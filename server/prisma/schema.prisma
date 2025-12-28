@@ -1,0 +1,54 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  abrev     String
+  skills    Skill[]
+}
+
+model Skill {
+  id          Int          @id @default(autoincrement())
+  nombre      String
+  categoria   Category     @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+  assessments Assessment[]
+}
+
+model Collaborator {
+  id          Int          @id @default(autoincrement())
+  nombre      String
+  rol         String
+  esDemo      Boolean      @default(false)
+  assessments Assessment[]
+}
+
+model Assessment {
+  id             Int          @id @default(autoincrement())
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
+  collaboratorId Int
+  skill          Skill        @relation(fields: [skillId], references: [id])
+  skillId        Int
+  nivel          Float
+  criticidad     String       // C, I, D, N
+  frecuencia     String       // D, S, M, T, N
+  snapshot       Snapshot?    @relation(fields: [snapshotId], references: [id])
+  snapshotId     Int?
+  createdAt      DateTime     @default(now())
+
+  @@unique([collaboratorId, skillId, snapshotId])
+}
+
+model Snapshot {
+  id          Int          @id @default(autoincrement())
+  nombre      String       // e.g., "Q1 2024"
+  createdAt   DateTime     @default(now())
+  assessments Assessment[]
+}
