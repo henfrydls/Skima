@@ -964,7 +964,7 @@ const SkillsDashboard = () => {
                     width={100}
                   />
                   <ReferenceLine
-                    x={3}
+                    x={2.5}
                     stroke={COLORS.neutral}
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
