@@ -2,9 +2,29 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  h1 {
+    @apply text-4xl font-light text-primary;
+  }
+  
+  h2 {
+    @apply text-2xl font-light text-primary;
+  }
+  
+  h3 {
+    @apply text-xl font-medium text-primary;
+  }
+  
+  /* Texto de datos - más peso visual */
+  .data-text {
+    @apply font-medium;
+  }
+}
+
 body {
   margin: 0;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  @apply bg-background;
 }

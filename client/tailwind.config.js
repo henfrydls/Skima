@@ -5,7 +5,19 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        primary: '#2d676e',
+        competent: '#a6ae3d',
+        warning: '#da8a0c',
+        critical: '#ef4444',
+        background: '#f5f5f5',
+        surface: '#ffffff',
+      },
+      fontFamily: {
+        sans: ['system-ui', 'Avenir', 'Helvetica', 'Arial', 'sans-serif'],
+      },
+    },
   },
   plugins: [],
 }
