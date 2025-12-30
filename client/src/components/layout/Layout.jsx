@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
+  FileText,
   Settings, 
   ChevronLeft, 
   ChevronRight,
@@ -20,6 +21,7 @@ import {
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/team-matrix', icon: Users, label: 'Team Matrix' },
+  { to: '/reports', icon: FileText, label: 'Reports' },
   { to: '/settings', icon: Settings, label: 'Settings' },
 ];
 

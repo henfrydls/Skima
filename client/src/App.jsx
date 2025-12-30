@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { DashboardView, TeamMatrixPage } from './pages';
+import { DashboardView, TeamMatrixPage, ReportsPage } from './pages';
 
 // Settings placeholder (se implementará en fases posteriores)
 function SettingsPage() {
@@ -21,6 +21,7 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<DashboardView />} />
           <Route path="/team-matrix" element={<TeamMatrixPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
