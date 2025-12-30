@@ -1,246 +1,268 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  TrendingUp, 
+  TrendingDown, 
+  AlertTriangle, 
+  Users, 
+  Camera, 
+  Download,
+  Lightbulb,
+  ArrowRight
+} from 'lucide-react';
+import { 
+  COLLABORATORS, 
+  SKILLS, 
+  CATEGORIES, 
+  isCriticalGap,
+  calculateMetrics 
+} from '../data/mockData';
+import {
+  calculateDelta,
+  prioritizeGaps,
+  calculateDistribution,
+  detectUnderutilizedTalent,
+  calculateExecutiveMetrics
+} from '../lib/dashboardLogic';
 
 // ============================================
-// STATIC DATA - Datos realistas para demo
+// MOCK SNAPSHOT DATA (para Time Travel)
 // ============================================
-const STATIC_DATA = {
-  promedioGeneral: '2.8',
-  fortalezas: 2,
-  gapsCriticos: 2,
-  
-  gaps: [
-    { categoria: 'Cloud & DevOps', valor: 1.8 },
-    { categoria: 'Arquitectura de Software', valor: 2.2 },
-  ],
-  
-  categorias: [
-    { id: 1, nombre: 'Innovación', abrev: 'INN', promedio: 2.4 },
-    { id: 2, nombre: 'Desarrollo', abrev: 'DEV', promedio: 3.2 },
-    { id: 3, nombre: 'Liderazgo', abrev: 'LID', promedio: 2.8 },
-    { id: 4, nombre: 'Gestión', abrev: 'GES', promedio: 3.1 },
-    { id: 5, nombre: 'Comunicación', abrev: 'COM', promedio: 3.4 },
-    { id: 6, nombre: 'Técnico', abrev: 'TEC', promedio: 2.6 },
-  ],
-  
-  colaboradores: [
-    { id: 1, nombre: 'María González', rol: 'Product Manager', promedio: 3.2,
-      categorias: { INN: 3.5, DEV: 2.8, LID: 3.4, GES: 3.8, COM: 3.2, TEC: 2.5 }},
-    { id: 2, nombre: 'Carlos Rodríguez', rol: 'Tech Lead', promedio: 3.6,
-      categorias: { INN: 3.2, DEV: 4.2, LID: 3.5, GES: 3.0, COM: 3.1, TEC: 4.5 }},
-    { id: 3, nombre: 'Laura Martínez', rol: 'Junior Developer', promedio: 2.1,
-      categorias: { INN: 1.8, DEV: 2.5, LID: 1.5, GES: 2.0, COM: 2.2, TEC: 2.6 }},
-    { id: 4, nombre: 'Pedro Sánchez', rol: 'UX Designer', promedio: 2.9,
-      categorias: { INN: 3.8, DEV: 2.0, LID: 2.5, GES: 3.0, COM: 3.5, TEC: 2.6 }},
-    { id: 5, nombre: 'Ana Torres', rol: 'QA Engineer', promedio: 2.7,
-      categorias: { INN: 2.2, DEV: 2.8, LID: 2.4, GES: 2.8, COM: 3.0, TEC: 3.0 }},
-  ]
-};
-
-const getStatusColor = (nivel) => {
-  if (nivel >= 3.5) return 'text-primary';
-  if (nivel >= 2.5) return 'text-competent';
-  return 'text-warning';
+const MOCK_PREVIOUS_SNAPSHOT = {
+  promedioGeneral: 2.5,
+  fecha: 'Q1 2024'
 };
 
 // ============================================
-// DASHBOARD VIEW - Solo Resumen Ejecutivo
+// DASHBOARD VIEW - Executive Summary
 // ============================================
 export default function DashboardView() {
+  // Calcular métricas ejecutivas
+  const metrics = useMemo(() => {
+    return calculateExecutiveMetrics(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
+  }, []);
+
+  // Calcular delta vs snapshot anterior
+  const trendData = useMemo(() => {
+    return calculateDelta(metrics.teamAverageRaw, MOCK_PREVIOUS_SNAPSHOT.promedioGeneral);
+  }, [metrics]);
+
+  // Gaps priorizados
+  const prioritizedGaps = useMemo(() => {
+    return prioritizeGaps(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
+  }, []);
+
+  // Distribución del equipo
+  const distribution = useMemo(() => {
+    return calculateDistribution(COLLABORATORS);
+  }, []);
+
+  // Insights automáticos
+  const insights = useMemo(() => {
+    return detectUnderutilizedTalent(COLLABORATORS, SKILLS);
+  }, []);
+
+  // Calcular progreso hacia objetivo
+  const targetScore = 3.5;
+  const progressPercent = Math.min((metrics.teamAverageRaw / targetScore) * 100, 100);
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-4xl font-light text-primary mb-2">
-          Dashboard de Competencias
-        </h1>
-        <p className="text-gray-500">
-          Resumen ejecutivo del estado de competencias del equipo
+        <h1>Dashboard Ejecutivo</h1>
+        <p className="text-gray-500 mt-1">
+          Resumen del estado de competencias del equipo
         </p>
       </div>
 
-      {/* KPI Gigante */}
-      <div className="bg-surface p-12 rounded-lg shadow-sm text-center">
-        <p className="text-sm uppercase tracking-wide text-gray-500 mb-2">
-          Promedio General del Equipo
-        </p>
-        <div className="flex items-baseline justify-center gap-3 mb-4">
-          <p className="text-7xl font-light text-primary">
-            {STATIC_DATA.promedioGeneral}
-          </p>
-          <span className="text-sm font-medium text-competent flex items-center gap-1">
-            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-            +0.3
-          </span>
-        </div>
-        <p className="text-xs text-gray-400 mb-4">vs. mes anterior</p>
-        <div className="flex items-center justify-center gap-8 text-sm">
-          <div>
-            <span className="text-gray-400">de</span>
-            <span className="font-semibold text-gray-600 ml-1">5.0</span>
-          </div>
-          <div className="text-gray-300">|</div>
-          <div>
-            <span className="font-semibold text-primary">{STATIC_DATA.fortalezas}</span>
-            <span className="text-gray-500 ml-1">fortalezas</span>
-          </div>
-          <div className="text-gray-300">|</div>
-          <div>
-            <span className="font-semibold text-warning">{STATIC_DATA.gapsCriticos}</span>
-            <span className="text-gray-500 ml-1">gaps críticos</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Áreas de Mejora */}
+      {/* Hero: Health Score */}
       <div className="bg-surface p-8 rounded-lg shadow-sm">
-        <h2 className="text-2xl font-light mb-6 text-primary">
-          {STATIC_DATA.gaps.length > 0
-            ? `${STATIC_DATA.gaps.length} áreas requieren atención inmediata`
-            : 'El equipo muestra competencias sólidas'}
-        </h2>
-        
-        {STATIC_DATA.gaps.length > 0 && (
-          <div className="space-y-4">
-            {STATIC_DATA.gaps.map((gap, idx) => (
-              <div 
-                key={idx} 
-                className={`flex items-start gap-4 pb-4 ${
-                  idx < STATIC_DATA.gaps.length - 1 ? 'border-b border-gray-200' : ''
-                }`}
-              >
-                <div className="text-3xl font-bold text-warning mt-1">
-                  {gap.valor.toFixed(1)}
-                </div>
-                <div className="flex-1">
-                  <p className="font-medium text-gray-800 mb-1">{gap.categoria}</p>
-                  <p className="text-sm text-gray-500">
-                    Por debajo del umbral de competencia (2.5). Capacitación prioritaria requerida.
-                  </p>
-                </div>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+          {/* Main KPI */}
+          <div className="text-center lg:text-left">
+            <p className="text-sm uppercase tracking-wide text-gray-500 mb-2">
+              Promedio General del Equipo
+            </p>
+            <div className="flex items-baseline justify-center lg:justify-start gap-4">
+              <p className="text-7xl font-light text-primary">
+                {metrics.teamAverage}
+              </p>
+              <div className="flex flex-col items-start">
+                <span className={`text-lg font-medium flex items-center gap-1 ${
+                  trendData.trend === 'up' ? 'text-competent' : 
+                  trendData.trend === 'down' ? 'text-warning' : 'text-gray-500'
+                }`}>
+                  {trendData.trend === 'up' ? <TrendingUp size={20} /> : 
+                   trendData.trend === 'down' ? <TrendingDown size={20} /> : null}
+                  {trendData.deltaRaw > 0 ? '+' : ''}{trendData.delta}
+                </span>
+                <span className="text-xs text-gray-400">vs {MOCK_PREVIOUS_SNAPSHOT.fecha}</span>
               </div>
-            ))}
-          </div>
-        )}
-      </div>
+            </div>
 
-
-      {/* Tabla Perfil del Equipo */}
-      <div className="bg-surface p-6 sm:p-8 rounded-lg shadow-sm">
-        <h3 className="text-xl font-light text-primary mb-6">Perfil del equipo</h3>
-        
-        {/* Desktop: tabla completa (>= 1024px) */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b-2 border-primary">
-                <th className="text-left py-3 font-medium text-gray-800">Colaborador</th>
-                <th className="text-left py-3 font-medium text-gray-800">Rol</th>
-                {STATIC_DATA.categorias.map(cat => (
-                  <th key={cat.id} className="text-center py-3 font-medium text-sm text-gray-500">
-                    {cat.abrev}
-                  </th>
-                ))}
-                <th className="text-center py-3 font-medium text-gray-800">Promedio</th>
-              </tr>
-            </thead>
-            <tbody>
-              {STATIC_DATA.colaboradores.map((col) => (
-                <tr 
-                  key={col.id} 
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-4">
-                    <span className="font-medium text-primary">{col.nombre}</span>
-                  </td>
-                  <td className="py-4 text-sm text-gray-500">{col.rol}</td>
-                  {Object.entries(col.categorias).map(([key, valor]) => (
-                    <td key={key} className="text-center py-4">
-                      <span className={`text-sm font-medium ${getStatusColor(valor)}`}>
-                        {valor.toFixed(1)}
-                      </span>
-                    </td>
-                  ))}
-                  <td className="text-center py-4">
-                    <span className={`text-lg font-medium ${getStatusColor(col.promedio)}`}>
-                      {col.promedio.toFixed(1)}
-                    </span>
-                  </td>
-                </tr>
-              ))}
-              {/* Fila de promedio */}
-              <tr className="bg-gray-50">
-                <td className="py-4 font-medium text-gray-800" colSpan={2}>
-                  Promedio del equipo
-                </td>
-                {STATIC_DATA.categorias.map(cat => (
-                  <td key={cat.id} className="text-center py-4">
-                    <span className={`font-semibold ${getStatusColor(cat.promedio)}`}>
-                      {cat.promedio.toFixed(1)}
-                    </span>
-                  </td>
-                ))}
-                <td className="text-center py-4">
-                  <span className="text-lg font-semibold text-primary">
-                    {STATIC_DATA.promedioGeneral}
-                  </span>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile: acordeón nativo (< 1024px) */}
-        <div className="lg:hidden space-y-3">
-          {STATIC_DATA.colaboradores.map((col) => (
-            <details 
-              key={col.id} 
-              className="border border-gray-200 rounded-lg bg-white group"
-            >
-              <summary className="cursor-pointer p-4 flex justify-between items-center list-none [&::-webkit-details-marker]:hidden">
-                <div>
-                  <p className="font-medium text-primary">{col.nombre}</p>
-                  <p className="text-xs text-gray-500">{col.rol}</p>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`text-2xl font-light ${getStatusColor(col.promedio)}`}>
-                    {col.promedio.toFixed(1)}
-                  </span>
-                  <svg 
-                    className="w-5 h-5 text-gray-400 transition-transform group-open:rotate-180" 
-                    fill="none" 
-                    viewBox="0 0 24 24" 
-                    stroke="currentColor"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-              </summary>
-              <div className="px-4 pb-4 pt-2 border-t border-gray-100">
-                <div className="grid grid-cols-3 gap-2">
-                  {Object.entries(col.categorias).map(([key, valor]) => (
-                    <div key={key} className="text-center p-2 bg-gray-50 rounded">
-                      <p className="text-xs text-gray-500 mb-1">{key}</p>
-                      <p className={`font-semibold ${getStatusColor(valor)}`}>
-                        {valor.toFixed(1)}
-                      </p>
-                    </div>
-                  ))}
-                </div>
+            {/* Progress bar */}
+            <div className="mt-4 max-w-sm">
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Actual: {metrics.teamAverage}</span>
+                <span>Objetivo: {targetScore}</span>
               </div>
-            </details>
-          ))}
-          
-          {/* Promedio del equipo - Mobile */}
-          <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center">
-              <span className="font-medium text-gray-700">Promedio del equipo</span>
-              <span className="text-2xl font-semibold text-primary">
-                {STATIC_DATA.promedioGeneral}
-              </span>
+              <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-2 bg-primary rounded-full transition-all animate-progress"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
             </div>
           </div>
+
+          {/* Secondary Metrics */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="text-center p-4 bg-critical/5 rounded-lg border border-critical/20">
+              <p className="text-3xl font-light text-critical">{metrics.criticalGaps}</p>
+              <p className="text-xs text-gray-600 mt-1">Brechas Críticas</p>
+            </div>
+            <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
+              <p className="text-3xl font-light text-primary">{metrics.teamSize}</p>
+              <p className="text-xs text-gray-600 mt-1">Colaboradores</p>
+            </div>
+            <div className="text-center p-4 bg-competent/5 rounded-lg border border-competent/20">
+              <p className="text-3xl font-light text-competent">{metrics.strengths}</p>
+              <p className="text-xs text-gray-600 mt-1">Fortalezas</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Distribution + Top Gaps */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Team Distribution */}
+        <div className="bg-surface p-6 rounded-lg shadow-sm">
+          <h3 className="text-lg font-medium text-primary mb-4 flex items-center gap-2">
+            <Users size={20} />
+            Distribución del Equipo
+          </h3>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="text-center p-4 bg-warning/10 rounded-lg">
+              <p className="text-3xl font-light text-warning">{distribution.beginners.count}</p>
+              <p className="text-sm text-gray-600 mt-1">Principiantes</p>
+              <p className="text-xs text-gray-400">&lt; 2.5</p>
+            </div>
+            <div className="text-center p-4 bg-competent/10 rounded-lg">
+              <p className="text-3xl font-light text-competent">{distribution.competent.count}</p>
+              <p className="text-sm text-gray-600 mt-1">Competentes</p>
+              <p className="text-xs text-gray-400">2.5 - 3.5</p>
+            </div>
+            <div className="text-center p-4 bg-primary/10 rounded-lg">
+              <p className="text-3xl font-light text-primary">{distribution.experts.count}</p>
+              <p className="text-sm text-gray-600 mt-1">Expertos</p>
+              <p className="text-xs text-gray-400">&gt; 3.5</p>
+            </div>
+          </div>
+          <Link 
+            to="/team-matrix" 
+            className="mt-4 text-sm text-primary hover:underline flex items-center gap-1 justify-center"
+          >
+            Ver matriz completa <ArrowRight size={14} />
+          </Link>
+        </div>
+
+        {/* Priority Gaps */}
+        <div className="bg-surface p-6 rounded-lg shadow-sm">
+          <h3 className="text-lg font-medium text-primary mb-4 flex items-center gap-2">
+            <AlertTriangle size={20} />
+            Áreas de Atención
+          </h3>
+          
+          {prioritizedGaps.length === 0 ? (
+            <p className="text-gray-500 text-sm text-center py-8">
+              ¡Excelente! No hay brechas críticas.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              {prioritizedGaps.slice(0, 3).map((gap, idx) => (
+                <div 
+                  key={gap.id}
+                  className={`flex items-start gap-3 p-3 rounded-lg border-l-4 ${
+                    gap.severidad === 'critical' ? 'border-critical bg-critical/5' :
+                    gap.severidad === 'warning' ? 'border-warning bg-warning/5' :
+                    'border-gray-300 bg-gray-50'
+                  }`}
+                >
+                  <div className={`flex-shrink-0 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
+                    gap.severidad === 'critical' ? 'bg-critical text-white' :
+                    gap.severidad === 'warning' ? 'bg-warning text-white' :
+                    'bg-gray-400 text-white'
+                  }`}>
+                    {idx + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="font-medium text-gray-800 truncate">{gap.categoria}</h4>
+                    <p className="text-sm text-gray-600">
+                      {gap.afectados} colaborador{gap.afectados > 1 ? 'es' : ''} afectado{gap.afectados > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <Link 
+                    to="/team-matrix"
+                    className="text-xs text-primary hover:underline flex-shrink-0"
+                  >
+                    Ver →
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Insight Automático */}
+      {insights.length > 0 && (
+        <div className="bg-gradient-to-r from-primary/5 to-competent/5 p-6 rounded-lg border border-primary/20">
+          <div className="flex items-start gap-3">
+            <Lightbulb className="text-primary flex-shrink-0 mt-1" size={24} />
+            <div>
+              <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                💡 Insight Automático
+              </h4>
+              <p className="text-sm text-gray-700 leading-relaxed">
+                <strong>{insights[0].colaborador}</strong> tiene alto nivel en{' '}
+                <strong>{insights[0].skill}</strong> ({insights[0].nivel.toFixed(1)}),
+                pero esa skill tiene <span className="text-warning">baja criticidad</span>.
+                {' '}Considera reasignarle a áreas donde el equipo tiene gaps.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Actions */}
+      <div className="bg-surface p-6 rounded-lg shadow-sm">
+        <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+          Acciones Rápidas
+        </h4>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
+            <Camera className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
+            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Crear Snapshot</p>
+          </button>
+
+          <Link 
+            to="/team-matrix"
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group"
+          >
+            <Users className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
+            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Ver Matriz</p>
+          </Link>
+
+          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
+            <TrendingUp className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
+            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Evaluar</p>
+          </button>
+
+          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
+            <Download className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
+            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Exportar</p>
+          </button>
         </div>
       </div>
     </div>
