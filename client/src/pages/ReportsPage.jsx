@@ -9,8 +9,9 @@ import {
   AlertTriangle,
   BookOpen,
   Users,
-  ChevronRight,
-  Calendar
+  Calendar,
+  Check,
+  Loader2
 } from 'lucide-react';
 import { 
   COLLABORATORS, 
@@ -19,62 +20,96 @@ import {
   isCriticalGap 
 } from '../data/mockData';
 import { prioritizeGaps, calculateDistribution } from '../lib/dashboardLogic';
-import { CardSkeleton } from '../components/common/LoadingSkeleton';
+import SnapshotSelector from '../components/dashboard/SnapshotSelector';
 
 /**
  * ReportsPage - Analytics y Exportación
  * 
- * Completa el User Journey: Dashboard → Team Matrix → Reports
- * Permite al manager:
- * - Exportar datos en múltiples formatos
- * - Ver análisis de gaps prioritarios
- * - Generar reportes ejecutivos
+ * Phase 2 Consistency Fixes Applied:
+ * - Removed hover-lift (only border transitions)
+ * - Removed ChevronRight (confuses navigation vs download)
+ * - Neutral backgrounds (gray-50 instead of colored)
+ * - Export states (loading → success → reset)
+ * - Added SnapshotSelector for context
+ * - Standardized typography (no emojis)
  */
 
 // ============================================
-// QUICK EXPORT BUTTONS
+// EXPORT BUTTON WITH STATES
 // ============================================
-function QuickExportCard({ icon: Icon, title, description, format, onExport, disabled = false }) {
+function ExportButton({ icon: Icon, title, description, format, onExport, disabled = false }) {
+  const [state, setState] = useState('idle'); // idle | loading | success
+
+  const handleClick = async () => {
+    if (disabled || state !== 'idle') return;
+    
+    setState('loading');
+    
+    // Simulate export delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    onExport(format);
+    setState('success');
+    
+    // Reset to idle after 2 seconds
+    setTimeout(() => setState('idle'), 2000);
+  };
+
   return (
     <button
-      onClick={() => onExport(format)}
-      disabled={disabled}
+      onClick={handleClick}
+      disabled={disabled || state !== 'idle'}
       className={`
-        p-6 bg-surface rounded-lg shadow-sm border border-gray-100 text-left
-        transition-all hover-lift group
-        ${disabled ? 'opacity-60 cursor-not-allowed' : 'hover:border-primary/30'}
+        p-5 bg-surface rounded-lg border text-left transition-colors
+        ${state === 'success' 
+          ? 'border-competent/30 bg-competent/5' 
+          : disabled 
+            ? 'border-gray-100 opacity-60 cursor-not-allowed' 
+            : 'border-gray-200 hover:border-primary/30'
+        }
       `}
     >
       <div className="flex items-start gap-4">
         <div className={`
-          w-12 h-12 rounded-lg flex items-center justify-center
-          ${disabled ? 'bg-gray-100 text-gray-400' : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-white'}
-          transition-colors
+          w-12 h-12 rounded-lg flex items-center justify-center transition-colors
+          ${state === 'loading' ? 'bg-gray-100 text-gray-400' :
+            state === 'success' ? 'bg-competent/10 text-competent' :
+            disabled ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 text-primary'}
         `}>
-          <Icon size={24} />
+          {state === 'loading' ? (
+            <Loader2 size={24} className="animate-spin" />
+          ) : state === 'success' ? (
+            <Check size={24} />
+          ) : (
+            <Icon size={24} />
+          )}
         </div>
         <div className="flex-1">
-          <h3 className="font-medium text-gray-800 group-hover:text-primary transition-colors">
-            {title}
+          <h3 className={`font-medium transition-colors ${
+            state === 'success' ? 'text-competent' : 'text-gray-800'
+          }`}>
+            {state === 'loading' ? 'Generando...' :
+             state === 'success' ? 'Exportado ✓' : title}
           </h3>
-          <p className="text-sm text-gray-500 mt-1">{description}</p>
-          {disabled && (
+          {state === 'idle' && (
+            <p className="text-sm text-gray-500 mt-1">{description}</p>
+          )}
+          {disabled && state === 'idle' && (
             <span className="text-xs text-gray-400 mt-2 block">Próximamente</span>
           )}
         </div>
-        <ChevronRight size={20} className="text-gray-300 group-hover:text-primary transition-colors" />
       </div>
     </button>
   );
 }
 
 // ============================================
-// GAP ANALYSIS SECTION
+// GAP ANALYSIS SECTION - Clean Design
 // ============================================
 function GapAnalysisSection({ gaps }) {
   if (!gaps || gaps.length === 0) {
     return (
-      <div className="bg-surface p-6 rounded-lg shadow-sm text-center">
+      <div className="bg-surface p-6 rounded-lg border border-gray-100 text-center">
         <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
         <p className="text-gray-500">No hay gaps críticos identificados</p>
       </div>
@@ -82,42 +117,35 @@ function GapAnalysisSection({ gaps }) {
   }
 
   return (
-    <div className="bg-surface p-6 rounded-lg shadow-sm">
-      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
-        <AlertTriangle size={20} className="text-warning" />
+    <div className="bg-surface p-6 rounded-lg border border-gray-100">
+      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
         Categorías con Mayor Impacto
       </h3>
       
-      <div className="space-y-4">
+      <div className="space-y-3">
         {gaps.slice(0, 5).map((gap, index) => (
           <div 
             key={gap.id}
-            className={`flex items-start gap-4 p-4 bg-gray-50 rounded-lg border-l-4 ${
-              gap.severidad === 'critical' ? 'border-critical' : 
-              gap.severidad === 'warning' ? 'border-warning' : 'border-gray-300'
-            }`}
+            className="flex items-start gap-4 p-4 bg-gray-50 rounded-lg"
           >
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-              gap.severidad === 'critical' ? 'bg-critical/20 text-critical' : 
-              gap.severidad === 'warning' ? 'bg-warning/20 text-warning' : 'bg-gray-200 text-gray-600'
-            }`}>
+            <div className={`
+              w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold
+              ${gap.severidad === 'critical' ? 'bg-critical/20 text-critical' : 
+                gap.severidad === 'warning' ? 'bg-warning/20 text-warning' : 'bg-gray-200 text-gray-600'}
+            `}>
               {index + 1}
             </div>
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <h4 className="font-medium text-gray-800">{gap.categoria}</h4>
-              <div className="flex items-center gap-4 mt-2 flex-wrap">
-                <span className="text-xs bg-critical/10 text-critical px-2 py-1 rounded">
-                  {gap.afectados} {gap.afectados === 1 ? 'persona' : 'personas'} afectadas
+              <div className="flex items-center gap-3 mt-2 flex-wrap">
+                <span className="text-xs text-gray-600">
+                  {gap.afectados} {gap.afectados === 1 ? 'persona' : 'personas'}
                 </span>
-                <span className="text-xs bg-warning/10 text-warning px-2 py-1 rounded">
+                <span className="text-xs text-gray-400">•</span>
+                <span className="text-xs text-gray-600">
                   {gap.skillsAfectados} skills con gap
                 </span>
               </div>
-              {gap.colaboradores && gap.colaboradores.length > 0 && (
-                <p className="text-xs text-gray-400 mt-2 truncate">
-                  {gap.colaboradores.join(', ')}
-                </p>
-              )}
             </div>
           </div>
         ))}
@@ -125,11 +153,11 @@ function GapAnalysisSection({ gaps }) {
 
       {/* Action Button */}
       <button 
-        className="w-full mt-6 p-4 border-2 border-dashed border-gray-300 rounded-lg text-center group hover:border-primary hover:bg-primary/5 transition-all"
+        className="w-full mt-6 p-4 border border-dashed border-gray-300 rounded-lg text-center group hover:border-primary transition-colors"
         onClick={() => alert('Próximamente: Exportar Plan de Capacitación')}
       >
-        <Download size={20} className="mx-auto text-gray-400 group-hover:text-primary mb-2" />
-        <span className="text-sm font-medium text-gray-600 group-hover:text-primary">
+        <Download size={18} className="mx-auto text-gray-400 group-hover:text-primary mb-2" />
+        <span className="text-sm text-gray-600 group-hover:text-primary">
           Exportar Plan de Capacitación
         </span>
       </button>
@@ -138,12 +166,11 @@ function GapAnalysisSection({ gaps }) {
 }
 
 // ============================================
-// TREND ANALYSIS SECTION (Requiere Snapshots)
+// TREND ANALYSIS SECTION
 // ============================================
 function TrendAnalysisSection() {
-  // Mock data para demostración
   const trendData = {
-    hasSnapshots: true, // Cambiar a false para ver estado vacío
+    hasSnapshots: true,
     trends: [
       { skill: 'Backend Development', delta: 1.2, direction: 'up' },
       { skill: 'Liderazgo del Cambio', delta: 0.8, direction: 'up' },
@@ -153,11 +180,11 @@ function TrendAnalysisSection() {
 
   if (!trendData.hasSnapshots) {
     return (
-      <div className="bg-surface p-6 rounded-lg shadow-sm text-center">
+      <div className="bg-surface p-6 rounded-lg border border-gray-100 text-center">
         <Calendar size={48} className="mx-auto text-gray-300 mb-4" />
         <h4 className="font-medium text-gray-700 mb-2">Análisis de Tendencias</h4>
         <p className="text-sm text-gray-500 mb-4">
-          Crea snapshots para ver la evolución del equipo a través del tiempo.
+          Crea snapshots para ver la evolución del equipo.
         </p>
         <button className="text-sm text-primary hover:underline">
           Crear primer snapshot →
@@ -167,24 +194,23 @@ function TrendAnalysisSection() {
   }
 
   return (
-    <div className="bg-surface p-6 rounded-lg shadow-sm">
-      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
-        <TrendingUp size={20} className="text-competent" />
+    <div className="bg-surface p-6 rounded-lg border border-gray-100">
+      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
         Evolución del Equipo
       </h3>
 
-      <div className="space-y-3">
+      <div className="space-y-2">
         {trendData.trends.map((trend) => (
           <div 
             key={trend.skill}
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
           >
-            <span className="font-medium text-gray-700">{trend.skill}</span>
+            <span className="text-sm text-gray-700">{trend.skill}</span>
             <span className={`
-              flex items-center gap-1 font-semibold
+              flex items-center gap-1 text-sm font-medium
               ${trend.direction === 'up' ? 'text-competent' : 'text-warning'}
             `}>
-              {trend.direction === 'up' ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
+              {trend.direction === 'up' ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
               {trend.delta > 0 ? '+' : ''}{trend.delta.toFixed(1)}
             </span>
           </div>
@@ -199,26 +225,25 @@ function TrendAnalysisSection() {
 }
 
 // ============================================
-// TEAM SUMMARY SECTION
+// TEAM SUMMARY SECTION - Neutral Backgrounds
 // ============================================
 function TeamSummarySection({ distribution }) {
   return (
-    <div className="bg-surface p-6 rounded-lg shadow-sm">
-      <h3 className="text-lg font-medium text-gray-800 mb-4 flex items-center gap-2">
-        <Users size={20} className="text-primary" />
+    <div className="bg-surface p-6 rounded-lg border border-gray-100">
+      <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
         Resumen del Equipo
       </h3>
 
       <div className="grid grid-cols-3 gap-4">
-        <div className="text-center p-4 bg-critical/10 rounded-lg">
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
           <p className="text-2xl font-light text-critical">{distribution.needsAttention}</p>
           <p className="text-xs text-gray-600 mt-1">Requieren Atención</p>
         </div>
-        <div className="text-center p-4 bg-warning/10 rounded-lg">
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
           <p className="text-2xl font-light text-warning">{distribution.developing}</p>
           <p className="text-xs text-gray-600 mt-1">En Desarrollo</p>
         </div>
-        <div className="text-center p-4 bg-competent/10 rounded-lg">
+        <div className="text-center p-4 bg-gray-50 rounded-lg">
           <p className="text-2xl font-light text-competent">{distribution.proficient}</p>
           <p className="text-xs text-gray-600 mt-1">Competentes</p>
         </div>
@@ -231,8 +256,6 @@ function TeamSummarySection({ distribution }) {
 // MAIN REPORTS PAGE
 // ============================================
 export default function ReportsPage() {
-  const [isLoading, setIsLoading] = useState(false);
-
   // Calculate gaps (category-level data from prioritizeGaps)
   const gaps = useMemo(() => {
     return prioritizeGaps(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
@@ -281,7 +304,6 @@ export default function ReportsPage() {
   };
 
   const handleExportCSV = () => {
-    // Create CSV with collaborator summaries
     let csv = 'Nombre,Rol,Promedio,Gaps Críticos\n';
     
     COLLABORATORS.forEach(collab => {
@@ -302,8 +324,6 @@ export default function ReportsPage() {
   };
 
   const handleExportExcel = () => {
-    // For now, export as CSV which Excel can open
-    // In production, use a library like xlsx
     alert('Exportando como CSV (compatible con Excel)...');
     handleExportCSV();
   };
@@ -318,35 +338,38 @@ export default function ReportsPage() {
         </p>
       </div>
 
+      {/* Snapshot Context */}
+      <SnapshotSelector />
+
       {/* Quick Export Section */}
       <section>
-        <h2 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-          📊 Exportación Rápida
+        <h2 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4">
+          Exportación Rápida
         </h2>
-        <div className="grid md:grid-cols-2 gap-4">
-          <QuickExportCard
+        <div className="grid md:grid-cols-2 gap-6">
+          <ExportButton
             icon={FileText}
             title="Reporte Ejecutivo PDF"
-            description="Resumen para presentar a stakeholders"
+            description="Resumen para stakeholders"
             format="pdf"
             onExport={handleExport}
             disabled={true}
           />
-          <QuickExportCard
+          <ExportButton
             icon={FileSpreadsheet}
             title="Matriz Excel"
             description="Datos completos con fórmulas"
             format="excel"
             onExport={handleExport}
           />
-          <QuickExportCard
+          <ExportButton
             icon={Download}
             title="Exportar CSV"
-            description="Data cruda para análisis personalizado"
+            description="Data para análisis personalizado"
             format="csv"
             onExport={handleExport}
           />
-          <QuickExportCard
+          <ExportButton
             icon={FileJson}
             title="Backup JSON"
             description="Backup completo del sistema"
@@ -372,7 +395,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Training Recommendations (Coming Soon) */}
-      <section className="bg-surface p-6 rounded-lg shadow-sm border-2 border-dashed border-gray-200">
+      <section className="bg-surface p-6 rounded-lg border border-dashed border-gray-200">
         <div className="text-center py-8">
           <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
           <h3 className="text-lg font-medium text-gray-700 mb-2">
