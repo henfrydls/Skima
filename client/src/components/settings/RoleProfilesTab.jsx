@@ -9,7 +9,9 @@ import {
   ChevronDown,
   ChevronRight,
   HelpCircle,
-  Briefcase
+  Briefcase,
+  Plus,
+  X
 } from 'lucide-react';
 
 /**
@@ -20,6 +22,7 @@ import {
  * - Progressive disclosure with category accordions
  * - Visual feedback on save
  * - Duplicate profile for similar roles
+ * - Create new role profiles
  */
 
 const API_BASE = '/api';
@@ -31,6 +34,70 @@ const CRITICIDAD_OPTIONS = [
   { value: 'D', label: 'Deseable', short: 'D', color: 'bg-gray-400 text-white', desc: 'Nice-to-have, suma puntos' },
   { value: 'N', label: 'N/A', short: '—', color: 'bg-gray-200 text-gray-500', desc: 'No aplica para este rol' },
 ];
+
+// New Role Modal Component
+function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
+  const [roleName, setRoleName] = useState('');
+  const [error, setError] = useState('');
+
+  if (!isOpen) return null;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!roleName.trim()) {
+      setError('El nombre del rol es requerido');
+      return;
+    }
+    if (existingRoles.includes(roleName.trim())) {
+      setError('Ya existe un perfil para este rol');
+      return;
+    }
+    onCreateRole(roleName.trim());
+    setRoleName('');
+    setError('');
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-medium text-gray-800">Nuevo Perfil de Puesto</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre del Rol *
+            </label>
+            <input
+              type="text"
+              value={roleName}
+              onChange={(e) => { setRoleName(e.target.value); setError(''); }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              placeholder="Ej: Senior Developer, UX Lead..."
+              autoFocus
+            />
+            {error && <p className="text-xs text-critical mt-1">{error}</p>}
+          </div>
+          <p className="text-xs text-gray-500">
+            Después de crear el perfil, podrás definir las skills críticas, importantes y deseables.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
+              Crear Perfil
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 // Skill row component
 function SkillRequirementRow({ skill, value, onChange }) {
@@ -175,6 +242,13 @@ export default function RoleProfilesTab() {
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState(null);
+  const [showNewRoleModal, setShowNewRoleModal] = useState(false);
+
+  // Handler to create new role
+  const handleCreateNewRole = (roleName) => {
+    setRoles(prev => [...prev, roleName]);
+    setSelectedRole(roleName);
+  };
 
   // Fetch data
   useEffect(() => {
@@ -338,7 +412,16 @@ export default function RoleProfilesTab() {
           )}
         </div>
 
-        <CriticidadLegend />
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => setShowNewRoleModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
+          >
+            <Plus size={16} />
+            Nuevo Perfil
+          </button>
+          <CriticidadLegend />
+        </div>
       </div>
 
       {/* No role selected */}
@@ -423,6 +506,14 @@ export default function RoleProfilesTab() {
           </div>
         </>
       )}
+
+      {/* New Role Modal */}
+      <NewRoleModal
+        isOpen={showNewRoleModal}
+        onClose={() => setShowNewRoleModal(false)}
+        onCreateRole={handleCreateNewRole}
+        existingRoles={roles}
+      />
     </div>
   );
 }

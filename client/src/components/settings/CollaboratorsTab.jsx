@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Search, 
   Plus, 
@@ -8,7 +8,9 @@ import {
   Trash2,
   X,
   Check,
-  UserPlus
+  UserPlus,
+  AlertCircle,
+  Briefcase
 } from 'lucide-react';
 import { COLLABORATORS } from '../../data/mockData';
 
@@ -203,9 +205,13 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
 }
 
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete }) {
+function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {} }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+  
+  // Check if role has a profile configured
+  const hasRoleProfile = collaborator.rol && roleProfiles[collaborator.rol] && 
+    Object.keys(roleProfiles[collaborator.rol]).length > 0;
 
   const initials = collaborator.nombre
     .split(' ')
@@ -236,15 +242,26 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete }) {
         </div>
       </td>
 
-      {/* Role */}
+      {/* Role with Profile Status */}
       <td className="px-4 py-3">
-        <EditableCell
-          value={collaborator.rol}
-          onSave={(value) => handleFieldSave('rol', value)}
-          isEditing={editingField === 'rol'}
-          onStartEdit={() => setEditingField('rol')}
-          onCancelEdit={() => setEditingField(null)}
-        />
+        <div className="flex items-center gap-2">
+          <EditableCell
+            value={collaborator.rol}
+            onSave={(value) => handleFieldSave('rol', value)}
+            isEditing={editingField === 'rol'}
+            onStartEdit={() => setEditingField('rol')}
+            onCancelEdit={() => setEditingField(null)}
+          />
+          {!hasRoleProfile && (
+            <span 
+              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning"
+              title="Este rol no tiene un perfil de puesto configurado"
+            >
+              <AlertCircle size={12} />
+              Sin perfil
+            </span>
+          )}
+        </div>
       </td>
 
       {/* Stats */}
@@ -314,8 +331,23 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete }) {
 // Main Component
 export default function CollaboratorsTab() {
   const [collaborators, setCollaborators] = useState(COLLABORATORS);
+  const [roleProfiles, setRoleProfiles] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Fetch role profiles
+  useEffect(() => {
+    const fetchRoleProfiles = async () => {
+      try {
+        const response = await fetch('/api/data');
+        const data = await response.json();
+        setRoleProfiles(data.roleProfiles || {});
+      } catch (err) {
+        console.error('Error fetching role profiles:', err);
+      }
+    };
+    fetchRoleProfiles();
+  }, []);
 
   // Filter collaborators
   const filteredCollaborators = collaborators.filter(c =>
@@ -419,6 +451,7 @@ export default function CollaboratorsTab() {
                 collaborator={collab}
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
+                roleProfiles={roleProfiles}
               />
             ))}
           </tbody>
