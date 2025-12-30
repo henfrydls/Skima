@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Users, Layers, FolderTree, ClipboardCheck } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck, Briefcase } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
 import EvaluationsTab from '../components/settings/EvaluationsTab';
+import RoleProfilesTab from '../components/settings/RoleProfilesTab';
 
 /**
  * SettingsPage — Gestión de Maestros del Sistema
@@ -24,6 +25,7 @@ const TABS = [
   { id: 'colaboradores', label: 'Colaboradores', icon: Users },
   { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'categorias', label: 'Categorías', icon: FolderTree },
+  { id: 'perfiles', label: 'Perfiles de Puesto', icon: Briefcase },
   { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
 ];
 
@@ -72,6 +74,7 @@ export default function SettingsPage() {
         {activeTab === 'colaboradores' && <CollaboratorsTab />}
         {activeTab === 'skills' && <SkillsTab />}
         {activeTab === 'categorias' && <CategoriesTab />}
+        {activeTab === 'perfiles' && <RoleProfilesTab />}
         {activeTab === 'evaluaciones' && <EvaluationsTab />}
       </div>
     </div>

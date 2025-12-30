@@ -170,26 +170,27 @@ function FrecuenciaSelector({ value, onChange }) {
 }
 
 // Skill Evaluation Row
-function SkillRow({ skill, evaluation, onChange }) {
+function SkillRow({ skill, evaluation, criticidad, onChange }) {
   const nivel = evaluation?.nivel ?? 0;
   const frecuencia = evaluation?.frecuencia ?? 'N';
-  const criticidad = skill.criticidad || 'I';
+  const effectiveCriticidad = criticidad || 'I';
   
-  const result = evaluarSkill(nivel, frecuencia, criticidad);
+  const result = evaluarSkill(nivel, frecuencia, effectiveCriticidad);
   const stateConfig = EVALUATION_STATES[result.estado] || EVALUATION_STATES['COMPETENTE'];
+  const isNA = effectiveCriticidad === 'N';
 
   const critLabel = {
     'C': { text: 'Crítica', class: 'bg-critical/10 text-critical' },
     'I': { text: 'Importante', class: 'bg-warning/10 text-warning' },
     'D': { text: 'Deseable', class: 'bg-gray-100 text-gray-500' },
     'N': { text: 'N/A', class: 'bg-gray-50 text-gray-400' },
-  }[criticidad] || { text: 'N/A', class: 'bg-gray-50 text-gray-400' };
+  }[effectiveCriticidad] || { text: 'N/A', class: 'bg-gray-50 text-gray-400' };
 
   return (
-    <div className="grid grid-cols-12 gap-4 items-center py-3 px-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0">
+    <div className={`grid grid-cols-12 gap-4 items-center py-3 px-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 ${isNA ? 'opacity-50' : ''}`}>
       {/* Skill Name + Criticidad */}
       <div className="col-span-3">
-        <span className="text-sm text-gray-800 font-medium">{skill.nombre}</span>
+        <span className={`text-sm font-medium ${isNA ? 'text-gray-400' : 'text-gray-800'}`}>{skill.nombre}</span>
         <div className="mt-0.5">
           <span className={`text-xs px-1.5 py-0.5 rounded ${critLabel.class}`}>
             {critLabel.text}
@@ -224,9 +225,13 @@ function SkillRow({ skill, evaluation, onChange }) {
 }
 
 // Category Accordion
-function CategoryAccordion({ category, skills, evaluations, onEvaluationChange }) {
+function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvaluationChange }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const categorySkills = skills.filter(s => s.categoria === category.id);
+  
+  // Separate N/A skills to show them at the end (collapsed by default)
+  const activeSkills = categorySkills.filter(s => (roleProfile?.[s.id] || 'I') !== 'N');
+  const naSkills = categorySkills.filter(s => (roleProfile?.[s.id]) === 'N');
 
   if (categorySkills.length === 0) return null;
 
@@ -252,14 +257,20 @@ function CategoryAccordion({ category, skills, evaluations, onEvaluationChange }
             <div className="col-span-2">Frecuencia</div>
             <div className="col-span-3 text-right">Estado</div>
           </div>
-          {categorySkills.map(skill => (
+          {activeSkills.map(skill => (
             <SkillRow
               key={skill.id}
               skill={skill}
               evaluation={evaluations[skill.id]}
+              criticidad={roleProfile?.[skill.id] || skill.criticidad || 'I'}
               onChange={(val) => onEvaluationChange(skill.id, val)}
             />
           ))}
+          {naSkills.length > 0 && (
+            <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
+              {naSkills.length} skill(s) marcadas como N/A para este rol
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -334,6 +345,7 @@ export default function EvaluationsTab() {
   const [collaborators, setCollaborators] = useState([]);
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [roleProfiles, setRoleProfiles] = useState({});
   const [selectedCollaborator, setSelectedCollaborator] = useState(null);
   const [evaluations, setEvaluations] = useState({});
   const [isLoading, setIsLoading] = useState(true);
@@ -353,6 +365,7 @@ export default function EvaluationsTab() {
         setCollaborators(data.collaborators || []);
         setCategories(data.categories || []);
         setSkills(data.skills || []);
+        setRoleProfiles(data.roleProfiles || {});
       } catch (err) {
         setError('Error cargando datos');
         console.error(err);
@@ -374,6 +387,14 @@ export default function EvaluationsTab() {
       }
     }
   }, [selectedCollaborator, collaborators]);
+
+  // Get current role's profile
+  const currentRoleProfile = useMemo(() => {
+    if (!selectedCollaborator) return {};
+    const collab = collaborators.find(c => c.id === selectedCollaborator);
+    if (!collab?.rol) return {};
+    return roleProfiles[collab.rol] || {};
+  }, [selectedCollaborator, collaborators, roleProfiles]);
 
   // Handle evaluation change
   const handleEvaluationChange = (skillId, value) => {
@@ -407,7 +428,9 @@ export default function EvaluationsTab() {
     entries.forEach(([skillId, eval_]) => {
       const skill = skills.find(s => s.id === parseInt(skillId));
       if (!skill) return;
-      const result = evaluarSkill(eval_.nivel || 0, eval_.frecuencia || 'N', skill.criticidad || 'I');
+      const crit = currentRoleProfile[skill.id] || skill.criticidad || 'I';
+      if (crit === 'N') return; // Skip N/A skills
+      const result = evaluarSkill(eval_.nivel || 0, eval_.frecuencia || 'N', crit);
       if (result.estado === 'BRECHA CRÍTICA') critical++;
       if (result.estado.includes('FORTALEZA')) strengths++;
       if (result.estado === 'TALENTO SUBUTILIZADO') underutilized++;
@@ -512,6 +535,7 @@ export default function EvaluationsTab() {
                 category={category}
                 skills={skills}
                 evaluations={evaluations}
+                roleProfile={currentRoleProfile}
                 onEvaluationChange={handleEvaluationChange}
               />
             ))}
