@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   FileText, 
   Download, 
@@ -9,14 +9,9 @@ import {
   BookOpen,
   Calendar,
   Check,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
-import { 
-  COLLABORATORS, 
-  SKILLS, 
-  CATEGORIES, 
-  isCriticalGap 
-} from '../data/mockData';
 import { prioritizeGaps, calculateDistribution } from '../lib/dashboardLogic';
 import SnapshotSelector from '../components/dashboard/SnapshotSelector';
 import { 
@@ -25,6 +20,12 @@ import {
   DirectorMetrics, 
   HRMetrics 
 } from '../components/reports';
+
+// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
+const isCriticalGap = (skillData) => {
+  if (!skillData) return false;
+  return skillData.criticidad === 'C' && skillData.nivel < 3;
+};
 
 /**
  * ReportsPage - Analytics y Exportación
@@ -259,15 +260,41 @@ export default function ReportsPage() {
   // Stakeholder role state
   const [stakeholderRole, setStakeholderRole] = useState('manager');
   
+  // Data state
+  const [data, setData] = useState({ categories: [], skills: [], collaborators: [] });
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('Error fetching data');
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        console.error('Error loading reports data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { categories, skills, collaborators } = data;
+
   // Calculate gaps (category-level data from prioritizeGaps)
   const gaps = useMemo(() => {
-    return prioritizeGaps(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
-  }, []);
+    if (!collaborators.length) return [];
+    return prioritizeGaps(collaborators, skills, categories, isCriticalGap);
+  }, [collaborators, skills, categories]);
 
   // Calculate distribution
   const distribution = useMemo(() => {
-    return calculateDistribution(COLLABORATORS);
-  }, []);
+    if (!collaborators.length) return { needsAttention: 0, developing: 0, proficient: 0 };
+    return calculateDistribution(collaborators);
+  }, [collaborators]);
 
   // Export handlers
   const handleExport = (format) => {
@@ -312,12 +339,16 @@ export default function ReportsPage() {
   const handleExportCSV = () => {
     let csv = 'Nombre,Rol,Promedio,Gaps Críticos\n';
     
-    COLLABORATORS.forEach(collab => {
+    collaborators.forEach(collab => {
+      const skillValues = Object.values(collab.skills).map(s => s.nivel);
+      const promedio = skillValues.length > 0 
+        ? skillValues.reduce((sum, val) => sum + val, 0) / skillValues.length 
+        : 0;
       const criticalGaps = Object.values(collab.skills)
         .filter(skillData => isCriticalGap(skillData))
         .length;
       
-      csv += `"${collab.nombre}","${collab.rol}",${collab.promedio.toFixed(1)},${criticalGaps}\n`;
+      csv += `"${collab.nombre}","${collab.rol}",${promedio.toFixed(1)},${criticalGaps}\n`;
     });
 
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -399,11 +430,11 @@ export default function ReportsPage() {
       )}
       
       {stakeholderRole === 'director' && (
-        <DirectorMetrics gaps={gaps} distribution={distribution} categories={CATEGORIES} />
+        <DirectorMetrics gaps={gaps} distribution={distribution} categories={categories} />
       )}
       
       {stakeholderRole === 'hr' && (
-        <HRMetrics distribution={distribution} collaborators={COLLABORATORS} />
+        <HRMetrics distribution={distribution} collaborators={collaborators} />
       )}
     </div>
   );
