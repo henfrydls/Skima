@@ -7,6 +7,8 @@ export {
   TableSkeleton, 
   MatrixSkeleton, 
   KPISkeleton, 
-  CardSkeleton 
+  CardSkeleton,
+  DashboardSkeleton,
+  CollaboratorListSkeleton
 } from './LoadingSkeleton';
 export { EmptyState } from './EmptyState';

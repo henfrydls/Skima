@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { 
   TrendingUp, 
@@ -24,19 +24,30 @@ import {
   detectUnderutilizedTalent,
   calculateExecutiveMetrics
 } from '../lib/dashboardLogic';
+import SnapshotSelector from '../components/dashboard/SnapshotSelector';
+import { DashboardSkeleton } from '../components/common/LoadingSkeleton';
 
 // ============================================
 // MOCK SNAPSHOT DATA (para Time Travel)
 // ============================================
 const MOCK_PREVIOUS_SNAPSHOT = {
   promedioGeneral: 2.5,
-  fecha: 'Q1 2024'
+  fecha: 'Junio 2024'
 };
 
 // ============================================
 // DASHBOARD VIEW - Executive Summary
 // ============================================
 export default function DashboardView() {
+  // Loading state - Para demostrar skeleton durante fetch futuro
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular carga de datos (reemplazar con fetch real al backend)
+    const timer = setTimeout(() => setIsLoading(false), 800);
+    return () => clearTimeout(timer);
+  }, []);
+
   // Calcular métricas ejecutivas
   const metrics = useMemo(() => {
     return calculateExecutiveMetrics(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
@@ -66,6 +77,11 @@ export default function DashboardView() {
   const targetScore = 3.5;
   const progressPercent = Math.min((metrics.teamAverageRaw / targetScore) * 100, 100);
 
+  // Show skeleton while loading
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Header */}
@@ -75,6 +91,13 @@ export default function DashboardView() {
           Resumen del estado de competencias del equipo
         </p>
       </div>
+
+      {/* Snapshot Selector - Time Travel Feature */}
+      <SnapshotSelector 
+        onSnapshotChange={(snapshot) => console.log('Current:', snapshot)}
+        onCompareChange={(snapshot) => console.log('Compare:', snapshot)}
+        onCreateSnapshot={() => console.log('Create snapshot requested')}
+      />
 
       {/* Hero: Health Score */}
       <div className="bg-surface p-8 rounded-lg shadow-sm">

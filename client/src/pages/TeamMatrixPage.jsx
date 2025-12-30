@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Grid3x3, User, Layers } from 'lucide-react';
 import { TransposedMatrixTable } from '../components/matrix';
+import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 
 // ============================================
 // STATIC DATA - Datos para vistas de colaboradores/categorías
@@ -255,6 +256,13 @@ function CategoryGridView() {
 export default function TeamMatrixPage() {
   const [currentView, setCurrentView] = useState('matriz');
   const [selectedColaborador, setSelectedColaborador] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Simular carga de datos (reemplazar con fetch real al backend)
+    const timer = setTimeout(() => setIsLoading(false), 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   const tabs = [
     { id: 'matriz', label: 'Matriz de Equipo', Icon: Grid3x3 },
@@ -295,11 +303,11 @@ export default function TeamMatrixPage() {
 
       {/* Vista activa */}
       {currentView === 'matriz' && (
-        <TransposedMatrixTable />
+        isLoading ? <MatrixSkeleton /> : <TransposedMatrixTable />
       )}
       
       {currentView === 'colaboradores' && !selectedColaborador && (
-        <CollaboratorListView onSelect={(col) => setSelectedColaborador(col)} />
+        isLoading ? <CollaboratorListSkeleton /> : <CollaboratorListView onSelect={(col) => setSelectedColaborador(col)} />
       )}
       
       {currentView === 'colaboradores' && selectedColaborador && (
@@ -310,7 +318,11 @@ export default function TeamMatrixPage() {
       )}
       
       {currentView === 'categorias' && (
-        <CategoryGridView />
+        isLoading ? (
+          <div className="grid md:grid-cols-2 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)}
+          </div>
+        ) : <CategoryGridView />
       )}
     </div>
   );
