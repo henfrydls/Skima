@@ -21,17 +21,19 @@ import {
 } from '../data/mockData';
 import { prioritizeGaps, calculateDistribution } from '../lib/dashboardLogic';
 import SnapshotSelector from '../components/dashboard/SnapshotSelector';
+import { 
+  StakeholderToggle, 
+  ManagerMetrics, 
+  DirectorMetrics, 
+  HRMetrics 
+} from '../components/reports';
 
 /**
  * ReportsPage - Analytics y Exportación
  * 
- * Phase 2 Consistency Fixes Applied:
- * - Removed hover-lift (only border transitions)
- * - Removed ChevronRight (confuses navigation vs download)
- * - Neutral backgrounds (gray-50 instead of colored)
- * - Export states (loading → success → reset)
- * - Added SnapshotSelector for context
- * - Standardized typography (no emojis)
+ * Phase 3: Stakeholder Views
+ * - Toggle between Manager, Director, and HR perspectives
+ * - Each role sees metrics tailored to their decision-making needs
  */
 
 // ============================================
@@ -256,6 +258,9 @@ function TeamSummarySection({ distribution }) {
 // MAIN REPORTS PAGE
 // ============================================
 export default function ReportsPage() {
+  // Stakeholder role state
+  const [stakeholderRole, setStakeholderRole] = useState('manager');
+  
   // Calculate gaps (category-level data from prioritizeGaps)
   const gaps = useMemo(() => {
     return prioritizeGaps(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
@@ -379,33 +384,27 @@ export default function ReportsPage() {
         </div>
       </section>
 
-      {/* Analysis Grid */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Gap Analysis */}
-        <GapAnalysisSection gaps={gaps} />
-
-        {/* Right Column */}
-        <div className="space-y-6">
-          {/* Team Summary */}
-          <TeamSummarySection distribution={distribution} />
-
-          {/* Trend Analysis */}
-          <TrendAnalysisSection />
-        </div>
-      </div>
-
-      {/* Training Recommendations (Coming Soon) */}
-      <section className="bg-surface p-6 rounded-lg border border-dashed border-gray-200">
-        <div className="text-center py-8">
-          <BookOpen size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">
-            Recomendaciones de Capacitación
-          </h3>
-          <p className="text-sm text-gray-500 max-w-md mx-auto">
-            Próximamente: Sugerencias automáticas de cursos basadas en los gaps críticos del equipo.
-          </p>
-        </div>
+      {/* Stakeholder Toggle */}
+      <section>
+        <StakeholderToggle 
+          activeRole={stakeholderRole} 
+          onChange={setStakeholderRole} 
+        />
       </section>
+
+      {/* Role-Specific Metrics */}
+      {stakeholderRole === 'manager' && (
+        <ManagerMetrics gaps={gaps} distribution={distribution} />
+      )}
+      
+      {stakeholderRole === 'director' && (
+        <DirectorMetrics gaps={gaps} distribution={distribution} categories={CATEGORIES} />
+      )}
+      
+      {stakeholderRole === 'hr' && (
+        <HRMetrics distribution={distribution} collaborators={COLLABORATORS} />
+      )}
     </div>
   );
 }
+
