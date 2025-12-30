@@ -1,20 +1,19 @@
 import { useState, useMemo } from 'react';
-import { Camera, Calendar, ChevronDown, Clock, ArrowLeft, Radio } from 'lucide-react';
+import { Camera, Calendar, ChevronDown, ChevronUp, Clock, ArrowLeft } from 'lucide-react';
 
 /**
- * SnapshotSelector Component - Versión Mejorada
+ * SnapshotSelector Component - Versión Compacta
  * 
- * Permite seleccionar y comparar snapshots históricos.
- * Feature diferenciadora: "Time Travel" para ver evolución del equipo.
+ * PRINCIPIO: El gerente viene a ver KPIs, no a seleccionar fechas.
+ * El selector debe ser discreto pero accesible.
  * 
- * MEJORAS:
- * - Banner "Modo Histórico" cuando no estamos en tiempo real
- * - Indicador visual claro de fecha de corte
- * - Tiempo relativo ("hace 3 meses")
- * - Botón "Volver a Actualidad"
+ * DISEÑO:
+ * - Por defecto: Una línea compacta con el contexto actual
+ * - Expandido: Panel completo con dropdowns
+ * - El banner de Modo Histórico SÍ debe ser prominente (es una advertencia)
  */
 
-// Mock data para snapshots - Reemplazar con API
+// Mock data para snapshots
 const MOCK_SNAPSHOTS = [
   { id: 1, label: 'Diciembre 2024', value: '2024-12', date: new Date('2024-12-29'), isCurrent: true },
   { id: 2, label: 'Septiembre 2024', value: '2024-09', date: new Date('2024-09-30'), isCurrent: false },
@@ -22,7 +21,6 @@ const MOCK_SNAPSHOTS = [
   { id: 4, label: 'Marzo 2024', value: '2024-03', date: new Date('2024-03-31'), isCurrent: false },
 ];
 
-// Helper: Calcular tiempo relativo
 function getRelativeTime(date) {
   const now = new Date();
   const diffMs = now - date;
@@ -31,24 +29,14 @@ function getRelativeTime(date) {
   if (diffDays < 7) return 'hace pocos días';
   if (diffDays < 30) return `hace ${Math.floor(diffDays / 7)} semanas`;
   if (diffDays < 365) return `hace ${Math.floor(diffDays / 30)} meses`;
-  return `hace ${Math.floor(diffDays / 365)} años`;
+  return `hace más de 1 año`;
 }
 
-// Helper: Formatear fecha completa
-function formatFullDate(date) {
-  return date.toLocaleDateString('es-ES', { 
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
-  });
-}
-
-export default function SnapshotSelector({ onSnapshotChange, onCompareChange, onCreateSnapshot, onModeChange }) {
+export default function SnapshotSelector({ onSnapshotChange, onCompareChange, onModeChange }) {
   const [currentSnapshot, setCurrentSnapshot] = useState(MOCK_SNAPSHOTS[0]);
   const [compareSnapshot, setCompareSnapshot] = useState(MOCK_SNAPSHOTS[2]);
-  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  // Detectar si estamos en modo histórico
   const isHistoricalMode = !currentSnapshot.isCurrent;
   const relativeTime = useMemo(() => getRelativeTime(currentSnapshot.date), [currentSnapshot]);
 
@@ -70,156 +58,139 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
     setCurrentSnapshot(liveSnapshot);
     onSnapshotChange?.(liveSnapshot);
     onModeChange?.(false);
-  };
-
-  const handleCreateSnapshot = () => {
-    setShowCreateModal(true);
-    setTimeout(() => setShowCreateModal(false), 2000);
-    onCreateSnapshot?.();
+    setIsExpanded(false);
   };
 
   return (
-    <div className="space-y-3">
-      {/* Historical Mode Banner - Solo visible cuando NO estamos en "Actualidad" */}
+    <div className="space-y-2">
+      {/* Historical Mode Banner - Solo cuando NO estamos en vivo */}
       {isHistoricalMode && (
-        <div className="bg-warning/10 border-l-4 border-warning rounded-r-lg p-4 animate-fade-in">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center flex-shrink-0">
-                <Clock size={20} className="text-warning" />
-              </div>
+        <div className="bg-warning/10 border-l-4 border-warning rounded-r-lg px-4 py-3 animate-fade-in">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Clock size={18} className="text-warning flex-shrink-0" />
               <div>
-                <p className="font-semibold text-warning flex items-center gap-2">
-                  <span className="text-sm uppercase tracking-wide">Modo Histórico</span>
-                </p>
-                <p className="text-sm text-gray-700">
-                  Viendo datos de <span className="font-semibold">{currentSnapshot.label}</span>
-                  <span className="text-gray-500"> — {relativeTime}</span>
-                </p>
-                <p className="text-xs text-gray-500 mt-1">
-                  📅 Fecha de corte: {formatFullDate(currentSnapshot.date)}
-                </p>
+                <span className="text-sm font-medium text-warning">Modo Histórico</span>
+                <span className="text-sm text-gray-600 ml-2">
+                  Viendo: <span className="font-medium">{currentSnapshot.label}</span>
+                  <span className="text-gray-400 ml-1">({relativeTime})</span>
+                </span>
               </div>
             </div>
-            
             <button
               onClick={handleReturnToLive}
-              className="flex items-center gap-2 px-4 py-2 bg-competent/10 text-competent rounded-lg hover:bg-competent hover:text-white transition-all text-sm font-medium group"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-competent bg-competent/10 rounded-md hover:bg-competent hover:text-white transition-all"
             >
-              <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
-              Volver a Actualidad
+              <ArrowLeft size={14} />
+              Volver a hoy
             </button>
           </div>
         </div>
       )}
 
-      {/* Live Mode Indicator - Pequeño badge cuando estamos en tiempo real */}
-      {!isHistoricalMode && (
-        <div className="flex items-center gap-2 text-xs text-competent">
-          <span className="w-2 h-2 bg-competent rounded-full animate-pulse" />
-          <span className="font-medium">En vivo — {currentSnapshot.label}</span>
+      {/* Compact Context Bar */}
+      <div 
+        className={`
+          flex items-center justify-between gap-4 px-4 py-2 rounded-lg cursor-pointer
+          transition-all duration-200
+          ${isExpanded 
+            ? 'bg-surface shadow-sm border border-gray-200' 
+            : 'bg-gray-50 hover:bg-gray-100 border border-transparent'
+          }
+        `}
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        {/* Left: Context Info */}
+        <div className="flex items-center gap-3 text-sm">
+          {!isHistoricalMode && (
+            <span className="flex items-center gap-1.5 text-competent">
+              <span className="w-1.5 h-1.5 bg-competent rounded-full animate-pulse" />
+              <span className="font-medium">En vivo</span>
+            </span>
+          )}
+          
+          <span className="text-gray-400">|</span>
+          
+          <span className="text-gray-600">
+            <Calendar size={14} className="inline mr-1 opacity-60" />
+            {currentSnapshot.label}
+            <span className="text-gray-400 mx-1">vs</span>
+            {compareSnapshot.label}
+          </span>
         </div>
-      )}
 
-      {/* Main Selector Card */}
-      <div className={`
-        bg-surface p-4 rounded-lg shadow-sm border transition-all duration-300
-        ${isHistoricalMode ? 'border-warning/30 ring-1 ring-warning/20' : 'border-gray-100'}
-      `}>
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          {/* Snapshot Selectors */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            {/* Current Snapshot */}
-            <div className="flex-1 min-w-0">
+        {/* Right: Expand Toggle */}
+        <button 
+          className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
+          onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
+        >
+          <span>{isExpanded ? 'Cerrar' : 'Cambiar'}</span>
+          {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+        </button>
+      </div>
+
+      {/* Expanded Panel */}
+      {isExpanded && (
+        <div className="bg-surface p-4 rounded-lg shadow-sm border border-gray-100 animate-fade-in">
+          <div className="flex flex-col sm:flex-row sm:items-end gap-4">
+            {/* Ver datos de */}
+            <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-                <Calendar size={12} className="inline mr-1" />
                 Ver datos de
               </label>
-              <div className="relative">
-                <select
-                  value={currentSnapshot.value}
-                  onChange={handleCurrentChange}
-                  className={`
-                    appearance-none w-full sm:w-48 px-3 py-2 pr-10 border rounded-lg bg-white text-sm font-medium 
-                    focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary 
-                    transition-colors cursor-pointer
-                    ${isHistoricalMode 
-                      ? 'border-warning text-warning' 
-                      : 'border-gray-300 text-gray-700'
-                    }
-                  `}
-                >
-                  {MOCK_SNAPSHOTS.map(snapshot => (
-                    <option key={snapshot.id} value={snapshot.value}>
-                      {snapshot.label} {snapshot.isCurrent ? '✓ Actual' : ''}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className={`
-                  absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none
-                  ${isHistoricalMode ? 'text-warning' : 'text-gray-400'}
-                `} />
-              </div>
+              <select
+                value={currentSnapshot.value}
+                onChange={handleCurrentChange}
+                className={`
+                  w-full px-3 py-2 border rounded-lg text-sm font-medium 
+                  focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer
+                  ${isHistoricalMode 
+                    ? 'border-warning text-warning bg-warning/5' 
+                    : 'border-gray-300 text-gray-700'
+                  }
+                `}
+              >
+                {MOCK_SNAPSHOTS.map(s => (
+                  <option key={s.id} value={s.value}>
+                    {s.label} {s.isCurrent ? '✓ Actual' : ''}
+                  </option>
+                ))}
+              </select>
             </div>
 
-            {/* VS Separator */}
-            <span className="hidden sm:block text-gray-300 font-medium px-2">vs</span>
+            <span className="hidden sm:block text-gray-300 pb-2">vs</span>
 
-            {/* Compare Snapshot */}
-            <div className="flex-1 min-w-0">
+            {/* Comparar con */}
+            <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-                <Calendar size={12} className="inline mr-1" />
                 Comparar con
               </label>
-              <div className="relative">
-                <select
-                  value={compareSnapshot.value}
-                  onChange={handleCompareChange}
-                  className="appearance-none w-full sm:w-48 px-3 py-2 pr-10 border border-gray-300 rounded-lg bg-white text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors cursor-pointer"
-                >
-                  {MOCK_SNAPSHOTS.filter(s => s.value !== currentSnapshot.value).map(snapshot => (
-                    <option key={snapshot.id} value={snapshot.value}>
-                      {snapshot.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown size={16} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-              </div>
+              <select
+                value={compareSnapshot.value}
+                onChange={handleCompareChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer"
+              >
+                {MOCK_SNAPSHOTS.filter(s => s.value !== currentSnapshot.value).map(s => (
+                  <option key={s.id} value={s.value}>{s.label}</option>
+                ))}
+              </select>
             </div>
-          </div>
 
-          {/* Create Snapshot Button */}
-          <div className="relative">
+            {/* Crear Snapshot */}
             <button
-              onClick={handleCreateSnapshot}
-              className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all flex items-center justify-center gap-2 font-medium text-sm"
+              onClick={(e) => { e.stopPropagation(); alert('📸 Próximamente: Crear snapshots'); }}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Camera size={16} />
-              Crear Snapshot
+              <span className="hidden sm:inline">Crear</span>
             </button>
-            
-            {/* Coming Soon Tooltip */}
-            {showCreateModal && (
-              <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 z-50 animate-fade-in">
-                <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap shadow-lg">
-                  📸 Próximamente: Crear snapshots manuales
-                  <div className="absolute left-1/2 -translate-x-1/2 bottom-full w-0 h-0 border-l-4 border-r-4 border-b-4 border-transparent border-b-gray-900" />
-                </div>
-              </div>
-            )}
           </div>
-        </div>
 
-        {/* Time Travel Info */}
-        <div className="mt-3 pt-3 border-t border-gray-100">
-          <p className="text-xs text-gray-500">
-            📊 Comparando: <span className="font-medium text-gray-700">{currentSnapshot.label}</span>
-            {' '}vs{' '}
-            <span className="font-medium text-gray-700">{compareSnapshot.label}</span>
-            {' '}— Los delta mostrados reflejan esta comparación.
+          <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
+            📊 Los deltas mostrados comparan {currentSnapshot.label} vs {compareSnapshot.label}
           </p>
         </div>
-      </div>
+      )}
     </div>
   );
 }
