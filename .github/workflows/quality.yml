@@ -1,0 +1,48 @@
+name: Quality Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          
+      # Install Root Dependencies
+      - name: Install Root Dependencies
+        run: npm install
+
+      # Install Client Dependencies
+      - name: Install Client Dependencies
+        run: |
+          cd client
+          npm install
+
+      # Install Server Dependencies
+      - name: Install Server Dependencies
+        run: |
+          cd server
+          npm install
+
+      # Linting (Client)
+      - name: Linting (Client)
+        run: npm run lint
+        working-directory: ./client
+
+      # Testing (Unit & Integration)
+      - name: Run Tests (Client & Server)
+        run: npm test
+
+      # Security Audit
+      - name: Security Audit
+        run: npm audit --audit-level=high
+        continue-on-error: true
