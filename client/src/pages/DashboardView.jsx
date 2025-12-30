@@ -10,13 +10,6 @@ import {
   Lightbulb,
   ArrowRight
 } from 'lucide-react';
-import { 
-  COLLABORATORS, 
-  SKILLS, 
-  CATEGORIES, 
-  isCriticalGap,
-  calculateMetrics 
-} from '../data/mockData';
 import {
   calculateDelta,
   prioritizeGaps,
@@ -27,8 +20,14 @@ import {
 import SnapshotSelector from '../components/dashboard/SnapshotSelector';
 import { DashboardSkeleton } from '../components/common/LoadingSkeleton';
 
+// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
+const isCriticalGap = (skillData) => {
+  if (!skillData) return false;
+  return skillData.criticidad === 'C' && skillData.nivel < 3;
+};
+
 // ============================================
-// MOCK SNAPSHOT DATA (para Time Travel)
+// MOCK SNAPSHOT DATA (para Time Travel - Phase 3)
 // ============================================
 const MOCK_PREVIOUS_SNAPSHOT = {
   promedioGeneral: 2.5,
@@ -39,21 +38,37 @@ const MOCK_PREVIOUS_SNAPSHOT = {
 // DASHBOARD VIEW - Executive Summary
 // ============================================
 export default function DashboardView() {
-  // Loading state - Para demostrar skeleton durante fetch futuro
+  // Data state
+  const [data, setData] = useState({ categories: [], skills: [], collaborators: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch data from API
   useEffect(() => {
-    // TODO [Phase 2]: Replace this setTimeout with real API fetch.
-    // When connected to backend, remove the artificial delay - loading should
-    // reflect actual server response time (~100-300ms).
-    const timer = setTimeout(() => setIsLoading(false), 800);
-    return () => clearTimeout(timer);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('Error fetching data');
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError('Error cargando datos del dashboard');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  const { categories, skills, collaborators } = data;
 
   // Calcular métricas ejecutivas
   const metrics = useMemo(() => {
-    return calculateExecutiveMetrics(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
-  }, []);
+    if (!collaborators.length) return { teamAverage: '0.0', teamAverageRaw: 0, criticalGapsCount: 0, employeeCount: 0 };
+    return calculateExecutiveMetrics(collaborators, skills, categories, isCriticalGap);
+  }, [collaborators, skills, categories]);
 
   // Calcular delta vs snapshot anterior
   const trendData = useMemo(() => {
@@ -62,18 +77,21 @@ export default function DashboardView() {
 
   // Gaps priorizados
   const prioritizedGaps = useMemo(() => {
-    return prioritizeGaps(COLLABORATORS, SKILLS, CATEGORIES, isCriticalGap);
-  }, []);
+    if (!collaborators.length) return [];
+    return prioritizeGaps(collaborators, skills, categories, isCriticalGap);
+  }, [collaborators, skills, categories]);
 
   // Distribución del equipo
   const distribution = useMemo(() => {
-    return calculateDistribution(COLLABORATORS);
-  }, []);
+    if (!collaborators.length) return { needsAttention: 0, developing: 0, proficient: 0 };
+    return calculateDistribution(collaborators);
+  }, [collaborators]);
 
   // Insights automáticos
   const insights = useMemo(() => {
-    return detectUnderutilizedTalent(COLLABORATORS, SKILLS);
-  }, []);
+    if (!collaborators.length) return [];
+    return detectUnderutilizedTalent(collaborators, skills);
+  }, [collaborators, skills]);
 
   // Calcular progreso hacia objetivo
   const targetScore = 3.5;

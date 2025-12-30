@@ -1,58 +1,44 @@
-import { useState, useEffect } from 'react';
-import { Grid3x3, User, Layers } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Grid3x3, User, Layers, Loader2, AlertCircle } from 'lucide-react';
 import { TransposedMatrixTable } from '../components/matrix';
 import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 
-// ============================================
-// STATIC DATA - Datos para vistas de colaboradores/categorías
-// ============================================
-const STATIC_DATA = {
-  categorias: [
-    { id: 1, nombre: 'Innovación', abrev: 'INN', promedio: 2.4 },
-    { id: 2, nombre: 'Desarrollo', abrev: 'DEV', promedio: 3.2 },
-    { id: 3, nombre: 'Liderazgo', abrev: 'LID', promedio: 2.8 },
-    { id: 4, nombre: 'Gestión', abrev: 'GES', promedio: 3.1 },
-    { id: 5, nombre: 'Comunicación', abrev: 'COM', promedio: 3.4 },
-    { id: 6, nombre: 'Técnico', abrev: 'TEC', promedio: 2.6 },
-  ],
-  
-  colaboradores: [
-    { id: 1, nombre: 'María González', rol: 'Product Manager', promedio: 3.2,
-      categorias: { INN: 3.5, DEV: 2.8, LID: 3.4, GES: 3.8, COM: 3.2, TEC: 2.5 },
-      brechas: ['Cloud Computing', 'DevOps'],
-      fortalezas: ['Gestión de Proyectos', 'Liderazgo'] },
-    { id: 2, nombre: 'Carlos Rodríguez', rol: 'Tech Lead', promedio: 3.6,
-      categorias: { INN: 3.2, DEV: 4.2, LID: 3.5, GES: 3.0, COM: 3.1, TEC: 4.5 },
-      brechas: ['Presentaciones Ejecutivas'],
-      fortalezas: ['Arquitectura', 'Backend'] },
-    { id: 3, nombre: 'Laura Martínez', rol: 'Junior Developer', promedio: 2.1,
-      categorias: { INN: 1.8, DEV: 2.5, LID: 1.5, GES: 2.0, COM: 2.2, TEC: 2.6 },
-      brechas: ['Arquitectura', 'Testing', 'Cloud'],
-      fortalezas: ['Frontend Básico'] },
-    { id: 4, nombre: 'Pedro Sánchez', rol: 'UX Designer', promedio: 2.9,
-      categorias: { INN: 3.8, DEV: 2.0, LID: 2.5, GES: 3.0, COM: 3.5, TEC: 2.6 },
-      brechas: ['Backend', 'DevOps'],
-      fortalezas: ['User Research', 'UI Design'] },
-    { id: 5, nombre: 'Ana Torres', rol: 'QA Engineer', promedio: 2.7,
-      categorias: { INN: 2.2, DEV: 2.8, LID: 2.4, GES: 2.8, COM: 3.0, TEC: 3.0 },
-      brechas: ['Arquitectura'],
-      fortalezas: ['Testing', 'QA'] },
-  ]
-};
-
+// Helper: get status color
 const getStatusColor = (nivel) => {
   if (nivel >= 3.5) return 'text-primary';
   if (nivel >= 2.5) return 'text-competent';
   return 'text-warning';
 };
 
+// Helper: calculate average for a collaborator
+const calculateAverage = (skills) => {
+  const values = Object.values(skills).map(s => s.nivel);
+  if (values.length === 0) return 0;
+  return values.reduce((sum, val) => sum + val, 0) / values.length;
+};
+
+// Helper: calculate category averages for a collaborator
+const calculateCategoryAverages = (collabSkills, skills, categories) => {
+  const result = {};
+  categories.forEach(cat => {
+    const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
+    const levels = catSkillIds
+      .filter(id => collabSkills[id])
+      .map(id => collabSkills[id].nivel);
+    result[cat.abrev] = levels.length > 0 
+      ? levels.reduce((sum, l) => sum + l, 0) / levels.length 
+      : 0;
+  });
+  return result;
+};
+
 // ============================================
 // COLLABORATOR LIST VIEW
 // ============================================
-function CollaboratorListView({ onSelect }) {
+function CollaboratorListView({ collaborators = [], onSelect }) {
   return (
     <div className="space-y-4 animate-stagger">
-      {STATIC_DATA.colaboradores.map(col => (
+      {collaborators.map(col => (
         <button
           key={col.id}
           onClick={() => onSelect(col)}
@@ -211,10 +197,10 @@ function CollaboratorDetailView({ colaborador, onBack }) {
 // ============================================
 // CATEGORY GRID VIEW
 // ============================================
-function CategoryGridView() {
+function CategoryGridView({ categories = [] }) {
   return (
     <div className="grid md:grid-cols-2 gap-6">
-      {STATIC_DATA.categorias.map(cat => (
+      {categories.map(cat => (
         <div 
           key={cat.id}
           className="bg-surface p-6 rounded-lg shadow-sm border border-gray-100 
@@ -256,19 +242,83 @@ function CategoryGridView() {
 export default function TeamMatrixPage() {
   const [currentView, setCurrentView] = useState('matriz');
   const [selectedColaborador, setSelectedColaborador] = useState(null);
+  const [data, setData] = useState({ categories: [], skills: [], collaborators: [] });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
+  // Fetch data from API
   useEffect(() => {
-    // Simular carga de datos (reemplazar con fetch real al backend)
-    const timer = setTimeout(() => setIsLoading(false), 600);
-    return () => clearTimeout(timer);
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/data');
+        if (!response.ok) throw new Error('Error fetching data');
+        const result = await response.json();
+        setData(result);
+      } catch (err) {
+        setError('Error cargando datos');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  const { categories, skills, collaborators } = data;
+
+  // Transform collaborators for list view
+  const collaboratorsWithAverages = useMemo(() => {
+    return collaborators.map(col => ({
+      ...col,
+      promedio: calculateAverage(col.skills),
+      categorias: calculateCategoryAverages(col.skills, skills, categories),
+      brechas: [], // TODO: Calculate from skills
+      fortalezas: [] // TODO: Calculate from skills
+    }));
+  }, [collaborators, skills, categories]);
+
+  // Calculate category averages for grid view
+  const categoriesWithAverages = useMemo(() => {
+    return categories.map(cat => {
+      const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
+      let total = 0;
+      let count = 0;
+      collaborators.forEach(col => {
+        catSkillIds.forEach(skillId => {
+          if (col.skills[skillId]) {
+            total += col.skills[skillId].nivel;
+            count++;
+          }
+        });
+      });
+      return {
+        ...cat,
+        promedio: count > 0 ? total / count : 0
+      };
+    });
+  }, [categories, skills, collaborators]);
 
   const tabs = [
     { id: 'matriz', label: 'Matriz de Equipo', Icon: Grid3x3 },
     { id: 'colaboradores', label: 'Por Persona', Icon: User },
     { id: 'categorias', label: 'Por Área', Icon: Layers },
   ];
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <AlertCircle size={48} className="text-critical mb-4" />
+        <p className="text-gray-700">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 text-primary hover:underline"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -280,7 +330,7 @@ export default function TeamMatrixPage() {
         </p>
       </div>
 
-      {/* Pestañas de navegación - Estilo limpio con underline */}
+      {/* Pestañas de navegación */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-6" aria-label="Tabs">
           {tabs.map(tab => (
@@ -307,11 +357,16 @@ export default function TeamMatrixPage() {
 
       {/* Vista activa */}
       {currentView === 'matriz' && (
-        isLoading ? <MatrixSkeleton /> : <TransposedMatrixTable />
+        <TransposedMatrixTable 
+          categories={categories}
+          skills={skills}
+          collaborators={collaborators}
+          isLoading={isLoading}
+        />
       )}
       
       {currentView === 'colaboradores' && !selectedColaborador && (
-        isLoading ? <CollaboratorListSkeleton /> : <CollaboratorListView onSelect={(col) => setSelectedColaborador(col)} />
+        isLoading ? <CollaboratorListSkeleton /> : <CollaboratorListView collaborators={collaboratorsWithAverages} onSelect={(col) => setSelectedColaborador(col)} />
       )}
       
       {currentView === 'colaboradores' && selectedColaborador && (
@@ -326,8 +381,9 @@ export default function TeamMatrixPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)}
           </div>
-        ) : <CategoryGridView />
+        ) : <CategoryGridView categories={categoriesWithAverages} />
       )}
     </div>
   );
 }
+

@@ -1,8 +1,12 @@
 import { useState, useMemo } from 'react';
-import { ChevronDown } from 'lucide-react';
-import { CATEGORIES, SKILLS, COLLABORATORS, isCriticalGap } from '../../data/mockData';
-import Avatar from '../common/Avatar';
+import { ChevronDown, Loader2 } from 'lucide-react';
 import LevelDot from '../common/LevelDot';
+
+// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
+const isCriticalGap = (skillData) => {
+  if (!skillData) return false;
+  return skillData.criticidad === 'C' && skillData.nivel < 3;
+};
 
 /**
  * TransposedMatrixTable Component
@@ -11,12 +15,17 @@ import LevelDot from '../common/LevelDot';
  * - Filas: Skills (permite nombres largos sin cortar)
  * - Columnas: Empleados (avatares con iniciales + nombre)
  * - Agrupación visual por categoría (colapsable)
- * - Rich tooltips con info contextual
+ * 
+ * Props:
+ * - categories: array of { id, nombre, abrev }
+ * - skills: array of { id, categoria, nombre }
+ * - collaborators: array of { id, nombre, rol, skills: { [skillId]: { nivel, criticidad, frecuencia } } }
+ * - isLoading: boolean
  */
-export default function TransposedMatrixTable() {
+export default function TransposedMatrixTable({ categories = [], skills = [], collaborators = [], isLoading = false }) {
   // Estado para categorías colapsadas
-  const [expandedCategories, setExpandedCategories] = useState(
-    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
+  const [expandedCategories, setExpandedCategories] = useState(() =>
+    categories.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
   );
 
   const toggleCategory = (catId) => {
@@ -25,11 +34,11 @@ export default function TransposedMatrixTable() {
 
   // Agrupar skills por categoría
   const skillsByCategory = useMemo(() => {
-    return CATEGORIES.map(cat => ({
+    return categories.map(cat => ({
       ...cat,
-      skills: SKILLS.filter(s => s.categoria === cat.id),
+      skills: skills.filter(s => s.categoria === cat.id),
     }));
-  }, []);
+  }, [categories, skills]);
 
   // Estilos para celda sticky izquierda
   const stickyLeftStyles = `
@@ -39,12 +48,28 @@ export default function TransposedMatrixTable() {
     shadow-[4px_0_6px_-2px_rgba(0,0,0,0.08)]
   `;
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!collaborators.length) {
+    return (
+      <div className="text-center py-16 text-gray-500">
+        No hay datos de colaboradores
+      </div>
+    );
+  }
+
   return (
     <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in">
       {/* Contenedor con scroll */}
       <div className="overflow-auto max-h-[calc(100vh-200px)]">
         <table className="w-full border-collapse">
-          {/* Header: Empleados como columnas - Estilo Heatmap Minimalista */}
+          {/* Header: Empleados como columnas */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
               {/* Celda esquina: Skill */}
@@ -61,8 +86,8 @@ export default function TransposedMatrixTable() {
                 <span className="text-sm">Skill</span>
               </th>
               
-              {/* Headers de empleados - Avatares circulares con nombre */}
-              {COLLABORATORS.map(collab => (
+              {/* Headers de empleados */}
+              {collaborators.map(collab => (
                 <th
                   key={collab.id}
                   className="sticky top-0 z-10 bg-gray-50 p-2 text-center min-w-[60px]"
@@ -91,7 +116,7 @@ export default function TransposedMatrixTable() {
                 {/* Header de categoría - Colapsable */}
                 <tr key={`cat-${category.id}`}>
                   <td 
-                    colSpan={COLLABORATORS.length + 1}
+                    colSpan={collaborators.length + 1}
                     className="bg-gray-100 p-2 text-sm font-medium text-gray-700 border-t-2 border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors"
                     onClick={() => toggleCategory(category.id)}
                   >
@@ -140,8 +165,8 @@ export default function TransposedMatrixTable() {
                       </div>
                     </td>
                     
-                    {/* Celdas de nivel por empleado - Con Rich Tooltip */}
-                    {COLLABORATORS.map(collab => {
+                    {/* Celdas de nivel por empleado */}
+                    {collaborators.map(collab => {
                       const skillData = collab.skills[skill.id];
                       const hasCriticalGap = isCriticalGap(skillData);
                       
