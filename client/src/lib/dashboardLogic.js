@@ -221,11 +221,38 @@ export function detectBusFactorRisk(collaborators, skills) {
  * Calcula todas las métricas ejecutivas para el dashboard
  */
 export function calculateExecutiveMetrics(collaborators, skills, categories, isCriticalGap) {
-  // Promedio general
-  const totalAvg = collaborators.reduce((sum, c) => sum + c.promedio, 0) / collaborators.length;
+  // Helper to calculate average from skills object
+  const calcAvg = (skillsObj) => {
+    const vals = Object.values(skillsObj).map(s => s.nivel);
+    if (vals.length === 0) return 0;
+    return vals.reduce((sum, v) => sum + v, 0) / vals.length;
+  };
+
+  // Promedio general - calculate dynamically from skills
+  let totalSum = 0;
+  collaborators.forEach(c => {
+    totalSum += calcAvg(c.skills);
+  });
+  const totalAvg = collaborators.length > 0 ? totalSum / collaborators.length : 0;
   
   // Contar fortalezas (categorías con promedio > 3.5)
-  const strengths = categories.filter(cat => cat.promedio >= 3.5).length;
+  // Calculate category averages from collaborator skills
+  const categoryAverages = categories.map(cat => {
+    const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
+    let sum = 0;
+    let count = 0;
+    collaborators.forEach(c => {
+      catSkillIds.forEach(skillId => {
+        if (c.skills[skillId]) {
+          sum += c.skills[skillId].nivel;
+          count++;
+        }
+      });
+    });
+    return { id: cat.id, promedio: count > 0 ? sum / count : 0 };
+  });
+  
+  const strengths = categoryAverages.filter(cat => cat.promedio >= 3.5).length;
   
   // Contar gaps críticos
   let criticalGapsCount = 0;

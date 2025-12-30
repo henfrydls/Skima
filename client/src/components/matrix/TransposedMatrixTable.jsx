@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
 import LevelDot from '../common/LevelDot';
 
@@ -112,7 +112,7 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
           {/* Body: Skills como filas, agrupadas por categoría */}
           <tbody>
             {skillsByCategory.map(category => (
-              <>
+              <React.Fragment key={`cat-group-${category.id}`}>
                 {/* Header de categoría - Colapsable */}
                 <tr key={`cat-${category.id}`}>
                   <td 
@@ -205,7 +205,7 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
                     })}
                   </tr>
                 ))}
-              </>
+              </React.Fragment>
             ))}
           </tbody>
         </table>
