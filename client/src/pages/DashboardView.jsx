@@ -47,7 +47,7 @@ const getStatusColor = (nivel) => {
 // ============================================
 export default function DashboardView() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-4xl font-light text-primary mb-2">
@@ -63,9 +63,18 @@ export default function DashboardView() {
         <p className="text-sm uppercase tracking-wide text-gray-500 mb-2">
           Promedio General del Equipo
         </p>
-        <p className="text-7xl font-light text-primary mb-4">
-          {STATIC_DATA.promedioGeneral}
-        </p>
+        <div className="flex items-baseline justify-center gap-3 mb-4">
+          <p className="text-7xl font-light text-primary">
+            {STATIC_DATA.promedioGeneral}
+          </p>
+          <span className="text-sm font-medium text-competent flex items-center gap-1">
+            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clipRule="evenodd" />
+            </svg>
+            +0.3
+          </span>
+        </div>
+        <p className="text-xs text-gray-400 mb-4">vs. mes anterior</p>
         <div className="flex items-center justify-center gap-8 text-sm">
           <div>
             <span className="text-gray-400">de</span>

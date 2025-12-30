@@ -21,6 +21,40 @@
   }
 }
 
+@layer utilities {
+  /* Animación fade-in para transiciones de vista */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* Variante más lenta para cards */
+  .animate-fade-in-slow {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  /* Animación para progress bars */
+  @keyframes progress-grow {
+    from {
+      width: 0;
+    }
+  }
+
+  .animate-progress {
+    animation: progress-grow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
 body {
   margin: 0;
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;

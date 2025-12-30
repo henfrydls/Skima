@@ -1,4 +1,5 @@
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { CATEGORIES, SKILLS, COLLABORATORS, isCriticalGap } from '../../data/mockData';
 import Avatar from '../common/Avatar';
 import LevelDot from '../common/LevelDot';
@@ -8,10 +9,20 @@ import LevelDot from '../common/LevelDot';
  * 
  * Matriz de habilidades TRANSPUESTA:
  * - Filas: Skills (permite nombres largos sin cortar)
- * - Columnas: Empleados (avatares con iniciales)
- * - Agrupación visual por categoría
+ * - Columnas: Empleados (avatares con iniciales + nombre)
+ * - Agrupación visual por categoría (colapsable)
+ * - Rich tooltips con info contextual
  */
 export default function TransposedMatrixTable() {
+  // Estado para categorías colapsadas
+  const [expandedCategories, setExpandedCategories] = useState(
+    CATEGORIES.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
+  );
+
+  const toggleCategory = (catId) => {
+    setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
+  };
+
   // Agrupar skills por categoría
   const skillsByCategory = useMemo(() => {
     return CATEGORIES.map(cat => ({
@@ -29,7 +40,7 @@ export default function TransposedMatrixTable() {
   `;
 
   return (
-    <div className="bg-surface rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in">
       {/* Contenedor con scroll */}
       <div className="overflow-auto max-h-[calc(100vh-200px)]">
         <table className="w-full border-collapse">
@@ -77,18 +88,28 @@ export default function TransposedMatrixTable() {
           <tbody>
             {skillsByCategory.map(category => (
               <>
-                {/* Header de categoría */}
+                {/* Header de categoría - Colapsable */}
                 <tr key={`cat-${category.id}`}>
                   <td 
                     colSpan={COLLABORATORS.length + 1}
-                    className="bg-gray-100 p-2 text-sm font-medium text-gray-700 border-t-2 border-gray-200"
+                    className="bg-gray-100 p-2 text-sm font-medium text-gray-700 border-t-2 border-gray-200 cursor-pointer hover:bg-gray-200 transition-colors"
+                    onClick={() => toggleCategory(category.id)}
                   >
-                    {category.nombre}
+                    <div className="flex items-center gap-2">
+                      <ChevronDown 
+                        size={16} 
+                        className={`transition-transform duration-200 ${expandedCategories[category.id] ? '' : '-rotate-90'}`}
+                      />
+                      {category.nombre}
+                      <span className="text-xs text-gray-500">
+                        ({category.skills.length} skills)
+                      </span>
+                    </div>
                   </td>
                 </tr>
                 
                 {/* Skills de esta categoría */}
-                {category.skills.map((skill, skillIdx) => (
+                {expandedCategories[category.id] && category.skills.map((skill, skillIdx) => (
                   <tr 
                     key={skill.id}
                     className={`
@@ -119,7 +140,7 @@ export default function TransposedMatrixTable() {
                       </div>
                     </td>
                     
-                    {/* Celdas de nivel por empleado */}
+                    {/* Celdas de nivel por empleado - Con Rich Tooltip */}
                     {COLLABORATORS.map(collab => {
                       const skillData = collab.skills[skill.id];
                       const hasCriticalGap = isCriticalGap(skillData);
@@ -132,11 +153,27 @@ export default function TransposedMatrixTable() {
                             ${hasCriticalGap ? 'bg-critical/5' : ''}
                           `}
                         >
-                          <div className="flex items-center justify-center">
+                          {/* Rich Tooltip Container */}
+                          <div className="flex items-center justify-center group relative">
                             <LevelDot 
                               level={skillData?.nivel ?? 0}
                               isCriticalGap={hasCriticalGap}
                             />
+                            {/* Rich Tooltip */}
+                            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-max pointer-events-none">
+                              <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
+                                <p className="font-semibold">{collab.nombre}</p>
+                                <p className="text-gray-300 text-[10px] mb-1">{skill.nombre}</p>
+                                <p className="flex items-center gap-2">
+                                  Nivel: <span className="font-bold">{skillData?.nivel?.toFixed(1) ?? 0}</span>
+                                  {hasCriticalGap && (
+                                    <span className="text-red-400 font-medium">⚠️ CRÍTICO</span>
+                                  )}
+                                </p>
+                              </div>
+                              {/* Arrow */}
+                              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                            </div>
                           </div>
                         </td>
                       );
