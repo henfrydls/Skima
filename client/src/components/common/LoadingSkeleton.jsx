@@ -22,24 +22,49 @@ export function TableSkeleton({ rows = 5 }) {
   );
 }
 
-export function MatrixSkeleton({ columns = 5, rows = 8 }) {
+export function MatrixSkeleton({ columns = 5 }) {
+  // Simulate 2 categories with 4 skills each to match the real layout structure
+  const categories = [1, 2];
+  const skillsPerCategory = 4;
+
   return (
     <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-pulse">
-      {/* Header row */}
-      <div className="p-4 flex gap-4 border-b border-gray-100">
-        <div className="w-[280px] h-8 bg-gray-200 rounded" />
-        {[...Array(columns)].map((_, i) => (
-          <div key={i} className="w-8 h-8 bg-gray-200 rounded-full" />
-        ))}
+      {/* Main Header (Collaborator Names) */}
+      <div className="p-4 flex gap-4 border-b border-gray-100 bg-gray-50/50">
+        <div className="w-[280px] h-4 bg-gray-200 rounded" /> {/* "Skill" label */}
+        <div className="flex-1 flex justify-between px-8">
+          {[...Array(columns)].map((_, i) => (
+             <div key={i} className="flex flex-col items-center gap-2">
+               <div className="w-8 h-8 bg-gray-200 rounded-full" /> {/* Avatar */}
+               <div className="w-12 h-3 bg-gray-200 rounded" /> {/* Name */}
+             </div>
+          ))}
+        </div>
       </div>
-      {/* Body rows */}
-      <div className="p-4 space-y-3">
-        {[...Array(rows)].map((_, i) => (
-          <div key={i} className="flex gap-4 items-center">
-            <div className="w-[280px] h-6 bg-gray-200 rounded" />
-            {[...Array(columns)].map((_, j) => (
-              <div key={j} className="w-6 h-6 bg-gray-200 rounded-full" />
-            ))}
+
+      {/* Categories Body */}
+      <div>
+        {categories.map((cat) => (
+          <div key={cat}>
+            {/* Category Header */}
+            <div className="bg-gray-50 p-3 border-y border-gray-100 flex items-center">
+               <div className="w-4 h-4 bg-gray-200 rounded mr-3" /> {/* Chevron */}
+               <div className="w-48 h-5 bg-gray-300 rounded" /> {/* Category Name */}
+            </div>
+            
+            {/* Skills Rows */}
+            <div className="p-4 space-y-4">
+              {[...Array(skillsPerCategory)].map((_, i) => (
+                <div key={i} className="flex gap-4 items-center">
+                  <div className="w-[280px] h-4 bg-gray-200 rounded" /> {/* Skill Name */}
+                  <div className="flex-1 flex justify-between px-8">
+                    {[...Array(columns)].map((_, j) => (
+                      <div key={j} className="w-8 h-8 bg-gray-100 rounded-full" /> /* Score Placeholder */
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         ))}
       </div>

@@ -7,26 +7,50 @@ import {
   Settings, 
   ChevronLeft, 
   ChevronRight,
-  Menu
+  Menu,
+  LogIn,
+  LogOut,
+  User
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import LoginModal from '../auth/LoginModal';
 
 /**
  * Layout Component - App Shell
  * 
  * Estructura principal de la aplicación:
  * - Sidebar lateral colapsable con navegación
- * - Área de contenido principal
+ * - Settings solo visible si está autenticado
+ * - Botón de login/logout en la parte inferior
  */
 
-const navItems = [
-  { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-  { to: '/team-matrix', icon: Users, label: 'Team Matrix' },
-  { to: '/reports', icon: FileText, label: 'Reports' },
-  { to: '/settings', icon: Settings, label: 'Settings' },
-];
+// Navigation items - Settings only shows when authenticated
+const getNavItems = (isAuthenticated) => {
+  const items = [
+    { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
+    { to: '/team-matrix', icon: Users, label: 'Team Matrix' },
+    { to: '/reports', icon: FileText, label: 'Reports' },
+  ];
+  
+  // Only show Settings if authenticated
+  if (isAuthenticated) {
+    items.push({ to: '/settings', icon: Settings, label: 'Settings' });
+  }
+  
+  return items;
+};
 
 export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const { isAuthenticated, login, logout } = useAuth();
+  
+  const navItems = getNavItems(isAuthenticated);
+
+  const handleLoginSuccess = (token) => {
+    login(token);
+    setShowLoginModal(false);
+  };
 
   return (
     <div className="flex min-h-screen bg-background">
@@ -36,6 +60,7 @@ export default function Layout() {
           fixed left-0 top-0 z-40 h-screen
           bg-surface shadow-lg
           transition-all duration-300 ease-in-out
+          flex flex-col
           ${isCollapsed ? 'w-16' : 'w-64'}
         `}
       >
@@ -56,7 +81,7 @@ export default function Layout() {
         </div>
 
         {/* Navegación */}
-        <nav className="p-2 space-y-1">
+        <nav className="p-2 space-y-1 flex-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -77,6 +102,39 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Login/Logout Button - Bottom Left */}
+        <div className="p-2 border-t border-gray-100">
+          {isAuthenticated ? (
+            <button
+              onClick={logout}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                text-gray-600 hover:bg-critical/10 hover:text-critical
+                transition-all duration-150
+              `}
+            >
+              <LogOut size={20} className="flex-shrink-0" />
+              {!isCollapsed && (
+                <span className="whitespace-nowrap">Cerrar Sesión</span>
+              )}
+            </button>
+          ) : (
+            <button
+              onClick={() => setShowLoginModal(true)}
+              className={`
+                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                text-gray-600 hover:bg-primary/10 hover:text-primary
+                transition-all duration-150
+              `}
+            >
+              <LogIn size={20} className="flex-shrink-0" />
+              {!isCollapsed && (
+                <span className="whitespace-nowrap">Iniciar Sesión</span>
+              )}
+            </button>
+          )}
+        </div>
       </aside>
 
       {/* Contenido Principal */}
@@ -102,6 +160,13 @@ export default function Layout() {
           <Outlet />
         </div>
       </main>
+
+      {/* Login Modal */}
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
+      />
     </div>
   );
 }

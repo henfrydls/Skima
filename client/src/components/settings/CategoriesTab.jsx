@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   GripVertical, 
   Plus, 
@@ -6,20 +6,23 @@ import {
   Edit3, 
   Trash2,
   X,
-  Check,
-  FolderPlus
+  FolderPlus,
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
-import { CATEGORIES, SKILLS } from '../../data/mockData';
+import { useAuth } from '../../contexts/AuthContext';
+import LoginModal from '../auth/LoginModal';
 
 /**
- * CategoriesTab — Gestión de Categorías
+ * CategoriesTab — Gestión de Categorías (Connected to API)
  * 
  * Features:
- * - Drag & Drop para reordenar
- * - Color picker por categoría
- * - Contador de skills
- * - CRUD de categorías
+ * - Fetches categories from /api/categories
+ * - CRUD with auth protection
+ * - Login modal on 401
  */
+
+const API_BASE = '/api';
 
 // Color Picker Popover
 const PRESET_COLORS = [
@@ -55,30 +58,39 @@ function ColorPicker({ color, onChange, isOpen, onClose }) {
   );
 }
 
-// Create Category Modal
-function CreateCategoryModal({ isOpen, onClose, onSave }) {
+// Create/Edit Category Modal
+function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) {
   const [formData, setFormData] = useState({
     nombre: '',
-    color: PRESET_COLORS[0]
+    abrev: ''
   });
+
+  useEffect(() => {
+    if (category) {
+      setFormData({ nombre: category.nombre, abrev: category.abrev || '' });
+    } else {
+      setFormData({ nombre: '', abrev: '' });
+    }
+  }, [category, isOpen]);
 
   if (!isOpen) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (formData.nombre) {
+    if (formData.nombre && formData.abrev) {
       onSave(formData);
-      setFormData({ nombre: '', color: PRESET_COLORS[0] });
-      onClose();
     }
   };
+
+  const isEdit = !!category;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-medium text-gray-800">Nueva Categoría</h2>
+          <h2 className="text-lg font-medium text-gray-800">
+            {isEdit ? 'Editar Categoría' : 'Nueva Categoría'}
+          </h2>
           <button 
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -87,7 +99,6 @@ function CreateCategoryModal({ isOpen, onClose, onSave }) {
           </button>
         </div>
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -104,25 +115,19 @@ function CreateCategoryModal({ isOpen, onClose, onSave }) {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Color
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Abreviatura *
             </label>
-            <div className="flex gap-2">
-              {PRESET_COLORS.map(c => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setFormData({ ...formData, color: c })}
-                  className={`w-8 h-8 rounded-full border-2 transition-transform hover:scale-110 ${
-                    formData.color === c ? 'border-gray-800 scale-110' : 'border-transparent'
-                  }`}
-                  style={{ backgroundColor: c }}
-                />
-              ))}
-            </div>
+            <input
+              type="text"
+              value={formData.abrev}
+              onChange={(e) => setFormData({ ...formData, abrev: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              placeholder="Innovación"
+              required
+            />
           </div>
 
-          {/* Actions */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"
@@ -133,9 +138,11 @@ function CreateCategoryModal({ isOpen, onClose, onSave }) {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              disabled={isLoading}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
             >
-              Crear
+              {isLoading && <Loader2 size={16} className="animate-spin" />}
+              {isEdit ? 'Guardar' : 'Crear'}
             </button>
           </div>
         </form>
@@ -145,18 +152,12 @@ function CreateCategoryModal({ isOpen, onClose, onSave }) {
 }
 
 // Category Row Component
-function CategoryRow({ category, skillCount, index, onColorChange, onDelete, onDragStart, onDragOver, onDrop }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete }) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div
-      draggable
-      onDragStart={(e) => onDragStart(e, index)}
-      onDragOver={(e) => onDragOver(e, index)}
-      onDrop={(e) => onDrop(e, index)}
-      className="flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all cursor-move group"
-    >
+    <div className="flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all group">
       {/* Drag Handle */}
       <div className="text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
         <GripVertical size={18} />
@@ -167,18 +168,21 @@ function CategoryRow({ category, skillCount, index, onColorChange, onDelete, onD
         <button
           onClick={() => setShowColorPicker(!showColorPicker)}
           className="w-4 h-4 rounded-full border border-gray-200 hover:scale-125 transition-transform"
-          style={{ backgroundColor: category.color || PRESET_COLORS[0] }}
+          style={{ backgroundColor: PRESET_COLORS[category.id % PRESET_COLORS.length] }}
         />
         <ColorPicker
-          color={category.color}
-          onChange={(color) => onColorChange(category.id, color)}
+          color={PRESET_COLORS[category.id % PRESET_COLORS.length]}
+          onChange={() => {}}
           isOpen={showColorPicker}
           onClose={() => setShowColorPicker(false)}
         />
       </div>
 
       {/* Name */}
-      <span className="flex-1 font-medium text-gray-800">{category.nombre}</span>
+      <div className="flex-1">
+        <span className="font-medium text-gray-800">{category.nombre}</span>
+        <span className="text-sm text-gray-400 ml-2">({category.abrev})</span>
+      </div>
 
       {/* Skill Count */}
       <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
@@ -200,14 +204,14 @@ function CategoryRow({ category, skillCount, index, onColorChange, onDelete, onD
             <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[140px]">
               <button
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                onClick={() => setShowMenu(false)}
+                onClick={() => { onEdit(category); setShowMenu(false); }}
               >
                 <Edit3 size={14} />
                 Editar
               </button>
               <hr className="my-1 border-gray-100" />
               <button
-                onClick={() => { onDelete(category.id); setShowMenu(false); }}
+                onClick={() => { onDelete(category); setShowMenu(false); }}
                 className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
               >
                 <Trash2 size={14} />
@@ -247,75 +251,206 @@ function EmptyState({ onCreateClick }) {
 
 // Main Component
 export default function CategoriesTab() {
-  const [categories, setCategories] = useState(CATEGORIES.map(c => ({
-    ...c,
-    color: PRESET_COLORS[Math.floor(Math.random() * PRESET_COLORS.length)]
-  })));
-  const [skills] = useState(SKILLS);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [draggedIndex, setDraggedIndex] = useState(null);
+  const { isAuthenticated, getHeaders, login } = useAuth();
+  const [categories, setCategories] = useState([]);
+  const [skills, setSkills] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Fetch categories and skills
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [catRes, skillRes] = await Promise.all([
+          fetch(`${API_BASE}/categories`),
+          fetch(`${API_BASE}/skills`)
+        ]);
+        
+        if (!catRes.ok || !skillRes.ok) {
+          throw new Error('Error fetching data');
+        }
+        
+        const [catData, skillData] = await Promise.all([
+          catRes.json(),
+          skillRes.json()
+        ]);
+        
+        setCategories(catData);
+        setSkills(skillData);
+      } catch (err) {
+        setError('Error cargando categorías');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, []);
 
   // Get skill count per category
   const getSkillCount = (categoryId) => {
-    return skills.filter(s => s.categoria === categoryId).length;
+    return skills.filter(s => s.categoriaId === categoryId).length;
   };
 
-  // Drag handlers
-  const handleDragStart = (e, index) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
+  // Handle auth-protected action
+  const withAuth = async (action) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return false;
+    }
+    return action();
   };
 
-  const handleDragOver = (e, index) => {
-    e.preventDefault();
-    if (draggedIndex === null || draggedIndex === index) return;
-
-    const newCategories = [...categories];
-    const [removed] = newCategories.splice(draggedIndex, 1);
-    newCategories.splice(index, 0, removed);
-    setCategories(newCategories);
-    setDraggedIndex(index);
+  // Create category
+  const handleCreate = async (data) => {
+    return withAuth(async () => {
+      setIsSaving(true);
+      try {
+        const res = await fetch(`${API_BASE}/categories`, {
+          method: 'POST',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        
+        if (res.status === 401) {
+          setShowLoginModal(true);
+          return;
+        }
+        
+        if (!res.ok) throw new Error('Error creating category');
+        
+        const newCategory = await res.json();
+        setCategories([...categories, newCategory]);
+        setShowModal(false);
+      } catch (err) {
+        setError('Error creando categoría');
+      } finally {
+        setIsSaving(false);
+      }
+    });
   };
 
-  const handleDrop = (e, index) => {
-    e.preventDefault();
-    setDraggedIndex(null);
-    // TODO: Save new order to backend
+  // Update category
+  const handleUpdate = async (data) => {
+    if (!editingCategory) return;
+    
+    return withAuth(async () => {
+      setIsSaving(true);
+      try {
+        const res = await fetch(`${API_BASE}/categories/${editingCategory.id}`, {
+          method: 'PUT',
+          headers: getHeaders(),
+          body: JSON.stringify(data)
+        });
+        
+        if (res.status === 401) {
+          setShowLoginModal(true);
+          return;
+        }
+        
+        if (!res.ok) throw new Error('Error updating category');
+        
+        const updated = await res.json();
+        setCategories(categories.map(c => c.id === updated.id ? updated : c));
+        setShowModal(false);
+        setEditingCategory(null);
+      } catch (err) {
+        setError('Error actualizando categoría');
+      } finally {
+        setIsSaving(false);
+      }
+    });
   };
 
-  // CRUD handlers
-  const handleColorChange = (id, color) => {
-    setCategories(categories.map(c => c.id === id ? { ...c, color } : c));
-  };
-
-  const handleDelete = (id) => {
-    const skillCount = getSkillCount(id);
+  // Delete category
+  const handleDelete = async (category) => {
+    const skillCount = getSkillCount(category.id);
     if (skillCount > 0) {
       alert(`No puedes eliminar esta categoría porque tiene ${skillCount} skills asociadas.`);
       return;
     }
-    if (confirm('¿Eliminar esta categoría?')) {
-      setCategories(categories.filter(c => c.id !== id));
-    }
+    
+    if (!confirm('¿Eliminar esta categoría?')) return;
+    
+    return withAuth(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/categories/${category.id}`, {
+          method: 'DELETE',
+          headers: getHeaders()
+        });
+        
+        if (res.status === 401) {
+          setShowLoginModal(true);
+          return;
+        }
+        
+        if (!res.ok) throw new Error('Error deleting category');
+        
+        setCategories(categories.filter(c => c.id !== category.id));
+      } catch (err) {
+        setError('Error eliminando categoría');
+      }
+    });
   };
 
-  const handleCreate = (data) => {
-    const newCategory = {
-      ...data,
-      id: `cat-${Date.now()}`
-    };
-    setCategories([...categories, newCategory]);
+  // Edit handler
+  const handleEdit = (category) => {
+    setEditingCategory(category);
+    setShowModal(true);
   };
+
+  // Handle login success
+  const handleLoginSuccess = (token) => {
+    login(token);
+    setShowLoginModal(false);
+  };
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 size={32} className="animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <AlertCircle size={48} className="text-critical mb-4" />
+        <p className="text-gray-700">{error}</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 text-primary hover:underline"
+        >
+          Reintentar
+        </button>
+      </div>
+    );
+  }
 
   // Empty state
   if (categories.length === 0) {
     return (
       <>
-        <EmptyState onCreateClick={() => setShowCreateModal(true)} />
-        <CreateCategoryModal
-          isOpen={showCreateModal}
-          onClose={() => setShowCreateModal(false)}
+        <EmptyState onCreateClick={() => setShowModal(true)} />
+        <CategoryModal
+          isOpen={showModal}
+          onClose={() => { setShowModal(false); setEditingCategory(null); }}
           onSave={handleCreate}
+          isLoading={isSaving}
+        />
+        <LoginModal
+          isOpen={showLoginModal}
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={handleLoginSuccess}
         />
       </>
     );
@@ -326,10 +461,10 @@ export default function CategoriesTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
-          Arrastra para reordenar
+          {categories.length} categoría{categories.length !== 1 ? 's' : ''}
         </p>
         <button
-          onClick={() => setShowCreateModal(true)}
+          onClick={() => setShowModal(true)}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
         >
           <Plus size={18} />
@@ -339,26 +474,29 @@ export default function CategoriesTab() {
 
       {/* Categories List */}
       <div className="space-y-2">
-        {categories.map((category, index) => (
+        {categories.map((category) => (
           <CategoryRow
             key={category.id}
             category={category}
             skillCount={getSkillCount(category.id)}
-            index={index}
-            onColorChange={handleColorChange}
+            onEdit={handleEdit}
             onDelete={handleDelete}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDrop={handleDrop}
           />
         ))}
       </div>
 
-      {/* Create Modal */}
-      <CreateCategoryModal
-        isOpen={showCreateModal}
-        onClose={() => setShowCreateModal(false)}
-        onSave={handleCreate}
+      {/* Modals */}
+      <CategoryModal
+        isOpen={showModal}
+        onClose={() => { setShowModal(false); setEditingCategory(null); }}
+        onSave={editingCategory ? handleUpdate : handleCreate}
+        category={editingCategory}
+        isLoading={isSaving}
+      />
+      <LoginModal
+        isOpen={showLoginModal}
+        onClose={() => setShowLoginModal(false)}
+        onSuccess={handleLoginSuccess}
       />
     </div>
   );

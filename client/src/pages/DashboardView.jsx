@@ -43,7 +43,9 @@ export default function DashboardView() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simular carga de datos (reemplazar con fetch real al backend)
+    // TODO [Phase 2]: Replace this setTimeout with real API fetch.
+    // When connected to backend, remove the artificial delay - loading should
+    // reflect actual server response time (~100-300ms).
     const timer = setTimeout(() => setIsLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);

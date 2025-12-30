@@ -289,21 +289,24 @@ export default function ReportsPage() {
     }
   };
 
-  const handleExportJSON = () => {
-    const data = {
-      exportDate: new Date().toISOString(),
-      collaborators: COLLABORATORS,
-      skills: SKILLS,
-      categories: CATEGORIES
-    };
-    
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `skills-matrix-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportJSON = async () => {
+    try {
+      const response = await fetch('/api/export');
+      if (!response.ok) throw new Error('Export failed');
+      
+      const data = await response.json();
+      
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `skills-matrix-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Export error:', error);
+      alert('Error exportando datos');
+    }
   };
 
   const handleExportCSV = () => {
