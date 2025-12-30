@@ -1,68 +1,44 @@
 import { 
   Users, 
   FileText, 
-  AlertTriangle,
   UserCheck,
   UserX,
-  UserPlus
+  UserPlus,
+  Clock
 } from 'lucide-react';
 
 /**
  * HRMetrics — HR/People View
  * 
  * Focus: People-centric development tracking
- * - Talent Distribution
- * - Individual Development Plans (IDPs)
- * - Succession Planning
+ * - Talent Distribution (functional)
+ * - Individual Development Plans (Phase 3)
+ * - Succession Planning (Phase 4)
  */
 
+// Coming Soon Placeholder Component
+function ComingSoonSection({ icon: Icon, title, description, phase }) {
+  return (
+    <div className="bg-surface p-6 rounded-lg border border-dashed border-gray-200">
+      <div className="text-center py-6">
+        <div className="w-14 h-14 mx-auto mb-4 rounded-full bg-gray-100 flex items-center justify-center">
+          <Icon size={24} className="text-gray-400" />
+        </div>
+        <h3 className="font-medium text-gray-700 mb-1">{title}</h3>
+        <p className="text-sm text-gray-500 mb-3">{description}</p>
+        <span className="inline-flex items-center gap-1 text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full">
+          <Clock size={12} />
+          {phase}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function HRMetrics({ distribution, collaborators }) {
-  // Mock IDP data
-  const idpStatus = [
-    { 
-      name: 'María González', 
-      role: 'Product Manager',
-      average: 3.2,
-      hasIDP: true,
-      objectives: 2,
-      nextReview: '15 Ene 2025'
-    },
-    { 
-      name: 'Carlos Rodríguez', 
-      role: 'Tech Lead',
-      average: 3.6,
-      hasIDP: true,
-      objectives: 3,
-      nextReview: '20 Ene 2025'
-    },
-    { 
-      name: 'Laura Torres', 
-      role: 'Jr Developer',
-      average: 2.1,
-      hasIDP: false,
-      objectives: 0,
-      gaps: 15
-    },
-  ];
-
-  const succession = [
-    { 
-      role: 'Arquitecto Cloud',
-      current: 'Carlos Rodríguez',
-      backup: null,
-      risk: 'high'
-    },
-    { 
-      role: 'Product Manager',
-      current: 'María González',
-      backup: 'Pedro Sánchez',
-      risk: 'low'
-    },
-  ];
-
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Talent Distribution */}
+      {/* Talent Distribution - FUNCTIONAL */}
       <div className="bg-surface p-6 rounded-lg border border-gray-100">
         <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
           <Users size={16} className="text-primary" />
@@ -97,91 +73,21 @@ export default function HRMetrics({ distribution, collaborators }) {
         </div>
       </div>
 
-      {/* IDP Status */}
-      <div className="bg-surface p-6 rounded-lg border border-gray-100">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
-          <FileText size={16} className="text-primary" />
-          Estado de Desarrollo Individual
-        </h3>
-        
-        <div className="space-y-3">
-          {idpStatus.map((person) => (
-            <div key={person.name} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-sm">
-                  {person.name.split(' ').map(n => n[0]).join('')}
-                </div>
-                <div>
-                  <p className="font-medium text-gray-800">{person.name}</p>
-                  <p className="text-xs text-gray-500">{person.role} • Promedio: {person.average}</p>
-                </div>
-              </div>
-              <div className="text-right">
-                {person.hasIDP ? (
-                  <>
-                    <span className="text-xs text-competent">
-                      {person.objectives} objetivos activos
-                    </span>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Próxima revisión: {person.nextReview}
-                    </p>
-                  </>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-critical flex items-center gap-1">
-                      <AlertTriangle size={12} />
-                      Sin IDP • {person.gaps} gaps
-                    </span>
-                    <button className="text-xs bg-primary text-white px-2 py-1 rounded hover:bg-primary/90 transition-colors">
-                      Crear IDP
-                    </button>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* IDP - COMING SOON (Phase 3) */}
+      <ComingSoonSection
+        icon={FileText}
+        title="Planes de Desarrollo Individual"
+        description="Crea y da seguimiento a planes de desarrollo personalizados basados en los gaps identificados."
+        phase="Disponible en Fase 3"
+      />
 
-      {/* Succession Planning */}
-      <div className="bg-surface p-6 rounded-lg border border-gray-100">
-        <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-4 flex items-center gap-2">
-          <UserPlus size={16} className="text-warning" />
-          Planificación de Sucesión
-        </h3>
-        
-        <div className="space-y-3">
-          {succession.map((item) => (
-            <div key={item.role} className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-800">{item.role}</p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Actual: {item.current}
-                  </p>
-                </div>
-                <div className="text-right">
-                  {item.backup ? (
-                    <span className="text-xs text-competent">
-                      Backup: {item.backup}
-                    </span>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-critical flex items-center gap-1">
-                        <AlertTriangle size={12} />
-                        Sin backup
-                      </span>
-                      <button className="text-xs text-primary hover:underline">
-                        Identificar
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {/* Succession Planning - COMING SOON (Phase 4) */}
+      <ComingSoonSection
+        icon={UserPlus}
+        title="Planificación de Sucesión"
+        description="Identifica sucesores potenciales para roles críticos y evalúa su preparación."
+        phase="Disponible en Fase 4"
+      />
     </div>
   );
 }
