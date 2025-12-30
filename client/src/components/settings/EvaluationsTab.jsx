@@ -60,9 +60,9 @@ const EVALUATION_STATES = {
  * Evaluation logic - FIXED edge cases
  */
 function evaluarSkill(nivel, frecuencia, criticidad) {
-  // Handle special cases first
+  // SIEMPRE considerar nivel 0 + no usa como pendiente de evaluación
   if (nivel === 0 && frecuencia === 'N') {
-    return { estado: criticidad === 'N' ? 'NO APLICA' : 'SIN EVALUAR' };
+    return { estado: 'SIN EVALUAR' };
   }
   
   if (nivel === 0) {
