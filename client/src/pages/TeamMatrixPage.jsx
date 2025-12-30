@@ -280,25 +280,29 @@ export default function TeamMatrixPage() {
         </p>
       </div>
 
-      {/* Pestañas de navegación - Mejoradas con iconos Lucide y bg activo */}
-      <div className="flex gap-2 border-b border-gray-200">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => {
-              setCurrentView(tab.id);
-              setSelectedColaborador(null);
-            }}
-            className={`pb-3 px-4 font-medium transition-all border-b-2 flex items-center gap-2 ${
-              currentView === tab.id 
-                ? 'text-primary border-primary bg-primary/5' 
-                : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            <tab.Icon size={18} />
-            <span className="hidden sm:inline">{tab.label}</span>
-          </button>
-        ))}
+      {/* Pestañas de navegación - Estilo limpio con underline */}
+      <div className="border-b border-gray-200">
+        <nav className="flex gap-6" aria-label="Tabs">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => {
+                setCurrentView(tab.id);
+                setSelectedColaborador(null);
+              }}
+              className={`
+                flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors
+                ${currentView === tab.id 
+                  ? 'border-primary text-primary' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }
+              `}
+            >
+              <tab.Icon size={18} />
+              <span className="hidden sm:inline">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
       </div>
 
       {/* Vista activa */}
