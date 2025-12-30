@@ -9,6 +9,7 @@ export default {
       colors: {
         primary: '#2d676e',
         competent: '#a6ae3d',
+        competentDark: '#7d8530', // WCAG AA compliant for text (5:1 ratio)
         warning: '#da8a0c',
         critical: '#ef4444',
         background: '#f5f5f5',

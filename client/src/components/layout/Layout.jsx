@@ -61,9 +61,9 @@ export default function Layout() {
               to={to}
               className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-2.5 rounded-lg
-                transition-all duration-150
+                transition-all duration-150 relative
                 ${isActive 
-                  ? 'bg-primary/10 text-primary font-medium' 
+                  ? 'bg-primary/10 text-primary font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r' 
                   : 'text-gray-600 hover:bg-gray-100 hover:text-primary'
                 }
               `}

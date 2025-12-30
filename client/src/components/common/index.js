@@ -9,3 +9,4 @@ export {
   KPISkeleton, 
   CardSkeleton 
 } from './LoadingSkeleton';
+export { EmptyState } from './EmptyState';

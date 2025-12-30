@@ -50,7 +50,7 @@ export default function TransposedMatrixTable() {
                 <span className="text-sm">Skill</span>
               </th>
               
-              {/* Headers de empleados - Avatares circulares */}
+              {/* Headers de empleados - Avatares circulares con nombre */}
               {COLLABORATORS.map(collab => (
                 <th
                   key={collab.id}
@@ -63,6 +63,9 @@ export default function TransposedMatrixTable() {
                     >
                       {collab.nombre.split(' ').map(w => w[0]).join('').slice(0, 2)}
                     </div>
+                    <span className="text-[10px] text-gray-500 truncate max-w-[55px]">
+                      {collab.nombre.split(' ')[0]}
+                    </span>
                   </div>
                 </th>
               ))}

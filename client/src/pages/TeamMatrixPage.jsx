@@ -96,11 +96,19 @@ function CollaboratorDetailView({ colaborador, onBack }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-surface p-6 rounded-lg shadow-sm">
+        {/* Breadcrumbs */}
+        <nav className="mb-4 flex items-center gap-2 text-sm">
+          <span className="text-gray-400">Team Matrix</span>
+          <span className="text-gray-300">/</span>
+          <span className="text-gray-400">Por Colaborador</span>
+          <span className="text-gray-300">/</span>
+          <span className="font-medium text-primary">{colaborador.nombre}</span>
+        </nav>
         <button 
           onClick={onBack}
-          className="mb-4 text-sm font-medium text-gray-500 hover:text-primary transition-colors"
+          className="mb-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
         >
-          ← Volver a colaboradores
+          ← Volver a lista
         </button>
         
         <div className="flex justify-between items-start">
@@ -248,9 +256,9 @@ export default function TeamMatrixPage() {
   const [selectedColaborador, setSelectedColaborador] = useState(null);
 
   const tabs = [
-    { id: 'matriz', label: 'Matriz' },
-    { id: 'colaboradores', label: 'Por Colaborador' },
-    { id: 'categorias', label: 'Por Categoría' },
+    { id: 'matriz', label: 'Matriz de Equipo', icon: '⊞' },
+    { id: 'colaboradores', label: 'Por Persona', icon: '👤' },
+    { id: 'categorias', label: 'Por Área', icon: '◫' },
   ];
 
   return (
@@ -258,13 +266,13 @@ export default function TeamMatrixPage() {
       {/* Header */}
       <div>
         <h1>Team Matrix</h1>
-        <p className="text-gray-600 mt-1">
+        <p className="text-gray-500 mt-1">
           Visualización de competencias del equipo
         </p>
       </div>
 
-      {/* Pestañas de navegación */}
-      <div className="flex gap-6 border-b border-gray-200">
+      {/* Pestañas de navegación - Mejoradas con iconos y bg activo */}
+      <div className="flex gap-2 border-b border-gray-200">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -272,12 +280,13 @@ export default function TeamMatrixPage() {
               setCurrentView(tab.id);
               setSelectedColaborador(null);
             }}
-            className={`pb-3 font-medium transition-all border-b-2 ${
+            className={`pb-3 px-4 font-medium transition-all border-b-2 flex items-center gap-2 ${
               currentView === tab.id 
-                ? 'text-primary border-primary' 
-                : 'text-gray-400 border-transparent hover:text-gray-600'
+                ? 'text-primary border-primary bg-primary/5' 
+                : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50'
             }`}
           >
+            <span>{tab.icon}</span>
             {tab.label}
           </button>
         ))}
