@@ -1,18 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { DashboardView, TeamMatrixPage, ReportsPage } from './pages';
+import { DashboardView, TeamMatrixPage, ReportsPage, SettingsPage } from './pages';
 
-// Settings placeholder (se implementará en fases posteriores)
-function SettingsPage() {
-  return (
-    <div>
-      <h1>Settings</h1>
-      <p className="text-gray-600 mt-1">
-        Configuración de la aplicación - Próximamente
-      </p>
-    </div>
-  );
-}
 
 function App() {
   return (
