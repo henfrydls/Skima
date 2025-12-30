@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Users, Layers, FolderTree } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
+import EvaluationsTab from '../components/settings/EvaluationsTab';
 
 /**
  * SettingsPage — Gestión de Maestros del Sistema
@@ -11,6 +12,7 @@ import CategoriesTab from '../components/settings/CategoriesTab';
  * - Colaboradores: CRUD de personas del equipo
  * - Skills: CRUD de habilidades con rúbricas
  * - Categorías: Drag & drop para organizar
+ * - Evaluaciones: Evaluar skills por colaborador
  * 
  * UX Principles Applied:
  * - Flat tabs (1 nivel, sin sub-navegación)
@@ -22,6 +24,7 @@ const TABS = [
   { id: 'colaboradores', label: 'Colaboradores', icon: Users },
   { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'categorias', label: 'Categorías', icon: FolderTree },
+  { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
 ];
 
 export default function SettingsPage() {
@@ -33,7 +36,7 @@ export default function SettingsPage() {
       <div>
         <h1>Configuración</h1>
         <p className="text-gray-500 mt-1">
-          Gestiona colaboradores, skills y categorías del sistema
+          Gestiona colaboradores, skills, categorías y evaluaciones
         </p>
       </div>
 
@@ -69,6 +72,7 @@ export default function SettingsPage() {
         {activeTab === 'colaboradores' && <CollaboratorsTab />}
         {activeTab === 'skills' && <SkillsTab />}
         {activeTab === 'categorias' && <CategoriesTab />}
+        {activeTab === 'evaluaciones' && <EvaluationsTab />}
       </div>
     </div>
   );
