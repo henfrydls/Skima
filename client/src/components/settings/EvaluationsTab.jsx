@@ -93,7 +93,12 @@ function evaluarSkill(nivel, frecuencia, criticidad) {
     return { estado: 'FORTALEZA CLAVE' };
   }
   
-  // EN DESARROLLO: Important/Desirable + mid level
+  // ÁREA DE MEJORA: Important + frequent use + low level (needs attention!)
+  if (criticidad === 'I' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
+    return { estado: 'ÁREA DE MEJORA' };
+  }
+  
+  // EN DESARROLLO: Important/Desirable + mid level (not urgent, progressing)
   if (['I', 'D'].includes(criticidad) && nivel >= 2 && nivel < 3) {
     return { estado: 'EN DESARROLLO' };
   }
