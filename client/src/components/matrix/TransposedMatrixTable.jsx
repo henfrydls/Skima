@@ -98,12 +98,22 @@ export default function TransposedMatrixTable() {
                       className={`
                         ${stickyLeftStyles}
                         ${skillIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-                        p-3 text-sm
+                        p-3 text-sm max-w-[280px]
                       `}
                     >
-                      <span className="text-gray-800" title={skill.nombre}>
-                        {skill.nombre}
-                      </span>
+                      <div className="flex items-center justify-between gap-2">
+                        <span 
+                          className="text-gray-800 truncate" 
+                          title={skill.nombre}
+                        >
+                          {skill.nombre}
+                        </span>
+                        {skill.nombre.length > 35 && (
+                          <span className="text-xs text-gray-400 flex-shrink-0">
+                            #{skill.id}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     
                     {/* Celdas de nivel por empleado */}
