@@ -6,9 +6,7 @@ import {
   FileJson, 
   TrendingUp, 
   TrendingDown,
-  AlertTriangle,
   BookOpen,
-  Users,
   Calendar,
   Check,
   Loader2
@@ -39,7 +37,7 @@ import {
 // ============================================
 // EXPORT BUTTON WITH STATES
 // ============================================
-function ExportButton({ icon: Icon, title, description, format, onExport, disabled = false }) {
+function ExportButton({ icon: IconComponent, title, description, format, onExport, disabled = false }) {
   const [state, setState] = useState('idle'); // idle | loading | success
 
   const handleClick = async () => {
@@ -83,7 +81,7 @@ function ExportButton({ icon: Icon, title, description, format, onExport, disabl
           ) : state === 'success' ? (
             <Check size={24} />
           ) : (
-            <Icon size={24} />
+            <IconComponent size={24} />
           )}
         </div>
         <div className="flex-1">
@@ -312,8 +310,8 @@ export default function ReportsPage() {
     let csv = 'Nombre,Rol,Promedio,Gaps Críticos\n';
     
     COLLABORATORS.forEach(collab => {
-      const criticalGaps = Object.entries(collab.skills)
-        .filter(([_, skillData]) => isCriticalGap(skillData))
+      const criticalGaps = Object.values(collab.skills)
+        .filter(skillData => isCriticalGap(skillData))
         .length;
       
       csv += `"${collab.nombre}","${collab.rol}",${collab.promedio.toFixed(1)},${criticalGaps}\n`;

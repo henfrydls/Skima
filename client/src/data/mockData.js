@@ -74,10 +74,11 @@ export const SKILLS = [
 ];
 
 // Helper: Calculate average from skills object
-const calculateAverage = (skills) => {
-  const values = Object.values(skills).map(s => s.nivel);
-  return values.reduce((sum, val) => sum + val, 0) / values.length;
-};
+// Helper: Calculate average from skills object
+// const calculateAverage = (skills) => {
+//   const values = Object.values(skills).map(s => s.nivel);
+//   return values.reduce((sum, val) => sum + val, 0) / values.length;
+// };
 
 // Colaboradores con sus evaluaciones
 export const COLLABORATORS = [
