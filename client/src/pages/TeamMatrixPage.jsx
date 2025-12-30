@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Grid3x3, User, Layers } from 'lucide-react';
 import { TransposedMatrixTable } from '../components/matrix';
 
 // ============================================
@@ -49,13 +50,13 @@ const getStatusColor = (nivel) => {
 // ============================================
 function CollaboratorListView({ onSelect }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 animate-stagger">
       {STATIC_DATA.colaboradores.map(col => (
         <button
           key={col.id}
           onClick={() => onSelect(col)}
           className="w-full text-left border border-gray-200 rounded-lg p-6 bg-white 
-                     hover:border-primary hover:shadow-md transition-all"
+                     hover:border-primary hover-lift"
         >
           <div className="flex justify-between items-start gap-6 mb-4">
             <div>
@@ -256,9 +257,9 @@ export default function TeamMatrixPage() {
   const [selectedColaborador, setSelectedColaborador] = useState(null);
 
   const tabs = [
-    { id: 'matriz', label: 'Matriz de Equipo', icon: '⊞' },
-    { id: 'colaboradores', label: 'Por Persona', icon: '👤' },
-    { id: 'categorias', label: 'Por Área', icon: '◫' },
+    { id: 'matriz', label: 'Matriz de Equipo', Icon: Grid3x3 },
+    { id: 'colaboradores', label: 'Por Persona', Icon: User },
+    { id: 'categorias', label: 'Por Área', Icon: Layers },
   ];
 
   return (
@@ -271,7 +272,7 @@ export default function TeamMatrixPage() {
         </p>
       </div>
 
-      {/* Pestañas de navegación - Mejoradas con iconos y bg activo */}
+      {/* Pestañas de navegación - Mejoradas con iconos Lucide y bg activo */}
       <div className="flex gap-2 border-b border-gray-200">
         {tabs.map(tab => (
           <button
@@ -286,8 +287,8 @@ export default function TeamMatrixPage() {
                 : 'text-gray-400 border-transparent hover:text-gray-600 hover:bg-gray-50'
             }`}
           >
-            <span>{tab.icon}</span>
-            {tab.label}
+            <tab.Icon size={18} />
+            <span className="hidden sm:inline">{tab.label}</span>
           </button>
         ))}
       </div>

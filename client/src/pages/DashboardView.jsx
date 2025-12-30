@@ -241,27 +241,46 @@ export default function DashboardView() {
           Acciones Rápidas
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
-            <Camera className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
-            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Crear Snapshot</p>
+          {/* Crear Snapshot - Coming Soon */}
+          <button 
+            className="p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-60 cursor-not-allowed text-center relative"
+            disabled
+            title="Próximamente"
+          >
+            <Camera className="mx-auto mb-2 text-gray-300" size={24} />
+            <p className="text-sm font-medium text-gray-400">Crear Snapshot</p>
+            <span className="text-[10px] text-gray-400 mt-1 block">Próximamente</span>
           </button>
 
+          {/* Ver Matriz - Functional */}
           <Link 
             to="/team-matrix"
-            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group"
+            className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group hover-lift"
           >
             <Users className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
             <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Ver Matriz</p>
           </Link>
 
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
-            <TrendingUp className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
-            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Evaluar</p>
+          {/* Evaluar - Coming Soon */}
+          <button 
+            className="p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-60 cursor-not-allowed text-center"
+            disabled
+            title="Próximamente"
+          >
+            <TrendingUp className="mx-auto mb-2 text-gray-300" size={24} />
+            <p className="text-sm font-medium text-gray-400">Evaluar</p>
+            <span className="text-[10px] text-gray-400 mt-1 block">Próximamente</span>
           </button>
 
-          <button className="p-4 border-2 border-dashed border-gray-300 rounded-lg hover:border-primary hover:bg-primary/5 transition-all text-center group">
-            <Download className="mx-auto mb-2 text-gray-400 group-hover:text-primary transition-colors" size={24} />
-            <p className="text-sm font-medium text-gray-600 group-hover:text-gray-800">Exportar</p>
+          {/* Exportar - Coming Soon */}
+          <button 
+            className="p-4 border-2 border-dashed border-gray-200 rounded-lg opacity-60 cursor-not-allowed text-center"
+            disabled
+            title="Próximamente"
+          >
+            <Download className="mx-auto mb-2 text-gray-300" size={24} />
+            <p className="text-sm font-medium text-gray-400">Exportar</p>
+            <span className="text-[10px] text-gray-400 mt-1 block">Próximamente</span>
           </button>
         </div>
       </div>

@@ -53,6 +53,42 @@
   .animate-progress {
     animation: progress-grow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Stagger animation para listas - aplica fade-in con delay incremental */
+  .animate-stagger > * {
+    animation: fade-in 0.3s ease-out backwards;
+  }
+  .animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .animate-stagger > *:nth-child(2) { animation-delay: 50ms; }
+  .animate-stagger > *:nth-child(3) { animation-delay: 100ms; }
+  .animate-stagger > *:nth-child(4) { animation-delay: 150ms; }
+  .animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
+  .animate-stagger > *:nth-child(6) { animation-delay: 250ms; }
+  .animate-stagger > *:nth-child(n+7) { animation-delay: 300ms; }
+
+  /* Tooltip con delay - para evitar tooltips accidentales */
+  @keyframes tooltip-fade-in {
+    from { 
+      opacity: 0; 
+      transform: translateY(4px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  .tooltip-delayed {
+    animation: tooltip-fade-in 0.2s ease-out 0.3s both;
+  }
+
+  /* Micro-lift para cards interactivos */
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+  .hover-lift:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
 }
 
 body {

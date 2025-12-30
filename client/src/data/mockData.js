@@ -73,12 +73,19 @@ export const SKILLS = [
   { id: 39, categoria: 6, nombre: 'IoT & Edge Computing' },
 ];
 
+// Helper: Calculate average from skills object
+const calculateAverage = (skills) => {
+  const values = Object.values(skills).map(s => s.nivel);
+  return values.reduce((sum, val) => sum + val, 0) / values.length;
+};
+
 // Colaboradores con sus evaluaciones
 export const COLLABORATORS = [
   {
     id: 1,
     nombre: 'María González',
     rol: 'Product Manager',
+    promedio: 2.2, // Pre-calculated
     skills: {
       1: { nivel: 3.5, frecuencia: 'D', criticidad: 'C' },
       2: { nivel: 3.5, frecuencia: 'S', criticidad: 'C' },
@@ -124,6 +131,7 @@ export const COLLABORATORS = [
     id: 2,
     nombre: 'Carlos Mendez',
     rol: 'Arquitecto Cloud',
+    promedio: 2.9, // Pre-calculated
     skills: {
       1: { nivel: 3.5, frecuencia: 'M', criticidad: 'I' },
       2: { nivel: 3.5, frecuencia: 'T', criticidad: 'D' },
@@ -169,6 +177,7 @@ export const COLLABORATORS = [
     id: 3,
     nombre: 'Ana Rodríguez',
     rol: 'Consultora de Innovación',
+    promedio: 2.9, // Pre-calculated
     skills: {
       1: { nivel: 4.2, frecuencia: 'D', criticidad: 'C' },
       2: { nivel: 4.0, frecuencia: 'D', criticidad: 'C' },
@@ -214,6 +223,7 @@ export const COLLABORATORS = [
     id: 4,
     nombre: 'Pedro Sánchez',
     rol: 'Líder de Plataforma',
+    promedio: 3.0, // Pre-calculated
     skills: {
       1: { nivel: 3.5, frecuencia: 'D', criticidad: 'C' },
       2: { nivel: 3.5, frecuencia: 'S', criticidad: 'C' },
@@ -259,6 +269,7 @@ export const COLLABORATORS = [
     id: 5,
     nombre: 'Laura Torres',
     rol: 'Junior Developer',
+    promedio: 1.3, // Pre-calculated
     skills: {
       1: { nivel: 1.5, frecuencia: 'M', criticidad: 'I' },
       2: { nivel: 1.0, frecuencia: 'T', criticidad: 'D' },
