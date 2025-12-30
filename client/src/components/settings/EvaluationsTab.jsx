@@ -8,7 +8,9 @@ import {
   AlertCircle,
   CheckCircle,
   HelpCircle,
-  Info
+  Info,
+  Calendar,
+  Clock
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -19,6 +21,7 @@ import { useAuth } from '../../contexts/AuthContext';
  * - Segmented controls with descriptive labels
  * - Progressive disclosure for frecuencia
  * - Fixed edge cases in evaluation logic
+ * - Freshness indicator for last evaluation date
  */
 
 const API_BASE = '/api';
@@ -55,6 +58,33 @@ const EVALUATION_STATES = {
   'BÁSICO': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Opcional según intereses' },
   'NO APLICA': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill no relevante para este rol' },
 };
+
+/**
+ * Freshness helper - calculates how fresh an evaluation is
+ */
+function getFreshness(lastEvaluatedDate) {
+  if (!lastEvaluatedDate) {
+    return { status: 'never', label: 'Sin evaluar', color: 'bg-gray-100 text-gray-500', days: null };
+  }
+  
+  const now = new Date();
+  const lastDate = new Date(lastEvaluatedDate);
+  const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
+  
+  if (diffDays < 30) {
+    return { status: 'fresh', label: 'Reciente', color: 'bg-competent/20 text-competent', days: diffDays };
+  } else if (diffDays < 90) {
+    return { status: 'aging', label: `Hace ${diffDays} días`, color: 'bg-warning/20 text-warning', days: diffDays };
+  } else {
+    return { status: 'stale', label: '⚠ Desactualizada', color: 'bg-critical/20 text-critical', days: diffDays };
+  }
+}
+
+function formatDate(dateString) {
+  if (!dateString) return 'Nunca';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 /**
  * Evaluation logic - FIXED edge cases
@@ -472,7 +502,7 @@ export default function EvaluationsTab() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* Header with inline status badges */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium text-gray-700">Evaluar a:</label>
@@ -486,6 +516,44 @@ export default function EvaluationsTab() {
               <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
             ))}
           </select>
+          
+          {/* Inline Status Badges - only show when collaborator selected */}
+          {selectedCollaborator && (() => {
+            const collab = collaborators.find(c => c.id === selectedCollaborator);
+            const freshness = getFreshness(collab?.lastEvaluated);
+            const hasRoleProfile = collab?.rol && Object.keys(currentRoleProfile).length > 0;
+            
+            return (
+              <div className="flex items-center gap-3">
+                {/* Freshness Badge */}
+                <div className="flex items-center gap-2 text-sm">
+                  <Calendar size={14} className="text-gray-400" />
+                  <span className="text-gray-500">{formatDate(collab?.lastEvaluated)}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${freshness.color}`}>
+                    {freshness.label}
+                  </span>
+                </div>
+                
+                {/* Separator */}
+                <span className="text-gray-200">|</span>
+                
+                {/* Role Profile Status */}
+                <div className="flex items-center gap-1.5 text-sm">
+                  {hasRoleProfile ? (
+                    <>
+                      <CheckCircle size={14} className="text-competent" />
+                      <span className="text-competent">Perfil configurado</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle size={14} className="text-gray-400" />
+                      <span className="text-gray-400">Sin perfil</span>
+                    </>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <EvaluationLegend />
@@ -503,6 +571,7 @@ export default function EvaluationsTab() {
       {/* Evaluation Form */}
       {selectedCollaborator && (
         <>
+
           {/* Summary Stats */}
           <div className="grid grid-cols-5 gap-4">
             <div className="bg-gray-50 p-4 rounded-lg text-center">
