@@ -187,7 +187,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
           </div>
 
           <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
-            📊 Los deltas mostrados comparan {currentSnapshot.label} vs {compareSnapshot.label}
+            Los deltas mostrados comparan {currentSnapshot.label} vs {compareSnapshot.label}
           </p>
         </div>
       )}

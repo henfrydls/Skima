@@ -289,7 +289,7 @@ export default function SkillsTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="text-sm text-gray-500">
-          📊 {categories.length} categorías • {totalSkills} skills totales
+          {categories.length} categorías • {totalSkills} skills totales
         </div>
         <button
           onClick={() => { setEditingSkill(null); setNewSkillCategory(null); setIsModalOpen(true); }}
