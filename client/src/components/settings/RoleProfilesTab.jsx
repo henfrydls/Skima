@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { 
   Users,
   Save,
@@ -11,7 +12,8 @@ import {
   HelpCircle,
   Briefcase,
   Plus,
-  X
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -24,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
  * - Visual feedback on save
  * - Duplicate profile for similar roles
  * - Create new role profiles
+ * - DIRTY STATE PROTECTION: Prevents accidental data loss
  */
 
 const API_BASE = '/api';
@@ -35,6 +38,48 @@ const CRITICIDAD_OPTIONS = [
   { value: 'D', label: 'Deseable', short: 'D', color: 'bg-gray-400 text-white', desc: 'Nice-to-have, suma puntos' },
   { value: 'N', label: 'N/A', short: '—', color: 'bg-gray-200 text-gray-500', desc: 'No aplica para este rol' },
 ];
+
+// Unsaved Changes Dialog
+function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
+        <div className="p-6">
+          <div className="flex items-center gap-3 text-warning mb-2">
+            <AlertTriangle size={24} />
+            <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Tienes modificaciones pendientes en este perfil. Si sales ahora, perderás los cambios.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button 
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={onDiscard}
+              className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
+            >
+              Descartar cambios
+            </button>
+            <button 
+              onClick={onSave}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors flex items-center gap-2"
+            >
+              <Save size={16} />
+              Guardar y Salir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // New Role Modal Component
 function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
@@ -236,18 +281,57 @@ export default function RoleProfilesTab() {
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
+  
+  // Requirements state
   const [requirements, setRequirements] = useState({});
+  const [initialRequirements, setInitialRequirements] = useState({}); // For dirty checking
+  
   const [allProfiles, setAllProfiles] = useState({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [showNewRoleModal, setShowNewRoleModal] = useState(false);
+  
+  // Navigation blocking state
+  const [pendingNavigation, setPendingNavigation] = useState(null); // { type: 'route' | 'role', target: ... }
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Compare objects to check if dirty
+  const isDirty = useMemo(() => {
+    return JSON.stringify(requirements) !== JSON.stringify(initialRequirements);
+  }, [requirements, initialRequirements]);
+
+  // React Router Blocker (blocks navigation if dirty)
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Handle blocker state change
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setPendingNavigation({ type: 'route', target: null }); // Blocker handles the target internally
+      setShowUnsavedDialog(true);
+    }
+  }, [blocker.state]);
 
   // Handler to create new role
   const handleCreateNewRole = (roleName) => {
+    // If dirty, warn first? Ideally yes, but simplified here assuming explicit create action
+    if (isDirty) {
+      if (!confirm('Tienes cambios sin guardar. ¿Deseas descartarlos y crear un nuevo rol?')) {
+        return;
+      }
+    }
     setRoles(prev => [...prev, roleName]);
     setSelectedRole(roleName);
+    // Initialize new role empty
+    const defaults = {};
+    skills.forEach(s => { defaults[s.id] = 'N'; });
+    setRequirements(defaults);
+    setInitialRequirements(defaults);
+    setSaveSuccess(false);
   };
 
   // Fetch data
@@ -278,19 +362,42 @@ export default function RoleProfilesTab() {
     fetchData();
   }, []);
 
-  // Load requirements when role changes - merge with defaults
+  // Safe Role Switcher
+  const handleRoleSwitch = (newRole) => {
+    if (!newRole) {
+      setSelectedRole(null);
+      return;
+    }
+
+    if (isDirty) {
+      setPendingNavigation({ type: 'role', target: newRole });
+      setShowUnsavedDialog(true);
+    } else {
+      setSelectedRole(newRole);
+    }
+  };
+
+  // Load requirements when role changes
   useEffect(() => {
+    if (!selectedRole) return;
+
     // First create defaults for all skills as 'N' (N/A)
     const defaults = {};
     skills.forEach(s => { defaults[s.id] = 'N'; });
     
-    if (selectedRole && allProfiles[selectedRole]) {
-      // Merge existing profile over defaults - this ensures all skills have a value
-      setRequirements({ ...defaults, ...allProfiles[selectedRole] });
+    let loadedReqs;
+    if (allProfiles[selectedRole]) {
+      // Merge existing profile over defaults
+      loadedReqs = { ...defaults, ...allProfiles[selectedRole] };
     } else {
       // New role - use all defaults
-      setRequirements(defaults);
+      loadedReqs = defaults;
     }
+    
+    setRequirements(loadedReqs);
+    setInitialRequirements(loadedReqs); // Reset dirty state baseline
+    setSaveSuccess(false);
+    
   }, [selectedRole, allProfiles, skills]);
 
   // Handle requirement change
@@ -302,16 +409,18 @@ export default function RoleProfilesTab() {
     setSaveSuccess(false);
   };
 
-  // Duplicate profile from another role
+  // Duplicate profile
   const handleDuplicate = (sourceRole) => {
     if (allProfiles[sourceRole]) {
-      setRequirements({ ...allProfiles[sourceRole] });
-      setSaveSuccess(false);
+      const newReqs = { ...allProfiles[sourceRole] };
+      setRequirements(newReqs);
+      // NOTE: We do NOT update initialRequirements here, so it immediately becomes dirty
+      // This is intentional: "Copy" is a change action.
     }
   };
 
   // Save profile
-  const handleSave = async () => {
+  const handleSave = async (shouldNavigateAfter = false) => {
     if (!selectedRole) return;
     
     setIsSaving(true);
@@ -335,9 +444,22 @@ export default function RoleProfilesTab() {
         ...prev,
         [selectedRole]: requirements
       }));
+      setInitialRequirements(requirements); // Reset dirty state
       
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
+
+      // Handle pending navigation if save was triggered from dialog
+      if (shouldNavigateAfter) {
+        setShowUnsavedDialog(false);
+        if (pendingNavigation?.type === 'role') {
+          setSelectedRole(pendingNavigation.target);
+        } else if (pendingNavigation?.type === 'route' && blocker.state === "blocked") {
+          blocker.proceed();
+        }
+        setPendingNavigation(null);
+      }
+
     } catch (err) {
       console.error('Error saving profile:', err);
       setError('Error guardando perfil');
@@ -345,6 +467,27 @@ export default function RoleProfilesTab() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Unsaved Dialog Actions
+  const handleDiscardChanges = () => {
+    setRequirements(initialRequirements); // Revert
+    setShowUnsavedDialog(false);
+    
+    if (pendingNavigation?.type === 'role') {
+      setSelectedRole(pendingNavigation.target);
+    } else if (pendingNavigation?.type === 'route' && blocker.state === "blocked") {
+      blocker.proceed();
+    }
+    setPendingNavigation(null);
+  };
+
+  const handleCancelNavigation = () => {
+    setShowUnsavedDialog(false);
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+    setPendingNavigation(null);
   };
 
   // Calculate summary stats
@@ -397,7 +540,7 @@ export default function RoleProfilesTab() {
           <label className="text-sm font-medium text-gray-700">Perfil para:</label>
           <select
             value={selectedRole || ''}
-            onChange={(e) => setSelectedRole(e.target.value || null)}
+            onChange={(e) => handleRoleSwitch(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-w-[250px]"
           >
             <option value="">Seleccionar rol...</option>
@@ -489,33 +632,38 @@ export default function RoleProfilesTab() {
             ))}
           </div>
 
-          {/* Save Button */}
-          <div className="flex justify-end sticky bottom-4">
+          {/* Sticky Footer for Save Actions - Only visible when dirty */}
+          <div 
+            className={`
+              sticky bottom-2 z-20 flex justify-end gap-3 p-4 rounded-xl shadow-lg border border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-300
+              ${isDirty ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}
+            `}
+          >
+            <span className="flex items-center text-sm text-gray-500 mr-auto">
+              <AlertCircle size={16} className="mr-2 text-warning" />
+              Tienes cambios sin guardar
+            </span>
+
             <button
-              onClick={handleSave}
+               onClick={() => setRequirements(initialRequirements)}
+               className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={() => handleSave(false)}
               disabled={isSaving}
-              className={`
-                px-6 py-3 rounded-lg font-medium flex items-center gap-2 shadow-lg transition-all
-                ${saveSuccess 
-                  ? 'bg-competent text-white' 
-                  : 'bg-primary text-white hover:bg-primary/90'
-                }
-              `}
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
             >
               {isSaving ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
                   Guardando...
                 </>
-              ) : saveSuccess ? (
-                <>
-                  <CheckCircle size={18} />
-                  Guardado ✓
-                </>
               ) : (
                 <>
                   <Save size={18} />
-                  Guardar Perfil
+                  Guardar Cambios
                 </>
               )}
             </button>
@@ -529,6 +677,14 @@ export default function RoleProfilesTab() {
         onClose={() => setShowNewRoleModal(false)}
         onCreateRole={handleCreateNewRole}
         existingRoles={roles}
+      />
+
+      {/* Unsaved Changes Warning Modal */}
+      <UnsavedChangesDialog
+        isOpen={showUnsavedDialog}
+        onDiscard={handleDiscardChanges}
+        onCancel={handleCancelNavigation}
+        onSave={() => handleSave(true)}
       />
     </div>
   );
