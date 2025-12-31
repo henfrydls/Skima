@@ -54,7 +54,7 @@ function EmptyState({ onCreateClick }) {
 }
 
 // Create Modal Component
-function CreateCollaboratorModal({ isOpen, onClose, onSave }) {
+function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} }) {
   const [formData, setFormData] = useState({
     nombre: '',
     rol: '',
@@ -395,6 +395,7 @@ export default function CollaboratorsTab() {
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
           onSave={handleCreate}
+          roleProfiles={roleProfiles}
         />
       </>
     );
