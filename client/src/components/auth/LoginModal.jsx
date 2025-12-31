@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Lock, Loader2, X, AlertCircle } from 'lucide-react';
 
 /**
@@ -48,8 +49,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">
       <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
         {/* Header */}
         <div className="bg-primary/5 px-6 py-4 flex items-center justify-between border-b border-gray-100">
@@ -124,6 +125,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           </p>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

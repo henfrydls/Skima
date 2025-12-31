@@ -93,31 +93,31 @@ export default function SettingsPage() {
         
         {mountedTabs.includes('categorias') && (
           <div className={activeTab === 'categorias' ? 'block' : 'hidden'}>
-            <CategoriesTab />
+            <CategoriesTab isActive={activeTab === 'categorias'} />
           </div>
         )}
         
         {mountedTabs.includes('skills') && (
           <div className={activeTab === 'skills' ? 'block' : 'hidden'}>
-             <SkillsTab />
+             <SkillsTab isActive={activeTab === 'skills'} />
           </div>
         )}
 
         {mountedTabs.includes('perfiles') && (
           <div className={activeTab === 'perfiles' ? 'block' : 'hidden'}>
-            <RoleProfilesTab />
+            <RoleProfilesTab isActive={activeTab === 'perfiles'} />
           </div>
         )}
 
         {mountedTabs.includes('colaboradores') && (
           <div className={activeTab === 'colaboradores' ? 'block' : 'hidden'}>
-            <CollaboratorsTab onNavigate={handleNavigate} />
+            <CollaboratorsTab onNavigate={handleNavigate} isActive={activeTab === 'colaboradores'} />
           </div>
         )}
 
         {mountedTabs.includes('evaluaciones') && (
           <div className={activeTab === 'evaluaciones' ? 'block' : 'hidden'}>
-            <EvaluationsTab initialContext={navigationContext} />
+            <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} />
           </div>
         )}
       </div>

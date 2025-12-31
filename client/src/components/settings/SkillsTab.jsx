@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   ChevronDown, 
   ChevronRight, 
@@ -50,7 +51,8 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-surface">
           <h2 className="text-lg font-medium text-gray-800">
@@ -113,7 +115,8 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -180,7 +183,7 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
 }
 
 // Main Component
-export default function SkillsTab() {
+export default function SkillsTab({ isActive = false }) {
   const { isAuthenticated, getHeaders, login } = useAuth();
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -192,37 +195,48 @@ export default function SkillsTab() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Fetch data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const [catRes, skillRes] = await Promise.all([
-          fetch(`${API_BASE}/categories`),
-          fetch(`${API_BASE}/skills`)
-        ]);
-        
-        if (!catRes.ok || !skillRes.ok) {
-          throw new Error('Error fetching data');
-        }
-        
-        const [catData, skillData] = await Promise.all([
-          catRes.json(),
-          skillRes.json()
-        ]);
-        
-        setCategories(catData);
-        setSkills(skillData);
-      } catch (err) {
-        setError('Error cargando datos');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      // Don't set loading true if refreshing in background to avoid flicker,
+      // unless it's the initial load
+      if (categories.length === 0) setIsLoading(true);
+      
+      const [catRes, skillRes] = await Promise.all([
+        fetch(`${API_BASE}/categories`),
+        fetch(`${API_BASE}/skills`)
+      ]);
+      
+      if (!catRes.ok || !skillRes.ok) {
+        throw new Error('Error fetching data');
       }
-    };
-    
+      
+      const [catData, skillData] = await Promise.all([
+        catRes.json(),
+        skillRes.json()
+      ]);
+      
+      setCategories(catData);
+      setSkills(skillData);
+    } catch (err) {
+      setError('Error cargando datos');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
+  useEffect(() => {
     fetchData();
   }, []);
+
+  // Refetch when tab becomes active
+  useEffect(() => {
+    if (isActive) {
+      fetchData();
+    }
+  }, [isActive]);
 
   // Auth wrapper
   const withAuth = async (action) => {

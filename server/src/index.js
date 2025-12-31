@@ -25,7 +25,7 @@ export function createApp() {
   app.get('/api/data', async (req, res) => {
     try {
       const categories = await prisma.category.findMany({
-        orderBy: { id: 'asc' }
+        orderBy: { orden: 'asc' }
       });
 
       const skills = await prisma.skill.findMany({
@@ -179,7 +179,8 @@ export function createApp() {
   app.get('/api/categories', async (req, res) => {
     try {
       const categories = await prisma.category.findMany({
-        include: { _count: { select: { skills: true } } }
+        include: { _count: { select: { skills: true } } },
+        orderBy: { orden: 'asc' }
       });
       res.json(categories.map(c => ({
         ...c,
@@ -224,13 +225,47 @@ export function createApp() {
       if (!nombre || !abrev) {
         return res.status(400).json({ message: 'Nombre y abreviatura son requeridos' });
       }
+      
+      // Get max order to append to end
+      const maxOrder = await prisma.category.aggregate({
+        _max: { orden: true }
+      });
+      const nextOrder = (maxOrder._max.orden || 0) + 1;
+
       const category = await prisma.category.create({
-        data: { nombre, abrev }
+        data: { nombre, abrev, orden: nextOrder }
       });
       res.json(category);
     } catch (error) {
       console.error('[API] POST /api/categories failed:', error);
       res.status(500).json({ message: 'Error creating category' });
+    }
+  });
+
+  // PUT /api/categories/reorder - Reorder categories
+  // MUST be defined before /:id route
+  app.put('/api/categories/reorder', authMiddleware, async (req, res) => {
+    try {
+      const { order } = req.body; // Array of IDs in new order
+      
+      if (!Array.isArray(order)) {
+        return res.status(400).json({ message: 'Invalid order data' });
+      }
+
+      // Transactional update for safety
+      await prisma.$transaction(
+        order.map((id, index) => 
+          prisma.category.update({
+            where: { id: parseInt(id) },
+            data: { orden: index }
+          })
+        )
+      );
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[API] PUT /api/categories/reorder failed:', error);
+      res.status(500).json({ message: 'Error reordering categories' });
     }
   });
 

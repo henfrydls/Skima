@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useBlocker } from 'react-router-dom';
 import { 
   Search, 
@@ -73,7 +74,8 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
         <div className="p-6">
           <div className="flex items-center gap-3 text-warning mb-2">
@@ -94,19 +96,19 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
               onClick={onDiscard}
               className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
             >
-              Descartar cambios
+              Descartar
             </button>
             <button 
               onClick={onSave}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors flex items-center gap-2"
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors"
             >
-              <Save size={16} />
-              Guardar y Salir
+              Guardar
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -516,7 +518,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
 }
 
 // Main Component
-export default function EvaluationsTab({ initialContext }) {
+export default function EvaluationsTab({ initialContext, isActive = false }) {
   const { getHeaders } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -560,27 +562,39 @@ export default function EvaluationsTab({ initialContext }) {
   }, [blocker.state]);
 
   // Fetch data
+  // Fetch data function
+  const fetchData = async () => {
+    try {
+      // Don't show loading on background refresh unless empty
+      if (collaborators.length === 0) setIsLoading(true);
+      
+      const response = await fetch(`${API_BASE}/data`);
+      if (!response.ok) throw new Error('Error fetching data');
+      const data = await response.json();
+      
+      setCollaborators(data.collaborators || []);
+      setCategories(data.categories || []);
+      setSkills(data.skills || []);
+      setRoleProfiles(data.roleProfiles || {});
+    } catch (err) {
+      setError('Error cargando datos');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Initial fetch
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch(`${API_BASE}/data`);
-        if (!response.ok) throw new Error('Error fetching data');
-        const data = await response.json();
-        
-        setCollaborators(data.collaborators || []);
-        setCategories(data.categories || []);
-        setSkills(data.skills || []);
-        setRoleProfiles(data.roleProfiles || {});
-      } catch (err) {
-        setError('Error cargando datos');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
     fetchData();
   }, []);
+
+  // Refetch when tab becomes active
+  useEffect(() => {
+    if (isActive) {
+      fetchData();
+    }
+  }, [isActive]);
 
   // Load evaluations and history when collaborator is selected
   useEffect(() => {
