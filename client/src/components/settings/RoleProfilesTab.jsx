@@ -174,12 +174,7 @@ function CategorySection({ category, skills, requirements, onRequirementChange }
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             <span>Skill</span>
-            <div className="flex items-center gap-2">
-              <span className="min-w-[60px] text-center">Crítica</span>
-              <span className="min-w-[60px] text-center">Importante</span>
-              <span className="min-w-[60px] text-center">Deseable</span>
-              <span className="min-w-[60px] text-center">N/A</span>
-            </div>
+            <span>Importancia para el Rol</span>
           </div>
           {categorySkills.map(skill => (
             <SkillRequirementRow
