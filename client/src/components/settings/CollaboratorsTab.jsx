@@ -107,14 +107,23 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Rol / Posición *
             </label>
-            <input
-              type="text"
+            <select
               value={formData.rol}
               onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="Product Manager"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
               required
-            />
+            >
+              <option value="">Seleccionar rol...</option>
+              {Object.keys(roleProfiles).map(rol => (
+                <option key={rol} value={rol}>{rol}</option>
+              ))}
+            </select>
+            {Object.keys(roleProfiles).length === 0 && (
+              <p className="mt-1 text-xs text-warning flex items-center gap-1">
+                <AlertCircle size={12} />
+                No hay perfiles creados. Ve a la pestaña Perfiles primero.
+              </p>
+            )}
           </div>
 
           {/* Optional Fields Toggle */}
@@ -469,6 +478,7 @@ export default function CollaboratorsTab() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSave={handleCreate}
+        roleProfiles={roleProfiles}
       />
     </div>
   );
