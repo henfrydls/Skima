@@ -546,28 +546,36 @@ export function createApp() {
 
         const criticidad = profileSkills[skillId] || 'N';
 
-        await prisma.assessment.upsert({
+        // Can't use upsert with null in composite key, so use findFirst + update/create
+        const existingAssessment = await prisma.assessment.findFirst({
           where: {
-            collaboratorId_skillId_snapshotId: {
-              collaboratorId,
-              skillId: parseInt(skillId),
-              snapshotId: null
-            }
-          },
-          update: {
-            nivel: data.nivel,
-            frecuencia: data.frecuencia,
-            criticidad
-          },
-          create: {
             collaboratorId,
             skillId: parseInt(skillId),
-            nivel: data.nivel,
-            frecuencia: data.frecuencia,
-            criticidad,
             snapshotId: null
           }
         });
+
+        if (existingAssessment) {
+          await prisma.assessment.update({
+            where: { id: existingAssessment.id },
+            data: {
+              nivel: data.nivel,
+              frecuencia: data.frecuencia,
+              criticidad
+            }
+          });
+        } else {
+          await prisma.assessment.create({
+            data: {
+              collaboratorId,
+              skillId: parseInt(skillId),
+              nivel: data.nivel,
+              frecuencia: data.frecuencia,
+              criticidad,
+              snapshotId: null
+            }
+          });
+        }
       }
 
       // Update lastEvaluated timestamp
@@ -753,28 +761,36 @@ export function createApp() {
           });
 
           // Also update/create the current assessment (snapshotId: null)
-          await prisma.assessment.upsert({
+          // Can't use upsert with null in composite key, so use findFirst + update/create
+          const existingAssessment = await prisma.assessment.findFirst({
             where: {
-              collaboratorId_skillId_snapshotId: {
-                collaboratorId,
-                skillId: parseInt(skillId),
-                snapshotId: null
-              }
-            },
-            update: {
-              nivel: data.nivel,
-              frecuencia: data.frecuencia,
-              criticidad
-            },
-            create: {
               collaboratorId,
               skillId: parseInt(skillId),
-              nivel: data.nivel,
-              frecuencia: data.frecuencia,
-              criticidad,
               snapshotId: null
             }
           });
+
+          if (existingAssessment) {
+            await prisma.assessment.update({
+              where: { id: existingAssessment.id },
+              data: {
+                nivel: data.nivel,
+                frecuencia: data.frecuencia,
+                criticidad
+              }
+            });
+          } else {
+            await prisma.assessment.create({
+              data: {
+                collaboratorId,
+                skillId: parseInt(skillId),
+                nivel: data.nivel,
+                frecuencia: data.frecuencia,
+                criticidad,
+                snapshotId: null
+              }
+            });
+          }
         }
       }
 
