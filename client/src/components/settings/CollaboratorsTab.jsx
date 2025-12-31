@@ -214,7 +214,7 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
 }
 
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {} }) {
+function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   
@@ -261,15 +261,6 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {} }
             onStartEdit={() => setEditingField('rol')}
             onCancelEdit={() => setEditingField(null)}
           />
-          {!hasRoleProfile && (
-            <span 
-              className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-warning/10 text-warning"
-              title="Este rol no tiene un perfil de puesto configurado"
-            >
-              <AlertCircle size={12} />
-              Sin perfil
-            </span>
-          )}
         </div>
       </td>
 
@@ -316,6 +307,10 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {} }
                 Editar completo
               </button>
               <button
+                onClick={() => {
+                  onNavigate('evaluaciones', { collaboratorId: collaborator.id, view: 'history' });
+                  setShowMenu(false);
+                }}
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
               >
                 <Eye size={14} />
@@ -338,7 +333,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {} }
 }
 
 // Main Component
-export default function CollaboratorsTab() {
+export default function CollaboratorsTab({ onNavigate }) {
   const [collaborators, setCollaborators] = useState(COLLABORATORS);
   const [roleProfiles, setRoleProfiles] = useState({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -462,6 +457,7 @@ export default function CollaboratorsTab() {
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
                 roleProfiles={roleProfiles}
+                onNavigate={onNavigate}
               />
             ))}
           </tbody>

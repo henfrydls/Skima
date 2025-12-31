@@ -556,16 +556,27 @@ export default function RoleProfilesTab() {
                 <Copy size={14} />
                 Copiar de...
               </button>
-              <div className="absolute left-0 top-full mt-1 bg-white shadow-lg rounded-lg border border-gray-100 py-1 hidden group-hover:block z-10">
-                {roles.filter(r => r !== selectedRole && allProfiles[r]).map(r => (
-                  <button
-                    key={r}
-                    onClick={() => handleDuplicate(r)}
-                    className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50"
-                  >
-                    {r}
-                  </button>
-                ))}
+              <div className="absolute left-0 top-full pt-2 hidden group-hover:block z-20 w-72">
+                <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-1 overflow-hidden">
+                  {roles.filter(r => r !== selectedRole && allProfiles[r]).map(r => {
+                    const definedCount = Object.values(allProfiles[r]).filter(v => v !== 'N').length;
+                    return (
+                      <button
+                        key={r}
+                        onClick={() => handleDuplicate(r)}
+                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between group/item transition-colors border-b last:border-0 border-gray-50"
+                      >
+                        <div>
+                          <span className="block text-sm font-medium text-gray-700 mb-0.5">{r}</span>
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                            <CheckCircle size={10} /> {definedCount} skills definidas
+                          </span>
+                        </div>
+                        <Copy size={14} className="text-primary opacity-0 group-hover/item:opacity-100 transition-all transform translate-x-1 group-hover/item:translate-x-0" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}

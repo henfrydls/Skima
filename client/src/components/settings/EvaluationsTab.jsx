@@ -16,7 +16,10 @@ import {
   FileText,
   ExternalLink,
   AlertTriangle,
-  X
+  X,
+  ArrowLeft,
+  Calendar as CalendarIcon,
+  Edit3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -201,8 +204,20 @@ function evaluarSkill(nivel, frecuencia, criticidad) {
 }
 
 // Nivel Selector with descriptive segmented control
-function NivelSelector({ value, onChange }) {
+function NivelSelector({ value, onChange, readOnly = false }) {
   const selected = NIVELES.find(n => n.value === value) || NIVELES[0];
+  
+  if (readOnly) {
+    return (
+      <div className={`
+        inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium
+        ${selected.color}
+      `}>
+        <span className="w-5 h-5 flex items-center justify-center rounded bg-black/10 text-[10px]">{selected.short}</span>
+        {selected.label}
+      </div>
+    );
+  }
   
   return (
     <div className="flex flex-col gap-1">
@@ -213,9 +228,9 @@ function NivelSelector({ value, onChange }) {
             onClick={() => onChange(n.value)}
             title={n.label}
             className={`
-              px-2 py-1.5 text-xs font-medium transition-all first:rounded-l last:rounded-r
+              px-3 py-1.5 text-xs font-medium transition-all rounded
               ${value === n.value 
-                ? n.color + ' ring-2 ring-offset-1 ring-primary/30' 
+                ? n.color + ' ring-2 ring-offset-1 ring-primary/30 z-10 relative' 
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }
             `}
@@ -230,8 +245,16 @@ function NivelSelector({ value, onChange }) {
 }
 
 // Frecuencia Selector dropdown
-function FrecuenciaSelector({ value, onChange }) {
+function FrecuenciaSelector({ value, onChange, readOnly = false }) {
   const selected = FRECUENCIAS.find(f => f.value === value) || FRECUENCIAS[4];
+  
+  if (readOnly) {
+    return (
+      <span className="text-sm text-gray-700 font-medium px-2 py-1 bg-gray-50 rounded border border-gray-100">
+        {selected.label}
+      </span>
+    );
+  }
   
   return (
     <select
@@ -248,7 +271,7 @@ function FrecuenciaSelector({ value, onChange }) {
 }
 
 // Skill Evaluation Row
-function SkillRow({ skill, evaluation, criticidad, onChange }) {
+function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false }) {
   const nivel = evaluation?.nivel ?? 0;
   const frecuencia = evaluation?.frecuencia ?? 'N';
   const effectiveCriticidad = criticidad || 'I';
@@ -280,7 +303,8 @@ function SkillRow({ skill, evaluation, criticidad, onChange }) {
       <div className="col-span-4">
         <NivelSelector 
           value={nivel} 
-          onChange={(n) => onChange({ nivel: n, frecuencia })} 
+          onChange={(n) => !readOnly && onChange({ nivel: n, frecuencia })} 
+          readOnly={readOnly}
         />
       </div>
 
@@ -288,7 +312,8 @@ function SkillRow({ skill, evaluation, criticidad, onChange }) {
       <div className="col-span-2">
         <FrecuenciaSelector 
           value={frecuencia} 
-          onChange={(f) => onChange({ nivel, frecuencia: f })} 
+          onChange={(f) => !readOnly && onChange({ nivel, frecuencia: f })} 
+          readOnly={readOnly}
         />
       </div>
 
@@ -342,6 +367,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
               evaluation={evaluations[skill.id]}
               criticidad={roleProfile?.[skill.id] || skill.criticidad || 'I'}
               onChange={(val) => onEvaluationChange(skill.id, val)}
+              readOnly={!!onEvaluationChange === false}
             />
           ))}
           {naSkills.length > 0 && (
@@ -417,14 +443,89 @@ function EvaluationLegend() {
   );
 }
 
+
+// Session Detail View Component
+function SessionDetailView({ uuid, onBack, categories, skills }) {
+  const [session, setSession] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchSession = async () => {
+      try {
+        const response = await fetch(`/api/evaluations/${uuid}`);
+        if (response.ok) {
+          const data = await response.json();
+          setSession(data);
+        }
+      } catch (err) {
+        console.error("Error loading session:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchSession();
+  }, [uuid]);
+
+  if (loading) {
+    return <div className="p-12 flex justify-center"><Loader2 className="animate-spin text-primary" size={32} /></div>;
+  }
+
+  if (!session) {
+    return <div className="p-8 text-center text-critical">Error cargando la evaluación.</div>;
+  }
+
+  // Transform assessments array to object map for CategoryAccordion
+  const evaluationsMap = {};
+  session.assessments.forEach(a => {
+    evaluationsMap[a.skillId] = { nivel: a.nivel, frecuencia: a.frecuencia };
+  });
+
+  return (
+    <div className="animate-fade-in">
+      <div className="flex items-center gap-2 mb-6">
+        <button 
+          onClick={onBack}
+          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <div>
+          <h3 className="text-lg font-medium text-gray-800">
+            Evaluación del {formatDate(session.evaluatedAt)}
+          </h3>
+          <p className="text-sm text-gray-500">
+            Realizada por {session.evaluatedBy || 'Admin'}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-4">
+        {categories.map(category => (
+          <CategoryAccordion
+            key={category.id}
+            category={category}
+            skills={skills}
+            evaluations={evaluationsMap}
+            roleProfile={{}} // In history view we might not know the historic profile, passing empty defaults to current/base criticidad
+            onEvaluationChange={null} // Read-only trigger
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Main Component
-export default function EvaluationsTab() {
+export default function EvaluationsTab({ initialContext }) {
   const { getHeaders } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
   const [roleProfiles, setRoleProfiles] = useState({});
   const [selectedCollaborator, setSelectedCollaborator] = useState(null);
+  const [viewMode, setViewMode] = useState('edit'); // 'edit', 'history', 'details'
+  const [selectedSessionUuid, setSelectedSessionUuid] = useState(null);
+  
   const [evaluations, setEvaluations] = useState({});
   const [initialEvaluations, setInitialEvaluations] = useState({}); // For dirty checking
   
@@ -509,6 +610,23 @@ export default function EvaluationsTab() {
       setInitialEvaluations({});
     }
   }, [selectedCollaborator, collaborators]);
+
+  // Handle initial context navigation (e.g. from Collaborators Tab)
+  useEffect(() => {
+    if (initialContext) {
+      if (initialContext.collaboratorId) {
+        // Ensure type consistency (string vs number)
+        const targetId = typeof collaborators[0]?.id === 'number' 
+          ? Number(initialContext.collaboratorId) 
+          : initialContext.collaboratorId;
+          
+        setSelectedCollaborator(targetId);
+      }
+      if (initialContext.view) {
+        setViewMode(initialContext.view);
+      }
+    }
+  }, [initialContext, collaborators]);
 
   // Get current role's profile
   const currentRoleProfile = useMemo(() => {
@@ -720,20 +838,23 @@ export default function EvaluationsTab() {
                 {/* Separator */}
                 <span className="text-gray-200">|</span>
                 
-                {/* Role Profile Status */}
-                <div className="flex items-center gap-1.5 text-sm">
-                  {hasRoleProfile ? (
+                {/* History Toggle Button */}
+                <button
+                  onClick={() => setViewMode(viewMode === 'edit' ? 'history' : 'edit')}
+                  className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors font-medium"
+                >
+                  {viewMode === 'edit' ? (
                     <>
-                      <CheckCircle size={14} className="text-competent" />
-                      <span className="text-competent">Perfil configurado</span>
+                      <History size={16} />
+                      Ver Historial
                     </>
                   ) : (
                     <>
-                      <AlertCircle size={14} className="text-gray-400" />
-                      <span className="text-gray-400">Sin perfil</span>
+                      <Edit3 size={16} />
+                      Volver a Edición
                     </>
                   )}
-                </div>
+                </button>
               </div>
             );
           })()}
@@ -751,9 +872,11 @@ export default function EvaluationsTab() {
         </div>
       )}
 
-      {/* Evaluation Form */}
+      {/* Evaluation Form / History / Details Switch */}
       {selectedCollaborator && (
         <>
+          {viewMode === 'edit' && (
+            <div className="animate-fade-in space-y-6">
 
           {/* Summary Stats */}
           <div className="grid grid-cols-5 gap-4">
@@ -793,49 +916,6 @@ export default function EvaluationsTab() {
             ))}
           </div>
 
-          {/* Evaluation History */}
-          {evaluationHistory.length > 0 && (
-            <div className="bg-surface rounded-lg border border-gray-100 p-4">
-              <div className="flex items-center gap-2 mb-3">
-                <History size={18} className="text-gray-400" />
-                <h4 className="font-medium text-gray-800">Historial de Evaluaciones</h4>
-                <span className="text-xs text-gray-400">({evaluationHistory.length})</span>
-              </div>
-              <div className="space-y-2">
-                {evaluationHistory.slice(0, 5).map(session => (
-                  <div 
-                    key={session.uuid} 
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <FileText size={16} className="text-gray-400" />
-                      <div>
-                        <p className="text-sm font-medium text-gray-700">
-                          {formatDate(session.evaluatedAt)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {session.evaluatedBy || 'Admin'} • {session.assessmentCount} skills
-                        </p>
-                      </div>
-                    </div>
-                    <a 
-                      href={`/evaluations/${session.uuid}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1"
-                    >
-                      Ver <ExternalLink size={12} />
-                    </a>
-                  </div>
-                ))}
-                {evaluationHistory.length > 5 && (
-                  <p className="text-xs text-gray-400 text-center pt-2">
-                    +{evaluationHistory.length - 5} evaluaciones anteriores
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
 
           {/* Sticky Footer for Save Actions - Only visible when dirty */}
           <div 
@@ -873,6 +953,77 @@ export default function EvaluationsTab() {
               )}
             </button>
           </div>
+          </div>
+          )}
+
+          {/* HISTORY VIEW */}
+          {viewMode === 'history' && (
+            <div className="animate-fade-in">
+              <div className="flex items-center gap-2 mb-6">
+                <button 
+                  onClick={() => setViewMode('edit')}
+                  className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+                <h3 className="text-lg font-medium text-gray-800">Historial de Evaluaciones</h3>
+              </div>
+
+              {evaluationHistory.length === 0 ? (
+                <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
+                  <History size={48} className="mx-auto text-gray-300 mb-4" />
+                  <p className="text-gray-500">No hay evaluaciones previas para este colaborador.</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {evaluationHistory.map(session => (
+                    <div 
+                      key={session.uuid}
+                      className="bg-surface p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <h4 className="font-medium text-gray-800">Evaluación del {formatDate(session.evaluatedAt)}</h4>
+                          <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
+                            <span>Por: {session.evaluatedBy || 'Admin'}</span>
+                            <span>•</span>
+                            <span>{session.assessmentCount} skills evaluadas</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button
+                        onClick={() => {
+                          setSelectedSessionUuid(session.uuid);
+                          setViewMode('details');
+                        }}
+                        className="px-4 py-2 text-primary hover:bg-primary/5 rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Ver detalles
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* DETAILS VIEW */}
+          {viewMode === 'details' && selectedSessionUuid && (
+            <SessionDetailView 
+              uuid={selectedSessionUuid} 
+              onBack={() => {
+                setSelectedSessionUuid(null);
+                setViewMode('history');
+              }}
+              categories={categories}
+              skills={skills}
+            />
+          )}
+
         </>
       )}
 

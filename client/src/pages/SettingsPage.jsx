@@ -31,6 +31,25 @@ const TABS = [
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState('categorias');
+  const [navigationContext, setNavigationContext] = useState(null);
+  // Track which tabs have been mounted at least once to lazy load them
+  const [mountedTabs, setMountedTabs] = useState(['categorias']);
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    setNavigationContext(null);
+    if (!mountedTabs.includes(tabId)) {
+      setMountedTabs(prev => [...prev, tabId]);
+    }
+  };
+
+  const handleNavigate = (tabId, context = null) => {
+    setActiveTab(tabId);
+    setNavigationContext(context);
+    if (!mountedTabs.includes(tabId)) {
+      setMountedTabs(prev => [...prev, tabId]);
+    }
+  };
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -52,7 +71,7 @@ export default function SettingsPage() {
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => handleTabChange(tab.id)}
                 className={`
                   flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors
                   ${isActive 
@@ -69,13 +88,38 @@ export default function SettingsPage() {
         </nav>
       </div>
 
-      {/* Tab Content */}
+      {/* Tab Content - Keep Alive Pattern */}
       <div className="min-h-[400px]">
-        {activeTab === 'colaboradores' && <CollaboratorsTab />}
-        {activeTab === 'skills' && <SkillsTab />}
-        {activeTab === 'categorias' && <CategoriesTab />}
-        {activeTab === 'perfiles' && <RoleProfilesTab />}
-        {activeTab === 'evaluaciones' && <EvaluationsTab />}
+        
+        {mountedTabs.includes('categorias') && (
+          <div className={activeTab === 'categorias' ? 'block' : 'hidden'}>
+            <CategoriesTab />
+          </div>
+        )}
+        
+        {mountedTabs.includes('skills') && (
+          <div className={activeTab === 'skills' ? 'block' : 'hidden'}>
+             <SkillsTab />
+          </div>
+        )}
+
+        {mountedTabs.includes('perfiles') && (
+          <div className={activeTab === 'perfiles' ? 'block' : 'hidden'}>
+            <RoleProfilesTab />
+          </div>
+        )}
+
+        {mountedTabs.includes('colaboradores') && (
+          <div className={activeTab === 'colaboradores' ? 'block' : 'hidden'}>
+            <CollaboratorsTab onNavigate={handleNavigate} />
+          </div>
+        )}
+
+        {mountedTabs.includes('evaluaciones') && (
+          <div className={activeTab === 'evaluaciones' ? 'block' : 'hidden'}>
+            <EvaluationsTab initialContext={navigationContext} />
+          </div>
+        )}
       </div>
     </div>
   );
