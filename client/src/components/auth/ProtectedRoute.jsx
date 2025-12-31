@@ -1,7 +1,7 @@
-import { Navigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 /**
  * ProtectedRoute - Wrapper for routes that require authentication
@@ -15,7 +15,25 @@ import { useState } from 'react';
  */
 export default function ProtectedRoute({ children }) {
   const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [showLoginModal, setShowLoginModal] = useState(!isAuthenticated);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+
+  // When authentication state changes after login, show the content
+  useEffect(() => {
+    if (isAuthenticated && justLoggedIn) {
+      // Navigate to settings (or stay on current protected route)
+      navigate(location.pathname, { replace: true });
+      setJustLoggedIn(false);
+    }
+  }, [isAuthenticated, justLoggedIn, navigate, location.pathname]);
+
+  // Handle successful login
+  const handleLoginSuccess = () => {
+    setJustLoggedIn(true);
+    setShowLoginModal(false);
+  };
 
   // If not authenticated, show login modal
   if (!isAuthenticated) {
@@ -38,7 +56,8 @@ export default function ProtectedRoute({ children }) {
         
         <LoginModal 
           isOpen={showLoginModal} 
-          onClose={() => setShowLoginModal(false)} 
+          onClose={() => setShowLoginModal(false)}
+          onSuccess={handleLoginSuccess}
         />
       </div>
     );
