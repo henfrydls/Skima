@@ -152,16 +152,27 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
 }
 
 // Category Row Component
-function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragging }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDragOver, onDragEnd, onDrop, isDragging, isDragOver }) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
     <div 
-      className={`flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all group ${isDragging ? 'opacity-50 border-primary border-2' : ''}`}
+      className={`
+        flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border transition-all duration-200 group
+        ${isDragging 
+          ? 'opacity-40 scale-95 rotate-2 shadow-lg border-primary border-2 z-10' 
+          : 'border-gray-100 hover:shadow-md'
+        }
+        ${isDragOver && !isDragging
+          ? 'border-primary border-2 bg-primary/5 transform -translate-y-1' 
+          : ''
+        }
+      `}
       draggable
       onDragStart={(e) => onDragStart(e, category.id)}
       onDragOver={(e) => onDragOver(e, category.id)}
+      onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(e, category.id)}
     >
       {/* Drag Handle */}
@@ -419,49 +430,63 @@ export default function CategoriesTab() {
 
   // ===== DRAG AND DROP REORDER =====
   const [draggedId, setDraggedId] = useState(null);
+  const [dragOverId, setDragOverId] = useState(null);
 
   const handleDragStart = (e, id) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = 'move';
+    // Create a custom drag image with rotation (optional enhancement)
+    const elem = e.target;
+    if (elem) {
+      e.dataTransfer.setDragImage(elem, elem.offsetWidth / 2, elem.offsetHeight / 2);
+    }
   };
 
   const handleDragOver = (e, overId) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = 'move';
+    
+    if (overId === draggedId || draggedId === null) return;
+    
+    // Live reorder while dragging
+    if (overId !== dragOverId) {
+      setDragOverId(overId);
+      
+      // Reorder the array in real-time for visual feedback
+      const oldIndex = categories.findIndex(c => c.id === draggedId);
+      const newIndex = categories.findIndex(c => c.id === overId);
+      
+      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
+        const newCategories = [...categories];
+        const [moved] = newCategories.splice(oldIndex, 1);
+        newCategories.splice(newIndex, 0, moved);
+        setCategories(newCategories);
+      }
+    }
   };
 
-  const handleDrop = async (e, dropId) => {
-    e.preventDefault();
-    if (draggedId === dropId || draggedId === null) {
-      setDraggedId(null);
-      return;
-    }
-
-    // Reorder locally first for instant feedback
-    const oldIndex = categories.findIndex(c => c.id === draggedId);
-    const newIndex = categories.findIndex(c => c.id === dropId);
-    
-    const newCategories = [...categories];
-    const [moved] = newCategories.splice(oldIndex, 1);
-    newCategories.splice(newIndex, 0, moved);
-    setCategories(newCategories);
-    setDraggedId(null);
-
-    // Persist to API
-    try {
-      const order = newCategories.map(c => c.id);
-      await fetch(`${API_BASE}/categories/reorder`, {
+  const handleDragEnd = () => {
+    // Persist final order to API
+    if (draggedId !== null) {
+      const order = categories.map(c => c.id);
+      fetch(`${API_BASE}/categories/reorder`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           ...getHeaders()
         },
         body: JSON.stringify({ order })
-      });
-    } catch (err) {
-      console.error('Error saving order:', err);
-      // Could revert here if needed
+      }).catch(err => console.error('Error saving order:', err));
     }
+    
+    setDraggedId(null);
+    setDragOverId(null);
+  };
+
+  const handleDrop = (e, dropId) => {
+    e.preventDefault();
+    // The actual reorder already happened in handleDragOver
+    // handleDragEnd will persist to API
   };
 
   // Loading state
@@ -536,8 +561,10 @@ export default function CategoriesTab() {
             onDelete={handleDelete}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
+            onDragEnd={handleDragEnd}
             onDrop={handleDrop}
             isDragging={draggedId === category.id}
+            isDragOver={dragOverId === category.id}
           />
         ))}
       </div>
