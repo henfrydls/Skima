@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -41,6 +41,7 @@ const getNavItems = (isAuthenticated) => {
 };
 
 export default function Layout() {
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, login, logout } = useAuth();
@@ -50,6 +51,7 @@ export default function Layout() {
   const handleLoginSuccess = (token) => {
     login(token);
     setShowLoginModal(false);
+    navigate('/settings');
   };
 
   return (
