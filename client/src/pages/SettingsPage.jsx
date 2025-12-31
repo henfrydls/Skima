@@ -22,15 +22,15 @@ import RoleProfilesTab from '../components/settings/RoleProfilesTab';
  */
 
 const TABS = [
-  { id: 'colaboradores', label: 'Colaboradores', icon: Users },
-  { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'categorias', label: 'Categorías', icon: FolderTree },
+  { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'perfiles', label: 'Perfiles de Puesto', icon: Briefcase },
+  { id: 'colaboradores', label: 'Colaboradores', icon: Users },
   { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
 ];
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('colaboradores');
+  const [activeTab, setActiveTab] = useState('categorias');
 
   return (
     <div className="space-y-6 animate-fade-in">
