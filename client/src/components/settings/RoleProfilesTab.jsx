@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useSearchParams } from 'react-router-dom';
 import { 
   Users,
   Save,
@@ -276,6 +276,7 @@ function CriticidadLegend() {
 // Main component
 export default function RoleProfilesTab() {
   const { getHeaders } = useAuth();
+  const [searchParams] = useSearchParams();
   const [roles, setRoles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -295,6 +296,14 @@ export default function RoleProfilesTab() {
   // Navigation blocking state
   const [pendingNavigation, setPendingNavigation] = useState(null); // { type: 'route' | 'role', target: ... }
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Pre-select role from URL param
+  useEffect(() => {
+    const rolFromUrl = searchParams.get('rol');
+    if (rolFromUrl && roles.includes(rolFromUrl)) {
+      setSelectedRole(rolFromUrl);
+    }
+  }, [searchParams, roles]);
 
   // Compare objects to check if dirty
   const isDirty = useMemo(() => {

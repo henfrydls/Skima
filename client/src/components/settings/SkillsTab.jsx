@@ -50,7 +50,6 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
     }
   };
 
-  return (
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">

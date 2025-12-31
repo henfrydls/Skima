@@ -12,7 +12,6 @@ import {
   AlertCircle,
   Briefcase
 } from 'lucide-react';
-import { COLLABORATORS } from '../../data/mockData';
 
 /**
  * CollaboratorsTab — CRUD de Colaboradores
@@ -214,7 +213,7 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
 }
 
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate }) {
+function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate, totalSkillsCount = 0 }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
   
@@ -264,30 +263,72 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
         </div>
       </td>
 
-      {/* Stats */}
+      {/* Stats - Skills evaluadas vs definidas en perfil */}
       <td className="px-4 py-3 text-sm text-gray-500">
-        <span className="bg-gray-100 px-2 py-1 rounded text-xs">
-          {Object.keys(collaborator.skills || {}).length} skills
-        </span>
+        {(() => {
+          const evaluatedCount = Object.keys(collaborator.skills || {}).length;
+          const roleProfile = roleProfiles[collaborator.rol] || {};
+          // Count skills that are defined (not 'N') in the role profile
+          const definedInProfile = Object.values(roleProfile).filter(v => v !== 'N').length;
+          
+          if (definedInProfile === 0) {
+            return (
+              <span 
+                className="text-gray-400 italic text-xs cursor-help"
+                title="Este rol no tiene skills definidas en su perfil de puesto"
+              >
+                Sin perfil
+              </span>
+            );
+          }
+          
+          return (
+            <span 
+              className="bg-gray-100 px-2 py-1 rounded text-xs cursor-help"
+              title={`${evaluatedCount} skills evaluadas de ${definedInProfile} requeridas por el perfil del puesto "${collaborator.rol}"`}
+            >
+              {evaluatedCount}/{definedInProfile} skills
+            </span>
+          );
+        })()}
+      </td>
+
+      {/* Última Evaluación */}
+      <td className="px-4 py-3 text-sm text-gray-500">
+        {collaborator.lastEvaluated ? (
+          <span className="text-gray-600">
+            {new Date(collaborator.lastEvaluated).toLocaleDateString('es-ES', { 
+              day: '2-digit', 
+              month: 'short', 
+              year: 'numeric' 
+            })}
+          </span>
+        ) : (
+          <span className="text-gray-400 italic">Sin evaluar</span>
+        )}
       </td>
 
       {/* Promedio */}
       <td className="px-4 py-3">
-        <span className={`
-          text-sm font-medium px-2 py-1 rounded
-          ${collaborator.promedio >= 3.5 ? 'bg-competent/10 text-competent' : 
-            collaborator.promedio >= 2.5 ? 'bg-warning/10 text-warning' : 
-            'bg-critical/10 text-critical'}
-        `}>
-          {collaborator.promedio?.toFixed(1) || 'N/A'}
-        </span>
+        {collaborator.promedio > 0 ? (
+          <span className={`
+            text-sm font-medium px-2 py-1 rounded
+            ${collaborator.promedio >= 3.5 ? 'bg-competent/10 text-competent' : 
+              collaborator.promedio >= 2.5 ? 'bg-warning/10 text-warning' : 
+              'bg-critical/10 text-critical'}
+          `}>
+            {collaborator.promedio.toFixed(1)}
+          </span>
+        ) : (
+          <span className="text-gray-400">--</span>
+        )}
       </td>
 
       {/* Actions */}
       <td className="px-4 py-3 text-right relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="p-2 hover:bg-gray-100 rounded transition-colors opacity-0 group-hover:opacity-100"
+          className="p-2 hover:bg-gray-100 rounded transition-colors"
         >
           <MoreVertical size={18} className="text-gray-500" />
         </button>
@@ -334,23 +375,26 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
 
 // Main Component
 export default function CollaboratorsTab({ onNavigate }) {
-  const [collaborators, setCollaborators] = useState(COLLABORATORS);
+  const [collaborators, setCollaborators] = useState([]);
   const [roleProfiles, setRoleProfiles] = useState({});
+  const [totalSkillsCount, setTotalSkillsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  // Fetch role profiles
+  // Fetch data (role profiles, collaborators, skills count)
   useEffect(() => {
-    const fetchRoleProfiles = async () => {
+    const fetchData = async () => {
       try {
         const response = await fetch('/api/data');
         const data = await response.json();
         setRoleProfiles(data.roleProfiles || {});
+        setCollaborators(data.collaborators || []);
+        setTotalSkillsCount(data.skills?.length || 0);
       } catch (err) {
-        console.error('Error fetching role profiles:', err);
+        console.error('Error fetching data:', err);
       }
     };
-    fetchRoleProfiles();
+    fetchData();
   }, []);
 
   // Filter collaborators
@@ -360,24 +404,61 @@ export default function CollaboratorsTab({ onNavigate }) {
   );
 
   // Handlers
-  const handleCreate = (newCollab) => {
-    const created = {
-      ...newCollab,
-      id: `collab-${Date.now()}`,
-      skills: {},
-      promedio: 0
-    };
-    setCollaborators([created, ...collaborators]);
-    // TODO: Toast notification
+  const handleCreate = async (newCollab) => {
+    try {
+      const response = await fetch('/api/collaborators', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCollab)
+      });
+      
+      if (!response.ok) throw new Error('Error saving collaborator');
+      
+      const created = await response.json();
+      // Initialize with empty skills/promedio for UI stability until refresh
+      const createdWithUIProps = {
+        ...created,
+        skills: {},
+        promedio: 0
+      };
+      
+      setCollaborators([createdWithUIProps, ...collaborators]);
+    } catch (err) {
+      console.error('Error creating:', err);
+      // TODO: Show toast error
+    }
   };
 
-  const handleUpdate = (id, updated) => {
+  const handleUpdate = async (id, updated) => {
+    // Optimistic update
     setCollaborators(collaborators.map(c => c.id === id ? updated : c));
+    
+    try {
+      const response = await fetch(`/api/collaborators/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updated)
+      });
+      if (!response.ok) throw new Error('Failed to update');
+    } catch (err) {
+      console.error('Error updating:', err);
+      // Revert optimization on error? complex to handle currently
+    }
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (confirm('¿Desactivar este colaborador?')) {
-      setCollaborators(collaborators.filter(c => c.id !== id));
+      try {
+        const response = await fetch(`/api/collaborators/${id}`, {
+          method: 'DELETE'
+        });
+        
+        if (!response.ok) throw new Error('Error deleting');
+        
+        setCollaborators(collaborators.filter(c => c.id !== id));
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
     }
   };
 
@@ -442,6 +523,9 @@ export default function CollaboratorsTab({ onNavigate }) {
                 Skills
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
+                Última Evaluación
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Promedio
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
@@ -458,6 +542,7 @@ export default function CollaboratorsTab({ onNavigate }) {
                 onDelete={handleDelete}
                 roleProfiles={roleProfiles}
                 onNavigate={onNavigate}
+                totalSkillsCount={totalSkillsCount}
               />
             ))}
           </tbody>

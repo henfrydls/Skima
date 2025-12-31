@@ -24,6 +24,8 @@ export function createApp() {
   // GET /api/data - Aggregated data for Dashboard (backwards compatible)
   app.get('/api/data', async (req, res) => {
     try {
+      res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+      
       const categories = await prisma.category.findMany({
         orderBy: { orden: 'asc' }
       });
@@ -39,23 +41,36 @@ export function createApp() {
           }
         }
       });
-
+      
       // Transform to match frontend expected format
       const collaborators = collaboratorsRaw.map(col => {
         const skillsMap = {};
+        let totalNivel = 0;
+        let evalCount = 0;
+        
         col.assessments.forEach(a => {
           skillsMap[a.skillId] = {
             nivel: a.nivel,
             criticidad: a.criticidad,
             frecuencia: a.frecuencia
           };
+          // Calculate average based on nivel (1-5 scale)
+          if (a.nivel && a.nivel > 0) {
+            totalNivel += a.nivel;
+            evalCount++;
+          }
         });
+        
+        const promedio = evalCount > 0 ? totalNivel / evalCount : 0;
+        
         return {
           id: col.id,
           nombre: col.nombre,
           rol: col.rol,
           esDemo: col.esDemo,
-          skills: skillsMap
+          skills: skillsMap,
+          promedio: Math.round(promedio * 10) / 10, // Round to 1 decimal
+          lastEvaluated: col.lastEvaluated
         };
       });
 
@@ -81,11 +96,7 @@ export function createApp() {
           categoria: s.categoriaId,
           nombre: s.nombre
         })),
-        collaborators: collaborators.map(c => ({
-          ...c,
-          email: collaboratorsRaw.find(r => r.id === c.id)?.email || null,
-          lastEvaluated: collaboratorsRaw.find(r => r.id === c.id)?.lastEvaluated || null
-        })),
+        collaborators,
         roleProfiles,
         allowResetFromDemo: hasDemo
       });
@@ -320,6 +331,50 @@ export function createApp() {
     } catch (error) {
       console.error('[API] PUT /api/categories/reorder failed:', error);
       res.status(500).json({ message: 'Error reordering categories' });
+    }
+  });
+
+  // POST /api/collaborators - Create collaborator
+  app.post('/api/collaborators', authMiddleware, async (req, res) => {
+    try {
+      const { nombre, rol, email, esDemo } = req.body;
+      if (!nombre || !rol) {
+        return res.status(400).json({ message: 'Nombre y rol son requeridos' });
+      }
+
+      const collaborator = await prisma.collaborator.create({
+        data: {
+          nombre,
+          rol,
+          email,
+          esDemo: esDemo || false
+        }
+      });
+      res.json(collaborator);
+    } catch (error) {
+      console.error('[API] POST /api/collaborators failed:', error);
+      res.status(500).json({ message: 'Error creating collaborator' });
+    }
+  });
+
+  // DELETE /api/collaborators/:id - Delete collaborator
+  app.delete('/api/collaborators/:id', authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      // Delete assessments first
+      await prisma.assessment.deleteMany({
+        where: { collaboratorId: id }
+      });
+
+      await prisma.collaborator.delete({
+        where: { id }
+      });
+      
+      res.json({ message: 'Collaborator deleted' });
+    } catch (error) {
+      console.error('[API] DELETE /api/collaborators/:id failed:', error);
+      res.status(500).json({ message: 'Error deleting collaborator' });
     }
   });
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import { 
   Search, 
   ChevronDown,
@@ -20,7 +20,8 @@ import {
   X,
   ArrowLeft,
   Calendar as CalendarIcon,
-  Edit3
+  Edit3,
+  Briefcase
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -36,14 +37,14 @@ import { useAuth } from '../../contexts/AuthContext';
 
 const API_BASE = '/api';
 
-// Nivel options with descriptive labels
+// Nivel options with descriptive labels - More vibrant colors for visibility
 const NIVELES = [
-  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-200 text-gray-600' },
-  { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-300 text-gray-700' },
-  { value: 2, short: '2', label: 'Con supervisión', color: 'bg-warning/20 text-warning' },
-  { value: 3, short: '3', label: 'Autónomo', color: 'bg-competent/20 text-competent' },
-  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-primary/20 text-primary' },
-  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-primary text-white' },
+  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-400 text-white' },
+  { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-500 text-white' },
+  { value: 2, short: '2', label: 'Con supervisión', color: 'bg-amber-500 text-white' },
+  { value: 3, short: '3', label: 'Autónomo', color: 'bg-emerald-500 text-white' },
+  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-blue-500 text-white' },
+  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-purple-600 text-white' },
 ];
 
 // Frecuencia options with clear labels
@@ -58,6 +59,7 @@ const FRECUENCIAS = [
 // Evaluation states with descriptions
 const EVALUATION_STATES = {
   'SIN EVALUAR': { color: 'bg-gray-100 text-gray-500', icon: '○', action: 'Completar evaluación' },
+  'SIN EXPERIENCIA': { color: 'bg-gray-300 text-gray-700', icon: '—', action: 'Evaluar necesidad de capacitación' },
   'BRECHA CRÍTICA': { color: 'bg-critical text-white', icon: '!', action: 'Capacitación urgente' },
   'ÁREA DE MEJORA': { color: 'bg-warning text-white', icon: '↗', action: 'Plan de desarrollo' },
   'TALENTO SUBUTILIZADO': { color: 'bg-purple-500 text-white', icon: '◇', action: 'Reasignar proyectos' },
@@ -73,7 +75,6 @@ const EVALUATION_STATES = {
 function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
   if (!isOpen) return null;
 
-  return (
   return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
@@ -143,9 +144,11 @@ function formatDate(dateString) {
  * Evaluation logic - FIXED edge cases
  */
 function evaluarSkill(nivel, frecuencia, criticidad) {
-  // SIEMPRE considerar nivel 0 + no usa como pendiente de evaluación
+  // Handle nivel 0 + no usa based on criticality
   if (nivel === 0 && frecuencia === 'N') {
-    return { estado: 'SIN EVALUAR' };
+    if (criticidad === 'C') return { estado: 'BRECHA CRÍTICA' }; // Critical skill not developed
+    if (criticidad === 'N') return { estado: 'NO APLICA' }; // Not relevant
+    return { estado: 'SIN EXPERIENCIA' }; // Important/Desirable but no experience
   }
   
   if (nivel === 0) {
@@ -330,13 +333,27 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
 }
 
 // Category Accordion
-function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvaluationChange }) {
+function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvaluationChange, showCategoryAverage = false }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const categorySkills = skills.filter(s => s.categoria === category.id);
   
   // Separate N/A skills to show them at the end (collapsed by default)
   const activeSkills = categorySkills.filter(s => (roleProfile?.[s.id] || 'I') !== 'N');
   const naSkills = categorySkills.filter(s => (roleProfile?.[s.id]) === 'N');
+
+  // Calculate category average (only evaluated skills with nivel > 0)
+  const categoryAverage = useMemo(() => {
+    let total = 0;
+    let count = 0;
+    activeSkills.forEach(skill => {
+      const eval_ = evaluations[skill.id];
+      if (eval_?.nivel && eval_.nivel > 0) {
+        total += eval_.nivel;
+        count++;
+      }
+    });
+    return count > 0 ? (total / count).toFixed(1) : null;
+  }, [activeSkills, evaluations]);
 
   if (categorySkills.length === 0) return null;
 
@@ -351,6 +368,21 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
           <span className="font-medium text-gray-800">{category.nombre}</span>
           <span className="text-xs text-gray-400">({categorySkills.length} skills)</span>
         </div>
+        
+        {/* Category Average Badge */}
+        {showCategoryAverage && categoryAverage && (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-500">Promedio:</span>
+            <span className={`
+              text-sm font-medium px-2 py-0.5 rounded
+              ${parseFloat(categoryAverage) >= 3.5 ? 'bg-competent/10 text-competent' : 
+                parseFloat(categoryAverage) >= 2.5 ? 'bg-warning/10 text-warning' : 
+                'bg-critical/10 text-critical'}
+            `}>
+              {categoryAverage}
+            </span>
+          </div>
+        )}
       </button>
 
       {isExpanded && (
@@ -476,11 +508,22 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
     return <div className="p-8 text-center text-critical">Error cargando la evaluación.</div>;
   }
 
-  // Transform assessments array to object map for CategoryAccordion
+  // Transform skills object (from API) to evaluationsMap and storedRoleProfile
+  // API returns skills as object keyed by skillId: { [skillId]: { nivel, frecuencia, criticidad, ... } }
   const evaluationsMap = {};
-  session.assessments.forEach(a => {
-    evaluationsMap[a.skillId] = { nivel: a.nivel, frecuencia: a.frecuencia };
-  });
+  const storedRoleProfile = {};
+  
+  if (session.skills && typeof session.skills === 'object') {
+    Object.entries(session.skills).forEach(([skillId, data]) => {
+      evaluationsMap[skillId] = { 
+        nivel: data.nivel, 
+        frecuencia: data.frecuencia,
+        criticidad: data.criticidad 
+      };
+      // Use stored criticidad for role profile
+      storedRoleProfile[skillId] = data.criticidad || 'I';
+    });
+  }
 
   return (
     <div className="animate-fade-in">
@@ -508,8 +551,9 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
             category={category}
             skills={skills}
             evaluations={evaluationsMap}
-            roleProfile={{}} // In history view we might not know the historic profile, passing empty defaults to current/base criticidad
+            roleProfile={storedRoleProfile} // Use stored criticidad from snapshot
             onEvaluationChange={null} // Read-only trigger
+            showCategoryAverage={true}
           />
         ))}
       </div>
@@ -520,6 +564,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
 // Main Component
 export default function EvaluationsTab({ initialContext, isActive = false }) {
   const { getHeaders } = useAuth();
+  const navigate = useNavigate();
   const [collaborators, setCollaborators] = useState([]);
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -550,7 +595,10 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
   // React Router Blocker
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
-      isDirty && currentLocation.pathname !== nextLocation.pathname
+      isDirty && (
+        currentLocation.pathname !== nextLocation.pathname ||
+        currentLocation.search !== nextLocation.search
+      )
   );
 
   // Handle blocker state
@@ -568,7 +616,13 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       // Don't show loading on background refresh unless empty
       if (collaborators.length === 0) setIsLoading(true);
       
-      const response = await fetch(`${API_BASE}/data`);
+      const response = await fetch(`${API_BASE}/data?t=${Date.now()}`, {
+        cache: 'no-store',
+        headers: {
+          'Pragma': 'no-cache',
+          'Cache-Control': 'no-cache'
+        }
+      });
       if (!response.ok) throw new Error('Error fetching data');
       const data = await response.json();
       
@@ -649,6 +703,14 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
     if (!collab?.rol) return {};
     return roleProfiles[collab.rol] || {};
   }, [selectedCollaborator, collaborators, roleProfiles]);
+
+  // Check if the role has any valid skills defined (not N/A)
+  const hasValidProfile = useMemo(() => {
+    const profileValues = Object.values(currentRoleProfile);
+    if (profileValues.length === 0) return false;
+    // Has valid profile if at least one skill is NOT 'N/A'
+    return profileValues.some(v => v !== 'N/A');
+  }, [currentRoleProfile]);
 
   // Handle evaluation change
   const handleEvaluationChange = (skillId, value) => {
@@ -889,7 +951,29 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       {/* Evaluation Form / History / Details Switch */}
       {selectedCollaborator && (
         <>
-          {viewMode === 'edit' && (
+          {viewMode === 'edit' && !hasValidProfile && (
+            <div className="text-center py-16 bg-amber-50 rounded-lg border border-amber-200">
+              <Briefcase size={48} className="mx-auto text-amber-400 mb-4" />
+              <h3 className="text-lg font-medium text-amber-800 mb-2">
+                Perfil de puesto sin configurar
+              </h3>
+              <p className="text-amber-600 max-w-md mx-auto mb-4">
+                El rol "{collaborators.find(c => c.id === selectedCollaborator)?.rol}" no tiene skills definidas.
+                Configura primero las skills requeridas en la pestaña "Perfiles de Puesto".
+              </p>
+              <button
+                onClick={() => {
+                  const rolName = collaborators.find(c => c.id === selectedCollaborator)?.rol;
+                  navigate(`/settings?tab=perfiles&rol=${encodeURIComponent(rolName || '')}`);
+                }}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
+              >
+                Ir a Perfiles de Puesto
+              </button>
+            </div>
+          )}
+          
+          {viewMode === 'edit' && hasValidProfile && (
             <div className="animate-fade-in space-y-6">
 
           {/* Summary Stats */}

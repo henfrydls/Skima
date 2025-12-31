@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Users, Layers, FolderTree, ClipboardCheck, Briefcase } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
@@ -16,9 +17,9 @@ import RoleProfilesTab from '../components/settings/RoleProfilesTab';
  * - Evaluaciones: Evaluar skills por colaborador
  * 
  * UX Principles Applied:
- * - Flat tabs (1 nivel, sin sub-navegación)
+ * - URL-driven state for deep linking
+ * - Keep Alive pattern for performance
  * - Progressive disclosure
- * - Inline editing donde posible
  */
 
 const TABS = [
@@ -30,25 +31,32 @@ const TABS = [
 ];
 
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState('categorias');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Get active tab from URL or default to 'categorias'
+  const activeTab = searchParams.get('tab') || 'categorias';
+  
   const [navigationContext, setNavigationContext] = useState(null);
   // Track which tabs have been mounted at least once to lazy load them
-  const [mountedTabs, setMountedTabs] = useState(['categorias']);
+  const [mountedTabs, setMountedTabs] = useState([activeTab]);
+
+  // Update mounted tabs when active tab changes
+  useEffect(() => {
+    if (!mountedTabs.includes(activeTab)) {
+      setMountedTabs(prev => [...prev, activeTab]);
+    }
+  }, [activeTab, mountedTabs]);
 
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
+    setSearchParams({ tab: tabId });
     setNavigationContext(null);
-    if (!mountedTabs.includes(tabId)) {
-      setMountedTabs(prev => [...prev, tabId]);
-    }
   };
 
   const handleNavigate = (tabId, context = null) => {
-    setActiveTab(tabId);
     setNavigationContext(context);
-    if (!mountedTabs.includes(tabId)) {
-      setMountedTabs(prev => [...prev, tabId]);
-    }
+    setSearchParams({ tab: tabId });
   };
 
   return (
