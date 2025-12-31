@@ -13,6 +13,7 @@ import {
   Plus,
   X
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
@@ -232,6 +233,7 @@ function CriticidadLegend() {
 
 // Main component
 export default function RoleProfilesTab() {
+  const { getHeaders } = useAuth();
   const [roles, setRoles] = useState([]);
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -321,7 +323,7 @@ export default function RoleProfilesTab() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          ...getHeaders()
         },
         body: JSON.stringify(requirements)
       });
