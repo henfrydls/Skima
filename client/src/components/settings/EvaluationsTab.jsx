@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { 
   Search, 
   ChevronDown,
@@ -13,7 +14,9 @@ import {
   Clock,
   History,
   FileText,
-  ExternalLink
+  ExternalLink,
+  AlertTriangle,
+  X
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -61,6 +64,48 @@ const EVALUATION_STATES = {
   'BÁSICO': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Opcional según intereses' },
   'NO APLICA': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill no relevante para este rol' },
 };
+
+// Unsaved Changes Dialog
+function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
+        <div className="p-6">
+          <div className="flex items-center gap-3 text-warning mb-2">
+            <AlertTriangle size={24} />
+            <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+          </div>
+          <p className="text-gray-600 mb-6">
+            Tienes modificaciones pendientes en esta evaluación. Si sales ahora, perderás los cambios.
+          </p>
+          <div className="flex justify-end gap-3">
+            <button 
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              onClick={onDiscard}
+              className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
+            >
+              Descartar cambios
+            </button>
+            <button 
+              onClick={onSave}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors flex items-center gap-2"
+            >
+              <Save size={16} />
+              Guardar y Salir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Freshness helper - calculates how fresh an evaluation is
@@ -381,12 +426,37 @@ export default function EvaluationsTab() {
   const [roleProfiles, setRoleProfiles] = useState({});
   const [selectedCollaborator, setSelectedCollaborator] = useState(null);
   const [evaluations, setEvaluations] = useState({});
+  const [initialEvaluations, setInitialEvaluations] = useState({}); // For dirty checking
+  
   const [evaluationHistory, setEvaluationHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [lastSavedUuid, setLastSavedUuid] = useState(null);
   const [error, setError] = useState(null);
+  
+  // Navigation blocking state
+  const [pendingNavigation, setPendingNavigation] = useState(null);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Compare evaluations to check if dirty
+  const isDirty = useMemo(() => {
+    return JSON.stringify(evaluations) !== JSON.stringify(initialEvaluations);
+  }, [evaluations, initialEvaluations]);
+
+  // React Router Blocker
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
+
+  // Handle blocker state
+  useEffect(() => {
+    if (blocker.state === "blocked") {
+      setPendingNavigation({ type: 'route', target: null });
+      setShowUnsavedDialog(true);
+    }
+  }, [blocker.state]);
 
   // Fetch data
   useEffect(() => {
@@ -415,11 +485,10 @@ export default function EvaluationsTab() {
   useEffect(() => {
     if (selectedCollaborator) {
       const collabData = collaborators.find(c => c.id === selectedCollaborator);
-      if (collabData?.skills) {
-        setEvaluations(collabData.skills);
-      } else {
-        setEvaluations({});
-      }
+      const loadedEvals = collabData?.skills || {};
+      
+      setEvaluations(loadedEvals);
+      setInitialEvaluations(loadedEvals); // Set baseline
       
       // Fetch evaluation history
       const fetchHistory = async () => {
@@ -436,6 +505,8 @@ export default function EvaluationsTab() {
       fetchHistory();
     } else {
       setEvaluationHistory([]);
+      setEvaluations({});
+      setInitialEvaluations({});
     }
   }, [selectedCollaborator, collaborators]);
 
@@ -462,7 +533,7 @@ export default function EvaluationsTab() {
   };
 
   // Save evaluations to API
-  const handleSave = async () => {
+  const handleSave = async (shouldNavigateAfter = false) => {
     if (!selectedCollaborator) return;
     
     setIsSaving(true);
@@ -491,6 +562,7 @@ export default function EvaluationsTab() {
       const result = await response.json();
       setLastSavedUuid(result.uuid);
       setSaveSuccess(true);
+      setInitialEvaluations(evaluations); // Update baseline
       
       // Refresh history
       const historyResponse = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
@@ -507,6 +579,18 @@ export default function EvaluationsTab() {
       ));
       
       setTimeout(() => setSaveSuccess(false), 5000);
+
+      // Handle navigation after save
+      if (shouldNavigateAfter) {
+        setShowUnsavedDialog(false);
+        if (pendingNavigation?.type === 'collaborator') {
+          setSelectedCollaborator(pendingNavigation.target);
+        } else if (pendingNavigation?.type === 'route' && blocker.state === "blocked") {
+          blocker.proceed();
+        }
+        setPendingNavigation(null);
+      }
+
     } catch (err) {
       console.error('Error saving evaluation:', err);
       setError('Error guardando evaluación');
@@ -514,6 +598,39 @@ export default function EvaluationsTab() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  // Safe Collaborator Switch
+  const handleCollaboratorSwitch = (collabId) => {
+    const target = collabId ? parseInt(collabId) : null;
+    
+    if (isDirty) {
+      setPendingNavigation({ type: 'collaborator', target });
+      setShowUnsavedDialog(true);
+    } else {
+      setSelectedCollaborator(target);
+    }
+  };
+
+  // Unsaved Dialog Actions
+  const handleDiscardChanges = () => {
+    setEvaluations(initialEvaluations); // Revert
+    setShowUnsavedDialog(false);
+    
+    if (pendingNavigation?.type === 'collaborator') {
+      setSelectedCollaborator(pendingNavigation.target);
+    } else if (pendingNavigation?.type === 'route' && blocker.state === "blocked") {
+      blocker.proceed();
+    }
+    setPendingNavigation(null);
+  };
+
+  const handleCancelNavigation = () => {
+    setShowUnsavedDialog(false);
+    if (blocker.state === "blocked") {
+      blocker.reset();
+    }
+    setPendingNavigation(null);
   };
 
   // Calculate summary stats
@@ -574,7 +691,7 @@ export default function EvaluationsTab() {
           <label className="text-sm font-medium text-gray-700">Evaluar a:</label>
           <select
             value={selectedCollaborator || ''}
-            onChange={(e) => setSelectedCollaborator(e.target.value ? parseInt(e.target.value) : null)}
+            onChange={(e) => handleCollaboratorSwitch(e.target.value)}
             className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-w-[250px]"
           >
             <option value="">Seleccionar colaborador...</option>
@@ -720,28 +837,33 @@ export default function EvaluationsTab() {
             </div>
           )}
 
-          {/* Save Button */}
-          <div className="flex justify-end sticky bottom-4">
+          {/* Sticky Footer for Save Actions - Only visible when dirty */}
+          <div 
+            className={`
+              sticky bottom-2 z-20 flex justify-end gap-3 p-4 rounded-xl shadow-lg border border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-300
+              ${isDirty ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}
+            `}
+          >
+            <span className="flex items-center text-sm text-gray-500 mr-auto">
+              <AlertCircle size={16} className="mr-2 text-warning" />
+              Tienes cambios sin guardar
+            </span>
+
             <button
-              onClick={handleSave}
+               onClick={() => setEvaluations(initialEvaluations)}
+               className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+            >
+              Descartar
+            </button>
+            <button
+              onClick={() => handleSave(false)}
               disabled={isSaving}
-              className={`
-                px-6 py-3 rounded-lg font-medium flex items-center gap-2 shadow-lg transition-all
-                ${saveSuccess 
-                  ? 'bg-competent text-white' 
-                  : 'bg-primary text-white hover:bg-primary/90'
-                }
-              `}
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
             >
               {isSaving ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />
                   Guardando...
-                </>
-              ) : saveSuccess ? (
-                <>
-                  <CheckCircle size={18} />
-                  Guardado ✓
                 </>
               ) : (
                 <>
@@ -753,6 +875,14 @@ export default function EvaluationsTab() {
           </div>
         </>
       )}
+
+      {/* Unsaved Changes Warning Modal */}
+      <UnsavedChangesDialog
+        isOpen={showUnsavedDialog}
+        onDiscard={handleDiscardChanges}
+        onCancel={handleCancelNavigation}
+        onSave={() => handleSave(true)}
+      />
     </div>
   );
 }
