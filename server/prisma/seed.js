@@ -236,11 +236,65 @@ async function main() {
     }
   }
 
+  // Create sample role profiles
+  console.log('  Seeding role profiles...');
+  const ROLE_PROFILES = [
+    {
+      rol: 'Product Manager',
+      skills: JSON.stringify({
+        "1": "C", "2": "C", "3": "C", "4": "C", "5": "I",  // Innovación & Diseño
+        "15": "C", "16": "I", "17": "I", "18": "C",       // Liderazgo del Cambio
+        "19": "C", "20": "I", "21": "I", "24": "C", "25": "C", // Negocio & Estrategia
+        "26": "I", "27": "I", "28": "I"                    // Entrega & Portafolio
+      })
+    },
+    {
+      rol: 'Tech Lead',
+      skills: JSON.stringify({
+        "7": "C", "8": "C", "9": "C", "10": "I", "11": "C", "13": "I", "14": "I", // Desarrollo
+        "15": "I", "16": "I", "17": "D",                    // Liderazgo
+        "32": "I", "33": "C", "34": "I", "35": "C", "36": "I", "37": "C", "38": "D" // Tecnologías
+      })
+    },
+    {
+      rol: 'Junior Developer',
+      skills: JSON.stringify({
+        "9": "C", "10": "C", "11": "I", "14": "C", // Desarrollo
+        "7": "D", "8": "D"                          // Cloud/Arch aspiracional
+      })
+    },
+    {
+      rol: 'UX Designer',
+      skills: JSON.stringify({
+        "1": "C", "2": "C", "4": "C", "5": "C", // Design skills
+        "3": "I", "6": "D",                      // Innovación
+        "18": "C", "16": "I"                     // Comunicación
+      })
+    },
+    {
+      rol: 'QA Engineer',
+      skills: JSON.stringify({
+        "14": "C",                                // Testing/QA
+        "9": "I", "10": "I", "11": "I",          // Desarrollo
+        "7": "D", "13": "I"                       // Cloud/Security
+      })
+    }
+  ];
+
+  for (const profile of ROLE_PROFILES) {
+    await prisma.roleProfile.upsert({
+      where: { rol: profile.rol },
+      update: { skills: profile.skills },
+      create: profile
+    });
+  }
+
   console.log('✅ Seed completed!');
   console.log(`   - ${CATEGORIES.length} categories`);
   console.log(`   - ${SKILLS.length} skills`);
   console.log(`   - ${COLLABORATORS.length} collaborators`);
   console.log(`   - ${totalAssessments} assessments`);
+  console.log(`   - ${ROLE_PROFILES.length} role profiles`);
 }
 
 main()

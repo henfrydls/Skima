@@ -62,6 +62,13 @@ export function createApp() {
       // Check if there are any demo collaborators
       const hasDemo = collaborators.some(c => c.esDemo);
 
+      // Fetch role profiles
+      const roleProfilesRaw = await prisma.roleProfile.findMany();
+      const roleProfiles = {};
+      roleProfilesRaw.forEach(p => {
+        roleProfiles[p.rol] = typeof p.skills === 'string' ? JSON.parse(p.skills) : p.skills;
+      });
+
       res.json({
         categories: categories.map(c => ({
           id: c.id,
@@ -74,7 +81,12 @@ export function createApp() {
           categoria: s.categoriaId,
           nombre: s.nombre
         })),
-        collaborators,
+        collaborators: collaborators.map(c => ({
+          ...c,
+          email: collaboratorsRaw.find(r => r.id === c.id)?.email || null,
+          lastEvaluated: collaboratorsRaw.find(r => r.id === c.id)?.lastEvaluated || null
+        })),
+        roleProfiles,
         allowResetFromDemo: hasDemo
       });
     } catch (error) {
@@ -366,6 +378,230 @@ export function createApp() {
     } catch (error) {
       console.error('[API] POST /api/import failed:', error);
       res.status(500).json({ message: 'Error importing data' });
+    }
+  });
+
+  // ============================================================
+  // ROLE PROFILES ENDPOINTS
+  // ============================================================
+
+  // GET /api/role-profiles - List all role profiles
+  app.get('/api/role-profiles', async (req, res) => {
+    try {
+      const profiles = await prisma.roleProfile.findMany();
+      // Transform to { "UX Designer": { "1": "C", ... }, ... }
+      const result = {};
+      profiles.forEach(p => {
+        result[p.rol] = typeof p.skills === 'string' ? JSON.parse(p.skills) : p.skills;
+      });
+      res.json(result);
+    } catch (error) {
+      console.error('[API] GET /api/role-profiles failed:', error);
+      res.status(500).json({ message: 'Error fetching role profiles' });
+    }
+  });
+
+  // GET /api/role-profiles/:rol - Get single role profile
+  app.get('/api/role-profiles/:rol', async (req, res) => {
+    try {
+      const { rol } = req.params;
+      const profile = await prisma.roleProfile.findUnique({ where: { rol } });
+      if (!profile) {
+        return res.status(404).json({ message: 'Perfil no encontrado' });
+      }
+      res.json(typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills);
+    } catch (error) {
+      console.error('[API] GET /api/role-profiles/:rol failed:', error);
+      res.status(500).json({ message: 'Error fetching role profile' });
+    }
+  });
+
+  // PUT /api/role-profiles/:rol - Create or update role profile
+  app.put('/api/role-profiles/:rol', authMiddleware, async (req, res) => {
+    try {
+      const { rol } = req.params;
+      const skills = req.body; // { "1": "C", "2": "I" }
+
+      // Validate criticidad values
+      const validCriticidades = ['C', 'I', 'D', 'N'];
+      for (const [, value] of Object.entries(skills)) {
+        if (!validCriticidades.includes(value)) {
+          return res.status(400).json({ message: `Criticidad inválida: ${value}. Debe ser C, I, D, o N` });
+        }
+      }
+
+      const profile = await prisma.roleProfile.upsert({
+        where: { rol },
+        update: { skills: JSON.stringify(skills) },
+        create: { rol, skills: JSON.stringify(skills) }
+      });
+
+      res.json({
+        id: profile.id,
+        rol: profile.rol,
+        skills: typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills
+      });
+    } catch (error) {
+      console.error('[API] PUT /api/role-profiles/:rol failed:', error);
+      res.status(500).json({ message: 'Error saving role profile' });
+    }
+  });
+
+  // POST /api/role-profiles - Create new role profile
+  app.post('/api/role-profiles', authMiddleware, async (req, res) => {
+    try {
+      const { rol, skills } = req.body;
+
+      if (!rol) {
+        return res.status(400).json({ message: 'Rol es requerido' });
+      }
+
+      // Check if profile already exists
+      const existing = await prisma.roleProfile.findUnique({ where: { rol } });
+      if (existing) {
+        return res.status(400).json({ message: 'Ya existe un perfil para este rol' });
+      }
+
+      const profile = await prisma.roleProfile.create({
+        data: { rol, skills: JSON.stringify(skills || {}) }
+      });
+
+      res.json({
+        id: profile.id,
+        rol: profile.rol,
+        skills: typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills
+      });
+    } catch (error) {
+      console.error('[API] POST /api/role-profiles failed:', error);
+      res.status(500).json({ message: 'Error creating role profile' });
+    }
+  });
+
+  // DELETE /api/role-profiles/:rol - Delete role profile
+  app.delete('/api/role-profiles/:rol', authMiddleware, async (req, res) => {
+    try {
+      const { rol } = req.params;
+      await prisma.roleProfile.delete({ where: { rol } });
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[API] DELETE /api/role-profiles/:rol failed:', error);
+      res.status(500).json({ message: 'Error deleting role profile' });
+    }
+  });
+
+  // ============================================================
+  // COLLABORATOR SKILLS (EVALUATIONS) ENDPOINTS
+  // ============================================================
+
+  // GET /api/collaborators/:id/skills - Get collaborator's current evaluations
+  app.get('/api/collaborators/:id/skills', async (req, res) => {
+    try {
+      const collaboratorId = parseInt(req.params.id);
+      
+      const assessments = await prisma.assessment.findMany({
+        where: { collaboratorId, snapshotId: null }
+      });
+
+      // Transform to { "1": { nivel: 3, frecuencia: "D" }, ... }
+      const result = {};
+      assessments.forEach(a => {
+        result[a.skillId] = { nivel: a.nivel, frecuencia: a.frecuencia };
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error('[API] GET /api/collaborators/:id/skills failed:', error);
+      res.status(500).json({ message: 'Error fetching collaborator skills' });
+    }
+  });
+
+  // PUT /api/collaborators/:id/skills - Save collaborator evaluations
+  app.put('/api/collaborators/:id/skills', authMiddleware, async (req, res) => {
+    try {
+      const collaboratorId = parseInt(req.params.id);
+      const skills = req.body; // { "1": { nivel: 3, frecuencia: "D" }, ... }
+
+      // Get collaborator and their role profile
+      const collab = await prisma.collaborator.findUnique({ where: { id: collaboratorId } });
+      if (!collab) {
+        return res.status(404).json({ message: 'Colaborador no encontrado' });
+      }
+
+      const roleProfile = await prisma.roleProfile.findUnique({ where: { rol: collab.rol } });
+      const profileSkills = roleProfile 
+        ? (typeof roleProfile.skills === 'string' ? JSON.parse(roleProfile.skills) : roleProfile.skills)
+        : {};
+
+      // Validate and upsert each assessment
+      const validFrecuencias = ['D', 'S', 'M', 'T', 'N'];
+      for (const [skillId, data] of Object.entries(skills)) {
+        // Validate nivel (0-5)
+        if (data.nivel < 0 || data.nivel > 5) {
+          return res.status(400).json({ message: `Nivel inválido para skill ${skillId}: ${data.nivel}. Debe ser 0-5` });
+        }
+        // Validate frecuencia
+        if (!validFrecuencias.includes(data.frecuencia)) {
+          return res.status(400).json({ message: `Frecuencia inválida: ${data.frecuencia}. Debe ser D, S, M, T, o N` });
+        }
+
+        const criticidad = profileSkills[skillId] || 'N';
+
+        await prisma.assessment.upsert({
+          where: {
+            collaboratorId_skillId_snapshotId: {
+              collaboratorId,
+              skillId: parseInt(skillId),
+              snapshotId: null
+            }
+          },
+          update: {
+            nivel: data.nivel,
+            frecuencia: data.frecuencia,
+            criticidad
+          },
+          create: {
+            collaboratorId,
+            skillId: parseInt(skillId),
+            nivel: data.nivel,
+            frecuencia: data.frecuencia,
+            criticidad,
+            snapshotId: null
+          }
+        });
+      }
+
+      // Update lastEvaluated timestamp
+      await prisma.collaborator.update({
+        where: { id: collaboratorId },
+        data: { lastEvaluated: new Date() }
+      });
+
+      res.json({ success: true, message: 'Evaluaciones guardadas' });
+    } catch (error) {
+      console.error('[API] PUT /api/collaborators/:id/skills failed:', error);
+      res.status(500).json({ message: 'Error saving evaluations' });
+    }
+  });
+
+  // PUT /api/collaborators/:id - Update collaborator
+  app.put('/api/collaborators/:id', authMiddleware, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { nombre, rol, email } = req.body;
+
+      const collaborator = await prisma.collaborator.update({
+        where: { id },
+        data: {
+          ...(nombre && { nombre }),
+          ...(rol && { rol }),
+          ...(email !== undefined && { email })
+        }
+      });
+
+      res.json(collaborator);
+    } catch (error) {
+      console.error('[API] PUT /api/collaborators/:id failed:', error);
+      res.status(500).json({ message: 'Error updating collaborator' });
     }
   });
 

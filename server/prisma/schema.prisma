@@ -23,11 +23,13 @@ model Skill {
 }
 
 model Collaborator {
-  id          Int          @id @default(autoincrement())
-  nombre      String
-  rol         String
-  esDemo      Boolean      @default(false)
-  assessments Assessment[]
+  id            Int          @id @default(autoincrement())
+  nombre        String
+  rol           String
+  email         String?      // Optional email for collaborator
+  esDemo        Boolean      @default(false)
+  lastEvaluated DateTime?    // Timestamp of last evaluation
+  assessments   Assessment[]
 }
 
 model Assessment {
@@ -52,3 +54,12 @@ model Snapshot {
   createdAt   DateTime     @default(now())
   assessments Assessment[]
 }
+
+model RoleProfile {
+  id        Int      @id @default(autoincrement())
+  rol       String   @unique  // "UX Designer", "Developer", etc.
+  skills    String   // JSON: { "1": "C", "2": "I", "3": "D" } - stored as string for SQLite
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
