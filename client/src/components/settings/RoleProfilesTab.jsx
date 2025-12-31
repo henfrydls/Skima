@@ -110,21 +110,24 @@ function SkillRequirementRow({ skill, value, onChange }) {
         <span className="text-sm text-gray-800 font-medium">{skill.nombre}</span>
       </div>
       
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
         {CRITICIDAD_OPTIONS.map(opt => (
           <button
             key={opt.value}
             onClick={() => onChange(opt.value)}
             title={opt.desc}
             className={`
-              w-10 h-8 text-xs font-semibold rounded transition-all
+              flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-lg transition-all min-w-[60px]
               ${value === opt.value 
                 ? opt.color + ' ring-2 ring-offset-1 ring-primary/30 shadow-sm' 
                 : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }
             `}
           >
-            {opt.short}
+            <span className="text-sm font-bold">{opt.short}</span>
+            <span className={`text-[9px] ${value === opt.value ? 'opacity-90' : 'text-gray-400'}`}>
+              {opt.label}
+            </span>
           </button>
         ))}
       </div>
@@ -171,11 +174,11 @@ function CategorySection({ category, skills, requirements, onRequirementChange }
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             <span>Skill</span>
-            <div className="flex items-center gap-1">
-              <span className="w-10 text-center">C</span>
-              <span className="w-10 text-center">I</span>
-              <span className="w-10 text-center">D</span>
-              <span className="w-10 text-center">N/A</span>
+            <div className="flex items-center gap-2">
+              <span className="min-w-[60px] text-center">Crítica</span>
+              <span className="min-w-[60px] text-center">Importante</span>
+              <span className="min-w-[60px] text-center">Deseable</span>
+              <span className="min-w-[60px] text-center">N/A</span>
             </div>
           </div>
           {categorySkills.map(skill => (
