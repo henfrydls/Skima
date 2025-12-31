@@ -278,14 +278,17 @@ export default function RoleProfilesTab() {
     fetchData();
   }, []);
 
-  // Load requirements when role changes
+  // Load requirements when role changes - merge with defaults
   useEffect(() => {
+    // First create defaults for all skills as 'N' (N/A)
+    const defaults = {};
+    skills.forEach(s => { defaults[s.id] = 'N'; });
+    
     if (selectedRole && allProfiles[selectedRole]) {
-      setRequirements(allProfiles[selectedRole]);
+      // Merge existing profile over defaults - this ensures all skills have a value
+      setRequirements({ ...defaults, ...allProfiles[selectedRole] });
     } else {
-      // Default all skills to 'N' (N/A) for new roles
-      const defaults = {};
-      skills.forEach(s => { defaults[s.id] = 'N'; });
+      // New role - use all defaults
       setRequirements(defaults);
     }
   }, [selectedRole, allProfiles, skills]);
@@ -313,19 +316,32 @@ export default function RoleProfilesTab() {
     
     setIsSaving(true);
     try {
-      // Update local state first
+      // Call API to persist
+      const response = await fetch(`${API_BASE}/role-profiles/${encodeURIComponent(selectedRole)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify(requirements)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error saving profile');
+      }
+      
+      // Update local state
       setAllProfiles(prev => ({
         ...prev,
         [selectedRole]: requirements
       }));
       
-      // TODO: API call to persist
-      await new Promise(resolve => setTimeout(resolve, 600));
-      
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3000);
     } catch (err) {
       console.error('Error saving profile:', err);
+      setError('Error guardando perfil');
+      setTimeout(() => setError(null), 3000);
     } finally {
       setIsSaving(false);
     }
