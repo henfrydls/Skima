@@ -10,7 +10,10 @@ import {
   HelpCircle,
   Info,
   Calendar,
-  Clock
+  Clock,
+  History,
+  FileText,
+  ExternalLink
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -378,9 +381,11 @@ export default function EvaluationsTab() {
   const [roleProfiles, setRoleProfiles] = useState({});
   const [selectedCollaborator, setSelectedCollaborator] = useState(null);
   const [evaluations, setEvaluations] = useState({});
+  const [evaluationHistory, setEvaluationHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [lastSavedUuid, setLastSavedUuid] = useState(null);
   const [error, setError] = useState(null);
 
   // Fetch data
@@ -406,7 +411,7 @@ export default function EvaluationsTab() {
     fetchData();
   }, []);
 
-  // Load evaluations when collaborator is selected
+  // Load evaluations and history when collaborator is selected
   useEffect(() => {
     if (selectedCollaborator) {
       const collabData = collaborators.find(c => c.id === selectedCollaborator);
@@ -415,6 +420,22 @@ export default function EvaluationsTab() {
       } else {
         setEvaluations({});
       }
+      
+      // Fetch evaluation history
+      const fetchHistory = async () => {
+        try {
+          const response = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
+          if (response.ok) {
+            const history = await response.json();
+            setEvaluationHistory(history);
+          }
+        } catch (err) {
+          console.error('Error fetching evaluation history:', err);
+        }
+      };
+      fetchHistory();
+    } else {
+      setEvaluationHistory([]);
     }
   }, [selectedCollaborator, collaborators]);
 
@@ -440,14 +461,59 @@ export default function EvaluationsTab() {
     setSaveSuccess(false);
   };
 
-  // Save evaluations (UI only - mock)
+  // Save evaluations to API
   const handleSave = async () => {
+    if (!selectedCollaborator) return;
+    
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 800));
-    // TODO: API call here
-    setIsSaving(false);
-    setSaveSuccess(true);
-    setTimeout(() => setSaveSuccess(false), 3000);
+    setSaveSuccess(false);
+    setLastSavedUuid(null);
+    
+    try {
+      const response = await fetch(`${API_BASE}/evaluations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders()
+        },
+        body: JSON.stringify({
+          collaboratorId: selectedCollaborator,
+          evaluatedBy: 'Admin',
+          notes: null,
+          skills: evaluations
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('Error saving evaluation');
+      }
+      
+      const result = await response.json();
+      setLastSavedUuid(result.uuid);
+      setSaveSuccess(true);
+      
+      // Refresh history
+      const historyResponse = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
+      if (historyResponse.ok) {
+        const history = await historyResponse.json();
+        setEvaluationHistory(history);
+      }
+      
+      // Update lastEvaluated in local state
+      setCollaborators(prev => prev.map(c => 
+        c.id === selectedCollaborator 
+          ? { ...c, lastEvaluated: new Date().toISOString() }
+          : c
+      ));
+      
+      setTimeout(() => setSaveSuccess(false), 5000);
+    } catch (err) {
+      console.error('Error saving evaluation:', err);
+      setError('Error guardando evaluación');
+      setTimeout(() => setError(null), 3000);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   // Calculate summary stats
@@ -609,6 +675,50 @@ export default function EvaluationsTab() {
               />
             ))}
           </div>
+
+          {/* Evaluation History */}
+          {evaluationHistory.length > 0 && (
+            <div className="bg-surface rounded-lg border border-gray-100 p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <History size={18} className="text-gray-400" />
+                <h4 className="font-medium text-gray-800">Historial de Evaluaciones</h4>
+                <span className="text-xs text-gray-400">({evaluationHistory.length})</span>
+              </div>
+              <div className="space-y-2">
+                {evaluationHistory.slice(0, 5).map(session => (
+                  <div 
+                    key={session.uuid} 
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3">
+                      <FileText size={16} className="text-gray-400" />
+                      <div>
+                        <p className="text-sm font-medium text-gray-700">
+                          {formatDate(session.evaluatedAt)}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {session.evaluatedBy || 'Admin'} • {session.assessmentCount} skills
+                        </p>
+                      </div>
+                    </div>
+                    <a 
+                      href={`/evaluations/${session.uuid}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary hover:underline flex items-center gap-1"
+                    >
+                      Ver <ExternalLink size={12} />
+                    </a>
+                  </div>
+                ))}
+                {evaluationHistory.length > 5 && (
+                  <p className="text-xs text-gray-400 text-center pt-2">
+                    +{evaluationHistory.length - 5} evaluaciones anteriores
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Save Button */}
           <div className="flex justify-end sticky bottom-4">

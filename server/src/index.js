@@ -605,6 +605,220 @@ export function createApp() {
     }
   });
 
+  // ============================================================
+  // EVALUATION SESSIONS ENDPOINTS
+  // ============================================================
+
+  // GET /api/collaborators/:id/evaluations - List evaluation sessions for a collaborator
+  app.get('/api/collaborators/:id/evaluations', async (req, res) => {
+    try {
+      const collaboratorId = parseInt(req.params.id);
+
+      const sessions = await prisma.evaluationSession.findMany({
+        where: { collaboratorId },
+        orderBy: { evaluatedAt: 'desc' },
+        include: {
+          _count: {
+            select: { assessments: true }
+          }
+        }
+      });
+
+      res.json(sessions.map(s => ({
+        id: s.id,
+        uuid: s.uuid,
+        evaluatedAt: s.evaluatedAt,
+        evaluatedBy: s.evaluatedBy,
+        notes: s.notes,
+        assessmentCount: s._count.assessments
+      })));
+    } catch (error) {
+      console.error('[API] GET /api/collaborators/:id/evaluations failed:', error);
+      res.status(500).json({ message: 'Error fetching evaluation sessions' });
+    }
+  });
+
+  // GET /api/evaluations/:uuid - Get single evaluation session by UUID
+  app.get('/api/evaluations/:uuid', async (req, res) => {
+    try {
+      const { uuid } = req.params;
+
+      const session = await prisma.evaluationSession.findUnique({
+        where: { uuid },
+        include: {
+          collaborator: true,
+          assessments: {
+            include: {
+              skill: {
+                include: {
+                  categoria: true
+                }
+              }
+            }
+          }
+        }
+      });
+
+      if (!session) {
+        return res.status(404).json({ message: 'Evaluación no encontrada' });
+      }
+
+      // Transform assessments to a map by skill ID
+      const skillsMap = {};
+      session.assessments.forEach(a => {
+        skillsMap[a.skillId] = {
+          nivel: a.nivel,
+          criticidad: a.criticidad,
+          frecuencia: a.frecuencia,
+          skillName: a.skill.nombre,
+          categoryName: a.skill.categoria.nombre,
+          categoryId: a.skill.categoriaId
+        };
+      });
+
+      res.json({
+        id: session.id,
+        uuid: session.uuid,
+        collaborator: {
+          id: session.collaborator.id,
+          nombre: session.collaborator.nombre,
+          rol: session.collaborator.rol
+        },
+        evaluatedAt: session.evaluatedAt,
+        evaluatedBy: session.evaluatedBy,
+        notes: session.notes,
+        skills: skillsMap,
+        assessmentCount: session.assessments.length
+      });
+    } catch (error) {
+      console.error('[API] GET /api/evaluations/:uuid failed:', error);
+      res.status(500).json({ message: 'Error fetching evaluation' });
+    }
+  });
+
+  // POST /api/evaluations - Create new evaluation session
+  app.post('/api/evaluations', authMiddleware, async (req, res) => {
+    try {
+      const { collaboratorId, evaluatedBy, notes, skills } = req.body;
+
+      if (!collaboratorId) {
+        return res.status(400).json({ message: 'collaboratorId es requerido' });
+      }
+
+      // Check collaborator exists
+      const collab = await prisma.collaborator.findUnique({ where: { id: collaboratorId } });
+      if (!collab) {
+        return res.status(404).json({ message: 'Colaborador no encontrado' });
+      }
+
+      // Get role profile for criticidad
+      const roleProfile = await prisma.roleProfile.findUnique({ where: { rol: collab.rol } });
+      const profileSkills = roleProfile 
+        ? (typeof roleProfile.skills === 'string' ? JSON.parse(roleProfile.skills) : roleProfile.skills)
+        : {};
+
+      // Create evaluation session
+      const session = await prisma.evaluationSession.create({
+        data: {
+          collaboratorId,
+          evaluatedBy: evaluatedBy || null,
+          notes: notes || null
+        }
+      });
+
+      // Create assessments if skills provided
+      if (skills && Object.keys(skills).length > 0) {
+        const validFrecuencias = ['D', 'S', 'M', 'T', 'N'];
+        
+        for (const [skillId, data] of Object.entries(skills)) {
+          // Validate
+          if (data.nivel < 0 || data.nivel > 5) {
+            continue; // Skip invalid
+          }
+          if (!validFrecuencias.includes(data.frecuencia)) {
+            continue;
+          }
+
+          const criticidad = profileSkills[skillId] || 'N';
+
+          await prisma.assessment.create({
+            data: {
+              collaboratorId,
+              skillId: parseInt(skillId),
+              nivel: data.nivel,
+              frecuencia: data.frecuencia,
+              criticidad,
+              evaluationSessionId: session.id
+            }
+          });
+
+          // Also update/create the current assessment (snapshotId: null)
+          await prisma.assessment.upsert({
+            where: {
+              collaboratorId_skillId_snapshotId: {
+                collaboratorId,
+                skillId: parseInt(skillId),
+                snapshotId: null
+              }
+            },
+            update: {
+              nivel: data.nivel,
+              frecuencia: data.frecuencia,
+              criticidad
+            },
+            create: {
+              collaboratorId,
+              skillId: parseInt(skillId),
+              nivel: data.nivel,
+              frecuencia: data.frecuencia,
+              criticidad,
+              snapshotId: null
+            }
+          });
+        }
+      }
+
+      // Update lastEvaluated
+      await prisma.collaborator.update({
+        where: { id: collaboratorId },
+        data: { lastEvaluated: new Date() }
+      });
+
+      res.json({
+        success: true,
+        uuid: session.uuid,
+        message: 'Evaluación creada correctamente'
+      });
+    } catch (error) {
+      console.error('[API] POST /api/evaluations failed:', error);
+      res.status(500).json({ message: 'Error creating evaluation' });
+    }
+  });
+
+  // DELETE /api/evaluations/:uuid - Delete evaluation session
+  app.delete('/api/evaluations/:uuid', authMiddleware, async (req, res) => {
+    try {
+      const { uuid } = req.params;
+
+      // Delete assessments linked to this session
+      const session = await prisma.evaluationSession.findUnique({ where: { uuid } });
+      if (!session) {
+        return res.status(404).json({ message: 'Evaluación no encontrada' });
+      }
+
+      await prisma.assessment.deleteMany({
+        where: { evaluationSessionId: session.id }
+      });
+
+      await prisma.evaluationSession.delete({ where: { uuid } });
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[API] DELETE /api/evaluations/:uuid failed:', error);
+      res.status(500).json({ message: 'Error deleting evaluation' });
+    }
+  });
+
   return app;
 }
 
