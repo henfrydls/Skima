@@ -35,7 +35,7 @@ function ComingSoonSection({ icon: Icon, title, description, phase }) {
   );
 }
 
-export default function HRMetrics({ distribution, collaborators }) {
+export default function HRMetrics({ distribution, collaborators: _collaborators }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Talent Distribution - FUNCTIONAL */}

@@ -10,7 +10,6 @@ export function EmptyState({
   icon: Icon = Users,
   title = 'No hay datos disponibles',
   description = 'No se encontraron elementos para mostrar.',
-  action = null,
   actionLabel = 'Agregar',
   onAction = null,
 }) {

@@ -42,7 +42,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       onSuccess(data.token);
       setPassword('');
       onClose();
-    } catch (err) {
+    } catch (_err) {
       setError('Error de conexión con el servidor');
     } finally {
       setIsLoading(false);

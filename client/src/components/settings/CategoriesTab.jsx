@@ -345,7 +345,7 @@ export default function CategoriesTab() {
         const newCategory = await res.json();
         setCategories([...categories, newCategory]);
         setShowModal(false);
-      } catch (err) {
+      } catch (_err) {
         setError('Error creando categoría');
       } finally {
         setIsSaving(false);
@@ -377,7 +377,7 @@ export default function CategoriesTab() {
         setCategories(categories.map(c => c.id === updated.id ? updated : c));
         setShowModal(false);
         setEditingCategory(null);
-      } catch (err) {
+      } catch (_err) {
         setError('Error actualizando categoría');
       } finally {
         setIsSaving(false);
@@ -410,7 +410,7 @@ export default function CategoriesTab() {
         if (!res.ok) throw new Error('Error deleting category');
         
         setCategories(categories.filter(c => c.id !== category.id));
-      } catch (err) {
+      } catch (_err) {
         setError('Error eliminando categoría');
       }
     });

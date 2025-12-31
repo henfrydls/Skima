@@ -14,7 +14,7 @@ import {
  * - Investment Priorities (ROI language)
  */
 
-export default function DirectorMetrics({ gaps, distribution, categories }) {
+export default function DirectorMetrics({ gaps: _gaps, distribution: _distribution, categories: _categories }) {
   // Mock health score calculation
   const healthScore = 2.9;
   const healthTarget = 3.5;
