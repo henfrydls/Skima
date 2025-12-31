@@ -264,6 +264,30 @@ export function createApp() {
     }
   });
 
+  // PUT /api/categories/reorder - Reorder categories
+  app.put('/api/categories/reorder', authMiddleware, async (req, res) => {
+    try {
+      const { order } = req.body; // Array of category IDs in new order: [3, 1, 2, 4, ...]
+      
+      if (!Array.isArray(order)) {
+        return res.status(400).json({ message: 'order must be an array of category IDs' });
+      }
+
+      // Update each category's orden field
+      for (let i = 0; i < order.length; i++) {
+        await prisma.category.update({
+          where: { id: order[i] },
+          data: { orden: i }
+        });
+      }
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[API] PUT /api/categories/reorder failed:', error);
+      res.status(500).json({ message: 'Error reordering categories' });
+    }
+  });
+
   // POST /api/skills - Create skill
   app.post('/api/skills', authMiddleware, async (req, res) => {
     try {

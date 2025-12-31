@@ -152,12 +152,18 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
 }
 
 // Category Row Component
-function CategoryRow({ category, skillCount, onEdit, onDelete }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDragOver, onDrop, isDragging }) {
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   return (
-    <div className="flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all group">
+    <div 
+      className={`flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-all group ${isDragging ? 'opacity-50 border-primary border-2' : ''}`}
+      draggable
+      onDragStart={(e) => onDragStart(e, category.id)}
+      onDragOver={(e) => onDragOver(e, category.id)}
+      onDrop={(e) => onDrop(e, category.id)}
+    >
       {/* Drag Handle */}
       <div className="text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
         <GripVertical size={18} />
@@ -411,6 +417,53 @@ export default function CategoriesTab() {
     setShowLoginModal(false);
   };
 
+  // ===== DRAG AND DROP REORDER =====
+  const [draggedId, setDraggedId] = useState(null);
+
+  const handleDragStart = (e, id) => {
+    setDraggedId(id);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, overId) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, dropId) => {
+    e.preventDefault();
+    if (draggedId === dropId || draggedId === null) {
+      setDraggedId(null);
+      return;
+    }
+
+    // Reorder locally first for instant feedback
+    const oldIndex = categories.findIndex(c => c.id === draggedId);
+    const newIndex = categories.findIndex(c => c.id === dropId);
+    
+    const newCategories = [...categories];
+    const [moved] = newCategories.splice(oldIndex, 1);
+    newCategories.splice(newIndex, 0, moved);
+    setCategories(newCategories);
+    setDraggedId(null);
+
+    // Persist to API
+    try {
+      const order = newCategories.map(c => c.id);
+      await fetch(`${API_BASE}/categories/reorder`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders()
+        },
+        body: JSON.stringify({ order })
+      });
+    } catch (err) {
+      console.error('Error saving order:', err);
+      // Could revert here if needed
+    }
+  };
+
   // Loading state
   if (isLoading) {
     return (
@@ -481,6 +534,10 @@ export default function CategoriesTab() {
             skillCount={getSkillCount(category.id)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onDragStart={handleDragStart}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+            isDragging={draggedId === category.id}
           />
         ))}
       </div>

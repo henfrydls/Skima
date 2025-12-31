@@ -11,6 +11,7 @@ model Category {
   id        Int      @id @default(autoincrement())
   nombre    String
   abrev     String
+  orden     Int      @default(0)  // Order for display sorting
   skills    Skill[]
 }
 
