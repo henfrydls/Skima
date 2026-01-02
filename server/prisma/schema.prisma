@@ -12,6 +12,7 @@ model Category {
   nombre    String
   abrev     String
   orden     Int      @default(0)  // Order for display sorting
+  isActive  Boolean  @default(true)  // Soft delete flag
   skills    Skill[]
 }
 
@@ -20,6 +21,7 @@ model Skill {
   nombre      String
   categoria   Category     @relation(fields: [categoriaId], references: [id])
   categoriaId Int
+  isActive    Boolean      @default(true)  // Soft delete flag
   assessments Assessment[]
 }
 

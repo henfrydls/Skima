@@ -186,11 +186,18 @@ export function createApp() {
     }
   });
 
-  // GET /api/categories - List all categories
+  // GET /api/categories - List all active categories
   app.get('/api/categories', async (req, res) => {
     try {
       const categories = await prisma.category.findMany({
-        include: { _count: { select: { skills: true } } },
+        where: { isActive: true },
+        include: { 
+          _count: { 
+            select: { 
+              skills: { where: { isActive: true } }  // Count only active skills
+            } 
+          } 
+        },
         orderBy: { orden: 'asc' }
       });
       res.json(categories.map(c => ({
@@ -203,10 +210,12 @@ export function createApp() {
     }
   });
 
-  // GET /api/skills - List all skills
+  // GET /api/skills - List all active skills
   app.get('/api/skills', async (req, res) => {
     try {
-      const skills = await prisma.skill.findMany();
+      const skills = await prisma.skill.findMany({
+        where: { isActive: true }
+      });
       res.json(skills);
     } catch (error) {
       console.error('[API] GET /api/skills failed:', error);
@@ -296,17 +305,28 @@ export function createApp() {
     }
   });
 
-  // DELETE /api/categories/:id - Delete category (cascades to skills)
+  // DELETE /api/categories/:id - Soft delete category (and its skills)
   app.delete('/api/categories/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
-      // Delete related skills first
-      await prisma.skill.deleteMany({ where: { categoriaId: parseInt(id) } });
-      await prisma.category.delete({ where: { id: parseInt(id) } });
-      res.json({ success: true });
+      const categoryId = parseInt(id);
+      
+      // Soft delete: set isActive=false for category and related skills
+      await prisma.$transaction([
+        prisma.skill.updateMany({ 
+          where: { categoriaId: categoryId },
+          data: { isActive: false }
+        }),
+        prisma.category.update({ 
+          where: { id: categoryId },
+          data: { isActive: false }
+        })
+      ]);
+      
+      res.json({ success: true, message: 'Categoría archivada exitosamente' });
     } catch (error) {
       console.error('[API] DELETE /api/categories failed:', error);
-      res.status(500).json({ message: 'Error deleting category' });
+      res.status(500).json({ message: 'Error archivando categoría' });
     }
   });
 
