@@ -213,13 +213,9 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
 }
 
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate, totalSkillsCount = 0 }) {
+function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
-  
-  // Check if role has a profile configured
-  const hasRoleProfile = collaborator.rol && roleProfiles[collaborator.rol] && 
-    Object.keys(roleProfiles[collaborator.rol]).length > 0;
 
   const initials = collaborator.nombre
     .split(' ')
