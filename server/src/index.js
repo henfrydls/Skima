@@ -38,6 +38,13 @@ export function createApp() {
       });
 
 
+      // Fetch role profiles FIRST to use in average calculation
+      const roleProfilesRaw = await prisma.roleProfile.findMany();
+      const roleProfiles = {};
+      roleProfilesRaw.forEach(p => {
+        roleProfiles[p.rol] = typeof p.skills === 'string' ? JSON.parse(p.skills) : p.skills;
+      });
+
       const collaboratorsRaw = await prisma.collaborator.findMany({
         include: {
           assessments: {
@@ -52,14 +59,21 @@ export function createApp() {
         let totalNivel = 0;
         let evalCount = 0;
         
+        // Get role profile for this collaborator
+        const profile = roleProfiles[col.rol] || {};
+        
         col.assessments.forEach(a => {
           skillsMap[a.skillId] = {
             nivel: a.nivel,
-            criticidad: a.criticidad,
+            criticidad: profile[String(a.skillId)] || 'N', // Use CURRENT role criticality, not historical
             frecuencia: a.frecuencia
           };
+          
           // Calculate average based on nivel (1-5 scale)
-          if (a.nivel && a.nivel > 0) {
+          // STRICT RULE: Only count skills required for the role (C, I, D). Ignore N/A even if evaluated.
+          const skillCriticidad = profile[String(a.skillId)] || 'N'; // Default to N/A if not defined (only explicit skills count)
+          
+          if (skillCriticidad !== 'N' && a.nivel && a.nivel > 0) {
             totalNivel += a.nivel;
             evalCount++;
           }
@@ -80,13 +94,6 @@ export function createApp() {
 
       // Check if there are any demo collaborators
       const hasDemo = collaborators.some(c => c.esDemo);
-
-      // Fetch role profiles
-      const roleProfilesRaw = await prisma.roleProfile.findMany();
-      const roleProfiles = {};
-      roleProfilesRaw.forEach(p => {
-        roleProfiles[p.rol] = typeof p.skills === 'string' ? JSON.parse(p.skills) : p.skills;
-      });
 
       res.json({
         categories: categories.map(c => ({

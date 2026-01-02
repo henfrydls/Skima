@@ -18,13 +18,19 @@ const calculateAverage = (skills) => {
 };
 
 // Helper: calculate category averages for a collaborator
-const calculateCategoryAverages = (collabSkills, skills, categories) => {
+// Helper: calculate category averages for a collaborator
+const calculateCategoryAverages = (collabSkills, skills, categories, roleProfile = {}) => {
   const result = {};
   categories.forEach(cat => {
     const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
-    const levels = catSkillIds
-      .filter(id => collabSkills[id])
+    
+    // Filter out N/A skills based on role profile
+    const relevantSkillIds = catSkillIds.filter(id => (roleProfile[id] || 'N') !== 'N');
+
+    const levels = relevantSkillIds
+      .filter(id => collabSkills[id] && collabSkills[id].nivel > 0)
       .map(id => collabSkills[id].nivel);
+      
     result[cat.abrev] = levels.length > 0 
       ? levels.reduce((sum, l) => sum + l, 0) / levels.length 
       : 0;
@@ -242,7 +248,7 @@ function CategoryGridView({ categories = [] }) {
 export default function TeamMatrixPage() {
   const [currentView, setCurrentView] = useState('matriz');
   const [selectedColaborador, setSelectedColaborador] = useState(null);
-  const [data, setData] = useState({ categories: [], skills: [], collaborators: [] });
+  const [data, setData] = useState({ categories: [], skills: [], collaborators: [], roleProfiles: {} });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -265,18 +271,19 @@ export default function TeamMatrixPage() {
     fetchData();
   }, []);
 
-  const { categories, skills, collaborators } = data;
+  const { categories, skills, collaborators, roleProfiles } = data;
 
   // Transform collaborators for list view
   const collaboratorsWithAverages = useMemo(() => {
     return collaborators.map(col => ({
       ...col,
-      promedio: calculateAverage(col.skills),
-      categorias: calculateCategoryAverages(col.skills, skills, categories),
+      // Use pre-calculated promedio from backend (which already respects Role Profile)
+      promedio: col.promedio, 
+      categorias: calculateCategoryAverages(col.skills, skills, categories, roleProfiles[col.rol]),
       brechas: [], // TODO: Calculate from skills
       fortalezas: [] // TODO: Calculate from skills
     }));
-  }, [collaborators, skills, categories]);
+  }, [collaborators, skills, categories, roleProfiles]);
 
   // Calculate category averages for grid view
   const categoriesWithAverages = useMemo(() => {
@@ -285,8 +292,12 @@ export default function TeamMatrixPage() {
       let total = 0;
       let count = 0;
       collaborators.forEach(col => {
+        const profile = roleProfiles?.[col.rol] || {};
         catSkillIds.forEach(skillId => {
-          if (col.skills[skillId]) {
+          // Strict filtering: Only count if relevant for the role
+          const isRelevant = (profile[skillId] || 'N') !== 'N';
+          
+          if (isRelevant && col.skills[skillId] && col.skills[skillId].nivel > 0) {
             total += col.skills[skillId].nivel;
             count++;
           }

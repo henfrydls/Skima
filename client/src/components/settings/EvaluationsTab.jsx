@@ -340,15 +340,30 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
   const [isExpanded, setIsExpanded] = useState(true);
   const categorySkills = skills.filter(s => s.categoria === category.id);
   
-  // Separate N/A skills to show them at the end (collapsed by default)
-  const activeSkills = categorySkills.filter(s => (roleProfile?.[s.id] || 'I') !== 'N');
-  const naSkills = categorySkills.filter(s => (roleProfile?.[s.id]) === 'N');
+  // FIX: Include N/A skills if they have been evaluated (nivel > 0)
+  // This ensures historical evaluations are visible even if the current role doesn't require the skill
+  const activeSkills = categorySkills.filter(s => {
+    const isProfileRelevant = (roleProfile?.[s.id] || 'N') !== 'N';
+    const hasEvaluation = evaluations?.[s.id]?.nivel > 0;
+    return isProfileRelevant || hasEvaluation;
+  });
+  
+  // Only show in "N/A" section if genuinely N/A and NOT evaluated
+  const naSkills = categorySkills.filter(s => {
+    const isProfileRelevant = (roleProfile?.[s.id] || 'N') !== 'N';
+    const hasEvaluation = evaluations?.[s.id]?.nivel > 0;
+    return !isProfileRelevant && !hasEvaluation;
+  });
 
-  // Calculate category average (only evaluated skills with nivel > 0)
+  // Calculate category average
+  // STRICT RULE: Only count skills required for the role (C, I, D). Ignore N/A even if evaluated.
   const categoryAverage = useMemo(() => {
+    // Only consider skills relevant to the profile for the average
+    const relevantSkills = categorySkills.filter(s => (roleProfile?.[s.id] || 'N') !== 'N');
+    
     let total = 0;
     let count = 0;
-    activeSkills.forEach(skill => {
+    relevantSkills.forEach(skill => {
       const eval_ = evaluations[skill.id];
       if (eval_?.nivel && eval_.nivel > 0) {
         total += eval_.nivel;
@@ -356,7 +371,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
       }
     });
     return count > 0 ? (total / count).toFixed(1) : null;
-  }, [activeSkills, evaluations]);
+  }, [categorySkills, evaluations, roleProfile]);
 
   if (categorySkills.length === 0) return null;
 
@@ -402,7 +417,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
               key={skill.id}
               skill={skill}
               evaluation={evaluations[skill.id]}
-              criticidad={roleProfile?.[skill.id] || skill.criticidad || 'I'}
+              criticidad={roleProfile?.[skill.id] || skill.criticidad || 'N'}
               onChange={(val) => onEvaluationChange(skill.id, val)}
               readOnly={!!onEvaluationChange === false}
             />
@@ -524,7 +539,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
         criticidad: data.criticidad 
       };
       // Use stored criticidad for role profile
-      storedRoleProfile[skillId] = data.criticidad || 'I';
+      storedRoleProfile[skillId] = data.criticidad || 'N';
     });
   }
 
@@ -543,11 +558,17 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
             {/* Collaborator snapshot info */}
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-medium text-gray-800">
-                {session.collaboratorNombre || session.collaborator.nombre}
+                {session.collaboratorNombre || session.collaborator.nombre || 'Colaborador'}
               </h3>
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
-                {session.collaboratorRol || session.collaborator.rol}
-              </span>
+              {session.collaboratorRol ? (
+                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                  {session.collaboratorRol}
+                </span>
+              ) : (
+                <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full italic" title="Evaluación antigua sin registro de rol histórico">
+                  Rol no registrado
+                </span>
+              )}
               {session.collaboratorRol && session.collaboratorRol !== session.collaborator.rol && (
                 <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title={`Rol actual: ${session.collaborator.rol}`}>
                   Rol cambió
@@ -747,7 +768,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
         ...(prev[skillId] || {}),
         nivel: value.nivel,
         frecuencia: value.frecuencia,
-        criticidad: skills.find(s => s.id === skillId)?.criticidad || 'I'
+        criticidad: skills.find(s => s.id === skillId)?.criticidad || 'N'
       }
     }));
     setSaveSuccess(false);
@@ -793,9 +814,10 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       }
       
       // Update lastEvaluated in local state
+      // Update lastEvaluated AND skills in local state to prevent revert on re-render
       setCollaborators(prev => prev.map(c => 
         c.id === selectedCollaborator 
-          ? { ...c, lastEvaluated: new Date().toISOString() }
+          ? { ...c, lastEvaluated: new Date().toISOString(), skills: evaluations }
           : c
       ));
       
@@ -1104,9 +1126,14 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                   {evaluationHistory.map(session => {
                     // Get current collaborator for comparison
                     const currentCollab = collaborators.find(c => c.id === selectedCollaborator);
-                    const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre;
-                    const snapshotRol = session.collaboratorRol || currentCollab?.rol;
-                    const rolChanged = session.collaboratorRol && currentCollab?.rol !== session.collaboratorRol;
+                    const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre || 'Colaborador';
+                    
+                    // CRITICAL FIX: Do NOT fallback to current role. Use snapshot role or show "Sim definir" if legacy data.
+                    const snapshotRol = session.collaboratorRol;
+                    const hasSnapshotRol = Boolean(snapshotRol);
+                    
+                    // Only show "Role Changed" badge if we have a snapshot role and it differs from current
+                    const rolChanged = hasSnapshotRol && currentCollab?.rol !== snapshotRol;
                     
                     return (
                       <div 
@@ -1119,14 +1146,21 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                               <FileText size={20} />
                             </div>
                             <div className="flex-1 min-w-0">
-                              {/* Snapshot colaborador info */}
+                              {/* Snapshot collaborator info */}
                               <div className="flex items-center gap-2 mb-1">
                                 <h4 className="font-medium text-gray-800 truncate">
                                   {snapshotNombre}
                                 </h4>
-                                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full shrink-0">
-                                  {snapshotRol}
-                                </span>
+                                {hasSnapshotRol ? (
+                                  <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full shrink-0">
+                                    {snapshotRol}
+                                  </span>
+                                ) : (
+                                  <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full shrink-0 italic" title="Evaluación antigua sin registro de rol histórico">
+                                    Rol no registrado
+                                  </span>
+                                )}
+                                
                                 {rolChanged && (
                                   <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title={`Rol actual: ${currentCollab?.rol}`}>
                                     Rol cambió

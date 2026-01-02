@@ -354,14 +354,17 @@ export default function RoleProfilesTab({ isActive = true }) {
         if (!response.ok) throw new Error('Error fetching data');
         const data = await response.json();
         
-        // Extract unique roles from collaborators
-        const uniqueRoles = [...new Set(data.collaborators?.map(c => c.rol) || [])].filter(Boolean);
+        // Extract unique roles from collaborators + existing profiles
+        const rolesFromCollaborators = data.collaborators?.map(c => c.rol) || [];
+        const rolesFromProfiles = Object.keys(data.roleProfiles || {});
+        const uniqueRoles = [...new Set([...rolesFromCollaborators, ...rolesFromProfiles])].filter(Boolean).sort();
         setRoles(uniqueRoles);
         setCategories(data.categories || []);
         setSkills(data.skills || []);
         
         // Load existing profiles if any
         setAllProfiles(data.roleProfiles || {});
+
         
       } catch (err) {
         setError('Error cargando datos');

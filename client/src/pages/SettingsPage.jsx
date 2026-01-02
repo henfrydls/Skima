@@ -56,8 +56,14 @@ export default function SettingsPage() {
 
   const handleNavigate = (tabId, context = null) => {
     setNavigationContext(context);
-    setSearchParams({ tab: tabId });
+    // If navigating to perfiles with a rol context, include it in URL
+    if (tabId === 'perfiles' && context?.rol) {
+      setSearchParams({ tab: tabId, rol: context.rol });
+    } else {
+      setSearchParams({ tab: tabId });
+    }
   };
+
 
   return (
     <div className="space-y-6 animate-fade-in">

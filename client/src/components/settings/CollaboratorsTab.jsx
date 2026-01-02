@@ -214,8 +214,81 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
   );
 }
 
+// Role Select Dropdown Cell
+function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigateToProfiles }) {
+  const [isOpen, setIsOpen] = useState(false);
+  
+  // Show all unique roles: from collaborators + from defined profiles
+  const allRoles = [...new Set([...availableRoles, ...Object.keys(roleProfiles)])].filter(Boolean).sort();
+
+  
+  const handleSelect = (role) => {
+    if (role === '__NEW__') {
+      onNavigateToProfiles();
+    } else {
+      onSave(role);
+    }
+    setIsOpen(false);
+  };
+
+  const hasProfile = roleProfiles[value] && Object.values(roleProfiles[value]).some(v => v !== 'N');
+
+  return (
+    <div className="relative">
+      {/* Trigger Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-2 py-1 rounded hover:bg-gray-100 transition-colors text-left"
+      >
+        <span className="font-medium text-gray-800">{value}</span>
+        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+
+
+      {/* Dropdown */}
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute left-0 top-full mt-1 bg-surface rounded-lg shadow-xl border border-gray-100 py-1 z-20 min-w-[180px] max-h-60 overflow-y-auto">
+            {allRoles.map(role => {
+              const isSelected = role === value;
+              return (
+                <button
+                  key={role}
+                  onClick={() => handleSelect(role)}
+                  className={`
+                    w-full px-4 py-2 text-left text-sm flex items-center justify-between transition-colors
+                    ${isSelected ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
+                  `}
+                >
+                  <span>{role}</span>
+                  {isSelected && <Check size={14} className="text-primary" />}
+                </button>
+              );
+            })}
+            
+            {/* Separator */}
+            <hr className="my-1 border-gray-100" />
+            
+            {/* Create new profile option */}
+            <button
+              onClick={() => handleSelect('__NEW__')}
+              className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/5 flex items-center gap-2 font-medium"
+            >
+              <Briefcase size={14} />
+              Nuevo perfil...
+            </button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, onNavigate }) {
+function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, availableRoles = [], onNavigate }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -250,15 +323,13 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
 
       {/* Role with Profile Status */}
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <EditableCell
-            value={collaborator.rol}
-            onSave={(value) => handleFieldSave('rol', value)}
-            isEditing={editingField === 'rol'}
-            onStartEdit={() => setEditingField('rol')}
-            onCancelEdit={() => setEditingField(null)}
-          />
-        </div>
+        <RoleSelectCell
+          value={collaborator.rol}
+          availableRoles={availableRoles}
+          roleProfiles={roleProfiles}
+          onSave={(value) => handleFieldSave('rol', value)}
+          onNavigateToProfiles={(role) => onNavigate('perfiles', { rol: role || collaborator.rol })}
+        />
       </td>
 
       {/* Stats - Skills evaluadas vs definidas en perfil */}
@@ -271,14 +342,17 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
           
           if (definedInProfile === 0) {
             return (
-              <span 
-                className="text-gray-400 italic text-xs cursor-help"
-                title="Este rol no tiene skills definidas en su perfil de puesto"
+              <button
+                onClick={() => onNavigate('perfiles', { rol: collaborator.rol })}
+                className="text-xs text-warning hover:text-warning/80 flex items-center gap-1 transition-colors"
+                title="Click para definir el perfil de este rol"
               >
-                Sin perfil
-              </span>
+                <Briefcase size={12} />
+                Definir
+              </button>
             );
           }
+
           
           return (
             <span 
@@ -402,6 +476,9 @@ export default function CollaboratorsTab({ onNavigate }) {
     c.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
     c.rol.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Get unique roles from all collaborators (for dropdown)
+  const uniqueRoles = [...new Set(collaborators.map(c => c.rol))].filter(Boolean);
 
   // Handlers
   const handleCreate = async (newCollab) => {
@@ -568,6 +645,7 @@ export default function CollaboratorsTab({ onNavigate }) {
                 onUpdate={handleUpdate}
                 onDelete={handleDelete}
                 roleProfiles={roleProfiles}
+                availableRoles={uniqueRoles}
                 onNavigate={onNavigate}
                 totalSkillsCount={totalSkillsCount}
               />
