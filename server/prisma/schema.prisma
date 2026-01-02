@@ -68,12 +68,14 @@ model RoleProfile {
 }
 
 model EvaluationSession {
-  id             Int          @id @default(autoincrement())
-  uuid           String       @unique @default(uuid())  // UUID for URL references
-  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
-  collaboratorId Int
-  evaluatedBy    String?      // Who performed the evaluation
-  notes          String?      // Optional notes about the evaluation
-  evaluatedAt    DateTime     @default(now())
-  assessments    Assessment[]
+  id                 Int          @id @default(autoincrement())
+  uuid               String       @unique @default(uuid())  // UUID for URL references
+  collaborator       Collaborator @relation(fields: [collaboratorId], references: [id])
+  collaboratorId     Int
+  collaboratorNombre String?      // Snapshot: collaborator name at time of evaluation
+  collaboratorRol    String?      // Snapshot: collaborator role at time of evaluation
+  evaluatedBy        String?      // Who performed the evaluation
+  notes              String?      // Optional notes about the evaluation
+  evaluatedAt        DateTime     @default(now())
+  assessments        Assessment[]
 }

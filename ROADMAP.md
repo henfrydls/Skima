@@ -45,8 +45,10 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 | Manager Metrics | ✅ | Gaps, Bus Factor, Acciones |
 | Director Metrics | ✅ | Health Score, Competency Map |
 | HR Metrics (básico) | ✅ | Distribución de talento |
+| Evaluation Snapshots | ✅ | Collaborator name/role stored at eval time |
 | Trend Analysis | 🔲 | Comparación temporal real |
 | Recommendations Engine | 🔲 | Reglas básicas if/then |
+| PDF Export | 🔲 | Export evaluation as PDF from history |
 
 ---
 

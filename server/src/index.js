@@ -752,7 +752,9 @@ export function createApp() {
         evaluatedAt: s.evaluatedAt,
         evaluatedBy: s.evaluatedBy,
         notes: s.notes,
-        assessmentCount: s._count.assessments
+        assessmentCount: s._count.assessments,
+        collaboratorNombre: s.collaboratorNombre,  // Snapshot data
+        collaboratorRol: s.collaboratorRol         // Snapshot data
       })));
     } catch (error) {
       console.error('[API] GET /api/collaborators/:id/evaluations failed:', error);
@@ -806,6 +808,9 @@ export function createApp() {
           nombre: session.collaborator.nombre,
           rol: session.collaborator.rol
         },
+        // Snapshot data (from time of evaluation)
+        collaboratorNombre: session.collaboratorNombre,
+        collaboratorRol: session.collaboratorRol,
         evaluatedAt: session.evaluatedAt,
         evaluatedBy: session.evaluatedBy,
         notes: session.notes,
@@ -839,10 +844,12 @@ export function createApp() {
         ? (typeof roleProfile.skills === 'string' ? JSON.parse(roleProfile.skills) : roleProfile.skills)
         : {};
 
-      // Create evaluation session
+      // Create evaluation session with collaborator snapshot
       const session = await prisma.evaluationSession.create({
         data: {
           collaboratorId,
+          collaboratorNombre: collab.nombre,  // Snapshot at time of evaluation
+          collaboratorRol: collab.rol,        // Snapshot at time of evaluation
           evaluatedBy: evaluatedBy || null,
           notes: notes || null
         }

@@ -21,7 +21,10 @@ import {
   ArrowLeft,
   Calendar as CalendarIcon,
   Edit3,
-  Briefcase
+  Briefcase,
+  MoreVertical,
+  Download,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -527,21 +530,45 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
 
   return (
     <div className="animate-fade-in">
-      <div className="flex items-center gap-2 mb-6">
-        <button 
-          onClick={onBack}
-          className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
-        >
-          <ArrowLeft size={20} />
-        </button>
-        <div>
-          <h3 className="text-lg font-medium text-gray-800">
-            Evaluación del {formatDate(session.evaluatedAt)}
-          </h3>
-          <p className="text-sm text-gray-500">
-            Realizada por {session.evaluatedBy || 'Admin'}
-          </p>
+      {/* Header with back button, collaborator info, and PDF action */}
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={onBack}
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors text-gray-500"
+          >
+            <ArrowLeft size={20} />
+          </button>
+          <div>
+            {/* Collaborator snapshot info */}
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="text-lg font-medium text-gray-800">
+                {session.collaboratorNombre || session.collaborator.nombre}
+              </h3>
+              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
+                {session.collaboratorRol || session.collaborator.rol}
+              </span>
+              {session.collaboratorRol && session.collaboratorRol !== session.collaborator.rol && (
+                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title={`Rol actual: ${session.collaborator.rol}`}>
+                  Rol cambió
+                </span>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 flex items-center gap-2">
+              <Calendar size={12} />
+              {formatDate(session.evaluatedAt)} • Por {session.evaluatedBy || 'Admin'}
+            </p>
+          </div>
         </div>
+        
+        {/* PDF Download Button */}
+        <button
+          onClick={() => alert('📄 Exportar PDF\n\nEsta funcionalidad estará disponible próximamente.')}
+          className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+        >
+          <Download size={16} />
+          Descargar PDF
+        </button>
       </div>
 
       <div className="space-y-4">
@@ -1073,37 +1100,84 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                   <p className="text-gray-500">No hay evaluaciones previas para este colaborador.</p>
                 </div>
               ) : (
-                <div className="grid gap-4">
-                  {evaluationHistory.map(session => (
-                    <div 
-                      key={session.uuid}
-                      className="bg-surface p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
-                          <FileText size={20} />
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800">Evaluación del {formatDate(session.evaluatedAt)}</h4>
-                          <div className="flex items-center gap-2 text-sm text-gray-500 mt-1">
-                            <span>Por: {session.evaluatedBy || 'Admin'}</span>
-                            <span>•</span>
-                            <span>{session.assessmentCount} skills evaluadas</span>
+                <div className="grid gap-3">
+                  {evaluationHistory.map(session => {
+                    // Get current collaborator for comparison
+                    const currentCollab = collaborators.find(c => c.id === selectedCollaborator);
+                    const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre;
+                    const snapshotRol = session.collaboratorRol || currentCollab?.rol;
+                    const rolChanged = session.collaboratorRol && currentCollab?.rol !== session.collaboratorRol;
+                    
+                    return (
+                      <div 
+                        key={session.uuid}
+                        className="bg-surface p-4 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-all group"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4 flex-1">
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                              <FileText size={20} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              {/* Snapshot colaborador info */}
+                              <div className="flex items-center gap-2 mb-1">
+                                <h4 className="font-medium text-gray-800 truncate">
+                                  {snapshotNombre}
+                                </h4>
+                                <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full shrink-0">
+                                  {snapshotRol}
+                                </span>
+                                {rolChanged && (
+                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title={`Rol actual: ${currentCollab?.rol}`}>
+                                    Rol cambió
+                                  </span>
+                                )}
+                              </div>
+                              {/* Evaluation date and metadata */}
+                              <div className="flex items-center gap-2 text-sm text-gray-500 flex-wrap">
+                                <span className="flex items-center gap-1">
+                                  <Calendar size={12} />
+                                  {formatDate(session.evaluatedAt)}
+                                </span>
+                                <span>•</span>
+                                <span>Por: {session.evaluatedBy || 'Admin'}</span>
+                                <span>•</span>
+                                <span>{session.assessmentCount} skills</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Actions */}
+                          <div className="flex items-center gap-2 shrink-0">
+                            <button
+                              onClick={() => {
+                                setSelectedSessionUuid(session.uuid);
+                                setViewMode('details');
+                              }}
+                              className="px-3 py-1.5 text-primary hover:bg-primary/5 rounded-lg text-sm font-medium transition-colors"
+                            >
+                              Ver detalles
+                            </button>
+                            
+                            {/* 3-dot menu */}
+                            <div className="relative">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  // For now, show a simple alert - PDF will be implemented later
+                                  alert('📄 Exportar PDF\n\nEsta funcionalidad estará disponible próximamente.');
+                                }}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                                title="Descargar PDF"
+                              >
+                                <Download size={16} className="text-gray-500" />
+                              </button>
+                            </div>
                           </div>
                         </div>
                       </div>
-                      
-                      <button
-                        onClick={() => {
-                          setSelectedSessionUuid(session.uuid);
-                          setViewMode('details');
-                        }}
-                        className="px-4 py-2 text-primary hover:bg-primary/5 rounded-lg text-sm font-medium transition-colors"
-                      >
-                        Ver detalles
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
