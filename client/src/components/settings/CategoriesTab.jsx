@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
+  Search,
   GripVertical, 
   Plus, 
   MoreVertical, 
@@ -372,15 +373,32 @@ export default function CategoriesTab() {
   const [isSaving, setIsSaving] = useState(false);
   const [showArchived, setShowArchived] = useState(false);
   const [archiveConfirm, setArchiveConfirm] = useState({ show: false, category: null });
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter categories
+  const filteredCategories = categories.filter(category => {
+    // 1. Archive filter
+    if (!showArchived && category.isActive === false) return false;
+    // 2. Search filter
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      return (
+        category.nombre.toLowerCase().includes(query) ||
+        category.abrev?.toLowerCase().includes(query)
+      );
+    }
+    return true;
+  });
 
   // Fetch categories and skills
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const archiveParam = showArchived ? '?includeArchived=true' : '';
-        const catUrl = `${API_BASE}/categories${archiveParam}`;
-        const skillUrl = `${API_BASE}/skills${archiveParam}`;
+        // Fetch ALL data (including archived) and filter client-side for smooth transitions
+        const responseParam = '?includeArchived=true';
+        const catUrl = `${API_BASE}/categories${responseParam}`;
+        const skillUrl = `${API_BASE}/skills${responseParam}`;
         const [catRes, skillRes] = await Promise.all([
           fetch(catUrl),
           fetch(skillUrl)
@@ -407,7 +425,7 @@ export default function CategoriesTab() {
     };
     
     fetchData();
-  }, [showArchived]);
+  }, []); // Fetch once, filter locally for smooth toggle
 
   // Get skill count per category
   const getSkillCount = (categoryId) => {
@@ -518,18 +536,15 @@ export default function CategoriesTab() {
         if (!res.ok) throw new Error('Error archiving category');
         
         // Update local state - mark as archived or remove based on showArchived
-        if (showArchived) {
-          setCategories(categories.map(c => 
-            c.id === category.id ? { ...c, isActive: false } : c
-          ));
-          // Also mark associated skills as archived
-          setSkills(skills.map(s => 
-            s.categoriaId === category.id ? { ...s, isActive: false } : s
-          ));
-        } else {
-          setCategories(categories.filter(c => c.id !== category.id));
-          setSkills(skills.filter(s => s.categoriaId !== category.id));
-        }
+        // Update local state - mark as archived (do not remove, so it can be toggled back)
+        setCategories(categories.map(c => 
+          c.id === category.id ? { ...c, isActive: false } : c
+        ));
+        
+        // Also mark associated skills as archived
+        setSkills(skills.map(s => 
+          s.categoriaId === category.id ? { ...s, isActive: false } : s
+        ));
         
         setArchiveConfirm({ show: false, category: null });
       } catch (_err) {
@@ -693,12 +708,27 @@ export default function CategoriesTab() {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <p className="text-sm text-gray-500">
-            {categories.filter(c => c.isActive !== false).length} categoría{categories.filter(c => c.isActive !== false).length !== 1 ? 's' : ''}
+      {/* Header Row (Standardized) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-xs">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar categoría..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-500 hidden sm:block">
+            {filteredCategories.length} categoría{filteredCategories.length !== 1 ? 's' : ''}
           </p>
+          <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
+          
           <button
             onClick={() => setShowArchived(!showArchived)}
             className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
@@ -710,19 +740,21 @@ export default function CategoriesTab() {
             <Archive size={14} />
             {showArchived ? 'Ocultar archivados' : 'Ver archivados'}
           </button>
+          
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
+          >
+            <Plus size={18} />
+            Nueva Categoría
+          </button>
         </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
-        >
-          <Plus size={18} />
-          Nueva
-        </button>
       </div>
 
       {/* Categories List */}
       <div className="space-y-2">
-        {categories.map((category) => (
+
+        {filteredCategories.map((category) => (
           <CategoryRow
             key={category.id}
             category={category}

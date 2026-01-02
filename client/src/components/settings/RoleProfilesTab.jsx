@@ -13,7 +13,11 @@ import {
   Briefcase,
   Plus,
   X,
-  AlertTriangle
+  AlertTriangle,
+  Search,
+  ArrowLeft,
+  LayoutGrid,
+  List
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -278,6 +282,10 @@ export default function RoleProfilesTab({ isActive = true }) {
   const { getHeaders } = useAuth();
   const [searchParams] = useSearchParams();
   const [roles, setRoles] = useState([]);
+  
+  // Toolbar State
+  const [searchTerm, setSearchTerm] = useState('');
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -296,6 +304,24 @@ export default function RoleProfilesTab({ isActive = true }) {
   // Navigation blocking state
   const [pendingNavigation, setPendingNavigation] = useState(null); // { type: 'route' | 'role', target: ... }
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+
+  // Computed & Filters
+  const filteredRoles = useMemo(() => {
+    return roles
+      .filter(r => r.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort();
+  }, [roles, searchTerm]);
+
+  const getRoleStatus = useCallback((roleName) => {
+    const profile = allProfiles?.[roleName]; 
+    if (!profile) return { count: 0, color: 'bg-gray-200', text: 'Sin definir' };
+    const count = Object.values(profile).filter(v => v !== 'N').length;
+    return { 
+      count, 
+      color: count > 0 ? (count >= 10 ? 'bg-competent' : 'bg-warning') : 'bg-gray-200',
+      text: count > 0 ? `${count} skills` : 'Sin definir'
+    };
+  }, [allProfiles]);
 
   // Pre-select role from URL param
   useEffect(() => {
@@ -349,7 +375,8 @@ export default function RoleProfilesTab({ isActive = true }) {
     
     const fetchData = async () => {
       try {
-        setIsLoading(true);
+        // Only show spinner on first load to make tab switching instant
+        if (roles.length === 0) setIsLoading(true);
         const response = await fetch(`${API_BASE}/data`);
         if (!response.ok) throw new Error('Error fetching data');
         const data = await response.json();
@@ -547,156 +574,256 @@ export default function RoleProfilesTab({ isActive = true }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <label className="text-sm font-medium text-gray-700">Perfil para:</label>
-          <select
-            value={selectedRole || ''}
-            onChange={(e) => handleRoleSwitch(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary min-w-[250px]"
-          >
-            <option value="">Seleccionar rol...</option>
-            {roles.map(r => (
-              <option key={r} value={r}>{r}</option>
-            ))}
-          </select>
-          
-          {/* Duplicate dropdown */}
-          {selectedRole && roles.filter(r => r !== selectedRole && allProfiles[r]).length > 0 && (
-            <div className="relative group">
-              <button className="flex items-center gap-1 text-sm text-gray-500 hover:text-primary">
-                <Copy size={14} />
-                Copiar de...
+    <div className="space-y-6 relative z-0">
+      {/* 1. EXTERNAL TOOLBAR (Controls) - Only visible when NO role is selected (Overview) */}
+      {!selectedRole && (
+       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          {/* Search */}
+          <div className="relative flex-1 max-w-xs">
+             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+             <input 
+               type="text" 
+               placeholder="Buscar rol..." 
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+              />
+           </div>
+
+           {/* Actions: View Toggle + New Button */}
+           <div className="flex items-center gap-3">
+              <div className="bg-gray-100 p-1 rounded-lg flex items-center border border-gray-200">
+                 <button 
+                  onClick={() => setViewMode('grid')} 
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                  title="Vista de Cuadrícula"
+                 >
+                    <LayoutGrid size={18} />
+                 </button>
+                 <button 
+                  onClick={() => setViewMode('list')} 
+                  className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-gray-400 hover:text-gray-600'}`}
+                  title="Vista de Lista"
+                 >
+                    <List size={18} />
+                 </button>
+              </div>
+
+              <div className="h-8 w-px bg-gray-300 mx-1 hidden md:block"></div>
+
+              <button
+                 onClick={() => setShowNewRoleModal(true)}
+                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
+              >
+                 <Plus size={18} />
+                 Nuevo Perfil
               </button>
-              <div className="absolute left-0 top-full pt-2 hidden group-hover:block z-20 w-72">
-                <div className="bg-white shadow-xl rounded-lg border border-gray-100 py-1 overflow-hidden">
-                  {roles.filter(r => r !== selectedRole && allProfiles[r]).map(r => {
-                    const definedCount = Object.values(allProfiles[r]).filter(v => v !== 'N').length;
-                    return (
-                      <button
-                        key={r}
-                        onClick={() => handleDuplicate(r)}
-                        className="w-full px-4 py-3 text-left hover:bg-gray-50 flex items-center justify-between group/item transition-colors border-b last:border-0 border-gray-50"
-                      >
-                        <div>
-                          <span className="block text-sm font-medium text-gray-700 mb-0.5">{r}</span>
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                            <CheckCircle size={10} /> {definedCount} skills definidas
-                          </span>
+           </div>
+        </div>
+      )}
+
+      {/* 2. MAIN CONTENT CARD */}
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px]' : ''}`}>
+        
+        {/* VIEW 1: ROLE LIST / GRID */}
+        {!selectedRole && (
+           <div className="p-6">
+              {filteredRoles.length === 0 ? (
+                 <div className="py-20 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                    <Search size={48} className="mx-auto text-gray-300 mb-4" />
+                    <h3 className="text-lg font-medium text-gray-700 mb-1">No se encontraron roles</h3>
+                    <p className="text-gray-500">Prueba con otro término de búsqueda o crea un nuevo perfil.</p>
+                 </div>
+              ) : viewMode === 'grid' ? (
+                 /* GRID VIEW */
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {filteredRoles.map(role => {
+                       const status = getRoleStatus(role);
+                       return (
+                          <button
+                             key={role}
+                             onClick={() => handleRoleSwitch(role)}
+                             className="bg-white p-5 rounded-xl border border-gray-200 hover:border-primary/50 hover:shadow-md transition-all text-left group relative overflow-hidden"
+                          >
+                             <div className="flex items-start justify-between mb-4">
+                                <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
+                                   <Briefcase size={20} />
+                                </div>
+                                <div className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${status.count > 0 ? 'bg-white border-gray-200 text-gray-600' : 'bg-gray-50 text-gray-400 border-transparent'}`}>
+                                   {status.text}
+                                </div>
+                             </div>
+                             
+                             <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-primary transition-colors truncate pr-2">{role}</h3>
+                             
+                             <div className="flex items-center gap-2 mt-3">
+                                <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                <span className="text-xs text-gray-500">
+                                   {status.count === 0 ? 'Sin definir' : 'Configurado'}
+                                </span>
+                             </div>
+                          </button>
+                       );
+                    })}
+                 </div>
+              ) : (
+                 /* LIST VIEW */
+                 <div className="border border-gray-100 rounded-xl overflow-hidden">
+                    <table className="w-full">
+                       <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-medium">
+                          <tr>
+                             <th className="px-6 py-3 text-left">Rol</th>
+                             <th className="px-6 py-3 text-left">Estado</th>
+                             <th className="px-6 py-3 text-right">Acción</th>
+                          </tr>
+                       </thead>
+                       <tbody className="divide-y divide-gray-100">
+                          {filteredRoles.map(role => {
+                             const status = getRoleStatus(role);
+                             return (
+                                <tr key={role} className="group hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleRoleSwitch(role)}>
+                                   <td className="px-6 py-4">
+                                      <div className="flex items-center gap-3">
+                                         <div className="w-8 h-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center">
+                                            <Briefcase size={16} />
+                                         </div>
+                                         <span className="font-medium text-gray-700 group-hover:text-primary transition-colors">{role}</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-6 py-4">
+                                      <div className="flex items-center gap-2">
+                                         <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                         <span className="text-sm text-gray-600">{status.text}</span>
+                                      </div>
+                                   </td>
+                                   <td className="px-6 py-4 text-right">
+                                      <button className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline">
+                                         Editar
+                                      </button>
+                                   </td>
+                                </tr>
+                             );
+                          })}
+                       </tbody>
+                    </table>
+                 </div>
+              )}
+           </div>
+        )}
+
+      {/* VIEW 2: EDITOR (DETAIL) */}
+      {selectedRole && (
+        <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300">
+            {/* Context Header */}
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-20">
+              <div className="flex items-center gap-4">
+                <button 
+                  onClick={() => handleRoleSwitch(null)}
+                  className="p-2 -ml-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
+                  title="Volver a la lista"
+                >
+                   <ArrowLeft size={20} />
+                </button>
+                <div>
+                   <div className="flex items-center gap-2">
+                     <h2 className="text-xl font-bold text-gray-800">{selectedRole}</h2>
+                     <span className={`w-2.5 h-2.5 rounded-full ${getRoleStatus(selectedRole).color}`} />
+                   </div>
+                   <p className="text-xs text-gray-500">Editando perfil de competencias</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* Save Status Indicator */}
+                {saveSuccess && (
+                  <span className="text-sm text-competent flex items-center gap-1 bg-competent/10 px-3 py-1 rounded-full animate-fade-in">
+                    <CheckCircle size={14} /> Guardado
+                  </span>
+                )}
+                
+                {/* Actions */}
+                <div className="flex items-center gap-2">
+                  <div className="relative group">
+                    <button className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100" title="Copiar de otro rol">
+                       <Copy size={18} />
+                    </button>
+                    {/* Copy Dropdown */}
+                    <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl rounded-lg border border-gray-100 py-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95">
+                       <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">
+                          Copiar configuración de...
+                       </div>
+                       <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                        {roles.filter(r => r !== selectedRole && allProfiles[r]).map(r => (
+                          <button
+                            key={r}
+                            onClick={() => handleDuplicate(r)}
+                            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-50 text-gray-700 truncate"
+                          >
+                            {r}
+                          </button>
+                        ))}
                         </div>
-                        <Copy size={14} className="text-primary opacity-0 group-hover/item:opacity-100 transition-all transform translate-x-1 group-hover/item:translate-x-0" />
-                      </button>
-                    );
-                  })}
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleSave(false)}
+                    disabled={isSaving || !isDirty}
+                    className={`
+                      flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all shadow-sm
+                      ${isDirty 
+                        ? 'bg-primary text-white hover:bg-primary/90 hover:shadow shadow-primary/20 hover:-translate-y-0.5' 
+                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'}
+                    `}
+                  >
+                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                  </button>
                 </div>
               </div>
             </div>
-          )}
-        </div>
 
-        <div className="flex items-center gap-4">
-          <button
-            onClick={() => setShowNewRoleModal(true)}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
-          >
-            <Plus size={16} />
-            Nuevo Perfil
-          </button>
-          <CriticidadLegend />
+            {/* Scrollable Content */}
+            <div className="flex-1 p-6 relative">
+              {/* Stats Summary */}
+              <div className="grid grid-cols-4 gap-4 mb-8">
+                 <div className="bg-critical/5 border border-critical/10 p-4 rounded-xl text-center">
+                    <div className="text-2xl font-light text-critical">{stats.critical}</div>
+                    <div className="text-[10px] font-bold text-critical tracking-wider uppercase opacity-70">Críticas</div>
+                 </div>
+                 <div className="bg-warning/5 border border-warning/10 p-4 rounded-xl text-center">
+                    <div className="text-2xl font-light text-warning">{stats.important}</div>
+                    <div className="text-[10px] font-bold text-warning tracking-wider uppercase opacity-70">Importantes</div>
+                 </div>
+                 <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-center">
+                    <div className="text-2xl font-light text-gray-600">{stats.desirable}</div>
+                    <div className="text-[10px] font-bold text-gray-500 tracking-wider uppercase opacity-70">Deseables</div>
+                 </div>
+                 <div className="bg-white border border-gray-200 p-4 rounded-xl text-center shadow-sm">
+                    <div className="text-2xl font-light text-gray-400">{stats.na}</div>
+                    <div className="text-[10px] font-bold text-gray-400 tracking-wider uppercase opacity-70">N/A</div>
+                 </div>
+              </div>
+
+              {/* Categories */}
+              <div className="space-y-6 pb-20 max-w-5xl mx-auto">
+                {categories.map(category => (
+                  <CategorySection
+                    key={category.id}
+                    category={category}
+                    skills={skills}
+                    requirements={requirements}
+                    onRequirementChange={handleRequirementChange}
+                  />
+                ))}
+              </div>
+            </div>
         </div>
+      )}
+
       </div>
 
-      {/* No role selected */}
-      {!selectedRole && (
-        <div className="text-center py-16 bg-gray-50 rounded-lg">
-          <Users size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-700">Selecciona un rol</h3>
-          <p className="text-gray-500 mt-1">Define qué skills son críticas, importantes o deseables para cada puesto.</p>
-        </div>
-      )}
-
-      {/* Profile Editor */}
-      {selectedRole && (
-        <>
-          {/* Summary Stats */}
-          <div className="grid grid-cols-5 gap-4">
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <p className="text-2xl font-light text-gray-800">{stats.total}</p>
-              <p className="text-xs text-gray-500">Total Skills</p>
-            </div>
-            <div className="bg-critical/10 p-4 rounded-lg text-center">
-              <p className="text-2xl font-light text-critical">{stats.critical}</p>
-              <p className="text-xs text-gray-500">Críticas (C)</p>
-            </div>
-            <div className="bg-warning/10 p-4 rounded-lg text-center">
-              <p className="text-2xl font-light text-warning">{stats.important}</p>
-              <p className="text-xs text-gray-500">Importantes (I)</p>
-            </div>
-            <div className="bg-gray-100 p-4 rounded-lg text-center">
-              <p className="text-2xl font-light text-gray-600">{stats.desirable}</p>
-              <p className="text-xs text-gray-500">Deseables (D)</p>
-            </div>
-            <div className="bg-gray-50 p-4 rounded-lg text-center">
-              <p className="text-2xl font-light text-gray-400">{stats.na}</p>
-              <p className="text-xs text-gray-500">N/A</p>
-            </div>
-          </div>
-
-          {/* Categories */}
-          <div>
-            {categories.map(category => (
-              <CategorySection
-                key={category.id}
-                category={category}
-                skills={skills}
-                requirements={requirements}
-                onRequirementChange={handleRequirementChange}
-              />
-            ))}
-          </div>
-
-          {/* Sticky Footer for Save Actions - Only visible when dirty */}
-          <div 
-            className={`
-              sticky bottom-2 z-20 flex justify-end gap-3 p-4 rounded-xl shadow-lg border border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-300
-              ${isDirty ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}
-            `}
-          >
-            <span className="flex items-center text-sm text-gray-500 mr-auto">
-              <AlertCircle size={16} className="mr-2 text-warning" />
-              Tienes cambios sin guardar
-            </span>
-
-            <button
-               onClick={() => setRequirements(initialRequirements)}
-               className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
-            >
-              Descartar
-            </button>
-            <button
-              onClick={() => handleSave(false)}
-              disabled={isSaving}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
-            >
-              {isSaving ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Guardar Cambios
-                </>
-              )}
-            </button>
-          </div>
-        </>
-      )}
-
-      {/* New Role Modal */}
+      {/* Modals & Dialogs */}
       <NewRoleModal
         isOpen={showNewRoleModal}
         onClose={() => setShowNewRoleModal(false)}
@@ -704,13 +831,33 @@ export default function RoleProfilesTab({ isActive = true }) {
         existingRoles={roles}
       />
 
-      {/* Unsaved Changes Warning Modal */}
       <UnsavedChangesDialog
         isOpen={showUnsavedDialog}
         onDiscard={handleDiscardChanges}
         onCancel={handleCancelNavigation}
         onSave={() => handleSave(true)}
       />
+
+      {/* Floating Sticky Save (Mobile/Safety) */}
+      {selectedRole && isDirty && (
+         <div className="fixed bottom-6 right-8 z-50 animate-in slide-in-from-bottom-4">
+            <div className="bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-4">
+               <div>
+                 <p className="text-sm font-medium">Cambios sin guardar</p>
+                 <button onClick={() => setRequirements(initialRequirements)} className="text-xs text-gray-400 hover:text-white underline decoration-gray-600 hover:decoration-white">Descartar</button>
+               </div>
+               <button 
+                  onClick={() => handleSave(false)}
+                  className="bg-primary hover:bg-primary-hover text-white p-2 rounded-md transition-colors"
+                  title="Guardar"
+               >
+                  <Save size={18} />
+               </button>
+            </div>
+         </div>
+      )}
+
     </div>
   );
 }
+

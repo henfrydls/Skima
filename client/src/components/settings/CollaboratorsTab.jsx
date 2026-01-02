@@ -607,7 +607,7 @@ export default function CollaboratorsTab({ onNavigate }) {
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Plus size={18} />
-            Nuevo
+            Nuevo Colaborador
           </button>
         </div>
       </div>

@@ -9,7 +9,8 @@ import {
   Trash2,
   Layers,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Search
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
@@ -193,6 +194,36 @@ export default function SkillsTab({ isActive = false }) {
   const [newSkillCategory, setNewSkillCategory] = useState(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // Filter categories and skills based on search
+  const filteredCategories = categories.filter(category => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    
+    // Check if category name matches
+    if (category.nombre.toLowerCase().includes(query)) return true;
+    
+    // Check if any skill in this category matches
+    const categorySkills = skills.filter(s => s.categoriaId === category.id);
+    return categorySkills.some(s => s.nombre.toLowerCase().includes(query));
+  });
+
+  const getFilteredSkills = (categoryId) => {
+    const query = searchQuery.toLowerCase();
+    let relevantSkills = skills.filter(s => s.categoriaId === categoryId);
+    
+    if (searchQuery) {
+      // If category name matches, show all skills in it. 
+      // Otherwise, only show skills that match the query.
+      const categoryMatches = categories.find(c => c.id === categoryId)?.nombre.toLowerCase().includes(query);
+      
+      if (!categoryMatches) {
+        relevantSkills = relevantSkills.filter(s => s.nombre.toLowerCase().includes(query));
+      }
+    }
+    return relevantSkills;
+  };
 
   // Fetch data function
   const fetchData = async () => {
@@ -402,27 +433,42 @@ export default function SkillsTab({ isActive = false }) {
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-gray-500">
-          {categories.length} categorías • {skills.length} skills
+      {/* Header Row */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-xs">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar skill o categoría..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+          />
         </div>
-        <button
-          onClick={() => { setEditingSkill(null); setNewSkillCategory(null); setIsModalOpen(true); }}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
-        >
-          <Plus size={18} />
-          Nueva Skill
-        </button>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <div className="text-sm text-gray-500 hidden sm:block">
+            {categories.length} categorías • {skills.length} skills
+          </div>
+          <button
+            onClick={() => { setEditingSkill(null); setNewSkillCategory(null); setIsModalOpen(true); }}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
+          >
+            <Plus size={18} />
+            Nuevo Skill
+          </button>
+        </div>
       </div>
 
       {/* Categories Accordion */}
       <div className="space-y-3">
-        {categories.map((category) => (
+        {filteredCategories.map((category) => (
           <CategoryAccordion
             key={category.id}
             category={category}
-            skills={skills}
+            skills={getFilteredSkills(category.id)}
             onEditSkill={handleEditSkill}
             onAddSkill={handleAddSkill}
             onDeleteSkill={handleDeleteSkill}
