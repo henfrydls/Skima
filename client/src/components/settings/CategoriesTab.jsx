@@ -8,7 +8,10 @@ import {
   X,
   FolderPlus,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  RotateCcw,
+  Archive,
+  AlertTriangle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
@@ -152,7 +155,8 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
 }
 
 // Category Row Component
-function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDragOver, onDragEnd, onDrop, isDragging, isDragOver }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onDragStart, onDragOver, onDragEnd, onDrop, isDragging, isDragOver }) {
+  const isArchived = category.isActive === false;
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
@@ -160,6 +164,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDr
     <div 
       className={`
         flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border transition-all duration-200 group
+        ${isArchived ? 'bg-gray-50' : ''}
         ${isDragging 
           ? 'opacity-40 scale-95 rotate-2 shadow-lg border-primary border-2 z-10' 
           : 'border-gray-100 hover:shadow-md'
@@ -197,8 +202,13 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDr
 
       {/* Name */}
       <div className="flex-1">
-        <span className="font-medium text-gray-800">{category.nombre}</span>
+        <span className={`font-medium ${isArchived ? 'text-gray-500' : 'text-gray-800'}`}>{category.nombre}</span>
         <span className="text-sm text-gray-400 ml-2">({category.abrev})</span>
+        {isArchived && (
+          <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
+            Archivado
+          </span>
+        )}
       </div>
 
       {/* Skill Count */}
@@ -219,24 +229,107 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onDragStart, onDr
           <>
             <div className="fixed inset-0 z-10" onClick={() => setShowMenu(false)} />
             <div className="absolute right-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[140px]">
-              <button
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                onClick={() => { onEdit(category); setShowMenu(false); }}
-              >
-                <Edit3 size={14} />
-                Editar
-              </button>
-              <hr className="my-1 border-gray-100" />
-              <button
-                onClick={() => { onDelete(category); setShowMenu(false); }}
-                className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
-              >
-                <Trash2 size={14} />
-                Eliminar
-              </button>
+              {!isArchived ? (
+                <>
+                  <button
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                    onClick={() => { onEdit(category); setShowMenu(false); }}
+                  >
+                    <Edit3 size={14} />
+                    Editar
+                  </button>
+                  <hr className="my-1 border-gray-100" />
+                  <button
+                    onClick={() => { onDelete(category); setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
+                  >
+                    <Trash2 size={14} />
+                    Archivar
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => { onRestore(category); setShowMenu(false); }}
+                  className="w-full px-4 py-2 text-left text-sm text-competentDark hover:bg-competent/10 flex items-center gap-2"
+                >
+                  <RotateCcw size={14} />
+                  Restaurar
+                </button>
+              )}
             </div>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Confirm Archive Modal (for categories with skills)
+function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isLoading }) {
+  if (!isOpen || !category) return null;
+
+  const affectedSkills = skills.filter(s => s.categoriaId === category.id);
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-warning/5">
+          <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+            <AlertTriangle size={20} className="text-warning" />
+          </div>
+          <div>
+            <h2 className="text-lg font-medium text-gray-800">Archivar Categoría</h2>
+            <p className="text-sm text-gray-500">Esta acción afectará múltiples elementos</p>
+          </div>
+          <button 
+            onClick={onClose}
+            className="ml-auto p-1 hover:bg-gray-100 rounded transition-colors"
+          >
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-4">
+          <p className="text-gray-700">
+            Al archivar <strong>"{category.nombre}"</strong>, también se archivarán:
+          </p>
+          
+          <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+            <p className="text-sm font-medium text-gray-600 mb-2">
+              {affectedSkills.length} skill{affectedSkills.length !== 1 ? 's' : ''} afectada{affectedSkills.length !== 1 ? 's' : ''}:
+            </p>
+            <ul className="space-y-1">
+              {affectedSkills.map(skill => (
+                <li key={skill.id} className="text-sm text-gray-600 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                  {skill.nombre}
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="text-sm text-gray-500">
+            Los elementos archivados no aparecerán en Team Matrix, evaluaciones ni perfiles de puesto. 
+            Podrás restaurarlos desde "Ver archivados".
+          </p>
+        </div>
+
+        <div className="flex justify-end gap-3 p-4 border-t border-gray-100">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className="px-4 py-2 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors flex items-center gap-2"
+          >
+            {isLoading && <Loader2 size={16} className="animate-spin" />}
+            Archivar todo ({affectedSkills.length + 1} items)
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -277,16 +370,22 @@ export default function CategoriesTab() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [showArchived, setShowArchived] = useState(false);
+  const [archiveConfirm, setArchiveConfirm] = useState({ show: false, category: null });
 
   // Fetch categories and skills
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
+        const archiveParam = showArchived ? '?includeArchived=true' : '';
+        const catUrl = `${API_BASE}/categories${archiveParam}`;
+        const skillUrl = `${API_BASE}/skills${archiveParam}`;
         const [catRes, skillRes] = await Promise.all([
-          fetch(`${API_BASE}/categories`),
-          fetch(`${API_BASE}/skills`)
+          fetch(catUrl),
+          fetch(skillUrl)
         ]);
+
         
         if (!catRes.ok || !skillRes.ok) {
           throw new Error('Error fetching data');
@@ -308,7 +407,7 @@ export default function CategoriesTab() {
     };
     
     fetchData();
-  }, []);
+  }, [showArchived]);
 
   // Get skill count per category
   const getSkillCount = (categoryId) => {
@@ -385,17 +484,26 @@ export default function CategoriesTab() {
     });
   };
 
-  // Delete category
+  // Delete/Archive category
   const handleDelete = async (category) => {
     const skillCount = getSkillCount(category.id);
+    
     if (skillCount > 0) {
-      alert(`No puedes eliminar esta categoría porque tiene ${skillCount} skills asociadas.`);
+      // Show confirmation modal for categories with skills
+      setArchiveConfirm({ show: true, category });
       return;
     }
     
-    if (!confirm('¿Eliminar esta categoría?')) return;
+    // No skills - simple confirmation
+    if (!confirm('¿Archivar esta categoría?')) return;
     
+    return executeArchive(category);
+  };
+
+  // Execute the actual archive
+  const executeArchive = async (category) => {
     return withAuth(async () => {
+      setIsSaving(true);
       try {
         const res = await fetch(`${API_BASE}/categories/${category.id}`, {
           method: 'DELETE',
@@ -407,11 +515,27 @@ export default function CategoriesTab() {
           return;
         }
         
-        if (!res.ok) throw new Error('Error deleting category');
+        if (!res.ok) throw new Error('Error archiving category');
         
-        setCategories(categories.filter(c => c.id !== category.id));
+        // Update local state - mark as archived or remove based on showArchived
+        if (showArchived) {
+          setCategories(categories.map(c => 
+            c.id === category.id ? { ...c, isActive: false } : c
+          ));
+          // Also mark associated skills as archived
+          setSkills(skills.map(s => 
+            s.categoriaId === category.id ? { ...s, isActive: false } : s
+          ));
+        } else {
+          setCategories(categories.filter(c => c.id !== category.id));
+          setSkills(skills.filter(s => s.categoriaId !== category.id));
+        }
+        
+        setArchiveConfirm({ show: false, category: null });
       } catch (_err) {
-        setError('Error eliminando categoría');
+        setError('Error archivando categoría');
+      } finally {
+        setIsSaving(false);
       }
     });
   };
@@ -421,6 +545,39 @@ export default function CategoriesTab() {
     setEditingCategory(category);
     setShowModal(true);
   };
+
+  // Restore archived category
+  const handleRestore = async (category) => {
+    return withAuth(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/categories/${category.id}/restore`, {
+          method: 'PUT',
+          headers: getHeaders()
+        });
+        
+        if (res.status === 401) {
+          setShowLoginModal(true);
+          return;
+        }
+        
+        if (!res.ok) throw new Error('Error restoring category');
+        
+        // Update local state: mark category as active
+        setCategories(categories.map(c => 
+          c.id === category.id ? { ...c, isActive: true } : c
+        ));
+        
+        // Also mark associated skills as active
+        setSkills(skills.map(s => 
+          s.categoriaId === category.id ? { ...s, isActive: true } : s
+        ));
+      } catch (_err) {
+        setError('Error restaurando categoría');
+      }
+    });
+  };
+
+
 
   // Handle login success
   const handleLoginSuccess = (token) => {
@@ -538,9 +695,22 @@ export default function CategoriesTab() {
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {categories.length} categoría{categories.length !== 1 ? 's' : ''}
-        </p>
+        <div className="flex items-center gap-4">
+          <p className="text-sm text-gray-500">
+            {categories.filter(c => c.isActive !== false).length} categoría{categories.filter(c => c.isActive !== false).length !== 1 ? 's' : ''}
+          </p>
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+              showArchived 
+                ? 'bg-gray-200 text-gray-700' 
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            <Archive size={14} />
+            {showArchived ? 'Ocultar archivados' : 'Ver archivados'}
+          </button>
+        </div>
         <button
           onClick={() => setShowModal(true)}
           className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -559,6 +729,7 @@ export default function CategoriesTab() {
             skillCount={getSkillCount(category.id)}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onRestore={handleRestore}
             onDragStart={handleDragStart}
             onDragOver={handleDragOver}
             onDragEnd={handleDragEnd}
@@ -582,6 +753,15 @@ export default function CategoriesTab() {
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleLoginSuccess}
       />
+      <ConfirmArchiveModal
+        isOpen={archiveConfirm.show}
+        onClose={() => setArchiveConfirm({ show: false, category: null })}
+        onConfirm={() => executeArchive(archiveConfirm.category)}
+        category={archiveConfirm.category}
+        skills={skills}
+        isLoading={isSaving}
+      />
     </div>
   );
+
 }

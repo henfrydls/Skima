@@ -274,7 +274,7 @@ function CriticidadLegend() {
 }
 
 // Main component
-export default function RoleProfilesTab() {
+export default function RoleProfilesTab({ isActive = true }) {
   const { getHeaders } = useAuth();
   const [searchParams] = useSearchParams();
   const [roles, setRoles] = useState([]);
@@ -342,8 +342,11 @@ export default function RoleProfilesTab() {
     setSaveSuccess(false);
   };
 
-  // Fetch data
+  // Fetch data on mount and when tab becomes active
   useEffect(() => {
+    // Only refetch if tab is active
+    if (!isActive) return;
+    
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -368,7 +371,7 @@ export default function RoleProfilesTab() {
       }
     };
     fetchData();
-  }, []);
+  }, [isActive]); // Refetch when isActive changes to true
 
   // Safe Role Switcher
   const handleRoleSwitch = (newRole) => {

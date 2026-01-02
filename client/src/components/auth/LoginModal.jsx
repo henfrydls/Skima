@@ -37,16 +37,15 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         return;
       }
 
-      // Store token and notify parent
-      localStorage.setItem('auth_token', data.token);
+      // Pass token to parent - let AuthContext handle storage
       onSuccess(data.token);
       setPassword('');
-      onClose();
     } catch (_err) {
       setError('Error de conexión con el servidor');
     } finally {
       setIsLoading(false);
     }
+
   };
 
   return createPortal(

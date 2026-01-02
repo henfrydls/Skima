@@ -26,13 +26,17 @@ export function createApp() {
     try {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       
+      // Only fetch active categories and skills
       const categories = await prisma.category.findMany({
+        where: { isActive: true },
         orderBy: { orden: 'asc' }
       });
 
       const skills = await prisma.skill.findMany({
+        where: { isActive: true },
         orderBy: { id: 'asc' }
       });
+
 
       const collaboratorsRaw = await prisma.collaborator.findMany({
         include: {
@@ -186,11 +190,13 @@ export function createApp() {
     }
   });
 
-  // GET /api/categories - List all active categories
+  // GET /api/categories - List categories (optionally include archived)
   app.get('/api/categories', async (req, res) => {
     try {
+      const includeArchived = req.query.includeArchived === 'true';
+      
       const categories = await prisma.category.findMany({
-        where: { isActive: true },
+        where: includeArchived ? {} : { isActive: true },
         include: { 
           _count: { 
             select: { 
@@ -210,11 +216,15 @@ export function createApp() {
     }
   });
 
-  // GET /api/skills - List all active skills
+
+
+  // GET /api/skills - List skills (optionally include archived)
   app.get('/api/skills', async (req, res) => {
     try {
+      const includeArchived = req.query.includeArchived === 'true';
+      
       const skills = await prisma.skill.findMany({
-        where: { isActive: true }
+        where: includeArchived ? {} : { isActive: true }
       });
       res.json(skills);
     } catch (error) {
@@ -330,7 +340,33 @@ export function createApp() {
     }
   });
 
+  // PUT /api/categories/:id/restore - Restore archived category (and its skills)
+  app.put('/api/categories/:id/restore', authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      const categoryId = parseInt(id);
+      
+      // Restore: set isActive=true for category and related skills
+      await prisma.$transaction([
+        prisma.skill.updateMany({ 
+          where: { categoriaId: categoryId },
+          data: { isActive: true }
+        }),
+        prisma.category.update({ 
+          where: { id: categoryId },
+          data: { isActive: true }
+        })
+      ]);
+      
+      res.json({ success: true, message: 'Categoría restaurada exitosamente' });
+    } catch (error) {
+      console.error('[API] PUT /api/categories/:id/restore failed:', error);
+      res.status(500).json({ message: 'Error restaurando categoría' });
+    }
+  });
+
   // PUT /api/categories/reorder - Reorder categories
+
   app.put('/api/categories/reorder', authMiddleware, async (req, res) => {
     try {
       const { order } = req.body; // Array of category IDs in new order: [3, 1, 2, 4, ...]
