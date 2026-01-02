@@ -19,6 +19,7 @@ export default defineConfig({
         statements: 80
       }
     },
-    setupFiles: ['./src/__tests__/setup.js']
+    setupFiles: ['./src/__tests__/setup.js'],
+    fileParallelism: false
   }
 });

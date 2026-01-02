@@ -368,16 +368,40 @@ export default function TeamMatrixPage() {
 
       {/* Vista activa */}
       {currentView === 'matriz' && (
-        <TransposedMatrixTable 
-          categories={categories}
-          skills={skills}
-          collaborators={collaborators}
-          isLoading={isLoading}
-        />
+        isLoading ? (
+          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <MatrixSkeleton />
+          </div>
+        ) : (
+          collaborators.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
+              <Grid3x3 size={48} className="mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">Matriz vacía</h3>
+              <p className="text-gray-500">No hay datos suficientes para generar la matriz de competencias.</p>
+            </div>
+          ) : (
+            <TransposedMatrixTable 
+              categories={categories}
+              skills={skills}
+              collaborators={collaborators}
+              isLoading={isLoading}
+            />
+          )
+        )
       )}
       
       {currentView === 'colaboradores' && !selectedColaborador && (
-        isLoading ? <CollaboratorListSkeleton /> : <CollaboratorListView collaborators={collaboratorsWithAverages} onSelect={(col) => setSelectedColaborador(col)} />
+        isLoading ? <CollaboratorListSkeleton /> : (
+          collaboratorsWithAverages.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
+              <User size={48} className="mx-auto text-gray-300 mb-4 " />
+              <h3 className="text-lg font-medium text-gray-900">No hay colaboradores</h3>
+              <p className="text-gray-500">Aún no se han registrado colaboradores en el sistema.</p>
+            </div>
+          ) : (
+            <CollaboratorListView collaborators={collaboratorsWithAverages} onSelect={(col) => setSelectedColaborador(col)} />
+          )
+        )
       )}
       
       {currentView === 'colaboradores' && selectedColaborador && (
@@ -392,7 +416,17 @@ export default function TeamMatrixPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {[1, 2, 3, 4, 5, 6].map(i => <CardSkeleton key={i} />)}
           </div>
-        ) : <CategoryGridView categories={categoriesWithAverages} />
+        ) : (
+          categoriesWithAverages.length === 0 ? (
+            <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
+              <Layers size={48} className="mx-auto text-gray-300 mb-4" />
+              <h3 className="text-lg font-medium text-gray-900">No hay categorías</h3>
+              <p className="text-gray-500">Aún no se han definido áreas o categorías de competencias.</p>
+            </div>
+          ) : (
+            <CategoryGridView categories={categoriesWithAverages} />
+          )
+        )
       )}
     </div>
   );

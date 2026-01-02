@@ -8,6 +8,12 @@ describe('API Routes', () => {
   beforeEach(async () => {
     app = createApp();
     
+    // Clean up
+    await prisma.assessment.deleteMany();
+    await prisma.collaborator.deleteMany();
+    await prisma.skill.deleteMany();
+    await prisma.category.deleteMany();
+
     // Seed test data
     await prisma.category.create({
       data: { id: 1, nombre: 'Test Category', abrev: 'Test' }

@@ -83,7 +83,11 @@ export default function DashboardView() {
 
   // Distribución del equipo
   const distribution = useMemo(() => {
-    if (!collaborators.length) return { needsAttention: 0, developing: 0, proficient: 0 };
+    if (!collaborators.length) return { 
+      beginners: { count: 0, names: [] }, 
+      competent: { count: 0, names: [] }, 
+      experts: { count: 0, names: [] } 
+    };
     return calculateDistribution(collaborators);
   }, [collaborators]);
 
