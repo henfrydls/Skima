@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 
 const AuthContext = createContext(null);
 
@@ -8,37 +8,63 @@ const AuthContext = createContext(null);
  * Provides:
  * - token: Current JWT token (or null)
  * - isAuthenticated: boolean
+ * - sessionExpired: boolean (true when 401 detected)
  * - login: (token) => void
  * - logout: () => void
  * - getHeaders: () => headers object with Authorization
+ * - authFetch: Wrapper around fetch that intercepts 401s
  */
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => {
-    // Initialize from localStorage
     return localStorage.getItem('auth_token') || null;
   });
+  const [sessionExpired, setSessionExpired] = useState(false);
 
   const login = (newToken) => {
     setToken(newToken);
+    setSessionExpired(false);
     localStorage.setItem('auth_token', newToken);
   };
 
-  const logout = () => {
+  const logout = useCallback(() => {
     setToken(null);
+    setSessionExpired(false);
     localStorage.removeItem('auth_token');
-  };
+  }, []);
 
-  const getHeaders = () => {
+  const getHeaders = useCallback(() => {
     return token 
       ? { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       : { 'Content-Type': 'application/json' };
-  };
+  }, [token]);
 
-  // Verify token on mount
+  /**
+   * authFetch - Wrapper around fetch that intercepts 401 errors
+   * Usage: const response = await authFetch('/api/endpoint', { method: 'POST', body: ... })
+   */
+  const authFetch = useCallback(async (url, options = {}) => {
+    const headers = {
+      ...getHeaders(),
+      ...(options.headers || {})
+    };
+    
+    const response = await fetch(url, { ...options, headers });
+    
+    // Intercept 401 - Session Expired
+    if (response.status === 401) {
+      setSessionExpired(true);
+      throw new Error('SESSION_EXPIRED');
+    }
+    
+    return response;
+  }, [getHeaders]);
+
+  // Verify token on mount only (not on every token change)
   useEffect(() => {
-    if (token) {
+    const initialToken = localStorage.getItem('auth_token');
+    if (initialToken) {
       fetch('/api/auth/verify', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${initialToken}` }
       })
         .then(res => res.json())
         .then(data => {
@@ -48,14 +74,33 @@ export function AuthProvider({ children }) {
         })
         .catch(() => logout());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Only run on mount
+
+
+  // Cross-tab session sync
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'auth_token') {
+        setToken(e.newValue);
+        if (!e.newValue) {
+          setSessionExpired(false); // Another tab logged out
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const value = {
     token,
     isAuthenticated: !!token,
+    sessionExpired,
     login,
     logout,
-    getHeaders
+    getHeaders,
+    authFetch
   };
 
   return (

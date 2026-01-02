@@ -3,6 +3,7 @@ import { Layout } from './components/layout';
 import { DashboardView, TeamMatrixPage, ReportsPage, SettingsPage } from './pages';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import SessionExpiredModal from './components/common/SessionExpiredModal';
 
 const router = createBrowserRouter([
   {
@@ -36,9 +37,9 @@ function App() {
   return (
     <AuthProvider>
       <RouterProvider router={router} />
+      <SessionExpiredModal />
     </AuthProvider>
   );
 }
 
 export default App;
-

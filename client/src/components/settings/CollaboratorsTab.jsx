@@ -12,6 +12,8 @@ import {
   AlertCircle,
   Briefcase
 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+
 
 /**
  * CollaboratorsTab — CRUD de Colaboradores
@@ -371,11 +373,13 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
 
 // Main Component
 export default function CollaboratorsTab({ onNavigate }) {
+  const { authFetch } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [roleProfiles, setRoleProfiles] = useState({});
   const [totalSkillsCount, setTotalSkillsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [updateError, setUpdateError] = useState(null); // For rollback feedback
 
   // Fetch data (role profiles, collaborators, skills count)
   useEffect(() => {
@@ -401,10 +405,10 @@ export default function CollaboratorsTab({ onNavigate }) {
 
   // Handlers
   const handleCreate = async (newCollab) => {
+    setUpdateError(null);
     try {
-      const response = await fetch('/api/collaborators', {
+      const response = await authFetch('/api/collaborators', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newCollab)
       });
       
@@ -420,32 +424,55 @@ export default function CollaboratorsTab({ onNavigate }) {
       
       setCollaborators([createdWithUIProps, ...collaborators]);
     } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') return; // Modal will handle this
       console.error('Error creating:', err);
-      // TODO: Show toast error
+      setUpdateError('Error al crear colaborador. Intenta de nuevo.');
     }
   };
 
   const handleUpdate = async (id, updated) => {
+    setUpdateError(null);
+    
+    // Store original state for rollback
+    const originalCollaborators = [...collaborators];
+    const originalItem = collaborators.find(c => c.id === id);
+    
     // Optimistic update
     setCollaborators(collaborators.map(c => c.id === id ? updated : c));
     
     try {
-      const response = await fetch(`/api/collaborators/${id}`, {
+      const response = await authFetch(`/api/collaborators/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updated)
       });
-      if (!response.ok) throw new Error('Failed to update');
+      
+      if (!response.ok) {
+        throw new Error('Failed to update');
+      }
+      // Success - data is already updated optimistically
     } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') {
+        // Rollback since auth failed
+        setCollaborators(originalCollaborators);
+        return; // Modal will handle this
+      }
+      
+      // Rollback optimistic update on any error
       console.error('Error updating:', err);
-      // Revert optimization on error? complex to handle currently
+      setCollaborators(originalCollaborators);
+      setUpdateError(`Error al actualizar "${originalItem?.nombre || 'colaborador'}". Cambios revertidos.`);
+      
+      // Auto-clear error after 5 seconds
+      setTimeout(() => setUpdateError(null), 5000);
     }
   };
 
+
   const handleDelete = async (id) => {
     if (confirm('¿Desactivar este colaborador?')) {
+      setUpdateError(null);
       try {
-        const response = await fetch(`/api/collaborators/${id}`, {
+        const response = await authFetch(`/api/collaborators/${id}`, {
           method: 'DELETE'
         });
         
@@ -453,10 +480,14 @@ export default function CollaboratorsTab({ onNavigate }) {
         
         setCollaborators(collaborators.filter(c => c.id !== id));
       } catch (err) {
+        if (err.message === 'SESSION_EXPIRED') return;
         console.error('Error deleting:', err);
+        setUpdateError('Error al eliminar colaborador.');
+        setTimeout(() => setUpdateError(null), 5000);
       }
     }
   };
+
 
   // Empty state
   if (collaborators.length === 0) {

@@ -1,7 +1,6 @@
 import express from 'express';
-import bcrypt from 'bcryptjs';
-import { generateToken } from '../middleware/auth.js';
-import { prisma } from '../index.js';
+import jwt from 'jsonwebtoken';
+import { generateToken, JWT_SECRET } from '../middleware/auth.js';
 
 const router = express.Router();
 
@@ -64,13 +63,14 @@ router.get('/verify', (req, res) => {
   }
 
   try {
-    const jwt = require('jsonwebtoken');
     const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'skills-matrix-secret-key-change-in-production');
+    const decoded = jwt.verify(token, JWT_SECRET);
     res.json({ authenticated: true, user: decoded });
-  } catch {
+  } catch (err) {
+    console.error('[API] Token verification failed:', err.message);
     res.json({ authenticated: false });
   }
 });
 
 export default router;
+
