@@ -25,3 +25,32 @@ dist-ssr
 
 # Local data files (user-specific, not tracked)
 data/database.json
+
+# ===========================================
+# SECURITY: Sensitive files - NEVER COMMIT
+# ===========================================
+
+# Environment files (may contain secrets)
+.env
+.env.*
+!.env.example
+*.env
+server/.env
+client/.env
+
+# Database files (contain user data)
+*.db
+*.sqlite
+*.sqlite3
+server/prisma/*.db
+
+# Secret/credential files
+*.pem
+*.key
+*.cert
+secrets/
+credentials/
+
+# Backup files that might contain sensitive data
+*.bak
+*.backup
