@@ -624,6 +624,58 @@ export function createApp() {
     }
   });
 
+  // PUT /api/role-profiles/:rol/rename - Rename role profile
+  app.put('/api/role-profiles/:rol/rename', authMiddleware, async (req, res) => {
+    try {
+      const { rol } = req.params; // Old role name
+      const { newName } = req.body; // New role name
+
+      if (!newName || !newName.trim()) {
+        return res.status(400).json({ message: 'El nuevo nombre es requerido' });
+      }
+
+      const trimmedNewName = newName.trim();
+
+      // Check if old profile exists
+      const existingProfile = await prisma.roleProfile.findUnique({ where: { rol } });
+      if (!existingProfile) {
+        return res.status(404).json({ message: 'Perfil no encontrado' });
+      }
+
+      // Check if new name already exists (unless it's the same)
+      if (trimmedNewName !== rol) {
+        const conflictProfile = await prisma.roleProfile.findUnique({ where: { rol: trimmedNewName } });
+        if (conflictProfile) {
+          return res.status(400).json({ message: 'Ya existe un perfil con ese nombre' });
+        }
+      }
+
+      // Transaction: Update profile + all collaborators using this role + evaluation sessions
+      await prisma.$transaction([
+        // 1. Update the role profile name
+        prisma.roleProfile.update({
+          where: { rol },
+          data: { rol: trimmedNewName }
+        }),
+        // 2. Update all collaborators that have this role
+        prisma.collaborator.updateMany({
+          where: { rol: rol },
+          data: { rol: trimmedNewName }
+        }),
+        // 3. Update evaluation session snapshots that reference this role
+        prisma.evaluationSession.updateMany({
+          where: { collaboratorRol: rol },
+          data: { collaboratorRol: trimmedNewName }
+        })
+      ]);
+
+      res.json({ success: true, oldName: rol, newName: trimmedNewName });
+    } catch (error) {
+      console.error('[API] PUT /api/role-profiles/:rol/rename failed:', error);
+      res.status(500).json({ message: 'Error renaming role profile' });
+    }
+  });
+
   // POST /api/role-profiles - Create new role profile
   app.post('/api/role-profiles', authMiddleware, async (req, res) => {
     try {

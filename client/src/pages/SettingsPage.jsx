@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { Users, Layers, FolderTree, ClipboardCheck, Briefcase } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, AlertTriangle, X } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
@@ -41,6 +42,12 @@ export default function SettingsPage() {
   const [navigationContext, setNavigationContext] = useState(null);
   // Track which tabs have been mounted at least once to lazy load them
   const [mountedTabs, setMountedTabs] = useState([activeTab]);
+  // Track if RoleProfilesTab has unsaved changes
+  const [roleProfilesDirty, setRoleProfilesDirty] = useState(false);
+  // Pending tab change when there are unsaved changes
+  const [pendingTab, setPendingTab] = useState(null);
+  // Data version - increments when role profiles change to trigger refetch in other tabs
+  const [dataVersion, setDataVersion] = useState(0);
 
   // Update mounted tabs when active tab changes
   useEffect(() => {
@@ -50,6 +57,11 @@ export default function SettingsPage() {
   }, [activeTab, mountedTabs]);
 
   const handleTabChange = (tabId) => {
+    // Block if leaving RoleProfiles with unsaved changes
+    if (activeTab === 'perfiles' && roleProfilesDirty && tabId !== 'perfiles') {
+      setPendingTab(tabId);
+      return;
+    }
     setSearchParams({ tab: tabId });
     setNavigationContext(null);
   };
@@ -119,22 +131,62 @@ export default function SettingsPage() {
 
         {mountedTabs.includes('perfiles') && (
           <div className={activeTab === 'perfiles' ? 'block' : 'hidden'}>
-            <RoleProfilesTab isActive={activeTab === 'perfiles'} />
+            <RoleProfilesTab 
+              isActive={activeTab === 'perfiles'} 
+              onDirtyChange={setRoleProfilesDirty}
+              onDataChange={() => setDataVersion(v => v + 1)}
+            />
           </div>
         )}
 
         {mountedTabs.includes('colaboradores') && (
           <div className={activeTab === 'colaboradores' ? 'block' : 'hidden'}>
-            <CollaboratorsTab onNavigate={handleNavigate} isActive={activeTab === 'colaboradores'} />
+            <CollaboratorsTab onNavigate={handleNavigate} isActive={activeTab === 'colaboradores'} dataVersion={dataVersion} />
           </div>
         )}
 
         {mountedTabs.includes('evaluaciones') && (
           <div className={activeTab === 'evaluaciones' ? 'block' : 'hidden'}>
-            <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} />
+            <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} dataVersion={dataVersion} />
           </div>
         )}
       </div>
+
+      {/* Unsaved Changes Dialog - Portal to body for full screen coverage */}
+      {pendingTab && createPortal(
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-warning mb-2">
+                <AlertTriangle size={24} />
+                <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+              </div>
+              <p className="text-gray-600 mb-6">
+                Tienes modificaciones pendientes en el perfil de puesto. Si sales ahora, perderás los cambios.
+              </p>
+              <div className="flex justify-end gap-3">
+                <button 
+                  onClick={() => setPendingTab(null)}
+                  className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button 
+                  onClick={() => {
+                    setRoleProfilesDirty(false);
+                    setSearchParams({ tab: pendingTab });
+                    setPendingTab(null);
+                  }}
+                  className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
+                >
+                  Descartar cambios
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }

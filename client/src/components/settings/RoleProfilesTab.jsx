@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useBlocker, useSearchParams } from 'react-router-dom';
 import { 
   Users,
@@ -17,7 +18,9 @@ import {
   Search,
   ArrowLeft,
   LayoutGrid,
-  List
+  List,
+  MoreVertical,
+  Edit3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -47,7 +50,7 @@ const CRITICIDAD_OPTIONS = [
 function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
         <div className="p-6">
@@ -80,7 +83,8 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -107,7 +111,7 @@ function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
     onClose();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -144,7 +148,106 @@ function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
+  );
+}
+
+// Edit Role Modal Component (Rename)
+function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, getHeaders }) {
+  const [newName, setNewName] = useState(currentName || '');
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setNewName(currentName || '');
+      setError('');
+    }
+  }, [isOpen, currentName]);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newName.trim()) {
+      setError('El nombre del rol es requerido');
+      return;
+    }
+    if (newName.trim() !== currentName && existingRoles.includes(newName.trim())) {
+      setError('Ya existe un perfil con ese nombre');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/role-profiles/${encodeURIComponent(currentName)}/rename`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders()
+        },
+        body: JSON.stringify({ newName: newName.trim() })
+      });
+      
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || 'Error al renombrar');
+      }
+      
+      onRename(currentName, newName.trim());
+      onClose();
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h2 className="text-lg font-medium text-gray-800">Renombrar Perfil</h2>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
+            <X size={20} className="text-gray-500" />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Nombre del Rol
+            </label>
+            <input
+              type="text"
+              value={newName}
+              onChange={(e) => { setNewName(e.target.value); setError(''); }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              placeholder="Ej: Senior Developer, UX Lead..."
+              autoFocus
+            />
+            {error && <p className="text-xs text-critical mt-1">{error}</p>}
+          </div>
+          <p className="text-xs text-gray-500">
+            Los colaboradores con este rol serán actualizados automáticamente.
+          </p>
+          <div className="flex justify-end gap-3 pt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+              Cancelar
+            </button>
+            <button 
+              type="submit" 
+              disabled={isLoading}
+              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
+            >
+              {isLoading && <Loader2 size={16} className="animate-spin" />}
+              Guardar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>,
+    document.body
   );
 }
 
@@ -278,14 +381,17 @@ function CriticidadLegend() {
 }
 
 // Main component
-export default function RoleProfilesTab({ isActive = true }) {
+export default function RoleProfilesTab({ isActive = true, onDirtyChange, onDataChange }) {
   const { getHeaders } = useAuth();
   const [searchParams] = useSearchParams();
   const [roles, setRoles] = useState([]);
   
   // Toolbar State
   const [searchTerm, setSearchTerm] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'list'
+  const [viewMode, setViewMode] = useState(() => {
+    // Persist view preference in localStorage
+    return localStorage.getItem('roleProfilesViewMode') || 'grid';
+  });
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
   const [selectedRole, setSelectedRole] = useState(null);
@@ -295,11 +401,16 @@ export default function RoleProfilesTab({ isActive = true }) {
   const [initialRequirements, setInitialRequirements] = useState({}); // For dirty checking
   
   const [allProfiles, setAllProfiles] = useState({});
+  const [collaborators, setCollaborators] = useState([]); // For counting collaborators per role
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [error, setError] = useState(null);
   const [showNewRoleModal, setShowNewRoleModal] = useState(false);
+  
+  // Edit/Rename Modal state
+  const [editRoleModal, setEditRoleModal] = useState({ isOpen: false, roleName: null });
+  const [activeActionMenu, setActiveActionMenu] = useState(null); // role name of currently open menu
   
   // Navigation blocking state
   const [pendingNavigation, setPendingNavigation] = useState(null); // { type: 'route' | 'role', target: ... }
@@ -323,6 +434,38 @@ export default function RoleProfilesTab({ isActive = true }) {
     };
   }, [allProfiles]);
 
+  // Get collaborator count for a role
+  const getCollaboratorCount = useCallback((roleName) => {
+    return collaborators.filter(c => c.rol === roleName).length;
+  }, [collaborators]);
+
+  // Handle rename of role profile
+  const handleRename = useCallback((oldName, newName) => {
+    // Update roles list
+    setRoles(prev => prev.map(r => r === oldName ? newName : r).sort());
+    
+    // Update profiles
+    setAllProfiles(prev => {
+      const { [oldName]: profile, ...rest } = prev;
+      return { ...rest, [newName]: profile };
+    });
+    
+    // Update collaborators locally
+    setCollaborators(prev => prev.map(c => 
+      c.rol === oldName ? { ...c, rol: newName } : c
+    ));
+    
+    // If this role is selected, update selection
+    if (selectedRole === oldName) {
+      setSelectedRole(newName);
+    }
+    
+    // Notify parent to trigger refetch in other tabs (Collaborators, Evaluations)
+    if (onDataChange) {
+      onDataChange();
+    }
+  }, [selectedRole, onDataChange]);
+
   // Pre-select role from URL param
   useEffect(() => {
     const rolFromUrl = searchParams.get('rol');
@@ -335,6 +478,18 @@ export default function RoleProfilesTab({ isActive = true }) {
   const isDirty = useMemo(() => {
     return JSON.stringify(requirements) !== JSON.stringify(initialRequirements);
   }, [requirements, initialRequirements]);
+
+  // Persist viewMode to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('roleProfilesViewMode', viewMode);
+  }, [viewMode]);
+
+  // Notify parent of dirty state for tab switch protection
+  useEffect(() => {
+    if (onDirtyChange) {
+      onDirtyChange(isDirty);
+    }
+  }, [isDirty, onDirtyChange]);
 
   // React Router Blocker (blocks navigation if dirty)
   const blocker = useBlocker(
@@ -391,8 +546,9 @@ export default function RoleProfilesTab({ isActive = true }) {
         
         // Load existing profiles if any
         setAllProfiles(data.roleProfiles || {});
-
         
+        // Save collaborators for counting per role
+        setCollaborators(data.collaborators || []);
       } catch (err) {
         setError('Error cargando datos');
         console.error(err);
@@ -403,8 +559,8 @@ export default function RoleProfilesTab({ isActive = true }) {
     fetchData();
   }, [isActive]); // Refetch when isActive changes to true
 
-  // Safe Role Switcher
-  const handleRoleSwitch = (newRole) => {
+  // Safe Role Switcher - wrapped in useCallback to ensure fresh isDirty value
+  const handleRoleSwitch = useCallback((newRole) => {
     if (!newRole) {
       setSelectedRole(null);
       return;
@@ -416,7 +572,7 @@ export default function RoleProfilesTab({ isActive = true }) {
     } else {
       setSelectedRole(newRole);
     }
-  };
+  }, [isDirty]);
 
   // Load requirements when role changes
   useEffect(() => {
@@ -635,60 +791,117 @@ export default function RoleProfilesTab({ isActive = true }) {
                     <p className="text-gray-500">Prueba con otro término de búsqueda o crea un nuevo perfil.</p>
                  </div>
               ) : viewMode === 'grid' ? (
-                 /* GRID VIEW */
+                 /* GRID VIEW - Redesigned with action menu */
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {filteredRoles.map(role => {
                        const status = getRoleStatus(role);
+                       const collabCount = getCollaboratorCount(role);
                        return (
-                          <button
+                          <div
                              key={role}
-                             onClick={() => handleRoleSwitch(role)}
-                             className="bg-white p-5 rounded-xl border border-gray-200 hover:border-primary/50 hover:shadow-md transition-all text-left group relative overflow-hidden"
+                             className="bg-white p-5 rounded-xl border border-gray-200 hover:border-primary/30 hover:shadow-md transition-all text-left group relative"
                           >
-                             <div className="flex items-start justify-between mb-4">
+                             {/* Header with icon and action menu */}
+                             <div className="flex items-start justify-between mb-3">
                                 <div className="w-10 h-10 bg-primary/5 rounded-lg flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-colors">
                                    <Briefcase size={20} />
                                 </div>
-                                <div className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide border ${status.count > 0 ? 'bg-white border-gray-200 text-gray-600' : 'bg-gray-50 text-gray-400 border-transparent'}`}>
-                                   {status.text}
+                                
+                                {/* Action Menu */}
+                                <div className="relative">
+                                   <button 
+                                      onClick={(e) => {
+                                         e.stopPropagation();
+                                         setActiveActionMenu(activeActionMenu === role ? null : role);
+                                      }}
+                                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
+                                   >
+                                      <MoreVertical size={18} />
+                                   </button>
+                                   
+                                   {activeActionMenu === role && (
+                                      <>
+                                         <div className="fixed inset-0 z-10" onClick={() => setActiveActionMenu(null)} />
+                                         <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                                            <button
+                                               onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setActiveActionMenu(null);
+                                                  handleRoleSwitch(role);
+                                               }}
+                                               className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                            >
+                                               <Edit3 size={14} />
+                                               Editar skills
+                                            </button>
+                                            <button
+                                               onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  setActiveActionMenu(null);
+                                                  setEditRoleModal({ isOpen: true, roleName: role });
+                                               }}
+                                               className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                            >
+                                               <Briefcase size={14} />
+                                               Renombrar
+                                            </button>
+                                         </div>
+                                      </>
+                                   )}
                                 </div>
                              </div>
                              
-                             <h3 className="font-semibold text-gray-800 mb-1 group-hover:text-primary transition-colors truncate pr-2">{role}</h3>
+                             {/* Role Name - Clickable */}
+                             <button 
+                                onClick={() => handleRoleSwitch(role)}
+                                className="block w-full text-left"
+                             >
+                                <h3 className="font-semibold text-gray-800 mb-2 group-hover:text-primary transition-colors truncate">{role}</h3>
+                             </button>
                              
-                             <div className="flex items-center gap-2 mt-3">
-                                <div className={`w-2 h-2 rounded-full ${status.color}`} />
-                                <span className="text-xs text-gray-500">
-                                   {status.count === 0 ? 'Sin definir' : 'Configurado'}
-                                </span>
+                             {/* Status Row */}
+                             <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                                <div className="flex items-center gap-2">
+                                   <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                   <span className="text-xs text-gray-500">{status.text}</span>
+                                </div>
+                                <div className="flex items-center gap-1 text-xs text-gray-400">
+                                   <Users size={12} />
+                                   <span>{collabCount}</span>
+                                </div>
                              </div>
-                          </button>
+                          </div>
                        );
                     })}
                  </div>
               ) : (
-                 /* LIST VIEW */
+                 /* LIST VIEW - Redesigned with action menu and collaborator count */
                  <div className="border border-gray-100 rounded-xl overflow-hidden">
                     <table className="w-full">
                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-medium">
                           <tr>
                              <th className="px-6 py-3 text-left">Rol</th>
-                             <th className="px-6 py-3 text-left">Estado</th>
-                             <th className="px-6 py-3 text-right">Acción</th>
+                             <th className="px-6 py-3 text-left">Skills</th>
+                             <th className="px-6 py-3 text-left">Colaboradores</th>
+                             <th className="px-6 py-3 text-right w-16">Acciones</th>
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-gray-100">
                           {filteredRoles.map(role => {
                              const status = getRoleStatus(role);
+                             const collabCount = getCollaboratorCount(role);
                              return (
-                                <tr key={role} className="group hover:bg-gray-50 transition-colors cursor-pointer" onClick={() => handleRoleSwitch(role)}>
+                                <tr key={role} className="group hover:bg-gray-50 transition-colors">
                                    <td className="px-6 py-4">
-                                      <div className="flex items-center gap-3">
-                                         <div className="w-8 h-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center">
+                                      <button 
+                                         onClick={() => handleRoleSwitch(role)}
+                                         className="flex items-center gap-3 text-left"
+                                      >
+                                         <div className="w-8 h-8 rounded-lg bg-primary/5 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-colors">
                                             <Briefcase size={16} />
                                          </div>
                                          <span className="font-medium text-gray-700 group-hover:text-primary transition-colors">{role}</span>
-                                      </div>
+                                      </button>
                                    </td>
                                    <td className="px-6 py-4">
                                       <div className="flex items-center gap-2">
@@ -696,10 +909,54 @@ export default function RoleProfilesTab({ isActive = true }) {
                                          <span className="text-sm text-gray-600">{status.text}</span>
                                       </div>
                                    </td>
+                                   <td className="px-6 py-4">
+                                      <div className="flex items-center gap-1.5 text-sm text-gray-500">
+                                         <Users size={14} />
+                                         <span>{collabCount} {collabCount === 1 ? 'persona' : 'personas'}</span>
+                                      </div>
+                                   </td>
                                    <td className="px-6 py-4 text-right">
-                                      <button className="text-xs font-semibold text-primary opacity-0 group-hover:opacity-100 transition-opacity hover:underline">
-                                         Editar
-                                      </button>
+                                      <div className="relative inline-block">
+                                         <button
+                                            onClick={(e) => {
+                                               e.stopPropagation();
+                                               setActiveActionMenu(activeActionMenu === role ? null : role);
+                                            }}
+                                            className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                                         >
+                                            <MoreVertical size={18} />
+                                         </button>
+                                         
+                                         {activeActionMenu === role && (
+                                            <>
+                                               <div className="fixed inset-0 z-10" onClick={() => setActiveActionMenu(null)} />
+                                               <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-20">
+                                                  <button
+                                                     onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveActionMenu(null);
+                                                        handleRoleSwitch(role);
+                                                     }}
+                                                     className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                  >
+                                                     <Edit3 size={14} />
+                                                     Editar skills
+                                                  </button>
+                                                  <button
+                                                     onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setActiveActionMenu(null);
+                                                        setEditRoleModal({ isOpen: true, roleName: role });
+                                                     }}
+                                                     className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                                                  >
+                                                     <Briefcase size={14} />
+                                                     Renombrar
+                                                  </button>
+                                               </div>
+                                            </>
+                                         )}
+                                      </div>
                                    </td>
                                 </tr>
                              );
@@ -838,23 +1095,52 @@ export default function RoleProfilesTab({ isActive = true }) {
         onSave={() => handleSave(true)}
       />
 
-      {/* Floating Sticky Save (Mobile/Safety) */}
-      {selectedRole && isDirty && (
-         <div className="fixed bottom-6 right-8 z-50 animate-in slide-in-from-bottom-4">
-            <div className="bg-gray-900 text-white px-5 py-3 rounded-lg shadow-xl flex items-center gap-4">
-               <div>
-                 <p className="text-sm font-medium">Cambios sin guardar</p>
-                 <button onClick={() => setRequirements(initialRequirements)} className="text-xs text-gray-400 hover:text-white underline decoration-gray-600 hover:decoration-white">Descartar</button>
-               </div>
-               <button 
-                  onClick={() => handleSave(false)}
-                  className="bg-primary hover:bg-primary-hover text-white p-2 rounded-md transition-colors"
-                  title="Guardar"
-               >
-                  <Save size={18} />
-               </button>
-            </div>
-         </div>
+      <EditRoleModal
+        isOpen={editRoleModal.isOpen}
+        onClose={() => setEditRoleModal({ isOpen: false, roleName: null })}
+        onRename={handleRename}
+        currentName={editRoleModal.roleName}
+        existingRoles={roles}
+        getHeaders={getHeaders}
+      />
+
+      {/* Sticky Footer for Save Actions - Only visible when dirty (matches EvaluationsTab style) */}
+      {selectedRole && (
+        <div 
+          className={`
+            sticky bottom-2 z-20 flex justify-end gap-3 p-4 mx-2 rounded-xl shadow-lg border border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-300
+            ${isDirty ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}
+          `}
+        >
+          <span className="flex items-center text-sm text-gray-500 mr-auto">
+            <AlertCircle size={16} className="mr-2 text-warning" />
+            Tienes cambios sin guardar
+          </span>
+
+          <button
+             onClick={() => setRequirements(initialRequirements)}
+             className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+          >
+            Descartar
+          </button>
+          <button
+            onClick={() => handleSave(false)}
+            disabled={isSaving}
+            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
+          >
+            {isSaving ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Guardando...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                Guardar Cambios
+              </>
+            )}
+          </button>
+        </div>
       )}
 
     </div>

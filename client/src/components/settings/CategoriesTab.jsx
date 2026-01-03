@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Search,
   GripVertical, 
@@ -88,7 +89,7 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
 
   const isEdit = !!category;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
@@ -151,7 +152,8 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -271,7 +273,7 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
 
   const affectedSkills = skills.filter(s => s.categoriaId === category.id);
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
         <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-warning/5">
@@ -332,7 +334,8 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -607,11 +610,13 @@ export default function CategoriesTab() {
   const handleDragStart = (e, id) => {
     setDraggedId(id);
     e.dataTransfer.effectAllowed = 'move';
-    // Create a custom drag image with rotation (optional enhancement)
-    const elem = e.target;
-    if (elem) {
-      e.dataTransfer.setDragImage(elem, elem.offsetWidth / 2, elem.offsetHeight / 2);
-    }
+    
+    // Create a transparent 1x1 pixel drag image to hide the browser's default preview
+    // The visual feedback is handled by CSS (opacity, transform) on the dragged row
+    const transparentImg = document.createElement('canvas');
+    transparentImg.width = 1;
+    transparentImg.height = 1;
+    e.dataTransfer.setDragImage(transparentImg, 0, 0);
   };
 
   const handleDragOver = (e, overId) => {

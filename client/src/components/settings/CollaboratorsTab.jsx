@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   Search, 
   Plus, 
@@ -74,7 +75,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
     }
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
         {/* Header */}
@@ -169,7 +170,8 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -446,7 +448,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
 }
 
 // Main Component
-export default function CollaboratorsTab({ onNavigate }) {
+export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0 }) {
   const { authFetch } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [roleProfiles, setRoleProfiles] = useState({});
@@ -454,8 +456,10 @@ export default function CollaboratorsTab({ onNavigate }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [updateError, setUpdateError] = useState(null); // For rollback feedback
+  const [isLoading, setIsLoading] = useState(true); // Prevent empty state flash
 
   // Fetch data (role profiles, collaborators, skills count)
+  // Refetches when dataVersion changes (triggered by role profile rename)
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -466,10 +470,12 @@ export default function CollaboratorsTab({ onNavigate }) {
         setTotalSkillsCount(data.skills?.length || 0);
       } catch (err) {
         console.error('Error fetching data:', err);
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
-  }, []);
+  }, [dataVersion]); // Add dataVersion dependency to trigger refetch on role rename
 
   // Filter collaborators
   const filteredCollaborators = collaborators.filter(c =>
@@ -566,7 +572,16 @@ export default function CollaboratorsTab({ onNavigate }) {
   };
 
 
-  // Empty state
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center py-16">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Empty state (only show AFTER loading is complete)
   if (collaborators.length === 0) {
     return (
       <>

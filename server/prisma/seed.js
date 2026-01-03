@@ -16,9 +16,11 @@ const CATEGORIES = [
   { id: 1, nombre: 'Innovación & Diseño', abrev: 'Innovación' },
   { id: 2, nombre: 'Desarrollo & Plataforma Técnica', abrev: 'Desarrollo' },
   { id: 3, nombre: 'Liderazgo del Cambio', abrev: 'Cambio' },
-  { id: 4, nombre: 'Negocio & Estrategia', abrev: 'Negocio' },
-  { id: 5, nombre: 'Entrega & Portafolio', abrev: 'Entrega' },
-  { id: 6, nombre: 'Tecnologías Emergentes', abrev: 'Emergentes' },
+  { id: 4, nombre: 'Negocio & Estrategia', abrev: 'Negocio', isActive: true },
+  { id: 5, nombre: 'Entrega & Portafolio', abrev: 'Entrega', isActive: true },
+  { id: 6, nombre: 'Tecnologías Emergentes', abrev: 'Emergentes', isActive: true },
+  // Case: Archived Category
+  { id: 7, nombre: 'Legacy Systems (Archived)', abrev: 'Legacy', isActive: false },
 ];
 
 // Demo Skills (37 skills)
@@ -61,6 +63,9 @@ const SKILLS = [
   { id: 38, categoriaId: 6, nombre: 'AI Agents & Workflows' },
   { id: 39, categoriaId: 6, nombre: 'IoT & Edge Computing' },
   { id: 40, categoriaId: 2, nombre: 'Control de versiones (Git)' },
+  // Case: Archived Skill
+  { id: 41, categoriaId: 7, nombre: 'COBOL Programming', isActive: false },
+  { id: 42, categoriaId: 7, nombre: 'Mainframe Maintenance', isActive: false },
 ];
 
 // Demo Collaborators with full skill assessments
@@ -184,6 +189,38 @@ const COLLABORATORS = [
       40: { nivel: 3.0, frecuencia: 'D', criticidad: 'C' },
     },
   },
+  // Case: "Promoted" (High Performance / Expert)
+  {
+    nombre: 'Diana Prince',
+    rol: 'Engineering Director',
+    esDemo: true,
+    skills: {
+      15: { nivel: 4.8, frecuencia: 'D', criticidad: 'C' }, // High Leadership
+      18: { nivel: 4.9, frecuencia: 'D', criticidad: 'C' },
+      24: { nivel: 4.7, frecuencia: 'D', criticidad: 'C' }, // Strategy
+      25: { nivel: 5.0, frecuencia: 'D', criticidad: 'C' },
+      30: { nivel: 4.5, frecuencia: 'W', criticidad: 'I' },
+    },
+  },
+  // Case: "New Hire" (Empty/Low Assessments)
+  {
+    nombre: 'Kevin Junior',
+    rol: 'Intern',
+    esDemo: true,
+    skills: {
+       // Very few skills assessed
+       40: { nivel: 1.5, frecuencia: 'D', criticidad: 'I' }, // Git
+    },
+  },
+  // Case: Undefined Role (No Profile)
+  {
+    nombre: 'Contractor',
+    rol: 'External Consultant',
+    esDemo: true,
+    skills: {
+      1: { nivel: 4.0, frecuencia: 'P', criticidad: 'I' },
+    },
+  }
 ];
 
 async function main() {
@@ -192,6 +229,7 @@ async function main() {
   // Clear existing data
   console.log('  Clearing existing data...');
   await prisma.assessment.deleteMany();
+  await prisma.evaluationSession.deleteMany();
   await prisma.snapshot.deleteMany();
   await prisma.collaborator.deleteMany();
   await prisma.skill.deleteMany();
@@ -212,24 +250,159 @@ async function main() {
   // Seed Collaborators and Assessments
   console.log('  Seeding collaborators and assessments...');
   let totalAssessments = 0;
+  let totalSessions = 0;
+  
+  // Generate varied evaluation dates for demo purposes
+  const getRandomPastDate = (daysAgo) => {
+    const date = new Date();
+    date.setDate(date.getDate() - daysAgo);
+    return date;
+  };
   
   for (const collab of COLLABORATORS) {
     const { skills, ...collaboratorData } = collab;
     
+    // Random evaluation date: between 5 and 90 days ago
+    const daysAgo = Math.floor(Math.random() * 85) + 5;
+    const evaluationDate = getRandomPastDate(daysAgo);
+    
     const created = await prisma.collaborator.create({
-      data: collaboratorData
+      data: {
+        ...collaboratorData,
+        lastEvaluated: evaluationDate
+      }
     });
 
-    // Create assessments for each skill
-    for (const [skillId, data] of Object.entries(skills)) {
-      await prisma.assessment.create({
+    // Create an EvaluationSession for this collaborator (if they have skills)
+    if (Object.keys(skills).length > 0) {
+      const session = await prisma.evaluationSession.create({
         data: {
           collaboratorId: created.id,
+          collaboratorNombre: created.nombre,
+          collaboratorRol: created.rol,
+          evaluatedBy: 'Admin (Demo)',
+          notes: 'Evaluación inicial generada por seed',
+          evaluatedAt: evaluationDate
+        }
+      });
+      totalSessions++;
+
+      // Create assessments for each skill, linked to the session
+      for (const [skillId, data] of Object.entries(skills)) {
+        await prisma.assessment.create({
+          data: {
+            collaboratorId: created.id,
+            skillId: parseInt(skillId),
+            nivel: data.nivel,
+            criticidad: data.criticidad,
+            frecuencia: data.frecuencia,
+            snapshotId: null,
+            evaluationSessionId: session.id,
+            createdAt: evaluationDate
+          }
+        });
+        totalAssessments++;
+      }
+    }
+  }
+
+  // Create historical evaluations to show role changes
+  console.log('  Adding historical evaluations...');
+  
+  // Find Laura Torres and Diana Prince to add historical evaluations
+  const lauraTorres = await prisma.collaborator.findFirst({ where: { nombre: 'Laura Torres' } });
+  const dianaPrince = await prisma.collaborator.findFirst({ where: { nombre: 'Diana Prince' } });
+  
+  // Laura Torres: Previous evaluation as "Intern" (6 months ago)
+  if (lauraTorres) {
+    const oldDate1 = getRandomPastDate(180); // ~6 months ago
+    const oldSession1 = await prisma.evaluationSession.create({
+      data: {
+        collaboratorId: lauraTorres.id,
+        collaboratorNombre: 'Laura Torres',
+        collaboratorRol: 'Intern', // Previous role
+        evaluatedBy: 'HR Manager',
+        notes: 'Evaluación de período de prueba',
+        evaluatedAt: oldDate1
+      }
+    });
+    totalSessions++;
+    
+    // Create some historical assessments with lower scores
+    const internSkills = { 9: 1.5, 10: 1.8, 40: 2.0 };
+    for (const [skillId, nivel] of Object.entries(internSkills)) {
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: lauraTorres.id,
           skillId: parseInt(skillId),
-          nivel: data.nivel,
-          criticidad: data.criticidad,
-          frecuencia: data.frecuencia,
-          snapshotId: null
+          nivel: nivel,
+          criticidad: 'I',
+          frecuencia: 'D',
+          evaluationSessionId: oldSession1.id,
+          createdAt: oldDate1
+        }
+      });
+      totalAssessments++;
+    }
+    
+    // Another historical one 3 months ago (still Intern but improving)
+    const oldDate2 = getRandomPastDate(90);
+    const oldSession2 = await prisma.evaluationSession.create({
+      data: {
+        collaboratorId: lauraTorres.id,
+        collaboratorNombre: 'Laura Torres',
+        collaboratorRol: 'Intern',
+        evaluatedBy: 'Tech Lead',
+        notes: 'Evaluación de progreso Q3',
+        evaluatedAt: oldDate2
+      }
+    });
+    totalSessions++;
+    
+    const improvingSkills = { 9: 2.0, 10: 2.2, 40: 2.5 };
+    for (const [skillId, nivel] of Object.entries(improvingSkills)) {
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: lauraTorres.id,
+          skillId: parseInt(skillId),
+          nivel: nivel,
+          criticidad: 'I',
+          frecuencia: 'D',
+          evaluationSessionId: oldSession2.id,
+          createdAt: oldDate2
+        }
+      });
+      totalAssessments++;
+    }
+  }
+  
+  // Diana Prince: Previous evaluation as "Engineering Manager" (4 months ago)
+  if (dianaPrince) {
+    const oldDate = getRandomPastDate(120); // ~4 months ago
+    const oldSession = await prisma.evaluationSession.create({
+      data: {
+        collaboratorId: dianaPrince.id,
+        collaboratorNombre: 'Diana Prince',
+        collaboratorRol: 'Engineering Manager', // Previous role before promotion
+        evaluatedBy: 'CTO',
+        notes: 'Evaluación pre-promoción',
+        evaluatedAt: oldDate
+      }
+    });
+    totalSessions++;
+    
+    // Lower leadership scores before promotion
+    const managerSkills = { 15: 4.0, 18: 4.2, 24: 4.0, 25: 4.3 };
+    for (const [skillId, nivel] of Object.entries(managerSkills)) {
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: dianaPrince.id,
+          skillId: parseInt(skillId),
+          nivel: nivel,
+          criticidad: 'C',
+          frecuencia: 'D',
+          evaluationSessionId: oldSession.id,
+          createdAt: oldDate
         }
       });
       totalAssessments++;
@@ -277,6 +450,47 @@ async function main() {
         "14": "C",                                // Testing/QA
         "9": "I", "10": "I", "11": "I",          // Desarrollo
         "7": "D", "13": "I"                       // Cloud/Security
+      })
+    },
+    // Case: Unused Profile (No collaborators have this role)
+    {
+      rol: 'Data Scientist',
+      skills: JSON.stringify({
+        "21": "C", "35": "C", "38": "I", // Data & AI
+        "9": "I", "30": "I"
+      })
+    },
+    // Case: Profiles that match actual collaborators
+    {
+      rol: 'Arquitecto Cloud',
+      skills: JSON.stringify({
+        "7": "C", "8": "C", "11": "C", "13": "C", "37": "C", // Cloud Infra
+        "9": "I", "10": "D", "40": "C",                      // Dev
+        "38": "I", "35": "I"                                   // AI/Emerging
+      })
+    },
+    {
+      rol: 'Consultora de Innovación',
+      skills: JSON.stringify({
+        "1": "C", "2": "C", "3": "C", "4": "C", "5": "C", // Innovación
+        "15": "C", "16": "C", "17": "I", "18": "C",       // Liderazgo
+        "19": "I", "21": "I", "24": "C", "31": "I"         // Negocio/Entrega
+      })
+    },
+    {
+      rol: 'Líder de Plataforma',
+      skills: JSON.stringify({
+        "7": "C", "8": "C", "11": "C", "13": "I", "37": "I", // Plataforma
+        "9": "I", "29": "C", "32": "I", "33": "C", "34": "I", // Entrega
+        "40": "C"                                              // Git
+      })
+    },
+    {
+      rol: 'Engineering Director',
+      skills: JSON.stringify({
+        "15": "C", "16": "I", "17": "I", "18": "C",       // Liderazgo
+        "24": "C", "25": "C", "30": "C", "31": "C",       // Estrategia
+        "7": "D", "8": "I"                                  // Tech awareness
       })
     }
   ];

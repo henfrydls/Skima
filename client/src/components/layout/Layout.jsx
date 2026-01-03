@@ -59,7 +59,7 @@ export default function Layout() {
       {/* Sidebar */}
       <aside
         className={`
-          fixed left-0 top-0 z-40 h-screen
+          fixed left-0 top-0 z-30 h-screen
           bg-surface shadow-lg
           transition-all duration-300 ease-in-out
           flex flex-col
