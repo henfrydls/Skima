@@ -189,7 +189,7 @@ export default function DashboardView() {
             <Users size={20} />
             Distribución del Equipo
           </h3>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="text-center p-4 bg-warning/10 rounded-lg">
               <p className="text-3xl font-light text-warning">{distribution.beginners.count}</p>
               <p className="text-sm text-gray-600 mt-1">Principiantes</p>
