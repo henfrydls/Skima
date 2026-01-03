@@ -2,20 +2,20 @@ import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, LabelList } from 'recharts';
 // Paleta de colores
 // Paleta de colores para Recharts (debe coincidir con Tailwind config)
-const CHART_COLORS = {
-  primary: '#2d676e',
-  secondary: '#9ca3af', // gray-400
-  neutral: '#a6ae3d',
-  warning: '#da8a0c',
-  background: '#f5f5f5',
-  white: '#ffffff',
-  success: '#10b981',
-  danger: '#ef4444',
+// Paleta de colores para Recharts (debe coincidir con Tailwind config)
+const COLORS = {
+  primary: '#2d676e',    // primary
+  secondary: '#7d8530',  // competentDark
+  neutral: '#a6ae3d',    // competent
+  warning: '#da8a0c',    // warning
+  background: '#f5f5f5', // background
   text: {
     primary: '#2d676e',
-    secondary: '#6b7280', // gray-500
-    light: '#9ca3af' // gray-400
-  }
+    secondary: '#4b5563', // gray-600
+    light: '#9ca3af'      // gray-400
+  },
+  success: '#10b981',    // success
+  critical: '#ef4444'    // critical (was danger)
 };
 const computeCategoriasDesdeSkills = (skillsMap = {}, skillsList = [], categoriasList = []) => {
   const categoriasCalculadas = {};
@@ -146,7 +146,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'BRECHA CRíTICA',
         prioridad: 10,
-        color: CHART_COLORS.danger,
+        prioridad: 10,
+        color: COLORS.critical,
         descripcion: 'Skill crítica de uso frecuente con nivel insuficiente',
         accion: 'Capacitación urgente requerida',
         peso: pesoCombinado
@@ -157,7 +158,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'ÁREA DE MEJORA',
         prioridad: 8,
-        color: CHART_COLORS.warning,
+        prioridad: 8,
+        color: COLORS.warning,
         descripcion: 'Skill crítica con nivel bajo',
         accion: 'Plan de desarrollo a corto plazo',
         peso: pesoCombinado
@@ -168,7 +170,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'FORTALEZA CLAVE',
         prioridad: 2,
-        color: CHART_COLORS.success,
+        prioridad: 2,
+        color: COLORS.success,
         descripcion: 'Skill crítica dominada y utilizada regularmente',
         accion: 'Mantener y compartir conocimiento',
         peso: pesoCombinado
@@ -179,7 +182,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'TALENTO SUBUTILIZADO',
         prioridad: 6,
-        color: '#9333ea',
+        prioridad: 6,
+        color: COLORS.secondary, // competentDark
         descripcion: 'Alto nivel de competencia sin uso efectivo',
         accion: 'Evaluar reasignación de proyectos',
         peso: pesoCombinado
@@ -190,7 +194,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'COMPETENTE',
         prioridad: 4,
-        color: CHART_COLORS.neutral,
+        prioridad: 4,
+        color: COLORS.neutral,
         descripcion: 'Nivel adecuado para las necesidades del rol',
         accion: 'Continuar aplicación práctica',
         peso: pesoCombinado
@@ -201,7 +206,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'EN DESARROLLO',
         prioridad: 5,
-        color: CHART_COLORS.text.secondary,
+        prioridad: 5,
+        color: COLORS.text.light, // gray-400
         descripcion: 'Skill en proceso de consolidación',
         accion: 'Continuar práctica y mentoría',
         peso: pesoCombinado
@@ -212,7 +218,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'FORTALEZA',
         prioridad: 3,
-        color: CHART_COLORS.primary,
+        prioridad: 3,
+        color: COLORS.primary,
         descripcion: 'Alto nivel en skill relevante',
         accion: 'Potenciar como referente',
         peso: pesoCombinado
@@ -223,7 +230,8 @@ const SkillsDashboard = () => {
       return {
         estado: 'BÁSICO',
         prioridad: 1,
-        color: CHART_COLORS.text.light,
+        prioridad: 1,
+        color: COLORS.text.light,
         descripcion: 'Skill deseable con nivel básico',
         accion: 'Opcional según intereses',
         peso: pesoCombinado
@@ -233,7 +241,7 @@ const SkillsDashboard = () => {
     return {
       estado: 'COMPETENTE',
       prioridad: 4,
-      color: CHART_COLORS.neutral,
+      color: COLORS.neutral,
       descripcion: 'Nivel adecuado',
       accion: 'Mantener',
       peso: pesoCombinado
@@ -277,16 +285,16 @@ const SkillsDashboard = () => {
     const porcentajeMadurezImportantes = totalImportantes > 0 ? (importantesCumplidas / totalImportantes * 100) : 0;
     // Nivel de riesgo general
     let nivelRiesgo = 'BAJO';
-    let colorRiesgo = CHART_COLORS.success;
+    let colorRiesgo = COLORS.success;
     if (brechasCriticas.length > 0) {
       nivelRiesgo = 'CRíTICO';
-      colorRiesgo = CHART_COLORS.danger;
+      colorRiesgo = COLORS.critical;
     } else if (areasMejora.length > 2) {
       nivelRiesgo = 'MODERADO';
-      colorRiesgo = CHART_COLORS.warning;
+      colorRiesgo = COLORS.warning;
     } else if (areasMejora.length > 0) {
       nivelRiesgo = 'BAJO-MODERADO';
-      colorRiesgo = CHART_COLORS.neutral;
+      colorRiesgo = COLORS.neutral;
     }
     return {
       brechasCriticas,
@@ -343,14 +351,14 @@ const SkillsDashboard = () => {
     return (sum / valores.length).toFixed(1);
   };
   const getStatusColor = (nivel) => {
-    if (nivel >= 3.5) return CHART_COLORS.primary;
-    if (nivel >= 2.5) return CHART_COLORS.neutral;
-    return CHART_COLORS.warning;
+    if (nivel >= 3.5) return COLORS.primary;
+    if (nivel >= 2.5) return COLORS.neutral;
+    return COLORS.warning;
   };
   const getStatusInfo = (nivel) => {
-    if (nivel >= 3.5) return { label: 'Fortaleza', color: CHART_COLORS.primary };
-    if (nivel >= 2.5) return { label: 'Competente', color: CHART_COLORS.neutral };
-    return { label: 'Requiere atención', color: CHART_COLORS.warning };
+    if (nivel >= 3.5) return { label: 'Fortaleza', color: COLORS.primary };
+    if (nivel >= 2.5) return { label: 'Competente', color: COLORS.neutral };
+    return { label: 'Requiere atención', color: COLORS.warning };
   };
   const getExecutiveInsights = () => {
     const promedios = calcularPromedioEquipo();
@@ -546,25 +554,24 @@ const SkillsDashboard = () => {
   const disableResetDemo = !allowResetFromDemo || isResettingDemo || isLoadingData || colaboradores.length === 0;
   if (isLoadingData) {
     return (
-      <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-2">
-          <div className="text-sm uppercase tracking-wide" style={{ color: CHART_COLORS.text.light }}>Cargando</div>
-          <div className="text-2xl font-light" style={{ color: CHART_COLORS.primary }}>Preparando dashboard de competencias...</div>
+          <div className="text-sm uppercase tracking-wide text-gray-400">Cargando</div>
+          <div className="text-2xl font-light text-primary">Preparando dashboard de competencias...</div>
         </div>
       </div>
     );
   }
   if (dataError) {
     return (
-      <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="text-center space-y-4 bg-white shadow-md rounded-lg px-8 py-10 border" style={{ borderColor: CHART_COLORS.secondary }}>
-          <h2 className="text-xl font-semibold" style={{ color: CHART_COLORS.danger }}>No se pudo cargar la información</h2>
-          <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>{dataError}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4 bg-white shadow-md rounded-lg px-8 py-10 border border-gray-200">
+          <h2 className="text-xl font-semibold text-critical">No se pudo cargar la información</h2>
+          <p className="text-sm text-gray-500">{dataError}</p>
           <button
             type="button"
             onClick={loadData}
-            className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
-            style={{ backgroundColor: CHART_COLORS.primary, color: CHART_COLORS.white }}
+            className="px-4 py-2 text-sm font-medium rounded-md transition-colors bg-primary text-white hover:bg-primary/90"
           >
             Reintentar
           </button>
@@ -573,14 +580,14 @@ const SkillsDashboard = () => {
     );
   }
   return (
-    <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', padding: '40px 20px' }}>
-      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="min-h-screen px-5 py-10 bg-background">
+      <div className="max-w-[1400px] mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
+          <h1 className="text-4xl font-light mb-2 text-primary">
             Dashboard de Competencias
           </h1>
-          <p className="text-base" style={{ color: CHART_COLORS.text.secondary }}>
+          <p className="text-base text-gray-500">
             Sistema de evaluación basado en criticidad y frecuencia de uso
           </p>
         </div>

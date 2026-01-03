@@ -45,12 +45,12 @@ const API_BASE = '/api';
 
 // Nivel options with descriptive labels - More vibrant colors for visibility
 const NIVELES = [
-  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-300 text-gray-700' },
+  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-200 text-gray-600' },
   { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-400 text-white' },
   { value: 2, short: '2', label: 'Con supervisión', color: 'bg-warning text-white' },
   { value: 3, short: '3', label: 'Autónomo', color: 'bg-competent text-white' },
-  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-primary text-white' },
-  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-success text-white' },
+  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-primary/80 text-white' },
+  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-primary text-white' },
 ];
 
 // Frecuencia options with clear labels
@@ -65,14 +65,14 @@ const FRECUENCIAS = [
 // Evaluation states with descriptions
 const EVALUATION_STATES = {
   'SIN EVALUAR': { color: 'bg-gray-100 text-gray-500', icon: '○', action: 'Completar evaluación' },
-  'SIN EXPERIENCIA': { color: 'bg-gray-300 text-gray-700', icon: '—', action: 'Evaluar necesidad de capacitación' },
+  'SIN EXPERIENCIA': { color: 'bg-gray-200 text-gray-600', icon: '—', action: 'Evaluar necesidad de capacitación' },
   'BRECHA CRÍTICA': { color: 'bg-critical text-white', icon: '!', action: 'Capacitación urgente' },
   'ÁREA DE MEJORA': { color: 'bg-warning text-white', icon: '↗', action: 'Plan de desarrollo' },
-  'TALENTO SUBUTILIZADO': { color: 'bg-purple-500 text-white', icon: '◇', action: 'Reasignar proyectos' },
+  'TALENTO SUBUTILIZADO': { color: 'bg-competentDark text-white', icon: '◇', action: 'Reasignar proyectos' },
   'EN DESARROLLO': { color: 'bg-gray-400 text-white', icon: '→', action: 'Continuar práctica' },
   'COMPETENTE': { color: 'bg-gray-500 text-white', icon: '✓', action: 'Mantener nivel' },
-  'FORTALEZA': { color: 'bg-primary text-white', icon: '★', action: 'Potenciar como referente' },
-  'FORTALEZA CLAVE': { color: 'bg-success text-white', icon: '★★', action: 'Compartir conocimiento' },
+  'FORTALEZA': { color: 'bg-primary/80 text-white', icon: '★', action: 'Potenciar como referente' },
+  'FORTALEZA CLAVE': { color: 'bg-primary text-white', icon: '★★', action: 'Compartir conocimiento' },
   'BÁSICO': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Opcional según intereses' },
   'NO APLICA': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill no relevante para este rol' },
 };
