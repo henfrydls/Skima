@@ -4,6 +4,7 @@ import { DashboardView, TeamMatrixPage, ReportsPage, SettingsPage } from './page
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SessionExpiredModal from './components/common/SessionExpiredModal';
+import { Toaster } from 'react-hot-toast';
 
 const router = createBrowserRouter([
   {
@@ -38,6 +39,7 @@ function App() {
     <AuthProvider>
       <RouterProvider router={router} />
       <SessionExpiredModal />
+      <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
     </AuthProvider>
   );
 }

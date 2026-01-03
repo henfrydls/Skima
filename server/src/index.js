@@ -46,6 +46,7 @@ export function createApp() {
       });
 
       const collaboratorsRaw = await prisma.collaborator.findMany({
+        where: { isActive: true },
         include: {
           assessments: {
             where: { snapshotId: null } // Current (not archived) assessments
@@ -243,7 +244,10 @@ export function createApp() {
   // GET /api/collaborators - List all collaborators
   app.get('/api/collaborators', async (req, res) => {
     try {
-      const collaborators = await prisma.collaborator.findMany();
+      const includeArchived = req.query.includeArchived === 'true';
+      const collaborators = await prisma.collaborator.findMany({
+        where: includeArchived ? {} : { isActive: true }
+      });
       res.json(collaborators);
     } catch (error) {
       console.error('[API] GET /api/collaborators failed:', error);
@@ -420,24 +424,38 @@ export function createApp() {
     }
   });
 
-  // DELETE /api/collaborators/:id - Delete collaborator
+  // DELETE /api/collaborators/:id - Soft Delete collaborator
   app.delete('/api/collaborators/:id', authMiddleware, async (req, res) => {
     try {
       const { id } = req.params;
       
-      // Delete assessments first
-      await prisma.assessment.deleteMany({
-        where: { collaboratorId: id }
-      });
-
-      await prisma.collaborator.delete({
-        where: { id }
+      // Soft Delete: just set isActive = false
+      await prisma.collaborator.update({
+        where: { id: parseInt(id) },
+        data: { isActive: false }
       });
       
-      res.json({ message: 'Collaborator deleted' });
+      res.json({ message: 'Collaborator archived' });
     } catch (error) {
       console.error('[API] DELETE /api/collaborators/:id failed:', error);
-      res.status(500).json({ message: 'Error deleting collaborator' });
+      res.status(500).json({ message: 'Error archiving collaborator' });
+    }
+  });
+
+  // PUT /api/collaborators/:id/restore - Restore collaborator
+  app.put('/api/collaborators/:id/restore', authMiddleware, async (req, res) => {
+    try {
+      const { id } = req.params;
+      
+      await prisma.collaborator.update({
+        where: { id: parseInt(id) },
+        data: { isActive: true }
+      });
+      
+      res.json({ message: 'Collaborator restored' });
+    } catch (error) {
+      console.error('[API] PUT /api/collaborators/:id/restore failed:', error);
+      res.status(500).json({ message: 'Error restoring collaborator' });
     }
   });
 

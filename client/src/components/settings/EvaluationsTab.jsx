@@ -27,6 +27,9 @@ import {
   User
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import Button from '../common/Button';
+import EmptyState from '../common/EmptyState';
+import toast from 'react-hot-toast';
 
 /**
  * EvaluationsTab — Evaluar Skills por Colaborador (v2)
@@ -42,12 +45,12 @@ const API_BASE = '/api';
 
 // Nivel options with descriptive labels - More vibrant colors for visibility
 const NIVELES = [
-  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-400 text-white' },
-  { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-500 text-white' },
-  { value: 2, short: '2', label: 'Con supervisión', color: 'bg-amber-500 text-white' },
-  { value: 3, short: '3', label: 'Autónomo', color: 'bg-emerald-500 text-white' },
-  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-blue-500 text-white' },
-  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-purple-600 text-white' },
+  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-300 text-gray-700' },
+  { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-400 text-white' },
+  { value: 2, short: '2', label: 'Con supervisión', color: 'bg-warning text-white' },
+  { value: 3, short: '3', label: 'Autónomo', color: 'bg-competent text-white' },
+  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-primary text-white' },
+  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-success text-white' },
 ];
 
 // Frecuencia options with clear labels
@@ -69,7 +72,7 @@ const EVALUATION_STATES = {
   'EN DESARROLLO': { color: 'bg-gray-400 text-white', icon: '→', action: 'Continuar práctica' },
   'COMPETENTE': { color: 'bg-gray-500 text-white', icon: '✓', action: 'Mantener nivel' },
   'FORTALEZA': { color: 'bg-primary text-white', icon: '★', action: 'Potenciar como referente' },
-  'FORTALEZA CLAVE': { color: 'bg-competent text-white', icon: '★★', action: 'Compartir conocimiento' },
+  'FORTALEZA CLAVE': { color: 'bg-success text-white', icon: '★★', action: 'Compartir conocimiento' },
   'BÁSICO': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Opcional según intereses' },
   'NO APLICA': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill no relevante para este rol' },
 };
@@ -664,17 +667,22 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       // Don't show loading on background refresh unless empty
       if (collaborators.length === 0) setIsLoading(true);
       
-      const response = await fetch(`${API_BASE}/data?t=${Date.now()}`, {
-        cache: 'no-store',
-        headers: {
-          'Pragma': 'no-cache',
-          'Cache-Control': 'no-cache'
-        }
-      });
-      if (!response.ok) throw new Error('Error fetching data');
-      const data = await response.json();
+      // Fetch all collaborators including archived ones to ensure historical data works
+      const [dataRes, collabsRes] = await Promise.all([
+        fetch(`${API_BASE}/data?t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`${API_BASE}/collaborators?includeArchived=true`, { cache: 'no-store' })
+      ]);
+
+      if (!dataRes.ok || !collabsRes.ok) throw new Error('Error fetching data');
       
-      setCollaborators(data.collaborators || []);
+      const data = await dataRes.json();
+      const allCollaborators = await collabsRes.json();
+      
+      // Merge: Use allCollaborators for the list, but enrich if needed. 
+      // Actually, allCollaborators from endpoint should be enough.
+      // But let's respect if 'data' returns other things like categories/skills.
+      
+      setCollaborators(allCollaborators || []);
       setCategories(data.categories || []);
       setSkills(data.skills || []);
       setRoleProfiles(data.roleProfiles || {});
@@ -803,9 +811,10 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       
       const result = await response.json();
       setLastSavedUuid(result.uuid);
-      setSaveSuccess(true);
       setInitialEvaluations(evaluations); // Update baseline
       
+      toast.success('Evaluación guardada correctamente');
+
       // Refresh history
       const historyResponse = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
       if (historyResponse.ok) {
@@ -836,8 +845,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
 
     } catch (err) {
       console.error('Error saving evaluation:', err);
-      setError('Error guardando evaluación');
-      setTimeout(() => setError(null), 3000);
+      toast.error('Error guardando evaluación');
     } finally {
       setIsSaving(false);
     }
@@ -918,11 +926,17 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
   // Empty state
   if (collaborators.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Info size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-800 mb-2">No hay colaboradores</h3>
-        <p className="text-gray-500">Primero crea colaboradores en la pestaña correspondiente.</p>
-      </div>
+      <EmptyState
+        icon={User}
+        title="No hay colaboradores"
+        description="Primero crea colaboradores en la pestaña correspondiente para poder evaluarlos."
+        actionLabel="Ir a Colaboradores"
+        onAction={() => {
+          // Ideally switch tab, but for now just show state
+          // We could use navigate('/settings?tab=colaboradores') if supported
+          window.location.search = '?tab=colaboradores';
+        }}
+      />
     );
   }
 
@@ -939,9 +953,32 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
               className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none bg-white text-sm"
             >
               <option value="">Seleccionar colaborador...</option>
-              {collaborators.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
-              ))}
+              {collaborators.some(c => c.isActive === false) ? (
+                <>
+                  <optgroup label="Activos">
+                    {collaborators
+                      .filter(c => c.isActive !== false)
+                      .sort((a,b) => a.nombre.localeCompare(b.nombre))
+                      .map(c => (
+                        <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
+                      ))}
+                  </optgroup>
+                  <optgroup label="Desactivados">
+                    {collaborators
+                      .filter(c => c.isActive === false)
+                      .sort((a,b) => a.nombre.localeCompare(b.nombre))
+                      .map(c => (
+                        <option key={c.id} value={c.id}>{c.nombre} (Desactivado) — {c.rol}</option>
+                      ))}
+                  </optgroup>
+                </>
+              ) : (
+                collaborators
+                  .sort((a,b) => a.nombre.localeCompare(b.nombre))
+                  .map(c => (
+                    <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
+                  ))
+              )}
             </select>
             <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -962,6 +999,12 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                     {freshness.label}
                   </span>
                 </div>
+
+                {collab?.isActive === false && (
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 uppercase font-bold tracking-wider">
+                      Desactivado
+                    </span>
+                )}
                 
                 {/* Separator */}
                 <span className="text-gray-200">|</span>
@@ -992,12 +1035,14 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       </div>
 
       {/* No collaborator selected */}
+      {/* No collaborator selected */}
       {!selectedCollaborator && (
-        <div className="text-center py-16 bg-gray-50 rounded-lg">
-          <Search size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-700">Selecciona un colaborador</h3>
-          <p className="text-gray-500 mt-1">Elige a quién deseas evaluar del menú superior.</p>
-        </div>
+         <EmptyState
+            icon={Search}
+            title="Selecciona un colaborador"
+            description="Elige a quién deseas evaluar del menú superior para ver su matriz de competencias."
+            // No action needed here, it's a prompt
+         />
       )}
 
       {/* Evaluation Form / History / Details Switch */}
@@ -1079,29 +1124,21 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
               Tienes cambios sin guardar
             </span>
 
-            <button
+            <Button
+               variant="ghost"
                onClick={() => setEvaluations(initialEvaluations)}
-               className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+               className="text-gray-600 hover:bg-gray-100"
             >
               Descartar
-            </button>
-            <button
+            </Button>
+            <Button
               onClick={() => handleSave(false)}
-              disabled={isSaving}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
+              isLoading={isSaving}
+              className="px-6 shadow-sm"
             >
-              {isSaving ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Guardando...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Guardar Evaluación
-                </>
-              )}
-            </button>
+              <Save size={18} className="mr-2" />
+              Guardar Evaluación
+            </Button>
           </div>
           </div>
           )}

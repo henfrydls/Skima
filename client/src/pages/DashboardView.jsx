@@ -164,7 +164,7 @@ export default function DashboardView() {
           </div>
 
           {/* Secondary Metrics */}
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-critical/5 rounded-lg border border-critical/20">
               <p className="text-3xl font-light text-critical">{metrics.criticalGaps}</p>
               <p className="text-xs text-gray-600 mt-1">Brechas Críticas</p>

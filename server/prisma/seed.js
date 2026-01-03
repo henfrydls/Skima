@@ -211,6 +211,7 @@ const COLLABORATORS = [
        // Very few skills assessed
        40: { nivel: 1.5, frecuencia: 'D', criticidad: 'I' }, // Git
     },
+    isActive: false,
   },
   // Case: Undefined Role (No Profile)
   {

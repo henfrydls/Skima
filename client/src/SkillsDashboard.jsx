@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, LabelList } from 'recharts';
 // Paleta de colores
-const COLORS = {
+// Paleta de colores para Recharts (debe coincidir con Tailwind config)
+const CHART_COLORS = {
   primary: '#2d676e',
-  secondary: '#c6ccd1',
+  secondary: '#9ca3af', // gray-400
   neutral: '#a6ae3d',
   warning: '#da8a0c',
   background: '#f5f5f5',
@@ -12,8 +13,8 @@ const COLORS = {
   danger: '#ef4444',
   text: {
     primary: '#2d676e',
-    secondary: '#6b7280',
-    light: '#9ca3af'
+    secondary: '#6b7280', // gray-500
+    light: '#9ca3af' // gray-400
   }
 };
 const computeCategoriasDesdeSkills = (skillsMap = {}, skillsList = [], categoriasList = []) => {
@@ -60,6 +61,8 @@ const FRECUENCIA_OPTIONS = [
   { value: "N", label: "Nunca (N)" }
 ];
 
+import ConfirmModal from './components/common/ConfirmModal';
+
 const SkillsDashboard = () => {
   const [CATEGORIAS, setCategoriasState] = useState([]);
   const [SKILLS, setSkillsState] = useState([]);
@@ -77,6 +80,14 @@ const SkillsDashboard = () => {
     computeCategoriasDesdeSkills(skillsMap, skillsList, categoriasList);
   const createEmptyCollaborator = (skillsList = SKILLS) => buildEmptyCollaborator(skillsList);
   const [nuevoColaborador, setNuevoColaborador] = useState(() => createEmptyCollaborator());
+  
+  // Confirm Modal State
+  const [confirmModal, setConfirmModal] = useState({ 
+    isOpen: false, 
+    title: '', 
+    message: '', 
+    onConfirm: () => {} 
+  });
   const [vistaActual, setVistaActual] = useState('resumen');
   const [colaboradorSeleccionado, setColaboradorSeleccionado] = useState(null);
   const [categoriaSeleccionada, setCategoriaSeleccionada] = useState(null);
@@ -135,7 +146,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'BRECHA CRíTICA',
         prioridad: 10,
-        color: COLORS.danger,
+        color: CHART_COLORS.danger,
         descripcion: 'Skill crítica de uso frecuente con nivel insuficiente',
         accion: 'Capacitación urgente requerida',
         peso: pesoCombinado
@@ -146,7 +157,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'ÁREA DE MEJORA',
         prioridad: 8,
-        color: COLORS.warning,
+        color: CHART_COLORS.warning,
         descripcion: 'Skill crítica con nivel bajo',
         accion: 'Plan de desarrollo a corto plazo',
         peso: pesoCombinado
@@ -157,7 +168,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'FORTALEZA CLAVE',
         prioridad: 2,
-        color: COLORS.success,
+        color: CHART_COLORS.success,
         descripcion: 'Skill crítica dominada y utilizada regularmente',
         accion: 'Mantener y compartir conocimiento',
         peso: pesoCombinado
@@ -179,7 +190,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'COMPETENTE',
         prioridad: 4,
-        color: COLORS.neutral,
+        color: CHART_COLORS.neutral,
         descripcion: 'Nivel adecuado para las necesidades del rol',
         accion: 'Continuar aplicación práctica',
         peso: pesoCombinado
@@ -190,7 +201,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'EN DESARROLLO',
         prioridad: 5,
-        color: COLORS.text.secondary,
+        color: CHART_COLORS.text.secondary,
         descripcion: 'Skill en proceso de consolidación',
         accion: 'Continuar práctica y mentoría',
         peso: pesoCombinado
@@ -201,7 +212,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'FORTALEZA',
         prioridad: 3,
-        color: COLORS.primary,
+        color: CHART_COLORS.primary,
         descripcion: 'Alto nivel en skill relevante',
         accion: 'Potenciar como referente',
         peso: pesoCombinado
@@ -212,7 +223,7 @@ const SkillsDashboard = () => {
       return {
         estado: 'BÁSICO',
         prioridad: 1,
-        color: COLORS.text.light,
+        color: CHART_COLORS.text.light,
         descripcion: 'Skill deseable con nivel básico',
         accion: 'Opcional según intereses',
         peso: pesoCombinado
@@ -222,7 +233,7 @@ const SkillsDashboard = () => {
     return {
       estado: 'COMPETENTE',
       prioridad: 4,
-      color: COLORS.neutral,
+      color: CHART_COLORS.neutral,
       descripcion: 'Nivel adecuado',
       accion: 'Mantener',
       peso: pesoCombinado
@@ -266,16 +277,16 @@ const SkillsDashboard = () => {
     const porcentajeMadurezImportantes = totalImportantes > 0 ? (importantesCumplidas / totalImportantes * 100) : 0;
     // Nivel de riesgo general
     let nivelRiesgo = 'BAJO';
-    let colorRiesgo = COLORS.success;
+    let colorRiesgo = CHART_COLORS.success;
     if (brechasCriticas.length > 0) {
       nivelRiesgo = 'CRíTICO';
-      colorRiesgo = COLORS.danger;
+      colorRiesgo = CHART_COLORS.danger;
     } else if (areasMejora.length > 2) {
       nivelRiesgo = 'MODERADO';
-      colorRiesgo = COLORS.warning;
+      colorRiesgo = CHART_COLORS.warning;
     } else if (areasMejora.length > 0) {
       nivelRiesgo = 'BAJO-MODERADO';
-      colorRiesgo = COLORS.neutral;
+      colorRiesgo = CHART_COLORS.neutral;
     }
     return {
       brechasCriticas,
@@ -332,14 +343,14 @@ const SkillsDashboard = () => {
     return (sum / valores.length).toFixed(1);
   };
   const getStatusColor = (nivel) => {
-    if (nivel >= 3.5) return COLORS.primary;
-    if (nivel >= 2.5) return COLORS.neutral;
-    return COLORS.warning;
+    if (nivel >= 3.5) return CHART_COLORS.primary;
+    if (nivel >= 2.5) return CHART_COLORS.neutral;
+    return CHART_COLORS.warning;
   };
   const getStatusInfo = (nivel) => {
-    if (nivel >= 3.5) return { label: 'Fortaleza', color: COLORS.primary };
-    if (nivel >= 2.5) return { label: 'Competente', color: COLORS.neutral };
-    return { label: 'Requiere atención', color: COLORS.warning };
+    if (nivel >= 3.5) return { label: 'Fortaleza', color: CHART_COLORS.primary };
+    if (nivel >= 2.5) return { label: 'Competente', color: CHART_COLORS.neutral };
+    return { label: 'Requiere atención', color: CHART_COLORS.warning };
   };
   const getExecutiveInsights = () => {
     const promedios = calcularPromedioEquipo();
@@ -388,12 +399,22 @@ const SkillsDashboard = () => {
     setNuevoColaborador(createEmptyCollaborator());
     setErrorNuevoColaborador('');
   };
-  const handleResetDemo = async () => {
+  const handleResetDemo = () => {
     if (!allowResetFromDemo || isResettingDemo) return;
-    const confirmado = typeof window !== 'undefined'
-      ? window.confirm('Esta acción eliminará los colaboradores de demostración y no se podrá deshacer. ¿Deseas continuar?')
-      : false;
-    if (!confirmado) return;
+    
+    setConfirmModal({
+      isOpen: true,
+      title: 'Reiniciar Demo',
+      message: 'Esta acción eliminará los colaboradores de demostración y no se podrá deshacer. ¿Deseas continuar?',
+      onConfirm: executeResetDemo,
+      variant: 'danger',
+      confirmText: 'Reiniciar'
+    });
+  };
+
+  const executeResetDemo = async () => {
+    setConfirmModal(prev => ({ ...prev, isOpen: false }));
+    
     try {
       setIsResettingDemo(true);
       setResetError('');
@@ -525,25 +546,25 @@ const SkillsDashboard = () => {
   const disableResetDemo = !allowResetFromDemo || isResettingDemo || isLoadingData || colaboradores.length === 0;
   if (isLoadingData) {
     return (
-      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div className="text-center space-y-2">
-          <div className="text-sm uppercase tracking-wide" style={{ color: COLORS.text.light }}>Cargando</div>
-          <div className="text-2xl font-light" style={{ color: COLORS.primary }}>Preparando dashboard de competencias...</div>
+          <div className="text-sm uppercase tracking-wide" style={{ color: CHART_COLORS.text.light }}>Cargando</div>
+          <div className="text-2xl font-light" style={{ color: CHART_COLORS.primary }}>Preparando dashboard de competencias...</div>
         </div>
       </div>
     );
   }
   if (dataError) {
     return (
-      <div style={{ backgroundColor: COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div className="text-center space-y-4 bg-white shadow-md rounded-lg px-8 py-10 border" style={{ borderColor: COLORS.secondary }}>
-          <h2 className="text-xl font-semibold" style={{ color: COLORS.danger }}>No se pudo cargar la información</h2>
-          <p className="text-sm" style={{ color: COLORS.text.secondary }}>{dataError}</p>
+      <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="text-center space-y-4 bg-white shadow-md rounded-lg px-8 py-10 border" style={{ borderColor: CHART_COLORS.secondary }}>
+          <h2 className="text-xl font-semibold" style={{ color: CHART_COLORS.danger }}>No se pudo cargar la información</h2>
+          <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>{dataError}</p>
           <button
             type="button"
             onClick={loadData}
             className="px-4 py-2 text-sm font-medium rounded-md transition-colors"
-            style={{ backgroundColor: COLORS.primary, color: COLORS.white }}
+            style={{ backgroundColor: CHART_COLORS.primary, color: CHART_COLORS.white }}
           >
             Reintentar
           </button>
@@ -552,14 +573,14 @@ const SkillsDashboard = () => {
     );
   }
   return (
-    <div style={{ backgroundColor: COLORS.background, minHeight: '100vh', padding: '40px 20px' }}>
+    <div style={{ backgroundColor: CHART_COLORS.background, minHeight: '100vh', padding: '40px 20px' }}>
       <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-4xl font-light mb-2" style={{ color: COLORS.primary }}>
+          <h1 className="text-4xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
             Dashboard de Competencias
           </h1>
-          <p className="text-base" style={{ color: COLORS.text.secondary }}>
+          <p className="text-base" style={{ color: CHART_COLORS.text.secondary }}>
             Sistema de evaluación basado en criticidad y frecuencia de uso
           </p>
         </div>
@@ -581,8 +602,8 @@ const SkillsDashboard = () => {
                 vistaActual === vista.id ? 'border-b-2' : ''
               }`}
               style={{
-                color: vistaActual === vista.id ? COLORS.primary : COLORS.text.light,
-                borderColor: vistaActual === vista.id ? COLORS.primary : 'transparent'
+                color: vistaActual === vista.id ? CHART_COLORS.primary : CHART_COLORS.text.light,
+                borderColor: vistaActual === vista.id ? CHART_COLORS.primary : 'transparent'
               }}
             >
               {vista.label}
@@ -591,263 +612,264 @@ const SkillsDashboard = () => {
           <button
             onClick={() => setMostrarExplicacion(!mostrarExplicacion)}
             className="pb-3 font-medium ml-auto transition-all"
-            style={{ color: COLORS.text.light }}
+            style={{ color: CHART_COLORS.text.light }}
           >
             {mostrarExplicacion ? '✕ Cerrar' : 'ⓘ Sistema de Puntuación'}
           </button>
         </div>
         {/* Sistema de Puntuación Explicado */}
         {mostrarExplicacion && (
-          <div className="bg-white p-8 mb-8 border-l-4 shadow-sm" style={{ borderColor: COLORS.primary }}>
-            <h2 className="text-2xl font-light mb-6" style={{ color: COLORS.primary }}>
+          <div className="bg-white p-8 mb-8 border-l-4 shadow-sm border-primary">
+            <h2 className="text-2xl font-light mb-6 text-primary">
               Sistema de Evaluación de Competencias
             </h2>
             <div className="mb-8">
-              <h3 className="text-lg font-medium mb-4" style={{ color: COLORS.text.primary }}>
+              <h3 className="text-lg font-medium mb-4 text-primary">
                 Metodología de Evaluación
               </h3>
-              <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+              <p className="text-sm mb-4 text-gray-500">
                 Cada skill se evalúa mediante <strong>tres dimensiones clave</strong> que determinan su estado y prioridad de desarrollo:
               </p>
             </div>
             <div className="grid md:grid-cols-3 gap-8 mb-8">
               {/* Criticidad */}
               <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: COLORS.primary }}>
+                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4 text-primary">
                   1. CRITICIDAD DEL ROL
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.danger }}>C</span>
+                    <span className="font-bold text-lg text-critical">C</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Crítica (peso: 3)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Esencial para el desempeí±o del rol. Sin esta competencia, no se pueden cumplir las responsabilidades principales.</div>
+                      <div className="font-medium text-primary">Crítica (peso: 3)</div>
+                      <div className="text-xs text-gray-500">Esencial para el desempeí±o del rol. Sin esta competencia, no se pueden cumplir las responsabilidades principales.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.warning }}>I</span>
+                    <span className="font-bold text-lg text-warning">I</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Importante (peso: 2)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Necesaria para un desempeí±o óptimo. Contribuye significativamente al í©xito del rol.</div>
+                      <div className="font-medium text-primary">Importante (peso: 2)</div>
+                      <div className="text-xs text-gray-500">Necesaria para un desempeí±o óptimo. Contribuye significativamente al í©xito del rol.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.neutral }}>D</span>
+                    <span className="font-bold text-lg text-competent">D</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Deseable (peso: 1)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Complementaria. Aí±ade valor pero no es determinante para el rol.</div>
+                      <div className="font-medium text-primary">Deseable (peso: 1)</div>
+                      <div className="text-xs text-gray-500">Complementaria. Aí±ade valor pero no es determinante para el rol.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.text.light }}>N</span>
+                    <span className="font-bold text-lg text-gray-400">N</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>No aplica (peso: 0)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>No relevante para el rol actual.</div>
+                      <div className="font-medium text-primary">No aplica (peso: 0)</div>
+                      <div className="text-xs text-gray-500">No relevante para el rol actual.</div>
                     </div>
                   </div>
                 </div>
               </div>
               {/* Frecuencia */}
               <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: COLORS.primary }}>
+                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4 text-primary">
                   2. FRECUENCIA DE USO
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.primary }}>D</span>
+                    <span className="font-bold text-lg text-primary">D</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Diaria (peso: 3)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Se utiliza todos los días en las actividades del rol.</div>
+                      <div className="font-medium text-primary">Diaria (peso: 3)</div>
+                      <div className="text-xs text-gray-500">Se utiliza todos los días en las actividades del rol.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.primary }}>S</span>
+                    <span className="font-bold text-lg text-primary">S</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Semanal (peso: 2)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Se aplica varias veces por semana regularmente.</div>
+                      <div className="font-medium text-primary">Semanal (peso: 2)</div>
+                      <div className="text-xs text-gray-500">Se aplica varias veces por semana regularmente.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.neutral }}>M</span>
+                    <span className="font-bold text-lg text-competent">M</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Mensual (peso: 1.5)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Se utiliza en momentos específicos del mes.</div>
+                      <div className="font-medium text-primary">Mensual (peso: 1.5)</div>
+                      <div className="text-xs text-gray-500">Se utiliza en momentos específicos del mes.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.text.secondary }}>T</span>
+                    <span className="font-bold text-lg text-gray-500">T</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Trimestral (peso: 1)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Se aplica ocasionalmente en proyectos específicos.</div>
+                      <div className="font-medium text-primary">Trimestral (peso: 1)</div>
+                      <div className="text-xs text-gray-500">Se aplica ocasionalmente en proyectos específicos.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.text.light }}>N</span>
+                    <span className="font-bold text-lg text-gray-400">N</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Nunca (peso: 0)</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Actualmente no se utiliza en las responsabilidades del rol.</div>
+                      <div className="font-medium text-primary">Nunca (peso: 0)</div>
+                      <div className="text-xs text-gray-500">Actualmente no se utiliza en las responsabilidades del rol.</div>
                     </div>
                   </div>
                 </div>
               </div>
               {/* Nivel */}
               <div>
-                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: COLORS.primary }}>
+                <h4 className="text-sm font-semibold uppercase tracking-wide mb-4 text-primary">
                   3. NIVEL DE COMPETENCIA
                 </h4>
                 <div className="space-y-3">
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.success }}>5</span>
+                    <span className="font-bold text-lg text-success">5</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Experto</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Referente reconocido. Entrena y desarrolla a otros.</div>
+                      <div className="font-medium text-primary">Experto</div>
+                      <div className="text-xs text-gray-500">Referente reconocido. Entrena y desarrolla a otros.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.primary }}>4</span>
+                    <span className="font-bold text-lg text-primary">4</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Avanzado</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Dominio práctico profundo. Resuelve problemas complejos.</div>
+                      <div className="font-medium text-primary">Avanzado</div>
+                      <div className="text-xs text-gray-500">Dominio práctico profundo. Resuelve problemas complejos.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.neutral }}>3</span>
+                    <span className="font-bold text-lg text-competent">3</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Competente</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Aplica con autonomía en situaciones habituales.</div>
+                      <div className="font-medium text-primary">Competente</div>
+                      <div className="text-xs text-gray-500">Aplica con autonomía en situaciones habituales.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.warning }}>2</span>
+                    <span className="font-bold text-lg text-warning">2</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Básico</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Conocimiento teórico. Requiere supervisión.</div>
+                      <div className="font-medium text-primary">Básico</div>
+                      <div className="text-xs text-gray-500">Conocimiento teórico. Requiere supervisión.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.text.secondary }}>1</span>
+                    <span className="font-bold text-lg text-gray-500">1</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Awareness</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>Conciencia básica del concepto.</div>
+                      <div className="font-medium text-primary">Awareness</div>
+                      <div className="text-xs text-gray-500">Conciencia básica del concepto.</div>
                     </div>
                   </div>
                   <div className="flex items-start gap-3">
-                    <span className="font-bold text-lg" style={{ color: COLORS.text.light }}>0</span>
+                    <span className="font-bold text-lg text-gray-400">0</span>
                     <div>
-                      <div className="font-medium" style={{ color: COLORS.text.primary }}>Sin conocimiento</div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>No tiene exposición a la competencia.</div>
+                      <div className="font-medium text-primary">Sin conocimiento</div>
+                      <div className="text-xs text-gray-500">No tiene exposición a la competencia.</div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             {/* Fórmula de Peso */}
+            {/* Fórmula de Peso */}
             <div className="bg-gray-50 p-6 mb-8 rounded">
-              <h4 className="text-sm font-semibold uppercase tracking-wide mb-3" style={{ color: COLORS.primary }}>
+              <h4 className="text-sm font-semibold uppercase tracking-wide mb-3 text-primary">
                 CÁLCULO DE PESO DE LA SKILL
               </h4>
-              <div className="text-center text-xl font-light mb-2" style={{ color: COLORS.text.primary }}>
+              <div className="text-center text-xl font-light mb-2 text-primary">
                 Peso = Criticidad  Frecuencia
               </div>
-              <p className="text-xs text-center" style={{ color: COLORS.text.secondary }}>
+              <p className="text-xs text-center text-gray-500">
                 Este peso determina la prioridad de atención y el orden en el análisis de desarrollo
               </p>
               <div className="mt-4 grid grid-cols-3 gap-4 text-xs">
                 <div className="text-center">
-                  <div className="font-semibold mb-1" style={{ color: COLORS.text.primary }}>Peso Máximo</div>
-                  <div style={{ color: COLORS.danger }}>C (3)  D (3) = 9</div>
-                  <div className="text-xs mt-1" style={{ color: COLORS.text.light }}>Crítica + Diaria</div>
+                  <div className="font-semibold mb-1 text-primary">Peso Máximo</div>
+                  <div className="text-critical">C (3)  D (3) = 9</div>
+                  <div className="text-xs mt-1 text-gray-400">Crítica + Diaria</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold mb-1" style={{ color: COLORS.text.primary }}>Peso Medio</div>
-                  <div style={{ color: COLORS.warning }}>I (2)  S (2) = 4</div>
-                  <div className="text-xs mt-1" style={{ color: COLORS.text.light }}>Importante + Semanal</div>
+                  <div className="font-semibold mb-1 text-primary">Peso Medio</div>
+                  <div className="text-warning">I (2)  S (2) = 4</div>
+                  <div className="text-xs mt-1 text-gray-400">Importante + Semanal</div>
                 </div>
                 <div className="text-center">
-                  <div className="font-semibold mb-1" style={{ color: COLORS.text.primary }}>Peso Bajo</div>
-                  <div style={{ color: COLORS.neutral }}>D (1)  M (1.5) = 1.5</div>
-                  <div className="text-xs mt-1" style={{ color: COLORS.text.light }}>Deseable + Mensual</div>
+                  <div className="font-semibold mb-1 text-primary">Peso Bajo</div>
+                  <div className="text-competent">D (1)  M (1.5) = 1.5</div>
+                  <div className="text-xs mt-1 text-gray-400">Deseable + Mensual</div>
                 </div>
               </div>
             </div>
             {/* Estados Posibles */}
             <div>
-              <h4 className="text-sm font-semibold uppercase tracking-wide mb-4" style={{ color: COLORS.primary }}>
+              <h4 className="text-sm font-semibold uppercase tracking-wide mb-4 text-primary">
                 ESTADOS DE COMPETENCIA RESULTANTES
               </h4>
-              <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+              <p className="text-sm mb-4 text-gray-500">
                 Según la combinación de Criticidad, Frecuencia y Nivel, cada skill se clasifica en uno de estos estados:
               </p>
               <div className="grid md:grid-cols-2 gap-4">
                 {[
                   {
                     estado: 'BRECHA CRíTICA',
-                    color: COLORS.danger,
+                    colorClass: 'text-critical',
                     condicion: 'Criticidad: C + Frecuencia: D/S + Nivel: < 3',
                     significado: 'Skill esencial de uso diario/semanal con nivel insuficiente',
                     accion: 'Capacitación urgente + Plan de desarrollo inmediato'
                   },
                   {
                     estado: 'ÁREA DE MEJORA',
-                    color: COLORS.warning,
+                    colorClass: 'text-warning',
                     condicion: 'Criticidad: C + Frecuencia: M/T + Nivel: < 3',
                     significado: 'Skill crítica con nivel bajo pero uso menos frecuente',
                     accion: 'Plan de desarrollo a corto plazo (1-3 meses)'
                   },
                   {
                     estado: 'FORTALEZA CLAVE',
-                    color: COLORS.success,
+                    colorClass: 'text-success',
                     condicion: 'Criticidad: C + Frecuencia: D/S + Nivel:  4',
                     significado: 'Competencia estratí©gica dominada y aplicada constantemente',
                     accion: 'Mantener, documentar y compartir con el equipo'
                   },
                   {
                     estado: 'TALENTO SUBUTILIZADO',
-                    color: '#9333ea',
+                    colorClass: 'text-purple-600',
                     condicion: 'Nivel:  4 + Frecuencia: N/T + Criticidad: C/I',
                     significado: 'Alta competencia que no se está aprovechando',
                     accion: 'Evaluar reasignación de proyectos o roles'
                   },
                   {
                     estado: 'FORTALEZA',
-                    color: COLORS.primary,
+                    colorClass: 'text-primary',
                     condicion: 'Criticidad: C/I + Nivel:  4',
                     significado: 'Alto nivel en competencias relevantes para el rol',
                     accion: 'Potenciar como referente interno'
                   },
                   {
                     estado: 'COMPETENTE',
-                    color: COLORS.neutral,
+                    colorClass: 'text-competent',
                     condicion: 'Criticidad: C/I + Nivel: 3',
                     significado: 'Nivel adecuado para cumplir con las responsabilidades',
                     accion: 'Mantener práctica regular'
                   },
                   {
                     estado: 'EN DESARROLLO',
-                    color: COLORS.text.secondary,
+                    colorClass: 'text-gray-500',
                     condicion: 'Criticidad: I/D + Nivel: 2',
                     significado: 'Competencia en proceso de consolidación',
                     accion: 'Continuar práctica con mentoría'
                   },
                   {
                     estado: 'BÁSICO',
-                    color: COLORS.text.light,
+                    colorClass: 'text-gray-400',
                     condicion: 'Criticidad: D/N + Nivel: < 3',
                     significado: 'Skill complementaria con nivel inicial',
                     accion: 'Desarrollo opcional según intereses'
                   }
                 ].map(item => (
-                  <div key={item.estado} className="p-4 border rounded" style={{ borderColor: COLORS.secondary }}>
+                  <div key={item.estado} className="p-4 border rounded border-gray-400">
                     <div className="flex items-center gap-2 mb-2">
-                      <span className="font-semibold" style={{ color: item.color }}>{item.estado}</span>
+                       <span className={`font-semibold ${item.colorClass}`}>{item.estado}</span>
                     </div>
-                    <div className="text-xs mb-2 font-mono" style={{ color: COLORS.text.secondary }}>
+                    <div className="text-xs mb-2 font-mono text-gray-500">
                       {item.condicion}
                     </div>
-                    <div className="text-sm mb-2" style={{ color: COLORS.text.primary }}>
+                    <div className="text-sm mb-2 text-primary">
                       <strong>Significado:</strong> {item.significado}
                     </div>
-                    <div className="text-sm" style={{ color: COLORS.text.secondary }}>
+                    <div className="text-sm text-gray-500">
                       <strong>Acción:</strong> {item.accion}
                     </div>
                   </div>
@@ -855,7 +877,7 @@ const SkillsDashboard = () => {
               </div>
             </div>
             <div className="mt-6 p-4 bg-blue-50 border-l-4 border-blue-500">
-              <p className="text-sm" style={{ color: COLORS.text.primary }}>
+              <p className="text-sm text-primary">
                 <strong>Nota:</strong> El sistema prioriza automáticamente las skills según su peso combinado,
                 asegurando que las competencias críticas y de uso frecuente reciban la atención necesaria primero.
               </p>
@@ -867,7 +889,7 @@ const SkillsDashboard = () => {
           <div className="space-y-8">
             {/* Insight principal - Lo más importante primero */}
             <div className="bg-white p-8">
-              <h2 className="text-2xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h2 className="text-2xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 {insights.gaps.length > 0
                   ? `${insights.gaps.length} área${insights.gaps.length > 1 ? 's' : ''} requiere${insights.gaps.length > 1 ? 'n' : ''} atención inmediata`
                   : 'El equipo muestra competencias sólidas'}
@@ -876,19 +898,19 @@ const SkillsDashboard = () => {
                 <div className="space-y-4">
                   {insights.gaps.map((gap, idx) => (
                     <div key={idx} className="flex items-start gap-4 pb-4" style={{
-                      borderBottom: idx < insights.gaps.length - 1 ? `1px solid ${COLORS.secondary}` : 'none'
+                      borderBottom: idx < insights.gaps.length - 1 ? `1px solid ${CHART_COLORS.secondary}` : 'none'
                     }}>
                       <div
                         className="text-3xl font-bold mt-1"
-                        style={{ color: COLORS.warning }}
+                        style={{ color: CHART_COLORS.warning }}
                       >
                         {gap.valor.toFixed(1)}
                       </div>
                       <div className="flex-1">
-                        <p className="font-medium mb-1" style={{ color: COLORS.text.primary }}>
+                        <p className="font-medium mb-1" style={{ color: CHART_COLORS.text.primary }}>
                           {gap.categoria}
                         </p>
-                        <p className="text-sm" style={{ color: COLORS.text.secondary }}>
+                        <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                           Por debajo del umbral de competencia (2.5). Capacitación prioritaria requerida.
                         </p>
                       </div>
@@ -896,39 +918,39 @@ const SkillsDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <p style={{ color: COLORS.text.secondary }}>
+                <p style={{ color: CHART_COLORS.text.secondary }}>
                   Todas las categorías cumplen con el nivel mínimo de competencia.
                 </p>
               )}
             </div>
             {/* Mí©trica clave única y grande */}
             <div className="bg-white p-12 text-center">
-              <p className="text-sm uppercase tracking-wide mb-2" style={{ color: COLORS.text.secondary }}>
+              <p className="text-sm uppercase tracking-wide mb-2" style={{ color: CHART_COLORS.text.secondary }}>
                 Promedio General del Equipo
               </p>
-              <p className="text-7xl font-light mb-4" style={{ color: COLORS.primary }}>
+              <p className="text-7xl font-light mb-4" style={{ color: CHART_COLORS.primary }}>
                 {calcularPromedioGeneral(promedioEquipo)}
               </p>
               <div className="flex items-center justify-center gap-8 text-sm">
                 <div>
-                  <span style={{ color: COLORS.text.light }}>de</span>
-                  <span className="font-semibold ml-1" style={{ color: COLORS.text.secondary }}>5.0</span>
+                  <span style={{ color: CHART_COLORS.text.light }}>de</span>
+                  <span className="font-semibold ml-1" style={{ color: CHART_COLORS.text.secondary }}>5.0</span>
                 </div>
-                <div style={{ color: COLORS.text.light }}></div>
+                <div style={{ color: CHART_COLORS.text.light }}></div>
                 <div>
-                  <span className="font-semibold" style={{ color: COLORS.primary }}>
+                  <span className="font-semibold" style={{ color: CHART_COLORS.primary }}>
                     {insights.fortalezas.length}
                   </span>
-                  <span style={{ color: COLORS.text.secondary }} className="ml-1">
+                  <span style={{ color: CHART_COLORS.text.secondary }} className="ml-1">
                     fortaleza{insights.fortalezas.length !== 1 ? 's' : ''}
                   </span>
                 </div>
-                <div style={{ color: COLORS.text.light }}></div>
+                <div style={{ color: CHART_COLORS.text.light }}></div>
                 <div>
-                  <span className="font-semibold" style={{ color: COLORS.warning }}>
+                  <span className="font-semibold" style={{ color: CHART_COLORS.warning }}>
                     {insights.gaps.length}
                   </span>
-                  <span style={{ color: COLORS.text.secondary }} className="ml-1">
+                  <span style={{ color: CHART_COLORS.text.secondary }} className="ml-1">
                     gap{insights.gaps.length !== 1 ? 's' : ''} crítico{insights.gaps.length !== 1 ? 's' : ''}
                   </span>
                 </div>
@@ -936,10 +958,10 @@ const SkillsDashboard = () => {
             </div>
             {/* Gráfico comparativo - minimalista */}
             <div className="bg-white p-8">
-              <h3 className="text-xl font-light mb-2" style={{ color: COLORS.primary }}>
+              <h3 className="text-xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
                 Prioridades de desarrollo
               </h3>
-              <p className="text-sm mb-8" style={{ color: COLORS.text.secondary }}>
+              <p className="text-sm mb-8" style={{ color: CHART_COLORS.text.secondary }}>
                 Gap respecto al objetivo ponderado por criticidad. Mayor gap implica mayor urgencia de desarrollo.
               </p>
               <ResponsiveContainer width="100%" height={300}>
@@ -953,24 +975,24 @@ const SkillsDashboard = () => {
                     domain={[0, 5]}
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: COLORS.text.light, fontSize: 12 }}
+                    tick={{ fill: CHART_COLORS.text.light, fontSize: 12 }}
                   />
                   <YAxis
                     type="category"
                     dataKey="nombre"
                     axisLine={false}
                     tickLine={false}
-                    tick={{ fill: COLORS.text.primary, fontSize: 13 }}
+                    tick={{ fill: CHART_COLORS.text.primary, fontSize: 13 }}
                     width={100}
                   />
                   <ReferenceLine
                     x={2.5}
-                    stroke={COLORS.neutral}
+                    stroke={CHART_COLORS.neutral}
                     strokeDasharray="4 4"
                     strokeWidth={1.5}
                   />
                   <Tooltip
-                    cursor={{ fill: COLORS.secondary + '30' }}
+                    cursor={{ fill: CHART_COLORS.secondary + '30' }}
                     content={({ active, payload }) => {
                       if (active && payload && payload.length) {
                         const status = getStatusInfo(payload[0].value);
@@ -978,20 +1000,20 @@ const SkillsDashboard = () => {
                         const objetivo = Number(item.objetivo ?? 0);
                         const gapValor = Number(item.gap ?? 0);
                         return (
-                          <div className="bg-white p-3 border" style={{ borderColor: COLORS.secondary }}>
-                            <p className="font-medium mb-1" style={{ color: COLORS.text.primary }}>
+                          <div className="bg-white p-3 border" style={{ borderColor: CHART_COLORS.secondary }}>
+                            <p className="font-medium mb-1" style={{ color: CHART_COLORS.text.primary }}>
                               {item.fullName}
                             </p>
                             <p className="text-2xl font-light" style={{ color: status.color }}>
                               {payload[0].value.toFixed(1)}
                             </p>
-                            <p className="text-sm" style={{ color: COLORS.text.secondary }}>
+                            <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                               Objetivo: {objetivo.toFixed(1)}
                             </p>
-                            <p className="text-sm" style={{ color: gapValor > 0 ? COLORS.warning : COLORS.primary }}>
+                            <p className="text-sm" style={{ color: gapValor > 0 ? CHART_COLORS.warning : CHART_COLORS.primary }}>
                               Gap: {gapValor.toFixed(1)}
                             </p>
-                            <p className="text-sm mt-1" style={{ color: COLORS.text.secondary }}>
+                            <p className="text-sm mt-1" style={{ color: CHART_COLORS.text.secondary }}>
                               {status.label}
                             </p>
                           </div>
@@ -1011,36 +1033,36 @@ const SkillsDashboard = () => {
                       dataKey="promedio"
                       position="right"
                       formatter={(value) => value.toFixed(1)}
-                      fill={COLORS.text.primary}
+                      fill={CHART_COLORS.text.primary}
                       fontSize={12}
                     />
                   </Bar>
                 </BarChart>
               </ResponsiveContainer>
-              <p className="text-xs mt-4" style={{ color: COLORS.text.light }}>
+              <p className="text-xs mt-4" style={{ color: CHART_COLORS.text.light }}>
                 Objetivo ponderado por criticidad (C=5, I=4, D=3, N=0).
               </p>
             </div>
             {/* Tabla simple y limpia - solo lo esencial */}
             <div className="bg-white p-8">
-              <h3 className="text-xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h3 className="text-xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 Perfil del equipo
               </h3>
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: `2px solid ${COLORS.primary}` }}>
-                    <th className="text-left py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                  <tr style={{ borderBottom: `2px solid ${CHART_COLORS.primary}` }}>
+                    <th className="text-left py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Colaborador
                     </th>
-                    <th className="text-left py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-left py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Rol
                     </th>
                     {CATEGORIAS.map(cat => (
-                      <th key={cat.id} className="text-center py-3 font-medium text-sm" style={{ color: COLORS.text.secondary }}>
+                      <th key={cat.id} className="text-center py-3 font-medium text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                         {cat.abrev}
                       </th>
                     ))}
-                    <th className="text-center py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-center py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Promedio
                     </th>
                   </tr>
@@ -1051,9 +1073,9 @@ const SkillsDashboard = () => {
                     return (
                       <tr
                         key={col.id}
-                        style={{ borderBottom: `1px solid ${COLORS.secondary}` }}
+                        style={{ borderBottom: `1px solid ${CHART_COLORS.secondary}` }}
                         className="hover:bg-opacity-50 transition-colors"
-                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = COLORS.background}
+                        onMouseEnter={(e) => e.currentTarget.style.backgroundColor = CHART_COLORS.background}
                         onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                       >
                         <td className="py-4">
@@ -1063,12 +1085,12 @@ const SkillsDashboard = () => {
                               setVistaActual('colaboradores');
                             }}
                             className="font-medium hover:underline"
-                            style={{ color: COLORS.primary }}
+                            style={{ color: CHART_COLORS.primary }}
                           >
                             {col.nombre}
                           </button>
                         </td>
-                        <td className="py-4 text-sm" style={{ color: COLORS.text.secondary }}>
+                        <td className="py-4 text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                           {col.rol}
                         </td>
                         {Object.values(col.categorias).map((valor, catIdx) => (
@@ -1092,8 +1114,8 @@ const SkillsDashboard = () => {
                       </tr>
                     );
                   })}
-                  <tr style={{ backgroundColor: COLORS.background }}>
-                    <td className="py-4 font-medium" colSpan="2" style={{ color: COLORS.text.primary }}>
+                  <tr style={{ backgroundColor: CHART_COLORS.background }}>
+                    <td className="py-4 font-medium" colSpan="2" style={{ color: CHART_COLORS.text.primary }}>
                       Promedio del equipo
                     </td>
                     {Object.values(promedioEquipo).map((val, idx) => (
@@ -1109,7 +1131,7 @@ const SkillsDashboard = () => {
                     <td className="text-center py-4">
                       <span
                         className="text-lg font-semibold"
-                        style={{ color: COLORS.primary }}
+                        style={{ color: CHART_COLORS.primary }}
                       >
                         {calcularPromedioGeneral(promedioEquipo)}
                       </span>
@@ -1124,7 +1146,7 @@ const SkillsDashboard = () => {
         {vistaActual === 'colaboradores' && !colaboradorSeleccionado && (
           <div className="bg-white p-8 rounded-lg shadow-sm">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6 gap-4">
-              <h2 className="text-2xl font-light" style={{ color: COLORS.primary }}>
+              <h2 className="text-2xl font-light" style={{ color: CHART_COLORS.primary }}>
                 Selecciona un colaborador para ver detalle
               </h2>
               <div className="flex flex-col sm:flex-row gap-3 md:justify-end">
@@ -1135,8 +1157,8 @@ const SkillsDashboard = () => {
                     disabled={disableResetDemo}
                     className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                     style={{
-                      backgroundColor: disableResetDemo ? COLORS.secondary : COLORS.danger,
-                      color: COLORS.white
+                      backgroundColor: disableResetDemo ? CHART_COLORS.secondary : CHART_COLORS.danger,
+                      color: CHART_COLORS.white
                     }}
                   >
                     {isResettingDemo ? 'Reiniciando...' : 'Iniciar desde cero'}
@@ -1148,8 +1170,8 @@ const SkillsDashboard = () => {
                   disabled={isLoadingData || SKILLS.length === 0}
                   className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                   style={{
-                    backgroundColor: isLoadingData || SKILLS.length === 0 ? COLORS.secondary : COLORS.primary,
-                    color: COLORS.white
+                    backgroundColor: isLoadingData || SKILLS.length === 0 ? CHART_COLORS.secondary : CHART_COLORS.primary,
+                    color: CHART_COLORS.white
                   }}
                 >
                   {mostrarFormularioColaborador ? 'Cancelar' : 'Agregar colaborador'}
@@ -1159,15 +1181,15 @@ const SkillsDashboard = () => {
             {(resetError || resetMessage || (allowResetFromDemo && hasDemoCollaborators)) && (
               <div className="text-sm rounded-md px-3 py-2 mb-6" style={{
                 backgroundColor: resetError
-                  ? COLORS.danger + '15'
+                  ? CHART_COLORS.danger + '15'
                   : resetMessage
-                    ? COLORS.success + '15'
-                    : COLORS.secondary + '20',
+                    ? CHART_COLORS.success + '15'
+                    : CHART_COLORS.secondary + '20',
                 color: resetError
-                  ? COLORS.danger
+                  ? CHART_COLORS.danger
                   : resetMessage
-                    ? COLORS.success
-                    : COLORS.text.secondary
+                    ? CHART_COLORS.success
+                    : CHART_COLORS.text.secondary
               }}>
                 {resetError || resetMessage || 'Este entorno incluye colaboradores demo. Usa “Iniciar desde cero” para eliminarlos (disponible una sola vez).'}
               </div>
@@ -1179,7 +1201,7 @@ const SkillsDashboard = () => {
               >
                 <div className="grid md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: COLORS.text.secondary }}>
+                    <label className="block text-sm font-medium mb-1" style={{ color: CHART_COLORS.text.secondary }}>
                       Nombre
                     </label>
                     <input
@@ -1187,12 +1209,12 @@ const SkillsDashboard = () => {
                       value={nuevoColaborador.nombre}
                       onChange={(event) => handleNuevoColaboradorCampo('nombre', event.target.value)}
                       className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      style={{ borderColor: COLORS.secondary }}
+                      style={{ borderColor: CHART_COLORS.secondary }}
                       placeholder="Ej. Ana Martínez"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1" style={{ color: COLORS.text.secondary }}>
+                    <label className="block text-sm font-medium mb-1" style={{ color: CHART_COLORS.text.secondary }}>
                       Rol
                     </label>
                     <input
@@ -1200,13 +1222,13 @@ const SkillsDashboard = () => {
                       value={nuevoColaborador.rol}
                       onChange={(event) => handleNuevoColaboradorCampo('rol', event.target.value)}
                       className="w-full border rounded px-3 py-2 text-sm focus:outline-none focus:ring-2"
-                      style={{ borderColor: COLORS.secondary }}
+                      style={{ borderColor: CHART_COLORS.secondary }}
                       placeholder="Ej. Tech Lead"
                     />
                   </div>
                 </div>
                 {errorNuevoColaborador && (
-                  <div className="text-sm px-3 py-2 rounded" style={{ backgroundColor: COLORS.danger + '15', color: COLORS.danger }}>
+                  <div className="text-sm px-3 py-2 rounded" style={{ backgroundColor: CHART_COLORS.danger + '15', color: CHART_COLORS.danger }}>
                     {errorNuevoColaborador}
                   </div>
                 )}
@@ -1215,10 +1237,10 @@ const SkillsDashboard = () => {
                   return (
                     <div key={cat.id} className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-sm font-semibold" style={{ color: COLORS.text.primary }}>
+                        <h3 className="text-sm font-semibold" style={{ color: CHART_COLORS.text.primary }}>
                           {cat.nombre}
                         </h3>
-                        <span className="text-xs font-medium" style={{ color: COLORS.text.secondary }}>
+                        <span className="text-xs font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                           Promedio estimado: {promedioCategoria.toFixed(1)}
                         </span>
                       </div>
@@ -1227,7 +1249,7 @@ const SkillsDashboard = () => {
                           const skillState = nuevoColaborador.skills[skill.id] || { nivel: 0, criticidad: 'N', frecuencia: 'N' };
                           return (
                             <div key={skill.id} className="grid md:grid-cols-12 gap-3 items-center">
-                              <span className="md:col-span-6 text-sm" style={{ color: COLORS.text.primary }}>
+                              <span className="md:col-span-6 text-sm" style={{ color: CHART_COLORS.text.primary }}>
                                 {skill.nombre}
                               </span>
                               <div className="md:col-span-4 flex items-center gap-3">
@@ -1240,14 +1262,14 @@ const SkillsDashboard = () => {
                                   onChange={(event) => handleNuevoColaboradorSkillChange(skill.id, 'nivel', event.target.value)}
                                   className="w-full"
                                 />
-                                <span className="text-sm font-semibold w-10 text-right" style={{ color: COLORS.text.primary }}>
+                                <span className="text-sm font-semibold w-10 text-right" style={{ color: CHART_COLORS.text.primary }}>
                                   {Number(skillState.nivel || 0).toFixed(1)}
                                 </span>
                               </div>
                               <div className="md:col-span-1">
                                 <select
                                   className="w-full border rounded px-2 py-1 text-xs"
-                                  style={{ borderColor: COLORS.secondary }}
+                                  style={{ borderColor: CHART_COLORS.secondary }}
                                   value={skillState.criticidad}
                                   onChange={(event) => handleNuevoColaboradorSkillChange(skill.id, 'criticidad', event.target.value)}
                                 >
@@ -1261,7 +1283,7 @@ const SkillsDashboard = () => {
                               <div className="md:col-span-1">
                                 <select
                                   className="w-full border rounded px-2 py-1 text-xs"
-                                  style={{ borderColor: COLORS.secondary }}
+                                  style={{ borderColor: CHART_COLORS.secondary }}
                                   value={skillState.frecuencia}
                                   onChange={(event) => handleNuevoColaboradorSkillChange(skill.id, 'frecuencia', event.target.value)}
                                 >
@@ -1284,7 +1306,7 @@ const SkillsDashboard = () => {
                     type="button"
                     onClick={handleCancelarNuevoColaborador}
                     className="px-4 py-2 text-sm rounded-md border transition-colors"
-                    style={{ borderColor: COLORS.secondary, color: COLORS.text.secondary }}
+                    style={{ borderColor: CHART_COLORS.secondary, color: CHART_COLORS.text.secondary }}
                   >
                     Cancelar
                   </button>
@@ -1292,7 +1314,7 @@ const SkillsDashboard = () => {
                     type="submit"
                     disabled={isSavingColaborador}
                     className="px-4 py-2 text-sm font-medium rounded-md transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: isSavingColaborador ? COLORS.secondary : COLORS.primary, color: COLORS.white }}
+                    style={{ backgroundColor: isSavingColaborador ? CHART_COLORS.secondary : CHART_COLORS.primary, color: CHART_COLORS.white }}
                   >
                     {isSavingColaborador ? 'Guardando...' : 'Guardar colaborador'}
                   </button>
@@ -1309,16 +1331,16 @@ const SkillsDashboard = () => {
                     type="button"
                     onClick={() => setColaboradorSeleccionado(col)}
                     className="w-full text-left border rounded-lg p-6 transition-all bg-white hover:shadow-md"
-                    style={{ borderColor: COLORS.secondary, borderWidth: '1px' }}
-                    onMouseEnter={(event) => { event.currentTarget.style.borderColor = COLORS.primary; }}
-                    onMouseLeave={(event) => { event.currentTarget.style.borderColor = COLORS.secondary; }}
+                    style={{ borderColor: CHART_COLORS.secondary, borderWidth: '1px' }}
+                    onMouseEnter={(event) => { event.currentTarget.style.borderColor = CHART_COLORS.primary; }}
+                    onMouseLeave={(event) => { event.currentTarget.style.borderColor = CHART_COLORS.secondary; }}
                   >
                     <div className="flex justify-between items-start gap-6 mb-4">
                       <div>
-                        <h3 className="text-lg font-medium" style={{ color: COLORS.text.primary }}>
+                        <h3 className="text-lg font-medium" style={{ color: CHART_COLORS.text.primary }}>
                           {col.nombre}
                         </h3>
-                        <p className="text-sm" style={{ color: COLORS.text.secondary }}>
+                        <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                           {col.rol}
                         </p>
                       </div>
@@ -1326,7 +1348,7 @@ const SkillsDashboard = () => {
                         <p className="text-3xl font-light" style={{ color: status.color }}>
                           {promedioGeneral}
                         </p>
-                        <p className="text-xs mt-1" style={{ color: COLORS.text.light }}>
+                        <p className="text-xs mt-1" style={{ color: CHART_COLORS.text.light }}>
                           {status.label}
                         </p>
                       </div>
@@ -1334,7 +1356,7 @@ const SkillsDashboard = () => {
                     <div className="flex gap-6 flex-wrap">
                       {Object.entries(col.categorias).map(([catKey, valor], idx) => (
                         <div key={catKey} className="text-center">
-                          <p className="text-xs mb-1 uppercase tracking-wide" style={{ color: COLORS.text.light }}>
+                          <p className="text-xs mb-1 uppercase tracking-wide" style={{ color: CHART_COLORS.text.light }}>
                             {(CATEGORIAS[idx] && CATEGORIAS[idx].abrev) || catKey}
                           </p>
                           <p
@@ -1361,21 +1383,21 @@ const SkillsDashboard = () => {
               <button
                 onClick={() => setColaboradorSeleccionado(null)}
                 className="mb-4 text-sm font-medium transition-colors"
-                style={{ color: COLORS.text.secondary }}
+                style={{ color: CHART_COLORS.text.secondary }}
               >
                 ← Volver a colaboradores
               </button>
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-3xl font-light mb-2" style={{ color: COLORS.primary }}>
+                  <h2 className="text-3xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
                     {colaboradorSeleccionado.nombre}
                   </h2>
-                  <p className="text-lg" style={{ color: COLORS.text.secondary }}>
+                  <p className="text-lg" style={{ color: CHART_COLORS.text.secondary }}>
                     {colaboradorSeleccionado.rol}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm mb-1" style={{ color: COLORS.text.secondary }}>
+                  <p className="text-sm mb-1" style={{ color: CHART_COLORS.text.secondary }}>
                     Promedio General
                   </p>
                   <p className="text-5xl font-light" style={{ color: getStatusColor(parseFloat(calcularPromedioGeneral(colaboradorSeleccionado.categorias))) }}>
@@ -1389,46 +1411,46 @@ const SkillsDashboard = () => {
               const analysis = getColaboradorInsights(colaboradorSeleccionado);
               return (
                 <div className="bg-white p-8 rounded-lg shadow-sm">
-                  <h2 className="text-2xl font-light mb-6" style={{ color: COLORS.primary }}>
+                  <h2 className="text-2xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                     Análisis de Desarrollo
                   </h2>
                   {/* Mí©tricas de madurez */}
                   <div className="grid md:grid-cols-4 gap-6 mb-8">
-                    <div className="text-center p-4 rounded" style={{ backgroundColor: COLORS.background }}>
+                    <div className="text-center p-4 rounded" style={{ backgroundColor: CHART_COLORS.background }}>
                       <div className="text-3xl font-light mb-2" style={{ color: analysis.metricas.colorRiesgo }}>
                         {analysis.metricas.nivelRiesgo}
                       </div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>
+                      <div className="text-xs" style={{ color: CHART_COLORS.text.secondary }}>
                         Nivel de Riesgo
                       </div>
                     </div>
-                    <div className="text-center p-4 rounded" style={{ backgroundColor: COLORS.background }}>
-                      <div className="text-3xl font-light mb-2" style={{ color: COLORS.primary }}>
+                    <div className="text-center p-4 rounded" style={{ backgroundColor: CHART_COLORS.background }}>
+                      <div className="text-3xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
                         {analysis.metricas.porcentajeMadurezCriticas.toFixed(0)}%
                       </div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>
+                      <div className="text-xs" style={{ color: CHART_COLORS.text.secondary }}>
                         Skills Críticas (3)
                       </div>
-                      <div className="text-xs mt-1" style={{ color: COLORS.text.light }}>
+                      <div className="text-xs mt-1" style={{ color: CHART_COLORS.text.light }}>
                         {analysis.metricas.criticasCumplidas} de {analysis.metricas.totalCriticas}
                       </div>
                     </div>
-                    <div className="text-center p-4 rounded" style={{ backgroundColor: COLORS.background }}>
-                      <div className="text-3xl font-light mb-2" style={{ color: COLORS.neutral }}>
+                    <div className="text-center p-4 rounded" style={{ backgroundColor: CHART_COLORS.background }}>
+                      <div className="text-3xl font-light mb-2" style={{ color: CHART_COLORS.neutral }}>
                         {analysis.metricas.porcentajeMadurezImportantes.toFixed(0)}%
                       </div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>
+                      <div className="text-xs" style={{ color: CHART_COLORS.text.secondary }}>
                         Skills Importantes (3)
                       </div>
-                      <div className="text-xs mt-1" style={{ color: COLORS.text.light }}>
+                      <div className="text-xs mt-1" style={{ color: CHART_COLORS.text.light }}>
                         {analysis.metricas.importantesCumplidas} de {analysis.metricas.totalImportantes}
                       </div>
                     </div>
-                    <div className="text-center p-4 rounded" style={{ backgroundColor: COLORS.background }}>
-                      <div className="text-3xl font-light mb-2" style={{ color: COLORS.success }}>
+                    <div className="text-center p-4 rounded" style={{ backgroundColor: CHART_COLORS.background }}>
+                      <div className="text-3xl font-light mb-2" style={{ color: CHART_COLORS.success }}>
                         {analysis.fortalezas.length}
                       </div>
-                      <div className="text-xs" style={{ color: COLORS.text.secondary }}>
+                      <div className="text-xs" style={{ color: CHART_COLORS.text.secondary }}>
                         Fortalezas Identificadas
                       </div>
                     </div>
@@ -1436,31 +1458,31 @@ const SkillsDashboard = () => {
                   {/* Brechas Críticas */}
                   {analysis.brechasCriticas.length > 0 && (
                     <div className="mb-8 p-6 border-l-4 rounded" style={{
-                      backgroundColor: COLORS.danger + '10',
-                      borderColor: COLORS.danger
+                      backgroundColor: CHART_COLORS.danger + '10',
+                      borderColor: CHART_COLORS.danger
                     }}>
-                      <h3 className="text-lg font-medium mb-4" style={{ color: COLORS.danger }}>
+                      <h3 className="text-lg font-medium mb-4" style={{ color: CHART_COLORS.danger }}>
                         Brechas Críticas ({analysis.brechasCriticas.length})
                       </h3>
-                      <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+                      <p className="text-sm mb-4" style={{ color: CHART_COLORS.text.secondary }}>
                         Skills críticas de uso frecuente con nivel insuficiente. <strong>Requieren atención inmediata.</strong>
                       </p>
                       <div className="space-y-3">
                         {analysis.brechasCriticas.slice(0, 5).map(skill => (
                           <div key={skill.id} className="flex justify-between items-center p-3 bg-white rounded">
                             <div className="flex-1">
-                              <div className="font-medium text-sm" style={{ color: COLORS.text.primary }}>
+                              <div className="font-medium text-sm" style={{ color: CHART_COLORS.text.primary }}>
                                 {skill.nombre}
                               </div>
-                              <div className="text-xs mt-1" style={{ color: COLORS.text.secondary }}>
+                              <div className="text-xs mt-1" style={{ color: CHART_COLORS.text.secondary }}>
                                 Criticidad: {skill.criticidad}  Frecuencia: {skill.frecuencia}  Peso: {skill.evaluacion.peso}
                               </div>
                             </div>
                             <div className="text-right ml-4">
-                              <div className="text-2xl font-light" style={{ color: COLORS.danger }}>
+                              <div className="text-2xl font-light" style={{ color: CHART_COLORS.danger }}>
                                 {skill.nivel}
                               </div>
-                              <div className="text-xs" style={{ color: COLORS.text.light }}>
+                              <div className="text-xs" style={{ color: CHART_COLORS.text.light }}>
                                 actual
                               </div>
                             </div>
@@ -1472,28 +1494,28 @@ const SkillsDashboard = () => {
                   {/* Áreas de Mejora */}
                   {analysis.areasMejora.length > 0 && (
                     <div className="mb-8 p-6 border-l-4 rounded" style={{
-                      backgroundColor: COLORS.warning + '10',
-                      borderColor: COLORS.warning
+                      backgroundColor: CHART_COLORS.warning + '10',
+                      borderColor: CHART_COLORS.warning
                     }}>
-                      <h3 className="text-lg font-medium mb-4" style={{ color: COLORS.warning }}>
+                      <h3 className="text-lg font-medium mb-4" style={{ color: CHART_COLORS.warning }}>
                         Áreas de Mejora ({analysis.areasMejora.length})
                       </h3>
-                      <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+                      <p className="text-sm mb-4" style={{ color: CHART_COLORS.text.secondary }}>
                         Skills críticas que requieren desarrollo a corto plazo.
                       </p>
                       <div className="space-y-3">
                         {analysis.areasMejora.slice(0, 5).map(skill => (
                           <div key={skill.id} className="flex justify-between items-center p-3 bg-white rounded">
                             <div className="flex-1">
-                              <div className="font-medium text-sm" style={{ color: COLORS.text.primary }}>
+                              <div className="font-medium text-sm" style={{ color: CHART_COLORS.text.primary }}>
                                 {skill.nombre}
                               </div>
-                              <div className="text-xs mt-1" style={{ color: COLORS.text.secondary }}>
+                              <div className="text-xs mt-1" style={{ color: CHART_COLORS.text.secondary }}>
                                 Criticidad: {skill.criticidad}  Frecuencia: {skill.frecuencia}  Peso: {skill.evaluacion.peso}
                               </div>
                             </div>
                             <div className="text-right ml-4">
-                              <div className="text-2xl font-light" style={{ color: COLORS.warning }}>
+                              <div className="text-2xl font-light" style={{ color: CHART_COLORS.warning }}>
                                 {skill.nivel}
                               </div>
                             </div>
@@ -1505,22 +1527,22 @@ const SkillsDashboard = () => {
                   {/* Fortalezas Clave */}
                   {analysis.fortalezasClave.length > 0 && (
                     <div className="mb-8 p-6 border-l-4 rounded" style={{
-                      backgroundColor: COLORS.success + '10',
-                      borderColor: COLORS.success
+                      backgroundColor: CHART_COLORS.success + '10',
+                      borderColor: CHART_COLORS.success
                     }}>
-                      <h3 className="text-lg font-medium mb-4" style={{ color: COLORS.success }}>
+                      <h3 className="text-lg font-medium mb-4" style={{ color: CHART_COLORS.success }}>
                         Fortalezas Clave ({analysis.fortalezasClave.length})
                       </h3>
-                      <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+                      <p className="text-sm mb-4" style={{ color: CHART_COLORS.text.secondary }}>
                         Skills críticas dominadas y aplicadas frecuentemente.
                       </p>
                       <div className="grid md:grid-cols-2 gap-3">
                         {analysis.fortalezasClave.slice(0, 6).map(skill => (
                           <div key={skill.id} className="flex justify-between items-center p-3 bg-white rounded">
-                            <div className="font-medium text-sm" style={{ color: COLORS.text.primary }}>
+                            <div className="font-medium text-sm" style={{ color: CHART_COLORS.text.primary }}>
                               {skill.nombre}
                             </div>
-                            <div className="text-xl font-light" style={{ color: COLORS.success }}>
+                            <div className="text-xl font-light" style={{ color: CHART_COLORS.success }}>
                               {skill.nivel}
                             </div>
                           </div>
@@ -1537,17 +1559,17 @@ const SkillsDashboard = () => {
                       <h3 className="text-lg font-medium mb-4" style={{ color: '#9333ea' }}>
                         Talento Subutilizado ({analysis.talentoSubutilizado.length})
                       </h3>
-                      <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+                      <p className="text-sm mb-4" style={{ color: CHART_COLORS.text.secondary }}>
                         Competencias de alto nivel que no se están aprovechando. <strong>Considerar reasignación de proyectos.</strong>
                       </p>
                       <div className="space-y-3">
                         {analysis.talentoSubutilizado.map(skill => (
                           <div key={skill.id} className="flex justify-between items-center p-3 bg-white rounded">
                             <div className="flex-1">
-                              <div className="font-medium text-sm" style={{ color: COLORS.text.primary }}>
+                              <div className="font-medium text-sm" style={{ color: CHART_COLORS.text.primary }}>
                                 {skill.nombre}
                               </div>
-                              <div className="text-xs mt-1" style={{ color: COLORS.text.secondary }}>
+                              <div className="text-xs mt-1" style={{ color: CHART_COLORS.text.secondary }}>
                                 Criticidad: {skill.criticidad}  Frecuencia actual: {skill.frecuencia}
                               </div>
                             </div>
@@ -1555,7 +1577,7 @@ const SkillsDashboard = () => {
                               <div className="text-2xl font-light" style={{ color: '#9333ea' }}>
                                 {skill.nivel}
                               </div>
-                              <div className="text-xs" style={{ color: COLORS.text.light }}>
+                              <div className="text-xs" style={{ color: CHART_COLORS.text.light }}>
                                 alto nivel
                               </div>
                             </div>
@@ -1566,12 +1588,12 @@ const SkillsDashboard = () => {
                   )}
                   {/* Mensaje si no hay alertas */}
                   {analysis.brechasCriticas.length === 0 && analysis.areasMejora.length === 0 && (
-                    <div className="p-6 text-center rounded" style={{ backgroundColor: COLORS.success + '10' }}>
+                    <div className="p-6 text-center rounded" style={{ backgroundColor: CHART_COLORS.success + '10' }}>
                       <div className="text-4xl mb-3"></div>
-                      <p className="font-medium mb-2" style={{ color: COLORS.success }}>
+                      <p className="font-medium mb-2" style={{ color: CHART_COLORS.success }}>
                         Excelente perfil de competencias
                       </p>
-                      <p className="text-sm" style={{ color: COLORS.text.secondary }}>
+                      <p className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                         No se detectaron brechas críticas. Continuar fortaleciendo las competencias clave.
                       </p>
                     </div>
@@ -1581,7 +1603,7 @@ const SkillsDashboard = () => {
             })()}
             {/* Perfil por categora - lollipop */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h2 className="text-2xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h2 className="text-2xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 Perfil por Categora
               </h2>
               <div className="space-y-5">
@@ -1592,14 +1614,14 @@ const SkillsDashboard = () => {
                   return (
                     <div key={cat.id}>
                       <div className="flex justify-between items-center mb-2">
-                        <span className="text-sm font-medium" style={{ color: COLORS.text.primary }}>
+                        <span className="text-sm font-medium" style={{ color: CHART_COLORS.text.primary }}>
                           {cat.nombre}
                         </span>
                         <span className="text-sm font-semibold" style={{ color }}>
                           {valor.toFixed(1)}
                         </span>
                       </div>
-                      <div className="relative h-2 rounded-full" style={{ backgroundColor: COLORS.secondary + '55' }}>
+                      <div className="relative h-2 rounded-full" style={{ backgroundColor: CHART_COLORS.secondary + '55' }}>
                         <div
                           className="absolute top-0 left-0 h-full rounded-full"
                           style={{
@@ -1610,7 +1632,7 @@ const SkillsDashboard = () => {
                         <div
                           className="absolute top-1/2 w-4 h-4 rounded-full transform -translate-y-1/2 -translate-x-1/2"
                           style={{
-                            backgroundColor: COLORS.white,
+                            backgroundColor: CHART_COLORS.white,
                             border: `2px solid ${color}`,
                             left: `${porcentaje}%`
                           }}
@@ -1623,29 +1645,29 @@ const SkillsDashboard = () => {
             </div>
             {/* Tabla detallada de todas las skills */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h2 className="text-2xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h2 className="text-2xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 Detalle Completo de Competencias
               </h2>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr style={{ borderBottom: `2px solid ${COLORS.primary}` }}>
-                      <th className="text-left py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                    <tr style={{ borderBottom: `2px solid ${CHART_COLORS.primary}` }}>
+                      <th className="text-left py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Skill
                       </th>
-                      <th className="text-left py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th className="text-left py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Categoría
                       </th>
-                      <th className="text-center py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th className="text-center py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Nivel
                       </th>
-                      <th className="text-center py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th className="text-center py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Criticidad
                       </th>
-                      <th className="text-center py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th className="text-center py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Frecuencia
                       </th>
-                      <th className="text-left py-3 px-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th className="text-left py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         Estado
                       </th>
                     </tr>
@@ -1656,11 +1678,11 @@ const SkillsDashboard = () => {
                       const evaluacion = evaluarSkill(skillData.nivel, skillData.frecuencia, skillData.criticidad);
                       const categoria = CATEGORIAS.find(c => c.id === skill.categoria);
                       return (
-                        <tr key={skill.id} style={{ borderBottom: `1px solid ${COLORS.secondary}` }}>
-                          <td className="py-3 px-3" style={{ color: COLORS.text.primary }}>
+                        <tr key={skill.id} style={{ borderBottom: `1px solid ${CHART_COLORS.secondary}` }}>
+                          <td className="py-3 px-3" style={{ color: CHART_COLORS.text.primary }}>
                             {skill.nombre}
                           </td>
-                          <td className="py-3 px-3 text-xs" style={{ color: COLORS.text.secondary }}>
+                          <td className="py-3 px-3 text-xs" style={{ color: CHART_COLORS.text.secondary }}>
                             {categoria.abrev}
                           </td>
                           <td className="text-center py-3 px-3">
@@ -1671,10 +1693,10 @@ const SkillsDashboard = () => {
                               {skillData.nivel}
                             </span>
                           </td>
-                          <td className="text-center py-3 px-3 font-medium" style={{ color: COLORS.text.primary }}>
+                          <td className="text-center py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                             {skillData.criticidad}
                           </td>
-                          <td className="text-center py-3 px-3 font-medium" style={{ color: COLORS.text.primary }}>
+                          <td className="text-center py-3 px-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                             {skillData.frecuencia}
                           </td>
                           <td className="py-3 px-3">
@@ -1708,16 +1730,16 @@ const SkillsDashboard = () => {
                   key={cat.id}
                   onClick={() => setCategoriaSeleccionada(cat)}
                   className="bg-white p-6 rounded-lg text-left transition-all hover:shadow-lg"
-                  style={{ border: `1px solid ${COLORS.secondary}` }}
+                  style={{ border: `1px solid ${CHART_COLORS.secondary}` }}
                 >
-                  <h3 className="text-xl font-medium mb-1" style={{ color: COLORS.primary }}>
+                  <h3 className="text-xl font-medium mb-1" style={{ color: CHART_COLORS.primary }}>
                     {cat.nombre}
                   </h3>
-                  <p className="text-sm mb-4" style={{ color: COLORS.text.secondary }}>
+                  <p className="text-sm mb-4" style={{ color: CHART_COLORS.text.secondary }}>
                     {cat.skillCount} competencias evaluadas
                   </p>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm" style={{ color: COLORS.text.secondary }}>
+                    <span className="text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                       Promedio del equipo
                     </span>
                     <span className="text-3xl font-light" style={{ color: status.color }}>
@@ -1736,21 +1758,21 @@ const SkillsDashboard = () => {
               <button
                 onClick={() => setCategoriaSeleccionada(null)}
                 className="mb-4 text-sm font-medium transition-colors"
-                style={{ color: COLORS.text.secondary }}
+                style={{ color: CHART_COLORS.text.secondary }}
               >
                 ← Volver a categorías
               </button>
               <div className="flex justify-between items-start">
                 <div>
-                  <h2 className="text-3xl font-light mb-2" style={{ color: COLORS.primary }}>
+                  <h2 className="text-3xl font-light mb-2" style={{ color: CHART_COLORS.primary }}>
                     {categoriaSeleccionada.nombre}
                   </h2>
-                  <p className="text-lg" style={{ color: COLORS.text.secondary }}>
+                  <p className="text-lg" style={{ color: CHART_COLORS.text.secondary }}>
                     {categoriaSeleccionada.skillCount} competencias
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm mb-1" style={{ color: COLORS.text.secondary }}>
+                  <p className="text-sm mb-1" style={{ color: CHART_COLORS.text.secondary }}>
                     Promedio del Equipo
                   </p>
                   <p className="text-5xl font-light" style={{
@@ -1763,22 +1785,22 @@ const SkillsDashboard = () => {
             </div>
             {/* Resumen por colaborador */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h3 className="text-xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 Resumen por Colaborador
               </h3>
               <table className="w-full">
                 <thead>
-                  <tr style={{ borderBottom: `2px solid ${COLORS.primary}` }}>
-                    <th className="text-left py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                  <tr style={{ borderBottom: `2px solid ${CHART_COLORS.primary}` }}>
+                    <th className="text-left py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Colaborador
                     </th>
-                    <th className="text-left py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-left py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Rol
                     </th>
-                    <th className="text-center py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-center py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Promedio
                     </th>
-                    <th className="text-center py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-center py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Status
                     </th>
                   </tr>
@@ -1788,11 +1810,11 @@ const SkillsDashboard = () => {
                     const promedioCat = col.categorias[`cat${categoriaSeleccionada.id}`];
                     const status = getStatusInfo(promedioCat);
                     return (
-                      <tr key={col.id} style={{ borderBottom: `1px solid ${COLORS.secondary}` }}>
-                        <td className="py-4 font-medium" style={{ color: COLORS.text.primary }}>
+                      <tr key={col.id} style={{ borderBottom: `1px solid ${CHART_COLORS.secondary}` }}>
+                        <td className="py-4 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                           {col.nombre}
                         </td>
-                        <td className="py-4 text-sm" style={{ color: COLORS.text.secondary }}>
+                        <td className="py-4 text-sm" style={{ color: CHART_COLORS.text.secondary }}>
                           {col.rol}
                         </td>
                         <td className="text-center py-4">
@@ -1814,12 +1836,12 @@ const SkillsDashboard = () => {
                       </tr>
                     );
                   })}
-                  <tr style={{ backgroundColor: COLORS.background }}>
-                    <td className="py-4 font-medium" colSpan="2" style={{ color: COLORS.text.primary }}>
+                  <tr style={{ backgroundColor: CHART_COLORS.background }}>
+                    <td className="py-4 font-medium" colSpan="2" style={{ color: CHART_COLORS.text.primary }}>
                       Promedio del equipo
                     </td>
                     <td className="text-center py-4">
-                      <span className="text-lg font-semibold" style={{ color: COLORS.primary }}>
+                      <span className="text-lg font-semibold" style={{ color: CHART_COLORS.primary }}>
                         {parseFloat(promedioEquipo[`cat${categoriaSeleccionada.id}`]).toFixed(1)}
                       </span>
                     </td>
@@ -1830,21 +1852,21 @@ const SkillsDashboard = () => {
             </div>
             {/* Detalle de skills */}
             <div className="bg-white p-8 rounded-lg shadow-sm">
-              <h3 className="text-xl font-light mb-6" style={{ color: COLORS.primary }}>
+              <h3 className="text-xl font-light mb-6" style={{ color: CHART_COLORS.primary }}>
                 Detalle por Skill
               </h3>
               <table className="w-full text-sm">
                 <thead>
-                  <tr style={{ borderBottom: `2px solid ${COLORS.secondary}` }}>
-                    <th className="text-left py-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                  <tr style={{ borderBottom: `2px solid ${CHART_COLORS.secondary}` }}>
+                    <th className="text-left py-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                       Skill
                     </th>
                     {colaboradores.map(col => (
-                      <th key={col.id} className="text-center py-3 font-medium" style={{ color: COLORS.text.secondary }}>
+                      <th key={col.id} className="text-center py-3 font-medium" style={{ color: CHART_COLORS.text.secondary }}>
                         {col.nombre.split(' ')[0]}
                       </th>
                     ))}
-                    <th className="text-center py-3 font-medium" style={{ color: COLORS.text.primary }}>
+                    <th className="text-center py-3 font-medium" style={{ color: CHART_COLORS.text.primary }}>
                       Promedio
                     </th>
                   </tr>
@@ -1854,8 +1876,8 @@ const SkillsDashboard = () => {
                     const niveles = colaboradores.map(col => col.skills[skill.id].nivel);
                     const promedioSkill = (niveles.reduce((a, b) => a + b, 0) / niveles.length);
                     return (
-                      <tr key={skill.id} style={{ borderBottom: `1px solid ${COLORS.secondary}` }}>
-                        <td className="py-3" style={{ color: COLORS.text.primary }}>
+                      <tr key={skill.id} style={{ borderBottom: `1px solid ${CHART_COLORS.secondary}` }}>
+                        <td className="py-3" style={{ color: CHART_COLORS.text.primary }}>
                           {skill.nombre}
                         </td>
                         {colaboradores.map(col => {
@@ -1888,6 +1910,15 @@ const SkillsDashboard = () => {
           </div>
         )}
       </div>
+      <ConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={confirmModal.onConfirm}
+        title={confirmModal.title}
+        message={confirmModal.message}
+        confirmText={confirmModal.confirmText || 'Confirmar'}
+        variant={confirmModal.variant || 'danger'}
+      />
     </div>
   );
 };

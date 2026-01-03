@@ -17,6 +17,9 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
+import EmptyState from '../common/EmptyState';
+import ToastUndo from '../common/ToastUndo';
+import toast from 'react-hot-toast';
 
 /**
  * CategoriesTab — Gestión de Categorías (Connected to API)
@@ -166,14 +169,14 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onDrag
   return (
     <div 
       className={`
-        flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border transition-all duration-200 group
+        flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border transition-all duration-200 group relative
         ${isArchived ? 'bg-gray-50' : ''}
         ${isDragging 
-          ? 'opacity-40 scale-95 rotate-2 shadow-lg border-primary border-2 z-10' 
+          ? 'opacity-100 scale-[1.02] -rotate-1 shadow-2xl border-primary border z-50 ring-1 ring-primary cursor-grabbing' 
           : 'border-gray-100 hover:shadow-md'
         }
         ${isDragOver && !isDragging
-          ? 'border-primary border-2 bg-primary/5 transform -translate-y-1' 
+          ? 'border-primary border-2 border-dashed bg-primary/5 transform translate-x-2' 
           : ''
         }
       `}
@@ -294,22 +297,28 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
 
         <div className="p-4 space-y-4">
           <p className="text-gray-700">
-            Al archivar <strong>"{category.nombre}"</strong>, también se archivarán:
+            ¿Estás seguro que deseas archivar <strong>"{category.nombre}"</strong>?
           </p>
           
-          <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
-            <p className="text-sm font-medium text-gray-600 mb-2">
-              {affectedSkills.length} skill{affectedSkills.length !== 1 ? 's' : ''} afectada{affectedSkills.length !== 1 ? 's' : ''}:
+          {affectedSkills.length > 0 ? (
+            <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
+              <p className="text-sm font-medium text-gray-600 mb-2">
+                {affectedSkills.length} skill{affectedSkills.length !== 1 ? 's' : ''} afectada{affectedSkills.length !== 1 ? 's' : ''}:
+              </p>
+              <ul className="space-y-1">
+                {affectedSkills.map(skill => (
+                  <li key={skill.id} className="text-sm text-gray-600 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
+                    {skill.nombre}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p className="text-sm text-gray-500">
+              Esta categoría no tiene skills asociadas, pero se ocultará de la lista principal.
             </p>
-            <ul className="space-y-1">
-              {affectedSkills.map(skill => (
-                <li key={skill.id} className="text-sm text-gray-600 flex items-center gap-2">
-                  <span className="w-1.5 h-1.5 rounded-full bg-gray-400"></span>
-                  {skill.nombre}
-                </li>
-              ))}
-            </ul>
-          </div>
+          )}
 
           <p className="text-sm text-gray-500">
             Los elementos archivados no aparecerán en Team Matrix, evaluaciones ni perfiles de puesto. 
@@ -339,29 +348,7 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
   );
 }
 
-// Empty State
-function EmptyState({ onCreateClick }) {
-  return (
-    <div className="text-center py-16">
-      <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <FolderPlus size={36} className="text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium text-gray-800 mb-2">
-        No hay categorías
-      </h3>
-      <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-        Las categorías ayudan a organizar las skills por área temática.
-      </p>
-      <button
-        onClick={onCreateClick}
-        className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 mx-auto"
-      >
-        <Plus size={18} />
-        Crear primera categoría
-      </button>
-    </div>
-  );
-}
+// Empty State removed (using shared)
 
 // Main Component
 export default function CategoriesTab() {
@@ -507,55 +494,61 @@ export default function CategoriesTab() {
 
   // Delete/Archive category
   const handleDelete = async (category) => {
-    const skillCount = getSkillCount(category.id);
-    
-    if (skillCount > 0) {
-      // Show confirmation modal for categories with skills
+      // Always show confirmation modal for double safety
       setArchiveConfirm({ show: true, category });
-      return;
-    }
-    
-    // No skills - simple confirmation
-    if (!confirm('¿Archivar esta categoría?')) return;
-    
-    return executeArchive(category);
   };
 
-  // Execute the actual archive
-  const executeArchive = async (category) => {
-    return withAuth(async () => {
-      setIsSaving(true);
-      try {
-        const res = await fetch(`${API_BASE}/categories/${category.id}`, {
-          method: 'DELETE',
-          headers: getHeaders()
-        });
-        
-        if (res.status === 401) {
-          setShowLoginModal(true);
-          return;
-        }
-        
-        if (!res.ok) throw new Error('Error archiving category');
-        
-        // Update local state - mark as archived or remove based on showArchived
-        // Update local state - mark as archived (do not remove, so it can be toggled back)
-        setCategories(categories.map(c => 
-          c.id === category.id ? { ...c, isActive: false } : c
-        ));
-        
-        // Also mark associated skills as archived
-        setSkills(skills.map(s => 
-          s.categoriaId === category.id ? { ...s, isActive: false } : s
-        ));
-        
-        setArchiveConfirm({ show: false, category: null });
-      } catch (_err) {
-        setError('Error archivando categoría');
-      } finally {
-        setIsSaving(false);
+  // Execute the actual archive with Undo
+  const executeArchive = (category) => {
+    // 1. Optimistic Update (Archive locally)
+    const prevCategories = [...categories];
+    const prevSkills = [...skills];
+    
+    // Mark as archived
+    setCategories(categories.map(c => 
+      c.id === category.id ? { ...c, isActive: false } : c
+    ));
+    setSkills(skills.map(s => 
+      s.categoriaId === category.id ? { ...s, isActive: false } : s
+    ));
+    
+    setArchiveConfirm({ show: false, category: null });
+
+    // 2. Undo Logic
+    let isUndone = false;
+    const handleUndo = () => {
+      isUndone = true;
+      setCategories(prevCategories);
+      setSkills(prevSkills);
+      toast.success('Archivado deshecho');
+    };
+
+    // 3. Show Toast
+    toast.custom((t) => (
+      <ToastUndo 
+        t={t}
+        // message={`"${category.nombre}" archivada`}
+        message="Categoría archivada" 
+        onUndo={handleUndo}
+        duration={4000}
+      />
+    ), { duration: 4000, id: `arch-${category.id}` });
+
+    // 4. Delayed API Call
+    setTimeout(async () => {
+      if (!isUndone) {
+         try {
+            const res = await fetch(`${API_BASE}/categories/${category.id}`, {
+              method: 'DELETE',
+              headers: getHeaders()
+            });
+            if (!res.ok) throw new Error('Failed');
+         } catch {
+            toast.error('Error sincronizando archivado');
+            // Revert on error if needed, or force reload
+         }
       }
-    });
+    }, 4100);
   };
 
   // Edit handler
@@ -695,7 +688,13 @@ export default function CategoriesTab() {
   if (categories.length === 0) {
     return (
       <>
-        <EmptyState onCreateClick={() => setShowModal(true)} />
+        <EmptyState 
+          icon={FolderPlus}
+          title="No hay categorías"
+          description="Las categorías ayudan a organizar las skills por área temática. Crea tu primera categoría para empezar."
+          actionLabel="Crear Categoría"
+          onAction={() => setShowModal(true)} 
+        />
         <CategoryModal
           isOpen={showModal}
           onClose={() => { setShowModal(false); setEditingCategory(null); }}

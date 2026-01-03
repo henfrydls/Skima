@@ -12,8 +12,12 @@ import {
   AlertCircle,
   Search
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
+import ConfirmModal from '../common/ConfirmModal';
+import EmptyState from '../common/EmptyState';
+import ToastUndo from '../common/ToastUndo';
 
 /**
  * SkillsTab — Gestión de Skills por Categoría (Connected to API)
@@ -195,6 +199,7 @@ export default function SkillsTab({ isActive = false }) {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, skill: null });
 
   // Filter categories and skills based on search
   const filteredCategories = categories.filter(category => {
@@ -313,8 +318,9 @@ export default function SkillsTab({ isActive = false }) {
         const newSkill = await res.json();
         setSkills([...skills, newSkill]);
         setIsModalOpen(false);
+        toast.success('Skill creada exitosamente');
       } catch (err) {
-        setError('Error creando skill');
+        toast.error('Error creando skill');
       } finally {
         setIsSaving(false);
       }
@@ -345,37 +351,73 @@ export default function SkillsTab({ isActive = false }) {
         setSkills(skills.map(s => s.id === updated.id ? updated : s));
         setIsModalOpen(false);
         setEditingSkill(null);
+        toast.success('Skill actualizada correctaemente');
       } catch (err) {
-        setError('Error actualizando skill');
+        toast.error('Error actualizando skill');
       } finally {
         setIsSaving(false);
       }
     });
   };
 
-  // Delete skill
-  const handleDeleteSkill = async (skill) => {
-    if (!confirm(`¿Eliminar la skill "${skill.nombre}"?`)) return;
-    
-    return withAuth(async () => {
+  const executeDelete = async (skill) => {
       try {
         const res = await fetch(`${API_BASE}/skills/${skill.id}`, {
           method: 'DELETE',
           headers: getHeaders()
         });
-        
-        if (res.status === 401) {
-          setShowLoginModal(true);
-          return;
-        }
-        
-        if (!res.ok) throw new Error('Error deleting skill');
-        
-        setSkills(skills.filter(s => s.id !== skill.id));
+        if (!res.ok) throw new Error('Failed');
       } catch (err) {
-        setError('Error eliminando skill');
+        toast.error('Error sincronizando eliminación');
+        // force fetch to reset
+        fetchData();
       }
-    });
+  };
+
+  // Delete with Double Safety
+  const executeDeleteSkill = (skill) => {
+    // 1. Optimistic Remove
+    const previousSkills = [...skills];
+    setSkills(skills.filter(s => s.id !== skill.id));
+    
+    // 2. Ref-like tracking for cancellation
+    let isUndone = false;
+    
+    const handleUndo = () => {
+      isUndone = true;
+      setSkills(previousSkills);
+      toast.success('Acción deshecha');
+    };
+    
+    toast.custom((t) => (
+      <ToastUndo 
+        t={t}
+        message={`"${skill.nombre}" eliminado`}
+        onUndo={handleUndo}
+        duration={4000}
+      />
+    ), { duration: 4000, id: `del-${skill.id}` });
+    
+    // 3. Delayed API Call
+    setTimeout(() => {
+      // If we are still "deleted" (meaning undo wasn't called impacting state logic)
+      if(!isUndone) {
+         executeDelete(skill);
+      }
+    }, 4100); 
+  };
+  
+
+
+  const handleDeleteClick = (skill) => {
+    setDeleteModal({ isOpen: true, skill });
+  };
+  
+  const handleConfirmDelete = () => {
+      if (deleteModal.skill) {
+          executeDeleteSkill(deleteModal.skill);
+          setDeleteModal({ isOpen: false, skill: null });
+      }
   };
 
   const handleSaveSkill = (data) => {
@@ -419,18 +461,17 @@ export default function SkillsTab({ isActive = false }) {
   // Empty state
   if (categories.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Layers size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-800 mb-2">
-          Primero crea categorías
-        </h3>
-        <p className="text-gray-500">
-          Las skills se organizan dentro de categorías.
-        </p>
-      </div>
+      <EmptyState
+        icon={Layers}
+        title="Primero crea categorías"
+        description="Las skills se organizan dentro de categorías. Necesitas crear al menos una categoría antes de agregar skills."
+        actionLabel="Ir a Categorías"
+        onAction={null}
+      />
     );
   }
 
+ 
   return (
     <div className="space-y-4">
       {/* Header Row */}
@@ -471,7 +512,7 @@ export default function SkillsTab({ isActive = false }) {
             skills={getFilteredSkills(category.id)}
             onEditSkill={handleEditSkill}
             onAddSkill={handleAddSkill}
-            onDeleteSkill={handleDeleteSkill}
+            onDeleteSkill={handleDeleteClick}
           />
         ))}
       </div>
@@ -485,10 +526,20 @@ export default function SkillsTab({ isActive = false }) {
         onSave={handleSaveSkill}
         isLoading={isSaving}
       />
+      {/* ConfirmModal removed - using Toast Undo */}
       <LoginModal
         isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleLoginSuccess}
+      />
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        title="Eliminar Skill"
+        message={`¿Estás seguro que deseas eliminar "${deleteModal.skill?.nombre}"? Esta acción se puede deshacer temporalmente.`}
+        confirmText="Eliminar"
+        variant="danger"
       />
     </div>
   );

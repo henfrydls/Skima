@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Lock, Loader2, X, AlertCircle } from 'lucide-react';
+import Button from '../common/Button';
 
 /**
  * LoginModal - Simple password-based admin login
@@ -95,26 +96,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          <button
+          <Button
             type="submit"
-            disabled={isLoading || !password}
-            className={`
-              w-full py-3 rounded-lg font-medium transition-all flex items-center justify-center gap-2
-              ${isLoading || !password 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-primary text-white hover:bg-primary/90 hover-lift'
-              }
-            `}
+            isLoading={isLoading}
+            disabled={!password}
+            className="w-full py-3 hover-lift"
           >
-            {isLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Verificando...
-              </>
-            ) : (
-              'Iniciar Sesión'
-            )}
-          </button>
+            Iniciar Sesión
+          </Button>
         </form>
 
         {/* Footer hint */}

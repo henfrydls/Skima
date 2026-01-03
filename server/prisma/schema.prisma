@@ -31,6 +31,7 @@ model Collaborator {
   rol                String
   email              String?              // Optional email for collaborator
   esDemo             Boolean              @default(false)
+  isActive           Boolean              @default(true) // Soft delete flag
   lastEvaluated      DateTime?            // Timestamp of last evaluation
   assessments        Assessment[]
   evaluationSessions EvaluationSession[]

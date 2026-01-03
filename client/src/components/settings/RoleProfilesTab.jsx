@@ -23,6 +23,7 @@ import {
   Edit3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import toast from 'react-hot-toast';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
@@ -643,8 +644,9 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       }));
       setInitialRequirements(requirements); // Reset dirty state
       
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      setInitialRequirements(requirements); // Reset dirty state
+      
+      toast.success('Perfil guardado correctamente');
 
       // Handle pending navigation if save was triggered from dialog
       if (shouldNavigateAfter) {
@@ -659,8 +661,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
 
     } catch (err) {
       console.error('Error saving profile:', err);
-      setError('Error guardando perfil');
-      setTimeout(() => setError(null), 3000);
+      toast.error('Error guardando perfil');
     } finally {
       setIsSaving(false);
     }

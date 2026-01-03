@@ -67,7 +67,7 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
   return (
     <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in">
       {/* Contenedor con scroll */}
-      <div className="overflow-auto max-h-[calc(100vh-200px)]">
+      <div className="overflow-x-auto max-h-[calc(100vh-200px)] border border-gray-100 rounded-lg">
         <table className="w-full border-collapse">
           {/* Header: Empleados como columnas */}
           <thead>

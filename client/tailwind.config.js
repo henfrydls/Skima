@@ -12,6 +12,7 @@ export default {
         competentDark: '#7d8530', // WCAG AA compliant for text (5:1 ratio)
         warning: '#da8a0c',
         critical: '#ef4444',
+        success: '#10b981',
         background: '#f5f5f5',
         surface: '#ffffff',
       },

@@ -11,9 +11,15 @@ import {
   Check,
   UserPlus,
   AlertCircle,
-  Briefcase
+  Briefcase,
+  Archive,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import ConfirmModal from '../common/ConfirmModal';
+import EmptyState from '../common/EmptyState';
+import ToastUndo from '../common/ToastUndo';
+import toast from 'react-hot-toast';
 
 
 /**
@@ -26,34 +32,7 @@ import { useAuth } from '../../contexts/AuthContext';
  * - Action menu para editar/eliminar
  */
 
-// Empty State Component
-function EmptyState({ onCreateClick }) {
-  return (
-    <div className="text-center py-16">
-      <div className="w-20 h-20 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
-        <UserPlus size={36} className="text-gray-400" />
-      </div>
-      <h3 className="text-lg font-medium text-gray-800 mb-2">
-        No hay colaboradores aún
-      </h3>
-      <p className="text-gray-500 mb-6 max-w-sm mx-auto">
-        Agrega a los miembros del equipo que evaluarás. Puedes importar desde CSV o crear manualmente.
-      </p>
-      <div className="flex justify-center gap-3">
-        <button
-          onClick={onCreateClick}
-          className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Crear uno
-        </button>
-        <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-          Importar CSV
-        </button>
-      </div>
-    </div>
-  );
-}
+// Empty State component removed (using shared)
 
 // Create Modal Component
 function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} }) {
@@ -217,7 +196,7 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
 }
 
 // Role Select Dropdown Cell
-function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigateToProfiles }) {
+function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigateToProfiles, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
   
   // Show all unique roles: from collaborators + from defined profiles
@@ -234,6 +213,14 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
   };
 
   const hasProfile = roleProfiles[value] && Object.values(roleProfiles[value]).some(v => v !== 'N');
+
+  if (disabled) {
+    return (
+      <span className="font-medium text-gray-500 cursor-not-allowed" title="No se puede editar rol de usuario desactivado">
+        {value}
+      </span>
+    );
+  }
 
   return (
     <div className="relative">
@@ -290,9 +277,15 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
 }
 
 // Collaborator Row Component
-function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, availableRoles = [], onNavigate }) {
+// CollaboratorRow Component
+// CollaboratorRow Component
+function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProfiles = {}, availableRoles = [], onNavigate, index, totalCount }) {
   const [editingField, setEditingField] = useState(null);
   const [showMenu, setShowMenu] = useState(false);
+
+  const isArchived = collaborator.isActive === false;
+  // Determine if menu should open upwards (if in last 2 rows and list is long enough)
+  const openUpwards = totalCount > 4 && index >= totalCount - 2;
 
   const initials = collaborator.nombre
     .split(' ')
@@ -306,36 +299,40 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
   };
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors group">
+    <tr className={`hover:bg-gray-50 transition-colors group ${isArchived ? 'bg-gray-50' : ''}`}>
       {/* Avatar + Name */}
-      <td className="px-4 py-3">
+      <td className={`px-4 py-3 ${isArchived ? 'opacity-50' : ''}`}>
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-medium text-sm">
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm ${isArchived ? 'bg-gray-200 text-gray-500' : 'bg-primary/10 text-primary'}`}>
             {initials}
           </div>
-          <EditableCell
-            value={collaborator.nombre}
-            onSave={(value) => handleFieldSave('nombre', value)}
-            isEditing={editingField === 'nombre'}
-            onStartEdit={() => setEditingField('nombre')}
-            onCancelEdit={() => setEditingField(null)}
-          />
+          <div className="flex flex-col">
+            <EditableCell
+                value={collaborator.nombre}
+                onSave={(value) => !isArchived && handleFieldSave('nombre', value)}
+                isEditing={!isArchived && editingField === 'nombre'}
+                onStartEdit={() => !isArchived && setEditingField('nombre')}
+                onCancelEdit={() => setEditingField(null)}
+            />
+            {isArchived && <span className="text-[10px] uppercase font-bold text-gray-400">Desactivado</span>}
+          </div>
         </div>
       </td>
 
       {/* Role with Profile Status */}
-      <td className="px-4 py-3">
+      <td className={`px-4 py-3 ${isArchived ? 'opacity-50' : ''}`}>
         <RoleSelectCell
           value={collaborator.rol}
           availableRoles={availableRoles}
           roleProfiles={roleProfiles}
           onSave={(value) => handleFieldSave('rol', value)}
           onNavigateToProfiles={(role) => onNavigate('perfiles', { rol: role || collaborator.rol })}
+          disabled={isArchived}
         />
       </td>
 
       {/* Stats - Skills evaluadas vs definidas en perfil */}
-      <td className="px-4 py-3 text-sm text-gray-500">
+      <td className={`px-4 py-3 text-sm text-gray-500 ${isArchived ? 'opacity-50' : ''}`}>
         {(() => {
           const evaluatedCount = Object.keys(collaborator.skills || {}).length;
           const roleProfile = roleProfiles[collaborator.rol] || {};
@@ -368,7 +365,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
       </td>
 
       {/* Última Evaluación */}
-      <td className="px-4 py-3 text-sm text-gray-500">
+      <td className={`px-4 py-3 text-sm text-gray-500 ${isArchived ? 'opacity-50' : ''}`}>
         {collaborator.lastEvaluated ? (
           <span className="text-gray-600">
             {new Date(collaborator.lastEvaluated).toLocaleDateString('es-ES', { 
@@ -383,7 +380,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
       </td>
 
       {/* Promedio */}
-      <td className="px-4 py-3">
+      <td className={`px-4 py-3 ${isArchived ? 'opacity-50' : ''}`}>
         {collaborator.promedio > 0 ? (
           <span className={`
             text-sm font-medium px-2 py-1 rounded
@@ -413,10 +410,15 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
               className="fixed inset-0 z-10" 
               onClick={() => setShowMenu(false)}
             />
-            <div className="absolute right-4 top-full mt-1 bg-surface rounded-lg shadow-lg border border-gray-100 py-1 z-20 min-w-[160px]">
+            <div className={`absolute right-4 z-20 min-w-[160px] bg-surface rounded-lg shadow-lg border border-gray-100 py-1 ${openUpwards ? 'bottom-full mb-1 origin-bottom-right' : 'top-full mt-1 origin-top-right'}`}>
               <button
-                onClick={() => { setEditingField('nombre'); setShowMenu(false); }}
-                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                onClick={() => { 
+                    if (isArchived) return;
+                    setEditingField('nombre'); 
+                    setShowMenu(false); 
+                }}
+                disabled={isArchived}
+                className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${isArchived ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
               >
                 <Edit3 size={14} />
                 Editar completo
@@ -432,13 +434,24 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
                 Ver evaluaciones
               </button>
               <hr className="my-1 border-gray-100" />
-              <button
-                onClick={() => { onDelete(collaborator.id); setShowMenu(false); }}
-                className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
-              >
-                <Trash2 size={14} />
-                Desactivar
-              </button>
+              
+              {isArchived ? (
+                <button
+                    onClick={() => { onRestore(collaborator); setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/5 flex items-center gap-2 font-medium"
+                >
+                    <RotateCcw size={14} />
+                    Restaurar
+                </button>
+              ) : (
+                <button
+                    onClick={() => { onDelete(collaborator.id, collaborator.nombre); setShowMenu(false); }}
+                    className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
+                >
+                    <Trash2 size={14} />
+                    Desactivar
+                </button>
+              )}
             </div>
           </>
         )}
@@ -447,6 +460,8 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, roleProfiles = {}, 
   );
 }
 
+
+
 // Main Component
 export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0 }) {
   const { authFetch } = useAuth();
@@ -454,8 +469,12 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   const [roleProfiles, setRoleProfiles] = useState({});
   const [totalSkillsCount, setTotalSkillsCount] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showArchived, setShowArchived] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [updateError, setUpdateError] = useState(null); // For rollback feedback
+  
+  // State for delete confirmation
+  const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: '' });
+  
   const [isLoading, setIsLoading] = useState(true); // Prevent empty state flash
 
   // Fetch data (role profiles, collaborators, skills count)
@@ -463,11 +482,38 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/data');
-        const data = await response.json();
-        setRoleProfiles(data.roleProfiles || {});
-        setCollaborators(data.collaborators || []);
-        setTotalSkillsCount(data.skills?.length || 0);
+        const response = await fetch('/api/data?includeArchived=true'); // Need updated API/Data logic or separate fetch? 
+        // /api/data usually returns active only. Ideally we should use /api/collaborators?includeArchived=true if /api/data doesn't support it.
+        // But the previous code used /api/data. 
+        // Let's stick to /api/collaborators for now to be safe, OR rely on my backend change to /api/collaborators.
+        // Wait, /api/data is the main dashboard endpoint. I haven't updated /api/data to return archived collaborators. 
+        // I updated /api/data to FILTER active collaborators (lines 48+).
+        // So fetching /api/data will NOT return archived collaborators.
+        // I should fetch collaborators separately or update /api/data.
+        // Fetching separately is safer.
+        
+        const [dataRes, collabRes] = await Promise.all([
+             fetch('/api/data'),
+             fetch('/api/collaborators?includeArchived=true') 
+        ]);
+        
+        const dataJson = await dataRes.json();
+        const collabsJson = await collabRes.json();
+
+        setRoleProfiles(dataJson.roleProfiles || {});
+        setTotalSkillsCount(dataJson.skills?.length || 0);
+
+        // Merge: Use dashboardData (active with stats) + archived from full list
+        const activeMap = new Map(dataJson.collaborators.map(c => [c.id, c]));
+        
+        const mergedCollaborators = collabsJson.map(c => {
+             const activeWithStats = activeMap.get(c.id);
+             if (activeWithStats) return activeWithStats;
+             return { ...c, skills: {}, promedio: 0, isActive: false }; // Fallback for archived
+        });
+        
+        setCollaborators(mergedCollaborators);
+        
       } catch (err) {
         console.error('Error fetching data:', err);
       } finally {
@@ -475,13 +521,37 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       }
     };
     fetchData();
-  }, [dataVersion]); // Add dataVersion dependency to trigger refetch on role rename
+  }, [dataVersion]); 
 
   // Filter collaborators
-  const filteredCollaborators = collaborators.filter(c =>
-    c.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.rol.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCollaborators = collaborators
+    .filter(c => {
+      // 1. Archive Filter
+      // Note: c.isActive might be undefined for those from /api/data (default true)
+      // Archived ones check: c.isActive === false
+      const isActive = c.isActive !== false; 
+      if (!showArchived && !isActive) return false;
+      
+      // 2. Search
+      return (
+        c.nombre.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        c.rol.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    })
+    .sort((a, b) => {
+      // 1. Sort by Status (Active first)
+      // isActive might be undefined for old records, treat as true
+      const aActive = a.isActive !== false;
+      const bActive = b.isActive !== false;
+      
+      // If A is active and B is inactive, A comes first (-1)
+      if (aActive && !bActive) return -1;
+      // If A is inactive and B is active, B comes first (1)
+      if (!aActive && bActive) return 1;
+      
+      // 2. Sort Alphabetically
+      return a.nombre.localeCompare(b.nombre);
+    });
 
   // Get unique roles from all collaborators (for dropdown)
   const uniqueRoles = [...new Set(collaborators.map(c => c.rol))].filter(Boolean);
@@ -506,10 +576,11 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       };
       
       setCollaborators([createdWithUIProps, ...collaborators]);
+      toast.success('Colaborador creado');
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') return; // Modal will handle this
       console.error('Error creating:', err);
-      setUpdateError('Error al crear colaborador. Intenta de nuevo.');
+      toast.error('Error al crear colaborador');
     }
   };
 
@@ -543,33 +614,91 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       // Rollback optimistic update on any error
       console.error('Error updating:', err);
       setCollaborators(originalCollaborators);
-      setUpdateError(`Error al actualizar "${originalItem?.nombre || 'colaborador'}". Cambios revertidos.`);
-      
-      // Auto-clear error after 5 seconds
-      setTimeout(() => setUpdateError(null), 5000);
+      toast.error(`Error al actualizar "${originalItem?.nombre || 'colaborador'}". Cambios revertidos.`);
     }
   };
 
 
-  const handleDelete = async (id) => {
-    if (confirm('¿Desactivar este colaborador?')) {
-      setUpdateError(null);
-      try {
-        const response = await authFetch(`/api/collaborators/${id}`, {
-          method: 'DELETE'
-        });
-        
-        if (!response.ok) throw new Error('Error deleting');
-        
-        setCollaborators(collaborators.filter(c => c.id !== id));
-      } catch (err) {
-        if (err.message === 'SESSION_EXPIRED') return;
-        console.error('Error deleting:', err);
-        setUpdateError('Error al eliminar colaborador.');
-        setTimeout(() => setUpdateError(null), 5000);
+  // Delete (Soft) Implementation
+  const executeDelete = (id, name) => {
+    // 1. Optimistic Update
+    const prevCollaborators = [...collaborators];
+    
+    // Mark as inactive locally instead of removing? Or remove if !showArchived?
+    // Let's follow CategoriesTab pattern: Mark as inactive.
+    setCollaborators(collaborators.map(c => 
+      c.id === id ? { ...c, isActive: false } : c
+    ));
+
+    // 2. Undo Handler
+    let isUndone = false;
+    const handleUndo = () => {
+       isUndone = true;
+       setCollaborators(prevCollaborators);
+       toast.success('Desactivación deshecha');
+    };
+    
+    // 3. Show Toast
+    toast.custom((t) => (
+      <ToastUndo 
+        t={t}
+        message={`"${name}" desactivado`}
+        onUndo={handleUndo}
+        duration={4000}
+      />
+    ), { duration: 4000, id: `del-collab-${id}` });
+
+    // 4. Delayed API Call
+    setTimeout(async () => {
+      if (!isUndone) {
+         try {
+            const response = await authFetch(`/api/collaborators/${id}`, {
+               method: 'DELETE'
+            });
+            if (!response.ok) throw new Error('Error deleting');
+         } catch(err) {
+             if (err.message !== 'SESSION_EXPIRED') {
+                toast.error('Error sincronizando desactivación');
+                setCollaborators(prevCollaborators); // Revert
+             }
+         }
       }
-    }
+    }, 4100);
   };
+  
+  // Restore Implementation
+  const executeRestore = async (collab) => {
+     // Optimistic
+     const prevCollaborators = [...collaborators];
+     setCollaborators(collaborators.map(c => 
+        c.id === collab.id ? { ...c, isActive: true } : c
+     ));
+     
+     try {
+        const response = await authFetch(`/api/collaborators/${collab.id}/restore`, {
+            method: 'PUT'
+        });
+        if (!response.ok) throw new Error('Failed');
+        toast.success('Colaborador restaurado');
+     } catch (err) {
+        setCollaborators(prevCollaborators);
+        toast.error('Error restaurando colaborador');
+     }
+  };
+
+  // Click Handler for Delete - Opens Modal (Double Safety)
+  const handleDeleteClick = (id, name) => {
+     setDeleteModal({ isOpen: true, id, name });
+  };
+  
+  const confirmDelete = () => {
+     if (deleteModal.id) {
+        executeDelete(deleteModal.id, deleteModal.name);
+        setDeleteModal({ isOpen: false, id: null, name: '' });
+     }
+  };
+  
+
 
 
   // Loading state
@@ -585,7 +714,18 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   if (collaborators.length === 0) {
     return (
       <>
-        <EmptyState onCreateClick={() => setShowCreateModal(true)} />
+        <EmptyState 
+          icon={UserPlus}
+          title="No hay colaboradores aún"
+          description="Agrega a los miembros del equipo que evaluarás. Puedes importar desde CSV o crear manualmente."
+          actionLabel="Crear uno"
+          onAction={() => setShowCreateModal(true)}
+          secondaryAction={
+            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm">
+              Importar CSV
+            </button>
+          }
+        />
         <CreateCollaboratorModal
           isOpen={showCreateModal}
           onClose={() => setShowCreateModal(false)}
@@ -614,9 +754,23 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
 
         {/* Actions */}
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-500">
-            {filteredCollaborators.length} colaboradores
-          </span>
+          <p className="text-sm text-gray-500 hidden sm:block">
+            {filteredCollaborators.length} colaborador{filteredCollaborators.length !== 1 ? 'es' : ''}
+          </p>
+          <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
+
+          <button
+            onClick={() => setShowArchived(!showArchived)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full transition-all ${
+              showArchived 
+                ? 'bg-gray-200 text-gray-700' 
+                : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+            }`}
+          >
+            <Archive size={14} />
+            {showArchived ? 'Ocultar inactivos' : 'Ver inactivos'}
+          </button>
+          
           <button
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
@@ -653,16 +807,19 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {filteredCollaborators.map((collab) => (
+            {filteredCollaborators.map((collab, index) => (
               <CollaboratorRow
                 key={collab.id}
                 collaborator={collab}
                 onUpdate={handleUpdate}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClick}
+                onRestore={executeRestore}
                 roleProfiles={roleProfiles}
                 availableRoles={uniqueRoles}
                 onNavigate={onNavigate}
                 totalSkillsCount={totalSkillsCount}
+                index={index}
+                totalCount={filteredCollaborators.length}
               />
             ))}
           </tbody>
@@ -682,6 +839,18 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
         onSave={handleCreate}
         roleProfiles={roleProfiles}
       />
+      
+      <ConfirmModal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
+        onConfirm={confirmDelete}
+        title="Desactivar Colaborador"
+        message={`¿Estás seguro que deseas desactivar a ${deleteModal.name}? Esta acción se puede deshacer temporalmente.`}
+        confirmText="Desactivar"
+        variant="danger"
+      />
+      
+
     </div>
   );
 }
