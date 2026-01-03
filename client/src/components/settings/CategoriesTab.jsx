@@ -19,6 +19,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import LoginModal from '../auth/LoginModal';
 import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
+import Button from '../common/Button';
 import toast from 'react-hot-toast';
 
 /**
@@ -137,21 +138,19 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+              isLoading={isLoading}
             >
-              {isLoading && <Loader2 size={16} className="animate-spin" />}
               {isEdit ? 'Guardar' : 'Crear'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -327,20 +326,19 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
         </div>
 
         <div className="flex justify-end gap-3 p-4 border-t border-gray-100">
-          <button
+          <Button
+            variant="secondary"
             onClick={onClose}
-            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
           >
             Cancelar
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
             onClick={onConfirm}
-            disabled={isLoading}
-            className="px-4 py-2 bg-warning text-white rounded-lg hover:bg-warning/90 transition-colors flex items-center gap-2"
+            isLoading={isLoading}
           >
-            {isLoading && <Loader2 size={16} className="animate-spin" />}
             Archivar todo ({affectedSkills.length + 1} items)
-          </button>
+          </Button>
         </div>
       </div>
     </div>,

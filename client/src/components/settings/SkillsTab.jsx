@@ -18,6 +18,7 @@ import LoginModal from '../auth/LoginModal';
 import ConfirmModal from '../common/ConfirmModal';
 import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
+import Button from '../common/Button';
 
 /**
  * SkillsTab — Gestión de Skills por Categoría (Connected to API)
@@ -101,21 +102,19 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <button
+            <Button
               type="button"
+              variant="secondary"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
               Cancelar
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
-              disabled={isLoading}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+              isLoading={isLoading}
             >
-              {isLoading && <Loader2 size={16} className="animate-spin" />}
               {skill ? 'Guardar' : 'Crear'}
-            </button>
+            </Button>
           </div>
         </form>
       </div>

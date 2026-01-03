@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import toast from 'react-hot-toast';
+import Button from '../common/Button';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
@@ -233,17 +234,12 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
             Los colaboradores con este rol serán actualizados automáticamente.
           </p>
           <div className="flex justify-end gap-3 pt-2">
-            <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            <Button type="button" variant="secondary" onClick={onClose}>
               Cancelar
-            </button>
-            <button 
-              type="submit" 
-              disabled={isLoading}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
-            >
-              {isLoading && <Loader2 size={16} className="animate-spin" />}
+            </Button>
+            <Button type="submit" isLoading={isLoading}>
               Guardar
-            </button>
+            </Button>
           </div>
         </form>
       </div>
@@ -1024,19 +1020,14 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                     </div>
                   </div>
 
-                  <button
+                  <Button
                     onClick={() => handleSave(false)}
-                    disabled={isSaving || !isDirty}
-                    className={`
-                      flex items-center gap-2 px-6 py-2 rounded-lg font-medium transition-all shadow-sm
-                      ${isDirty 
-                        ? 'bg-primary text-white hover:bg-primary/90 hover:shadow shadow-primary/20 hover:-translate-y-0.5' 
-                        : 'bg-gray-100 text-gray-400 cursor-not-allowed border border-gray-200'}
-                    `}
+                    disabled={!isDirty}
+                    isLoading={isSaving}
                   >
-                    {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                    <Save size={18} />
                     {isSaving ? 'Guardando...' : 'Guardar Cambios'}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>
@@ -1118,29 +1109,19 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
             Tienes cambios sin guardar
           </span>
 
-          <button
-             onClick={() => setRequirements(initialRequirements)}
-             className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors text-sm font-medium"
+          <Button
+            variant="ghost"
+            onClick={() => setRequirements(initialRequirements)}
           >
-            Descartar
-          </button>
-          <button
+             Descartar
+          </Button>
+          <Button
             onClick={() => handleSave(false)}
-            disabled={isSaving}
-            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 shadow-sm font-medium"
+            isLoading={isSaving}
           >
-            {isSaving ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Guardando...
-              </>
-            ) : (
-              <>
-                <Save size={18} />
-                Guardar Cambios
-              </>
-            )}
-          </button>
+            <Save size={18} />
+            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+          </Button>
         </div>
       )}
 
