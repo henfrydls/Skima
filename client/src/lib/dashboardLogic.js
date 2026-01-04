@@ -213,14 +213,10 @@ export function detectBusFactorRisk(collaborators, skills) {
   return risks;
 }
 
-// ============================================
-// EXECUTIVE METRICS
-// ============================================
-
 /**
  * Calcula todas las métricas ejecutivas para el dashboard
  */
-export function calculateExecutiveMetrics(collaborators, skills, categories, isCriticalGap) {
+export function calculateExecutiveMetrics(collaborators, skills, categories, isCriticalGap, roleProfiles = {}) {
   // Helper to calculate average from skills object
   const calcAvg = (skillsObj) => {
     const vals = Object.values(skillsObj).map(s => s.nivel);
@@ -256,13 +252,58 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
   
   // Contar gaps críticos
   let criticalGapsCount = 0;
+  let totalSkillAssessments = 0;
+  let expertSkillsCount = 0;
+  
   collaborators.forEach(collab => {
     Object.values(collab.skills).forEach(skillData => {
-      if (isCriticalGap(skillData)) {
-        criticalGapsCount++;
+      if (skillData.nivel > 0) {
+        totalSkillAssessments++;
+        
+        if (isCriticalGap(skillData)) {
+          criticalGapsCount++;
+        }
+        
+        // Count expert-level skills (nivel >= 4)
+        if (skillData.nivel >= 4) {
+          expertSkillsCount++;
+        }
       }
     });
   });
+
+  // Densidad de Expertos: % de skills en nivel 4-5
+  const expertDensity = totalSkillAssessments > 0 
+    ? Math.round((expertSkillsCount / totalSkillAssessments) * 100) 
+    : 0;
+
+  // Cobertura de Roles: % de colaboradores cumpliendo requisitos mínimos
+  let meetingRequirements = 0;
+  collaborators.forEach(collab => {
+    const profile = roleProfiles[collab.rol];
+    if (!profile) return; // No profile = can't evaluate
+    
+    let criticalSkillsMet = 0;
+    let totalCriticalSkills = 0;
+    
+    Object.entries(profile).forEach(([skillId, criticidad]) => {
+      if (criticidad === 'C') {
+        totalCriticalSkills++;
+        const skillData = collab.skills[skillId];
+        if (skillData && skillData.nivel >= 3) {
+          criticalSkillsMet++;
+        }
+      }
+    });
+    
+    if (totalCriticalSkills > 0 && criticalSkillsMet === totalCriticalSkills) {
+      meetingRequirements++;
+    }
+  });
+  
+  const roleCoverage = collaborators.length > 0 
+    ? Math.round((meetingRequirements / collaborators.length) * 100)
+    : 0;
 
   return {
     teamAverage: totalAvg.toFixed(1),
@@ -271,7 +312,64 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     criticalGaps: criticalGapsCount,
     teamSize: collaborators.length,
     totalSkills: skills.length,
-    totalCategories: categories.length
+    totalCategories: categories.length,
+    expertDensity,
+    roleCoverage
+  };
+}
+
+/**
+ * Calcula la distribución de talento por categoría para gráfico apilado
+ */
+export function calculateDistributionByCategory(collaborators, skills, categories) {
+  return categories.map(cat => {
+    const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
+    
+    let beginners = 0;
+    let competent = 0;
+    let experts = 0;
+    let total = 0;
+    
+    collaborators.forEach(collab => {
+      catSkillIds.forEach(skillId => {
+        const skillData = collab.skills[skillId];
+        if (skillData && skillData.nivel > 0) {
+          total++;
+          if (skillData.nivel < 2.5) {
+            beginners++;
+          } else if (skillData.nivel < 3.5) {
+            competent++;
+          } else {
+            experts++;
+          }
+        }
+      });
+    });
+    
+    return {
+      name: cat.abrev || cat.nombre.slice(0, 12),
+      fullName: cat.nombre,
+      beginners,
+      competent,
+      experts,
+      total
+    };
+  });
+}
+
+/**
+ * Calcula deltas entre métricas actuales y snapshot histórico
+ */
+export function calculateComparisonDeltas(currentMetrics, historicalMetrics) {
+  if (!historicalMetrics) {
+    return null;
+  }
+  
+  return {
+    teamAverageRaw: historicalMetrics.teamAverageRaw,
+    criticalGaps: historicalMetrics.criticalGaps,
+    expertDensity: historicalMetrics.expertDensity,
+    roleCoverage: historicalMetrics.roleCoverage,
   };
 }
 
