@@ -5,6 +5,84 @@
  * All functions are pure (no side effects) for easy testing.
  */
 
+// --- CONSTANTS & WEIGHTS ---
+
+const WEIGHTS = {
+  CRITICIDAD: { 'C': 3, 'I': 2, 'D': 1, 'N': 0 }, // C=Crítico es lo más alto
+  FRECUENCIA: { 'D': 3, 'S': 2, 'M': 1.5, 'T': 1, 'N': 0 } // D=Diario es lo más alto
+};
+
+// --- CORE EVALUATION LOGIC ---
+
+/**
+ * Evalúa una skill basándose en su nivel, frecuencia y criticidad.
+ * Retorna un objeto con el estado, color, score y acción sugerida.
+ * 
+ * @param {number} nivel - Nivel actual (0-5)
+ * @param {string} frecuencia - Frecuencia de uso (D, S, M, T, N)
+ * @param {string} criticidad - Criticidad del rol (C, I, D, N)
+ * @returns {Object} { estado, color, score, accion }
+ */
+export const evaluarSkill = (nivel, frecuencia, criticidad) => {
+  const wInv = WEIGHTS.CRITICIDAD[criticidad] || 0; // Importance weight
+  const wFreq = WEIGHTS.FRECUENCIA[frecuencia] || 0; // Frequency weight
+  
+  // Base Score: Importance * Frequency (This gives us "Urgency")
+  // Range: 0 (N*N) to 9 (C*D)
+  const score = wInv * wFreq;
+
+  // Estado Determinations
+  
+  // 1. BRECHA CRÍTICA (Critical Gap)
+  // Logic: Critical Skill (C) AND High Frequency (D/S) AND Low Level (< 3)
+  // This is the "Red Zone" - Urgent
+  if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
+    return {
+      estado: "BRECHA CRÍTICA",
+      color: "text-critical", // Red
+      score: score + 10, // Boost score to ensure it's top priority
+      accion: "Capacitación urgente"
+    };
+  }
+
+  // 2. ÁREA DE MEJORA (Area for Improvement)
+  // Logic: 
+  //   - Critical (C) but low frequency/better level (e.g. C + M, level < 3) 
+  //   - OR Important (I) with low level
+  //   - Basically any significant gap that isn't "Burning Red"
+  if (
+    (criticidad === 'C' && nivel < 3.5) || // Critical but maybe barely competent or low freq
+    (criticidad === 'I' && nivel < 3)      // Important and weak
+  ) {
+    return {
+      estado: "ÁREA DE MEJORA",
+      color: "text-warning", // Orange
+      score: score, // Use calculated score
+      accion: "Plan de desarrollo"
+    };
+  }
+
+  // 3. FORTALEZA (Strength)
+  // Logic: High Level (>= 4) in relevant skills (Not N)
+  if (nivel >= 4 && criticidad !== 'N') {
+    return {
+      estado: "FORTALEZA",
+      color: "text-primary", // Green/Teal
+      score: score,
+      accion: "Mentorear a otros"
+    };
+  }
+
+  // 4. COMPETENTE (Competent / Neutral)
+  // Default state: doing okay, or skill is not critical
+  return {
+    estado: "COMPETENTE",
+    color: "text-gray-500", // Gray
+    score: 0, // Low priority
+    accion: "Mantener"
+  };
+};
+
 /**
  * Calculate average nivel from an array of assessments
  * @param {Array} assessments - Array of { nivel, criticidad }
@@ -66,7 +144,10 @@ export const buildPreviousSnapshot = (sessions = []) => {
   const categoryAssessments = {};
   
   previousSession.assessments.forEach(a => {
-    const catName = a.categoriaNombre;
+    const catName = a.categoriaNombre; // Assuming backend sends this or we need to lookup? 
+    // Note: Backend might not send categoriaNombre directly in nested assessments unless included.
+    // If missing, this might rely on specific data shape. Existing code assumed it worked.
+    // We'll keep existing logic/assumption.
     if (!categoryAssessments[catName]) {
       categoryAssessments[catName] = [];
     }
@@ -89,49 +170,63 @@ export const buildPreviousSnapshot = (sessions = []) => {
 };
 
 /**
- * Identify skill gaps (brechas)
- * Business rule: Criticidad === 'C' AND Nivel < 3
- * @param {Object} skills - Skills map { skillId: { nivel, criticidad } }
+ * Identify skill gaps (brechas) using new weighted logic
+ * Returns sorted list of gap objects
+ * @param {Object} skills - Skills map { skillId: { nivel, criticidad, frecuencia } }
  * @param {Array} skillsList - Full skills list from API with nombres
- * @returns {string[]} Array of skill names with gaps
+ * @returns {Object[]} Array of gap objects { name, estado, color, score, accion } sorted by score desc
  */
 export const identifyGaps = (skills = {}, skillsList = []) => {
   const gaps = [];
   
   Object.entries(skills).forEach(([skillId, data]) => {
-    if (data.criticidad === 'C' && data.nivel < 3) {
+    // data must have { nivel, criticidad, frecuencia }
+    // If frecuencia is missing, default to 'M' (Medium) or 'N'? Let's assume passed or check.
+    const frecuencia = data.frecuencia || 'M'; 
+
+    const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
+
+    if (result.estado === "BRECHA CRÍTICA" || result.estado === "ÁREA DE MEJORA") {
       // Find skill name from list
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
-        gaps.push(skill.nombre);
+        gaps.push({
+          name: skill.nombre,
+          ...result
+        });
       }
     }
   });
   
-  return gaps;
+  // Sort by score descending (highest priority first)
+  return gaps.sort((a, b) => b.score - a.score);
 };
 
 /**
- * Identify strengths (fortalezas)
- * Business rule: Nivel >= 4 AND Criticidad !== 'N'
- * @param {Object} skills - Skills map { skillId: { nivel, criticidad } }
+ * Identify strengths (fortalezas) using new weighted logic
+ * @param {Object} skills - Skills map { skillId: { nivel, criticidad, frecuencia } }
  * @param {Array} skillsList - Full skills list from API with nombres
- * @returns {string[]} Array of skill names that are strengths
+ * @returns {Object[]} Array of strength objects sorted by score desc
  */
 export const identifyStrengths = (skills = {}, skillsList = []) => {
   const strengths = [];
   
   Object.entries(skills).forEach(([skillId, data]) => {
-    if (data.nivel >= 4 && data.criticidad !== 'N') {
-      // Find skill name from list
+    const frecuencia = data.frecuencia || 'M';
+    const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
+
+    if (result.estado === "FORTALEZA") {
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
-        strengths.push(skill.nombre);
+        strengths.push({
+          name: skill.nombre,
+          ...result
+        });
       }
     }
   });
   
-  return strengths;
+  return strengths.sort((a, b) => b.score - a.score);
 };
 
 /**
@@ -152,6 +247,11 @@ export const calculateCategoryAverages = (skills = {}, skillsList = [], categori
   // Aggregate skills by category
   Object.entries(skills).forEach(([skillId, data]) => {
     if (!data.nivel || data.nivel <= 0) return;
+    
+    // Check if relevant for profile? Existing logic in TeamMatrixPage filters this?
+    // The previous implementation here didn't filter by criticality, just aggregated what is evaluated.
+    // TeamMatrixPage passed `roleProfile` to a DIFFERENT `calculateCategoryAverages` internal helper.
+    // This export was for general use. We'll keep it as is: aggregate all evaluated skills.
     
     const skill = skillsList.find(s => s.id === parseInt(skillId));
     if (!skill) return;

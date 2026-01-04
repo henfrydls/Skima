@@ -306,25 +306,30 @@ export default function CollaboratorDrawer({
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <AlertTriangle size={14} className="text-warning" />
-                  Áreas de Mejora
+                  Áreas de Mejora y Brechas
                 </h3>
-                <div className="space-y-2 mb-4">
+                <div className="space-y-3 mb-4">
                   {gaps.map((gap, i) => (
-                    <div key={i} className="flex items-center gap-2 text-sm">
-                      <span className="w-2 h-2 rounded-full bg-warning" />
-                      <span className="text-gray-700">{gap}</span>
+                    <div key={i} className="flex items-start justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div>
+                         <p className="text-sm font-medium text-gray-800">{gap.name}</p>
+                         <p className="text-xs text-gray-500">{gap.accion}</p>
+                      </div>
+                      <span className={`px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded-md border ${
+                          gap.estado === 'BRECHA CRÍTICA' 
+                            ? 'bg-critical/10 text-critical border-critical/20' 
+                            : 'bg-warning/10 text-warning border-warning/20'
+                        }`}>
+                        {gap.estado === 'BRECHA CRÍTICA' ? 'CRÍTICO' : 'MEJORA'}
+                      </span>
                     </div>
                   ))}
                 </div>
                 
-                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 hidden">
                   Acciones Sugeridas
                 </h4>
-                <div className="space-y-2">
-                  {suggestedActions['AREA_MEJORA'].map((action, i) => (
-                    <ActionCard key={i} action={action} priority={action.priority} />
-                  ))}
-                </div>
+                {/* Actions removed/hidden for now as they are integrated into cards */}
               </div>
             )}
 
@@ -339,9 +344,10 @@ export default function CollaboratorDrawer({
                   {strengths.map((strength, i) => (
                     <span 
                       key={i}
-                      className="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full"
+                      className="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors cursor-default"
+                      title="Nivel experto"
                     >
-                      {strength}
+                      {strength.name}
                     </span>
                   ))}
                 </div>
