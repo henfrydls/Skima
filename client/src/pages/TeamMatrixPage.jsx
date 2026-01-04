@@ -2,6 +2,9 @@ import { useState, useEffect, useMemo } from 'react';
 import { Grid3x3, User, Layers, Loader2, AlertCircle } from 'lucide-react';
 import { TransposedMatrixTable } from '../components/matrix';
 import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
+import CollaboratorList from '../components/matrix/CollaboratorList';
+import CollaboratorDrawer from '../components/matrix/CollaboratorDrawer';
+import CategoryHealthCard from '../components/matrix/CategoryHealthCard';
 
 // Helper: get status color
 const getStatusColor = (nivel) => {
@@ -248,6 +251,7 @@ function CategoryGridView({ categories = [] }) {
 export default function TeamMatrixPage() {
   const [currentView, setCurrentView] = useState('matriz');
   const [selectedColaborador, setSelectedColaborador] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [data, setData] = useState({ categories: [], skills: [], collaborators: [], roleProfiles: {} });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -390,7 +394,7 @@ export default function TeamMatrixPage() {
         )
       )}
       
-      {currentView === 'colaboradores' && !selectedColaborador && (
+      {currentView === 'colaboradores' && (
         isLoading ? <CollaboratorListSkeleton /> : (
           collaboratorsWithAverages.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
@@ -399,17 +403,24 @@ export default function TeamMatrixPage() {
               <p className="text-gray-500">Aún no se han registrado colaboradores en el sistema.</p>
             </div>
           ) : (
-            <CollaboratorListView collaborators={collaboratorsWithAverages} onSelect={(col) => setSelectedColaborador(col)} />
+            <CollaboratorList 
+              collaborators={collaboratorsWithAverages} 
+              onSelect={(col) => {
+                setSelectedColaborador(col);
+                setIsDrawerOpen(true);
+              }} 
+            />
           )
         )
       )}
-      
-      {currentView === 'colaboradores' && selectedColaborador && (
-        <CollaboratorDetailView 
-          colaborador={selectedColaborador} 
-          onBack={() => setSelectedColaborador(null)} 
-        />
-      )}
+
+      {/* Collaborator Drawer */}
+      <CollaboratorDrawer
+        isOpen={isDrawerOpen}
+        onClose={() => setIsDrawerOpen(false)}
+        collaborator={selectedColaborador}
+        categories={categories}
+      />
       
       {currentView === 'categorias' && (
         isLoading ? (
@@ -424,7 +435,16 @@ export default function TeamMatrixPage() {
               <p className="text-gray-500">Aún no se han definido áreas o categorías de competencias.</p>
             </div>
           ) : (
-            <CategoryGridView categories={categoriesWithAverages} />
+            <div className="grid md:grid-cols-2 gap-6">
+              {categoriesWithAverages.map(cat => (
+                <CategoryHealthCard 
+                  key={cat.id}
+                  category={cat}
+                  collaborators={collaboratorsWithAverages}
+                  skills={skills}
+                />
+              ))}
+            </div>
           )
         )
       )}
