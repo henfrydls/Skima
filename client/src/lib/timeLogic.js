@@ -1,3 +1,4 @@
+// Time Travel Logic - Version 1.0
 import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, subMonths, eachMonthOfInterval, format, isBefore, isAfter, isEqual, parseISO, isValid } from 'date-fns';
 import { es } from 'date-fns/locale';
 
@@ -195,4 +196,33 @@ export const getSnapshotData = (collaborators, snapshotDate) => {
       // isStale: (dateLimit - new Date(latestUpdate)) > ONE_YEAR_MS
     };
   });
+};
+
+/**
+ * Calculates the end date of the previous period based on granularity.
+ * Used for comparison deltas (e.g. Current Month vs Previous Month).
+ */
+export const getPreviousPeriodDate = (referenceDate = new Date(), granularity = 'month') => {
+  const date = new Date(referenceDate);
+  
+  // Logic: Go to start of current period, then subtract 1 day to get end of previous.
+  let startOfPeriod;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  if (granularity === 'year') {
+    startOfPeriod = new Date(year, 0, 1);
+  } else if (granularity === 'quarter') {
+    const qMonth = Math.floor(month / 3) * 3;
+    startOfPeriod = new Date(year, qMonth, 1);
+  } else {
+    // month
+    startOfPeriod = new Date(year, month, 1);
+  }
+
+  // Subtract 1 day/ms to get end of previous period
+  const endOfPrevious = new Date(startOfPeriod);
+  endOfPrevious.setDate(endOfPrevious.getDate() - 1);
+  
+  return endOfPrevious;
 };

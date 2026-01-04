@@ -9,7 +9,7 @@ import {
   calculateExecutiveMetrics,
   calculateDistributionByCategory
 } from '../lib/dashboardLogic';
-import { generateTimePeriods, getSnapshotData } from '../lib/timeLogic';
+import { generateTimePeriods, getSnapshotData, getPreviousPeriodDate } from '../lib/timeLogic';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import ExecutiveKPIGrid from '../components/dashboard/ExecutiveKPIGrid';
 import StrategicInsights from '../components/dashboard/StrategicInsights';
@@ -92,37 +92,33 @@ export default function DashboardView() {
 
   // Previous metrics for comparison (Auto-compare with previous period)
   // Logic: If looking at Q4, compare with Q3. If Live, compare with last Q.
+  // Previous metrics for comparison (Auto-compare with previous period)
+  // Logic: Respects granularity (Month vs Prev Month, Year vs Prev Year)
+  // Works for both Live (Now vs Prev) and Time Travel (Snapshot vs Prev)
   const previousMetrics = useMemo(() => {
-    // Advanced: could implement getSnapshotData for "previous period"
-    // For now, let's keep it simple or implement the previous period logic if needed.
-    // Let's implement a basic "Compare with previous month" logic for live, 
-    // or "Compare with previous period" for snapshots.
-    
-    let compareDate;
+    let anchorDate;
+
     if (isComparing) {
-      const currentSnapshot = availableSnapshots.find(s => s.id === selectedSnapshotId);
-      if (currentSnapshot) {
-         // Find immediate previous period of same type
-         // (Assuming periods are sorted new->old in generateTimePeriods?)
-         // Actually generateTimePeriods returns them unsorted or sorted? 
-         // Let's assume we find the one chronologically before.
-         // Simpler: Just subtract 1 unit from endDate.
-         compareDate = new Date(currentSnapshot.startDate);
-         compareDate.setDate(compareDate.getDate() - 1); 
-      }
+        // Snapshot Mode: Anchor is the END date of the selected snapshot
+        const currentSnapshot = availableSnapshots.find(s => s.id === selectedSnapshotId);
+        if (currentSnapshot) {
+           anchorDate = new Date(currentSnapshot.endDate);
+        }
     } else {
-      // Live: Compare with last month
-      const d = new Date();
-      d.setMonth(d.getMonth() - 1);
-      compareDate = d;
+        // Live Mode: Anchor is NOW
+        anchorDate = new Date();
     }
     
-    if (compareDate) {
+    if (anchorDate) {
+        // Calculate the end date of the PREVIOUS equivalent period
+        const compareDate = getPreviousPeriodDate(anchorDate, granularity);
+        
+        // Reconstruct state at that previous point
         const prevCollaborators = getSnapshotData(collaborators, compareDate);
         return calculateExecutiveMetrics(prevCollaborators, skills, categories, isCriticalGap, roleProfiles);
     }
     return null;
-  }, [isComparing, selectedSnapshotId, availableSnapshots, collaborators, skills, categories, roleProfiles]);
+  }, [isComparing, selectedSnapshotId, availableSnapshots, collaborators, skills, categories, roleProfiles, granularity]);
 
   // Distribución por categoría para gráfico apilado
   const distributionByCategory = useMemo(() => {
