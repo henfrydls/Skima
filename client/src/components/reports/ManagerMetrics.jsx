@@ -45,15 +45,15 @@ export default function ManagerMetrics({ gaps, distribution }) {
       {/* Quick Stats */}
       <div className="grid grid-cols-3 gap-4">
         <div className="bg-surface p-4 rounded-lg border border-gray-100 text-center">
-          <p className="text-3xl font-light text-critical">{gaps?.length || 0}</p>
+          <p className="text-3xl font-light tabular-nums text-critical">{gaps?.length || 0}</p>
           <p className="text-xs text-gray-500 mt-1">Gaps Críticos</p>
         </div>
         <div className="bg-surface p-4 rounded-lg border border-gray-100 text-center">
-          <p className="text-3xl font-light text-warning">{busFactor.filter(b => b.risk === 'high').length}</p>
+          <p className="text-3xl font-light tabular-nums text-warning">{busFactor.filter(b => b.risk === 'high').length}</p>
           <p className="text-xs text-gray-500 mt-1">Bus Factor Risks</p>
         </div>
         <div className="bg-surface p-4 rounded-lg border border-gray-100 text-center">
-          <p className="text-3xl font-light text-primary">{distribution?.proficient || 0}</p>
+          <p className="text-3xl font-light tabular-nums text-primary">{distribution?.proficient || 0}</p>
           <p className="text-xs text-gray-500 mt-1">Competentes</p>
         </div>
       </div>

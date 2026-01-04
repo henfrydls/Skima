@@ -1032,6 +1032,8 @@ const SkillsDashboard = () => {
                   <Bar
                     dataKey="promedio"
                     radius={[0, 4, 4, 0]}
+                    animationDuration={1000}
+                    animationEasing="ease-out"
                   >
                     {categoriasData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={getStatusColor(entry.promedio)} />

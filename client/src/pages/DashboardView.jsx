@@ -166,15 +166,15 @@ export default function DashboardView() {
           {/* Secondary Metrics */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-4 bg-critical/5 rounded-lg border border-critical/20">
-              <p className="text-3xl font-light text-critical">{metrics.criticalGaps}</p>
+              <p className="text-3xl font-light tabular-nums text-critical">{metrics.criticalGaps}</p>
               <p className="text-xs text-gray-600 mt-1">Brechas Críticas</p>
             </div>
             <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/20">
-              <p className="text-3xl font-light text-primary">{metrics.teamSize}</p>
+              <p className="text-3xl font-light tabular-nums text-primary">{metrics.teamSize}</p>
               <p className="text-xs text-gray-600 mt-1">Colaboradores</p>
             </div>
             <div className="text-center p-4 bg-competent/5 rounded-lg border border-competent/20">
-              <p className="text-3xl font-light text-competent">{metrics.strengths}</p>
+              <p className="text-3xl font-light tabular-nums text-competent">{metrics.strengths}</p>
               <p className="text-xs text-gray-600 mt-1">Fortalezas</p>
             </div>
           </div>
@@ -191,17 +191,17 @@ export default function DashboardView() {
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="text-center p-4 bg-warning/10 rounded-lg">
-              <p className="text-3xl font-light text-warning">{distribution.beginners.count}</p>
+              <p className="text-3xl font-light tabular-nums text-warning">{distribution.beginners.count}</p>
               <p className="text-sm text-gray-600 mt-1">Principiantes</p>
               <p className="text-xs text-gray-400">&lt; 2.5</p>
             </div>
             <div className="text-center p-4 bg-competent/10 rounded-lg">
-              <p className="text-3xl font-light text-competent">{distribution.competent.count}</p>
+              <p className="text-3xl font-light tabular-nums text-competent">{distribution.competent.count}</p>
               <p className="text-sm text-gray-600 mt-1">Competentes</p>
               <p className="text-xs text-gray-400">2.5 - 3.5</p>
             </div>
             <div className="text-center p-4 bg-primary/10 rounded-lg">
-              <p className="text-3xl font-light text-primary">{distribution.experts.count}</p>
+              <p className="text-3xl font-light tabular-nums text-primary">{distribution.experts.count}</p>
               <p className="text-sm text-gray-600 mt-1">Expertos</p>
               <p className="text-xs text-gray-400">&gt; 3.5</p>
             </div>
