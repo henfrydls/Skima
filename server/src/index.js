@@ -18,6 +18,81 @@ export function createApp() {
   app.use('/api/auth', authRoutes);
 
   // ============================================================
+  // SYSTEM CONFIG ROUTES (Public - needed before login)
+  // ============================================================
+
+  // GET /api/config - Check if system is set up
+  app.get('/api/config', async (req, res) => {
+    try {
+      const config = await prisma.systemConfig.findFirst();
+      
+      if (!config) {
+        return res.json({ 
+          isSetup: false,
+          companyName: null,
+          adminName: null
+        });
+      }
+      
+      res.json({
+        isSetup: config.isSetup,
+        companyName: config.companyName,
+        adminName: config.adminName
+      });
+    } catch (error) {
+      console.error('Error fetching config:', error);
+      res.status(500).json({ error: 'Failed to fetch config' });
+    }
+  });
+
+  // POST /api/setup - Initial system setup
+  app.post('/api/setup', async (req, res) => {
+    try {
+      const { companyName, adminName } = req.body;
+
+      if (!companyName || !adminName) {
+        return res.status(400).json({ 
+          error: 'Company name and admin name are required' 
+        });
+      }
+
+      // Check if already set up
+      const existingConfig = await prisma.systemConfig.findFirst();
+      if (existingConfig?.isSetup) {
+        return res.status(400).json({ 
+          error: 'System is already configured' 
+        });
+      }
+
+      // Create or update config (upsert)
+      const config = await prisma.systemConfig.upsert({
+        where: { id: 1 },
+        update: {
+          companyName: companyName.trim(),
+          adminName: adminName.trim(),
+          isSetup: true
+        },
+        create: {
+          id: 1,
+          companyName: companyName.trim(),
+          adminName: adminName.trim(),
+          isSetup: true
+        }
+      });
+
+      res.json({
+        success: true,
+        isSetup: config.isSetup,
+        companyName: config.companyName,
+        adminName: config.adminName
+      });
+    } catch (error) {
+      console.error('Error setting up system:', error);
+      res.status(500).json({ error: 'Failed to setup system' });
+    }
+  });
+
+  // ============================================================
   // API ROUTES
   // ============================================================
 

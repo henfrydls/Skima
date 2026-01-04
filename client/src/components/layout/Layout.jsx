@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  Users, 
-  FileText,
+  Grid3X3, 
+  TrendingUp,
   Settings, 
   ChevronLeft, 
   ChevronRight,
@@ -13,6 +13,7 @@ import {
   User
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useConfig } from '../../contexts/ConfigContext';
 import LoginModal from '../auth/LoginModal';
 
 /**
@@ -28,8 +29,8 @@ import LoginModal from '../auth/LoginModal';
 const getNavItems = (isAuthenticated) => {
   const items = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
-    { to: '/team-matrix', icon: Users, label: 'Team Matrix' },
-    { to: '/reports', icon: FileText, label: 'Reports' },
+    { to: '/team-matrix', icon: Grid3X3, label: 'Team Matrix' },
+    { to: '/reports', icon: TrendingUp, label: 'Evolución' },
   ];
   
   // Only show Settings if authenticated
@@ -45,6 +46,7 @@ export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, login, logout } = useAuth();
+  const { companyName, adminName } = useConfig();
   
   const navItems = getNavItems(isAuthenticated);
 
@@ -67,19 +69,34 @@ export default function Layout() {
         `}
       >
         {/* Header del Sidebar */}
-        <div className="flex items-center justify-between h-16 px-4 border-b border-gray-100">
-          {!isCollapsed && (
-            <h1 className="text-lg font-light text-primary whitespace-nowrap">
-              Skills Matrix
-            </h1>
+        <div className="flex flex-col h-16 px-4 border-b border-gray-100 justify-center">
+          {!isCollapsed ? (
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-lg font-light text-primary whitespace-nowrap">
+                  Skills Matrix
+                </h1>
+                <p className="text-xs text-gray-400 truncate" title={companyName}>
+                  {companyName}
+                </p>
+              </div>
+              <button
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
+                aria-label="Colapsar sidebar"
+              >
+                <ChevronLeft size={20} />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors mx-auto"
+              aria-label="Expandir sidebar"
+            >
+              <ChevronRight size={20} />
+            </button>
           )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-            aria-label={isCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
-          >
-            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-          </button>
         </div>
 
         {/* Navegación */}
@@ -105,8 +122,25 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Login/Logout Button - Bottom Left */}
+        {/* User Info + Login/Logout - Bottom */}
         <div className="p-2 border-t border-gray-100">
+          {/* Admin name display */}
+          {!isCollapsed && (
+            <div className="px-3 py-2 mb-2">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User size={16} className="text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-700 truncate" title={adminName}>
+                    {adminName}
+                  </p>
+                  <p className="text-xs text-gray-400">Administrador</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
           {isAuthenticated ? (
             <button
               onClick={logout}

@@ -82,3 +82,13 @@ model EvaluationSession {
   evaluatedAt        DateTime     @default(now())
   assessments        Assessment[]
 }
+
+// System configuration for initial setup
+model SystemConfig {
+  id          Int     @id @default(1)  // Singleton pattern - only one row
+  companyName String  // e.g., "Acme Corp"
+  adminName   String  // e.g., "Jane Doe"
+  isSetup     Boolean @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
