@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
-import { sparklineHistory, getTrendColor } from '../../data/mockHistory';
+import { getTrendColor } from '../../lib/skillsLogic';
 
 /**
  * CollaboratorList - The Talent Hub
@@ -79,7 +79,8 @@ function getCollaboratorBadge(collaborator) {
 // Collaborator Card
 function CollaboratorCard({ collaborator, onSelect }) {
   const badge = getCollaboratorBadge(collaborator);
-  const history = sparklineHistory[collaborator.id] || { points: [], trend: 'neutral' };
+  // Use sparkline from props (real data), fallback to empty
+  const sparkline = collaborator.sparkline || { points: [], trend: 'neutral' };
   
   // Category chips (collapsed)
   const categoryEntries = Object.entries(collaborator.categorias || {}).slice(0, 3);
@@ -109,7 +110,7 @@ function CollaboratorCard({ collaborator, onSelect }) {
 
         {/* Right: Sparkline + Average */}
         <div className="flex items-center gap-3">
-          <Sparkline data={history.points} trend={history.trend} />
+          <Sparkline data={sparkline.points} trend={sparkline.trend} />
           <div className="text-right">
             <p className={`text-2xl font-light tabular-nums ${
               collaborator.promedio >= 3.5 ? 'text-primary' : 
@@ -118,7 +119,7 @@ function CollaboratorCard({ collaborator, onSelect }) {
               {collaborator.promedio.toFixed(1)}
             </p>
             <p className="text-[10px] text-gray-400 uppercase tracking-wide">
-              {history.trend === 'up' ? '↑' : history.trend === 'down' ? '↓' : '→'}
+              {sparkline.trend === 'up' ? '↑' : sparkline.trend === 'down' ? '↓' : '→'}
             </p>
           </div>
           <ChevronRight size={18} className="text-gray-300 group-hover:text-primary transition-colors" />

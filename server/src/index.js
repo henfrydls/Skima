@@ -50,6 +50,20 @@ export function createApp() {
         include: {
           assessments: {
             where: { snapshotId: null } // Current (not archived) assessments
+          },
+          // Include evaluation history for sparklines and comparison
+          evaluationSessions: {
+            orderBy: { evaluatedAt: 'desc' },
+            take: 5, // Last 5 sessions for sparkline (use last 3)
+            include: {
+              assessments: {
+                include: {
+                  skill: {
+                    include: { categoria: true }
+                  }
+                }
+              }
+            }
           }
         }
       });
@@ -89,7 +103,21 @@ export function createApp() {
           esDemo: col.esDemo,
           skills: skillsMap,
           promedio: Math.round(promedio * 10) / 10, // Round to 1 decimal
-          lastEvaluated: col.lastEvaluated
+          lastEvaluated: col.lastEvaluated,
+          // Include evaluation history for sparklines and comparison
+          evaluationSessions: col.evaluationSessions.map(session => ({
+            id: session.id,
+            evaluatedAt: session.evaluatedAt,
+            collaboratorRol: session.collaboratorRol,
+            assessments: session.assessments.map(a => ({
+              skillId: a.skillId,
+              skillNombre: a.skill.nombre,
+              nivel: a.nivel,
+              criticidad: a.criticidad,
+              categoriaId: a.skill.categoriaId,
+              categoriaNombre: a.skill.categoria.nombre
+            }))
+          }))
         };
       });
 

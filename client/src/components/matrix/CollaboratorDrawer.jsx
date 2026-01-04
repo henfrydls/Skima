@@ -13,7 +13,15 @@ import {
   AlertTriangle,
   Star
 } from 'lucide-react';
-import { previousSnapshots, calculateDelta, suggestedActions } from '../../data/mockHistory';
+import { calculateDelta } from '../../lib/skillsLogic';
+
+// Suggested actions (static for now)
+const suggestedActions = {
+  'AREA_MEJORA': [
+    { action: 'Curso online', icon: 'BookOpen', priority: 'medium' },
+    { action: 'Asignar como par en proyecto', icon: 'Briefcase', priority: 'medium' },
+  ],
+};
 
 /**
  * CollaboratorDrawer - Slide-over panel from right
@@ -151,10 +159,10 @@ export default function CollaboratorDrawer({
     };
   }, [isOpen]);
 
-  // Get previous snapshot for comparison
+  // Get previous snapshot for comparison - use real data from props
   const previousSnapshot = useMemo(() => {
     if (!collaborator) return null;
-    return previousSnapshots[collaborator.id] || null;
+    return collaborator.previousSnapshot || null;  // Use real data from props
   }, [collaborator]);
 
   // Calculate delta

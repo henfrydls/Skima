@@ -5,6 +5,12 @@ import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../compo
 import CollaboratorList from '../components/matrix/CollaboratorList';
 import CollaboratorDrawer from '../components/matrix/CollaboratorDrawer';
 import CategoryHealthCard from '../components/matrix/CategoryHealthCard';
+import { 
+  calculateSparkline, 
+  identifyGaps, 
+  identifyStrengths, 
+  buildPreviousSnapshot 
+} from '../lib/skillsLogic';
 
 // Helper: get status color
 const getStatusColor = (nivel) => {
@@ -277,15 +283,18 @@ export default function TeamMatrixPage() {
 
   const { categories, skills, collaborators, roleProfiles } = data;
 
-  // Transform collaborators for list view
+  // Transform collaborators for list view - enrich with sparklines, gaps, strengths
   const collaboratorsWithAverages = useMemo(() => {
     return collaborators.map(col => ({
       ...col,
       // Use pre-calculated promedio from backend (which already respects Role Profile)
       promedio: col.promedio, 
       categorias: calculateCategoryAverages(col.skills, skills, categories, roleProfiles[col.rol]),
-      brechas: [], // TODO: Calculate from skills
-      fortalezas: [] // TODO: Calculate from skills
+      // Real data from evaluationSessions
+      sparkline: calculateSparkline(col.evaluationSessions),
+      previousSnapshot: buildPreviousSnapshot(col.evaluationSessions),
+      brechas: identifyGaps(col.skills, skills),
+      fortalezas: identifyStrengths(col.skills, skills)
     }));
   }, [collaborators, skills, categories, roleProfiles]);
 
