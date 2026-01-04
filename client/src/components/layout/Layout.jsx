@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import LoginModal from '../auth/LoginModal';
+import SidebarUser from './SidebarUser';
 
 /**
  * Layout Component - App Shell
@@ -123,52 +124,27 @@ export default function Layout() {
         </nav>
 
         {/* User Info + Login/Logout - Bottom */}
-        <div className="p-2 border-t border-gray-100">
-          {/* Admin name display */}
-          {!isCollapsed && (
-            <div className="px-3 py-2 mb-2">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                  <User size={16} className="text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-700 truncate" title={adminName}>
-                    {adminName}
-                  </p>
-                  <p className="text-xs text-gray-400">Administrador</p>
-                </div>
-              </div>
-            </div>
-          )}
-          
+        <div className="mt-auto">
           {isAuthenticated ? (
-            <button
-              onClick={logout}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                text-gray-600 hover:bg-critical/10 hover:text-critical
-                transition-all duration-150
-              `}
-            >
-              <LogOut size={20} className="flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="whitespace-nowrap">Cerrar Sesión</span>
-              )}
-            </button>
+            <SidebarUser isCollapsed={isCollapsed} />
           ) : (
-            <button
-              onClick={() => setShowLoginModal(true)}
-              className={`
-                w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                text-gray-600 hover:bg-primary/10 hover:text-primary
-                transition-all duration-150
-              `}
-            >
-              <LogIn size={20} className="flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="whitespace-nowrap">Iniciar Sesión</span>
-              )}
-            </button>
+            <div className="p-2 border-t border-gray-100">
+              <button
+                onClick={() => setShowLoginModal(true)}
+                className={`
+                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
+                  text-gray-600 hover:bg-primary/10 hover:text-primary
+                  transition-all duration-150
+                  ${isCollapsed ? 'justify-center' : ''}
+                `}
+                title="Iniciar Sesión"
+              >
+                <LogIn size={20} />
+                {!isCollapsed && (
+                  <span className="whitespace-nowrap font-medium">Iniciar Sesión</span>
+                )}
+              </button>
+            </div>
           )}
         </div>
       </aside>

@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, AlertTriangle, X, UserCog } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, AlertTriangle, X } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
 import EvaluationsTab from '../components/settings/EvaluationsTab';
 import RoleProfilesTab from '../components/settings/RoleProfilesTab';
-import ProfileSettings from '../components/settings/ProfileSettings';
 
 /**
  * SettingsPage — Gestión de Maestros del Sistema
@@ -25,7 +24,6 @@ import ProfileSettings from '../components/settings/ProfileSettings';
  */
 
 const TABS = [
-  { id: 'perfil', label: 'Mi Perfil', icon: UserCog },
   { id: 'categorias', label: 'Categorías', icon: FolderTree },
   { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'perfiles', label: 'Perfiles de Puesto', icon: Briefcase },
@@ -38,8 +36,8 @@ export default function SettingsPage() {
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Get active tab from URL or default to 'perfil'
-  const activeTab = searchParams.get('tab') || 'perfil';
+  // Get active tab from URL or default to 'categorias'
+  const activeTab = searchParams.get('tab') || 'categorias';
   
   const [navigationContext, setNavigationContext] = useState(null);
   // Track which tabs have been mounted at least once to lazy load them
@@ -118,12 +116,6 @@ export default function SettingsPage() {
 
       {/* Tab Content - Keep Alive Pattern */}
       <div className="min-h-[400px]">
-        
-        {mountedTabs.includes('perfil') && (
-          <div className={activeTab === 'perfil' ? 'block' : 'hidden'}>
-            <ProfileSettings />
-          </div>
-        )}
         
         {mountedTabs.includes('categorias') && (
           <div className={activeTab === 'categorias' ? 'block' : 'hidden'}>

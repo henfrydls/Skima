@@ -2,6 +2,7 @@ import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'reac
 import { Layout } from './components/layout';
 import { DashboardView, TeamMatrixPage, ReportsPage, SettingsPage } from './pages';
 import SetupView from './pages/SetupView';
+import ProfilePage from './pages/ProfilePage';
 import { AuthProvider } from './contexts/AuthContext';
 import { ConfigProvider, useConfig } from './contexts/ConfigContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -82,6 +83,14 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "/profile",
+        element: (
+          <ProtectedRoute>
+            <ProfilePage />
           </ProtectedRoute>
         ),
       },
