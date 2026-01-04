@@ -9,7 +9,7 @@ import {
   calculateExecutiveMetrics,
   calculateDistributionByCategory
 } from '../lib/dashboardLogic';
-import { generateTimePeriods, getSnapshotData, getPreviousPeriodDate } from '../lib/timeLogic';
+import { generateTimePeriods, getSnapshotData, getPreviousPeriodDate, findBestMatchingPeriod } from '../lib/timeLogic';
 import DashboardHeader from '../components/dashboard/DashboardHeader';
 import ExecutiveKPIGrid from '../components/dashboard/ExecutiveKPIGrid';
 import StrategicInsights from '../components/dashboard/StrategicInsights';
@@ -35,6 +35,32 @@ export default function DashboardView() {
   // Time Travel state
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [granularity, setGranularity] = useState('quarter'); // Default granularity
+
+  // Intelligent Context Switching
+  const handleGranularityChange = (newGranularity) => {
+    if (newGranularity === granularity) return;
+
+    // Try to find the best matching period in the new granularity
+    // to preserve the user's "temporal context"
+    const newSnapshotId = findBestMatchingPeriod(selectedSnapshotId, newGranularity, availableSnapshots);
+    
+    // Update both states
+    setGranularity(newGranularity);
+    if (newSnapshotId) {
+        setSelectedSnapshotId(newSnapshotId);
+    } else {
+        // If no match found (e.g. switching to a grain with no data?), 
+        // fallback or stay selected? 
+        // If we return null, it goes to "Live". 
+        // It's safer to go to Live or keep current selection?
+        // But current selection ID is of wrong type (e.g. Year ID while in Month grain).
+        // This might break dropdown logic if filtered by type.
+        // DashboardHeader filters periods by type: periods.filter(p => p.type === granularity)
+        // So keeping a Year ID while in Month grain effectively selects "Nothing" (valid).
+        // But better to be explicit. Let's default to Live if no match.
+        setSelectedSnapshotId(null);
+    }
+  };
 
   // Fetch data from API
   useEffect(() => {
@@ -151,7 +177,7 @@ export default function DashboardView() {
         selectedPeriod={selectedSnapshotId}
         onPeriodChange={setSelectedSnapshotId}
         granularity={granularity}
-        onGranularityChange={setGranularity}
+        onGranularityChange={handleGranularityChange}
       />
 
       {/* KPI Grid */}

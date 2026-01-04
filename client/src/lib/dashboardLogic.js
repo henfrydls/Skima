@@ -4,6 +4,7 @@
  * Funciones de lógica de negocio para el Dashboard Ejecutivo.
  * Incluye: cálculos de métricas, priorización de gaps, detección de insights.
  */
+import { evaluarSkill } from './skillsLogic';
 
 // ============================================
 // WEIGHTS & CONSTANTS
@@ -323,9 +324,10 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
  */
 export function calculateDistributionByCategory(collaborators, skills, categories) {
   return categories.map(cat => {
+    // 1. Dynamic Category Generation (Iterates over 'categories' prop)
     const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
     
-    let beginners = 0;
+    let brechas = 0;
     let competent = 0;
     let experts = 0;
     let total = 0;
@@ -333,14 +335,24 @@ export function calculateDistributionByCategory(collaborators, skills, categorie
     collaborators.forEach(collab => {
       catSkillIds.forEach(skillId => {
         const skillData = collab.skills[skillId];
+        
+        // Only evaluate if there is actual data
         if (skillData && skillData.nivel > 0) {
           total++;
-          if (skillData.nivel < 2.5) {
-            beginners++;
-          } else if (skillData.nivel < 3.5) {
-            competent++;
-          } else {
+          
+          // 2. Weighted Logic Verification (Uses evaluarSkill)
+          // We default frequency to 'M' if missing, consistent with skillsLogic
+          const freq = skillData.frecuencia || 'M';
+          const evaluation = evaluarSkill(skillData.nivel, freq, skillData.criticidad);
+
+          // 3. Status Mapping to Visual Buckets
+          if (evaluation.estado === "BRECHA CRÍTICA" || evaluation.estado === "ÁREA DE MEJORA") {
+            brechas++;
+          } else if (evaluation.estado === "FORTALEZA") {
             experts++;
+          } else {
+            // "COMPETENTE" (Includes low level but low criticality items)
+            competent++; 
           }
         }
       });
@@ -349,7 +361,7 @@ export function calculateDistributionByCategory(collaborators, skills, categorie
     return {
       name: cat.abrev || cat.nombre.slice(0, 12),
       fullName: cat.nombre,
-      beginners,
+      brechas,
       competent,
       experts,
       total

@@ -226,3 +226,35 @@ export const getPreviousPeriodDate = (referenceDate = new Date(), granularity = 
   
   return endOfPrevious;
 };
+
+/**
+ * Finds the best matching period ID when switching granularity.
+ * Goals: Maintain the temporal context (e.g., Year 2025 -> Q4 2025 or Dec 2025).
+ * Logic: Find the latest period of the new type that ends on or before the current period's end date.
+ */
+export const findBestMatchingPeriod = (currentPeriodId, targetGranularity, allPeriods) => {
+  if (!currentPeriodId) return null; // Live view stays Live
+
+  const currentPeriod = allPeriods.find(p => p.id === currentPeriodId);
+  if (!currentPeriod) return null;
+
+  // Filter candidates of new type
+  const candidates = allPeriods.filter(p => p.type === targetGranularity);
+  
+  // Sort by date descending (newest first)
+  candidates.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+
+  // Strategy 1: Containment (Best for Drill-Up, e.g. Sep 2025 -> Year 2025)
+  // Find a target period that fully contains the reference end date
+  const containingPeriod = candidates.find(p => 
+    p.startDate <= currentPeriod.endDate && p.endDate >= currentPeriod.endDate
+  );
+  
+  if (containingPeriod) return containingPeriod.id;
+
+  // Strategy 2: Latest Available within range (Best for Drill-Down, e.g. Year 2025 -> Latest Q)
+  // Find the first candidate that ends on or before current period end
+  const bestFallback = candidates.find(p => p.endDate <= currentPeriod.endDate);
+  
+  return bestFallback ? bestFallback.id : (candidates.length > 0 ? candidates[0].id : null);
+};

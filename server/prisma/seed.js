@@ -68,7 +68,10 @@ const SKILLS = [
   { id: 42, categoriaId: 7, nombre: 'Mainframe Maintenance', isActive: false },
 ];
 
-// Demo Collaborators with full skill assessments
+/**
+ * COLLABORATORS - RICH DATA SET
+ * Includes original profiles + Specific scenarios for gaps/history
+ */
 const COLLABORATORS = [
   {
     nombre: 'María González',
@@ -204,12 +207,11 @@ const COLLABORATORS = [
   },
   // Case: "New Hire" (Empty/Low Assessments)
   {
-    nombre: 'Kevin Junior',
+    nombre: 'Kevin Nuevo',
     rol: 'Intern',
     esDemo: true,
     skills: {
-       // Very few skills assessed
-       40: { nivel: 1.5, frecuencia: 'D', criticidad: 'I' }, // Git
+       40: { nivel: 1.5, frecuencia: 'D', criticidad: 'I' }, // Just Git
     },
     isActive: false,
   },
@@ -221,7 +223,32 @@ const COLLABORATORS = [
     skills: {
       1: { nivel: 4.0, frecuencia: 'P', criticidad: 'I' },
     },
-  }
+  },
+  // ================= ADDED SCENARIOS =================
+  // 3. "The Struggling Manager" (Roberto - MANY GAPS)
+  {
+    nombre: 'Roberto Problemas',
+    rol: 'Engineering Director',
+    esDemo: true,
+    skills: {
+      15: { nivel: 1.5, frecuencia: 'D', criticidad: 'C' }, // Critical Gap
+      18: { nivel: 1.8, frecuencia: 'D', criticidad: 'C' }, // Critical Gap
+      24: { nivel: 2.0, frecuencia: 'D', criticidad: 'C' }, // Critical Gap
+      25: { nivel: 1.5, frecuencia: 'D', criticidad: 'C' }, // Critical Gap
+      7: { nivel: 4.0, frecuencia: 'W', criticidad: 'I' },  // Good technical, bad manager
+    },
+  },
+  // 4. "The Rising Star" (Sofia - IMPROVING)
+  {
+    nombre: 'Sofía Estrella',
+    rol: 'Junior Developer',
+    esDemo: true,
+    skills: {
+      9: { nivel: 4.0, frecuencia: 'D', criticidad: 'C' }, // Exceeds expectations
+      10: { nivel: 4.2, frecuencia: 'D', criticidad: 'C' },
+      40: { nivel: 4.5, frecuencia: 'D', criticidad: 'C' },
+    },
+  },
 ];
 
 async function main() {
@@ -307,14 +334,11 @@ async function main() {
     }
   }
 
-  // Create historical evaluations to show role changes
+  // Create historical evaluations for Time Travel
   console.log('  Adding historical evaluations...');
   
-  // Find Laura Torres and Diana Prince to add historical evaluations
+  // 1. Laura Torres: Previous evaluation as "Intern" (6 months ago)
   const lauraTorres = await prisma.collaborator.findFirst({ where: { nombre: 'Laura Torres' } });
-  const dianaPrince = await prisma.collaborator.findFirst({ where: { nombre: 'Diana Prince' } });
-  
-  // Laura Torres: Previous evaluation as "Intern" (6 months ago)
   if (lauraTorres) {
     const oldDate1 = getRandomPastDate(180); // ~6 months ago
     const oldSession1 = await prisma.evaluationSession.create({
@@ -376,8 +400,9 @@ async function main() {
       totalAssessments++;
     }
   }
-  
-  // Diana Prince: Previous evaluation as "Engineering Manager" (4 months ago)
+
+  // 2. Diana Prince: Previous evaluation as "Engineering Manager" (4 months ago)
+  const dianaPrince = await prisma.collaborator.findFirst({ where: { nombre: 'Diana Prince' } });
   if (dianaPrince) {
     const oldDate = getRandomPastDate(120); // ~4 months ago
     const oldSession = await prisma.evaluationSession.create({
@@ -404,6 +429,81 @@ async function main() {
           frecuencia: 'D',
           evaluationSessionId: oldSession.id,
           createdAt: oldDate
+        }
+      });
+      totalAssessments++;
+    }
+  }
+  
+  // 3.1. Roberto (Struggling): Was better before? Or always bad?
+  const roberto = await prisma.collaborator.findFirst({ where: { nombre: 'Roberto Problemas' } });
+  if (roberto) {
+    // 1 Year Ago (Q1 Previous Year)
+    const date1y = new Date();
+    date1y.setFullYear(date1y.getFullYear() - 1);
+    date1y.setMonth(2); // March
+    
+    const sess1 = await prisma.evaluationSession.create({
+      data: {
+        collaboratorId: roberto.id,
+        collaboratorNombre: 'Roberto Problemas',
+        collaboratorRol: 'Engineering Director',
+        evaluatedBy: 'CTO',
+        notes: 'Evaluación Anual 2024 - Desempeño Aceptable',
+        evaluatedAt: date1y
+      }
+    });
+    totalSessions++;
+    
+    // Skills were better
+    const decentSkills = { 15: 3.0, 18: 3.0, 24: 3.5, 25: 3.2 };
+    for (const [skillId, nivel] of Object.entries(decentSkills)) {
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: roberto.id,
+          skillId: parseInt(skillId),
+          nivel: nivel,
+          criticidad: 'C',
+          frecuencia: 'D',
+          evaluationSessionId: sess1.id,
+          createdAt: date1y
+        }
+      });
+      totalAssessments++;
+    }
+  }
+
+  // 3.2. Sofía Estrella (Rising): Was a rookie 6 months ago (Level 2), now Expert (Level 4+)
+  const sofia = await prisma.collaborator.findFirst({ where: { nombre: 'Sofía Estrella' } });
+  if (sofia) {
+    // 6 Months Ago (Previous Quarter roughly)
+    const date6m = new Date();
+    date6m.setMonth(date6m.getMonth() - 6);
+    
+    const sess2 = await prisma.evaluationSession.create({
+      data: {
+        collaboratorId: sofia.id,
+        collaboratorNombre: 'Sofía Estrella',
+        collaboratorRol: 'Junior Developer', // Same role
+        evaluatedBy: 'Tech Lead',
+        notes: 'Evaluación de Medio Año - Learning Phase',
+        evaluatedAt: date6m
+      }
+    });
+    totalSessions++;
+    
+    // Skills were lower
+    const rookieSkills = { 9: 2.0, 10: 2.2, 40: 2.5 };
+    for (const [skillId, nivel] of Object.entries(rookieSkills)) {
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: sofia.id,
+          skillId: parseInt(skillId),
+          nivel: nivel,
+          criticidad: 'C',
+          frecuencia: 'D',
+          evaluationSessionId: sess2.id,
+          createdAt: date6m
         }
       });
       totalAssessments++;
