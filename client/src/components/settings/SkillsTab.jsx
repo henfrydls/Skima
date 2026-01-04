@@ -123,6 +123,16 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
   );
 }
 
+// Color palette (shared with CategoriesTab)
+const PRESET_COLORS = [
+  '#2d676e', // Primary (teal)
+  '#a6ae3d', // Competent (olive)
+  '#da8a0c', // Warning (ocre)
+  '#ef4444', // Critical (red)
+  '#6366f1', // Indigo
+  '#8b5cf6', // Purple
+];
+
 // Category Accordion Component
 function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDeleteSkill }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -140,9 +150,15 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
           ) : (
             <ChevronRight size={18} className="text-gray-400" />
           )}
+          {/* Color Dot - matching CategoriesTab */}
+          <div
+            className="w-4 h-4 rounded-full border border-gray-200 flex-shrink-0"
+            style={{ backgroundColor: PRESET_COLORS[category.id % PRESET_COLORS.length] }}
+          />
           <span className="font-medium text-gray-800">{category.nombre}</span>
         </div>
-        <span className="text-sm text-gray-500">
+        {/* Skill Count Badge - matching CategoriesTab */}
+        <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
           {categorySkills.length} skills
         </span>
       </button>

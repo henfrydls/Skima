@@ -461,6 +461,15 @@ async function main() {
         "9": "I", "30": "I"
       })
     },
+    // Intern profile (entry-level - mostly desirable/learning skills)
+    {
+      rol: 'Intern',
+      skills: JSON.stringify({
+        "9": "D", "10": "D", "14": "D",   // Desarrollo básico
+        "40": "I",                        // Git
+        "11": "D"                         // Coding standards
+      })
+    },
     // Case: Profiles that match actual collaborators
     {
       rol: 'Arquitecto Cloud',
