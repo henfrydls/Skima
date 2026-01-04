@@ -12,9 +12,9 @@ import { AlertTriangle, ExternalLink, Users, Lightbulb } from 'lucide-react';
 
 // Color palette for distribution tiers
 const TIER_COLORS = {
-  beginners: '#f59e0b', // warning/amber
-  competent: '#22c55e', // success/green
-  experts: '#0d9488',   // primary/teal
+  brechas: '#f59e0b',   // Amber-500 (Atención/Oportunidad)
+  competent: '#22c55e', // Green-500 (Competente/Estabilidad)
+  experts: '#6366f1',   // Indigo-500 (Fortaleza/Premium)
 };
 
 // Custom Tooltip
@@ -79,21 +79,42 @@ function TalentDistributionChart({ data }) {
             )}
           />
           <Bar 
-            dataKey="beginners" 
-            name="Principiantes" 
+            dataKey="brechas" 
+            name="Brechas" 
             stackId="a" 
-            fill={TIER_COLORS.beginners}
-            radius={[0, 0, 0, 0]}
-          />
+            fill={TIER_COLORS.brechas}
+          >
+            {data.map((entry, index) => (
+              <Cell 
+                key={`cell-brechas-${index}`} 
+                radius={
+                  (entry.competent === 0 && entry.experts === 0) 
+                    ? [0, 4, 4, 0] 
+                    : [0, 0, 0, 0]
+                }
+              />
+            ))}
+          </Bar>
           <Bar 
             dataKey="competent" 
             name="Competentes" 
             stackId="a" 
             fill={TIER_COLORS.competent}
-          />
+          >
+            {data.map((entry, index) => (
+              <Cell 
+                key={`cell-competent-${index}`} 
+                radius={
+                  (entry.experts === 0) 
+                    ? [0, 4, 4, 0] 
+                    : [0, 0, 0, 0]
+                }
+              />
+            ))}
+          </Bar>
           <Bar 
             dataKey="experts" 
-            name="Expertos" 
+            name="Fortalezas" 
             stackId="a" 
             fill={TIER_COLORS.experts}
             radius={[0, 4, 4, 0]}

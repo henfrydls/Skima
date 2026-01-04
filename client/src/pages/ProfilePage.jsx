@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2 } from 'lucide-react';
+import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +26,7 @@ export default function ProfilePage() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [hasPassword, setHasPassword] = useState(false);
+  const [showSecurity, setShowSecurity] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // Check if password exists on mount
@@ -160,69 +161,82 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Password Section */}
+        {/* Security / Password Header & Toggle */}
         <div className="pt-4 border-t border-gray-100">
-          <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4 flex items-center gap-2">
-            <Lock size={14} />
-            Seguridad
-            {!hasPassword && (
-              <span className="text-xs text-gray-400 font-normal">(Sin contraseña)</span>
-            )}
-          </h3>
+          <button
+            type="button"
+            onClick={() => setShowSecurity(!showSecurity)}
+            className="group flex items-center gap-2 text-sm text-primary hover:text-primary/80 transition-colors w-full"
+          >
+            <ChevronRight 
+              size={16} 
+              className={`transform transition-transform duration-200 ${showSecurity ? 'rotate-90' : ''}`} 
+            />
+            <span className="font-medium group-hover:underline">
+              Cambiar Contraseña / Opciones Avanzadas
+            </span>
+          </button>
 
-          <div className="space-y-4">
-            {/* Current Password (only if exists) */}
-            {hasPassword && (
-              <div>
-                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Contraseña Actual
-                </label>
-                <input
-                  type="password"
-                  id="currentPassword"
-                  value={formData.currentPassword}
-                  onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                           text-gray-900 text-sm"
-                  disabled={isLoading}
-                />
-              </div>
-            )}
+          {/* Collapsible Security Section */}
+          <div className={`grid transition-all duration-300 ease-in-out ${
+            showSecurity ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'
+          }`}>
+             <div className="overflow-hidden">
+                <div className="bg-gray-50/50 p-4 rounded-lg border border-gray-100 space-y-4">
+                  {/* Current Password (only if exists) */}
+                  {hasPassword && (
+                    <div>
+                      <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Contraseña Actual
+                      </label>
+                      <input
+                        type="password"
+                        id="currentPassword"
+                        value={formData.currentPassword}
+                        onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                                 text-gray-900 text-sm bg-white"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  )}
 
-            {/* New Passwords */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Nueva Contraseña
-                </label>
-                <input
-                  type="password"
-                  id="newPassword"
-                  value={formData.newPassword}
-                  onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                           text-gray-900 text-sm"
-                  disabled={isLoading}
-                />
-              </div>
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Confirmar Contraseña
-                </label>
-                <input
-                  type="password"
-                  id="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                  className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
-                           focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                           text-gray-900 text-sm"
-                  disabled={isLoading}
-                />
-              </div>
-            </div>
+                  {/* New Passwords */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Nueva Contraseña
+                      </label>
+                      <input
+                        type="password"
+                        id="newPassword"
+                        value={formData.newPassword}
+                        onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                                 text-gray-900 text-sm bg-white"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div>
+                      <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
+                        Confirmar Contraseña
+                      </label>
+                      <input
+                        type="password"
+                        id="confirmPassword"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                                 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                                 text-gray-900 text-sm bg-white"
+                        disabled={isLoading}
+                      />
+                    </div>
+                  </div>
+                </div>
+             </div>
           </div>
         </div>
 

@@ -223,7 +223,7 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
   }
 
   return (
-    <div className="relative">
+    <div className={`relative ${isOpen ? 'z-50' : ''}`}>
       {/* Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
@@ -245,8 +245,9 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
               const isSelected = role === value;
               return (
                 <button
+                  type="button"
                   key={role}
-                  onClick={() => handleSelect(role)}
+                  onClick={(e) => { e.preventDefault(); handleSelect(role); }}
                   className={`
                     w-full px-4 py-2 text-left text-sm flex items-center justify-between transition-colors
                     ${isSelected ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
@@ -384,9 +385,10 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
         {collaborator.promedio > 0 ? (
           <span className={`
             text-sm font-medium px-2 py-1 rounded
-            ${collaborator.promedio >= 3.5 ? 'bg-competent/10 text-competent' : 
-              collaborator.promedio >= 2.5 ? 'bg-warning/10 text-warning' : 
-              'bg-critical/10 text-critical'}
+            ${collaborator.promedio >= 4.5 ? 'bg-indigo-100 text-indigo-700' : 
+              collaborator.promedio >= 3.5 ? 'bg-blue-100 text-blue-700' : 
+              collaborator.promedio >= 2.5 ? 'bg-amber-100 text-amber-700' : 
+              'bg-red-100 text-red-700'}
           `}>
             {collaborator.promedio.toFixed(1)}
           </span>
@@ -558,7 +560,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
 
   // Handlers
   const handleCreate = async (newCollab) => {
-    setUpdateError(null);
+
     try {
       const response = await authFetch('/api/collaborators', {
         method: 'POST',
@@ -585,14 +587,14 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   };
 
   const handleUpdate = async (id, updated) => {
-    setUpdateError(null);
+
     
     // Store original state for rollback
     const originalCollaborators = [...collaborators];
     const originalItem = collaborators.find(c => c.id === id);
     
     // Optimistic update
-    setCollaborators(collaborators.map(c => c.id === id ? updated : c));
+    setCollaborators(prev => prev.map(c => c.id == id ? updated : c));
     
     try {
       const response = await authFetch(`/api/collaborators/${id}`, {

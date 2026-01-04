@@ -39,7 +39,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
     return {
       estado: "BRECHA CRÍTICA",
-      color: "text-critical", // Red
+      color: "text-amber-600", // Amber (Visible but not alarmist red)
       score: score + 10, // Boost score to ensure it's top priority
       accion: "Capacitación urgente"
     };
@@ -56,7 +56,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   ) {
     return {
       estado: "ÁREA DE MEJORA",
-      color: "text-warning", // Orange
+      color: "text-amber-500", // Amber (Softer)
       score: score, // Use calculated score
       accion: "Plan de desarrollo"
     };
@@ -67,7 +67,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   if (nivel >= 4 && criticidad !== 'N') {
     return {
       estado: "FORTALEZA",
-      color: "text-primary", // Green/Teal
+      color: "text-indigo-600", // Indigo (Premium Strength)
       score: score,
       accion: "Mentorear a otros"
     };
@@ -77,7 +77,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   // Default state: doing okay, or skill is not critical
   return {
     estado: "COMPETENTE",
-    color: "text-gray-500", // Gray
+    color: "text-blue-500", // Blue (Active/Stable)
     score: 0, // Low priority
     accion: "Mantener"
   };
