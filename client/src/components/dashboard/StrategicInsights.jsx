@@ -1,12 +1,13 @@
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip, Legend } from 'recharts';
-import { AlertTriangle, ExternalLink, Users } from 'lucide-react';
+import { AlertTriangle, ExternalLink, Users, Lightbulb } from 'lucide-react';
 
 /**
  * StrategicInsights - Visual storytelling for executives
  * 
  * 1. Talent Distribution by Category (Stacked Bar Chart)
  * 2. Top Operational Risks (Compact list with action)
+ * 3. Automatic Insight (if available)
  */
 
 // Color palette for distribution tiers
@@ -105,12 +106,6 @@ function TalentDistributionChart({ data }) {
 
 // Risk Item Component
 function RiskItem({ risk, index }) {
-  const severityStyles = {
-    critical: 'border-critical bg-critical/5 text-critical',
-    warning: 'border-warning bg-warning/5 text-warning',
-    info: 'border-gray-300 bg-gray-50 text-gray-500',
-  };
-
   return (
     <div className={`flex items-center gap-3 p-3 rounded-lg border-l-4 ${
       risk.severidad === 'critical' ? 'border-critical bg-critical/5' :
@@ -147,36 +142,61 @@ function RiskItem({ risk, index }) {
 function OperationalRisksList({ risks = [] }) {
   if (risks.length === 0) {
     return (
-      <div className="py-8 text-center">
-        <div className="inline-flex items-center justify-center w-12 h-12 bg-success/10 rounded-full mb-3">
-          <AlertTriangle className="text-success" size={20} />
+      <div className="py-6 text-center">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-success/10 rounded-full mb-2">
+          <AlertTriangle className="text-success" size={16} />
         </div>
-        <p className="text-sm text-gray-500">¡Excelente! No hay riesgos operativos críticos.</p>
+        <p className="text-xs text-gray-500">¡Excelente! No hay riesgos críticos.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      {risks.slice(0, 5).map((risk, idx) => (
+      {risks.slice(0, 3).map((risk, idx) => (
         <RiskItem key={risk.id || idx} risk={risk} index={idx} />
       ))}
       
-      {risks.length > 5 && (
+      {risks.length > 3 && (
         <Link 
           to="/team-matrix"
-          className="block text-center text-sm text-primary hover:underline py-2"
+          className="block text-center text-xs text-primary hover:underline py-1"
         >
-          Ver todos los riesgos ({risks.length})
+          Ver todos ({risks.length})
         </Link>
       )}
     </div>
   );
 }
 
+// Automatic Insight Component
+function AutomaticInsightCard({ insight }) {
+  if (!insight) return null;
+
+  return (
+    <div className="mt-4 pt-4 border-t border-gray-100">
+      <div className="flex items-start gap-2">
+        <div className="p-1.5 rounded-lg bg-primary/10 flex-shrink-0">
+          <Lightbulb className="text-primary" size={14} />
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="text-xs font-bold uppercase tracking-wide text-gray-400 mb-1">
+            💡 Insight
+          </h4>
+          <p className="text-xs text-gray-600 leading-relaxed">
+            <strong className="text-gray-800">{insight.colaborador}</strong> tiene nivel {insight.nivel.toFixed(1)} en{' '}
+            <strong className="text-gray-800">{insight.skill}</strong> pero con baja criticidad.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function StrategicInsights({ 
   distributionByCategory = [], 
-  operationalRisks = [] 
+  operationalRisks = [],
+  automaticInsight = null
 }) {
   return (
     <div className="grid lg:grid-cols-3 gap-6">
@@ -191,16 +211,20 @@ export default function StrategicInsights({
         </p>
       </div>
 
-      {/* Operational Risks - 1/3 width */}
+      {/* Right Column: Risks + Insight - 1/3 width */}
       <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 flex items-center gap-2">
             <AlertTriangle size={14} />
-            Top Riesgos Operativos
+            Top Riesgos
           </h3>
         </div>
         <OperationalRisksList risks={operationalRisks} />
+        
+        {/* Automatic Insight - below risks */}
+        <AutomaticInsightCard insight={automaticInsight} />
       </div>
     </div>
   );
 }
+

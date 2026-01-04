@@ -85,10 +85,11 @@ model EvaluationSession {
 
 // System configuration for initial setup
 model SystemConfig {
-  id          Int     @id @default(1)  // Singleton pattern - only one row
-  companyName String  // e.g., "Acme Corp"
-  adminName   String  // e.g., "Jane Doe"
-  isSetup     Boolean @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id            Int     @id @default(1)  // Singleton pattern - only one row
+  companyName   String  // e.g., "Acme Corp"
+  adminName     String  // e.g., "Jane Doe"
+  adminPassword String? // Simple password for local MVP (optional for migration)
+  isSetup       Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }

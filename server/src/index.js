@@ -30,14 +30,16 @@ export function createApp() {
         return res.json({ 
           isSetup: false,
           companyName: null,
-          adminName: null
+          adminName: null,
+          hasPassword: false
         });
       }
       
       res.json({
         isSetup: config.isSetup,
         companyName: config.companyName,
-        adminName: config.adminName
+        adminName: config.adminName,
+        hasPassword: !!config.adminPassword
       });
     } catch (error) {
       console.error('Error fetching config:', error);
@@ -48,7 +50,7 @@ export function createApp() {
   // POST /api/setup - Initial system setup
   app.post('/api/setup', async (req, res) => {
     try {
-      const { companyName, adminName } = req.body;
+      const { companyName, adminName, adminPassword } = req.body;
 
       if (!companyName || !adminName) {
         return res.status(400).json({ 
@@ -70,12 +72,14 @@ export function createApp() {
         update: {
           companyName: companyName.trim(),
           adminName: adminName.trim(),
+          adminPassword: adminPassword || null,
           isSetup: true
         },
         create: {
           id: 1,
           companyName: companyName.trim(),
           adminName: adminName.trim(),
+          adminPassword: adminPassword || null,
           isSetup: true
         }
       });
@@ -84,11 +88,74 @@ export function createApp() {
         success: true,
         isSetup: config.isSetup,
         companyName: config.companyName,
-        adminName: config.adminName
+        adminName: config.adminName,
+        hasPassword: !!config.adminPassword
       });
     } catch (error) {
       console.error('Error setting up system:', error);
       res.status(500).json({ error: 'Failed to setup system' });
+    }
+  });
+
+  // PUT /api/config - Update system configuration (for Settings)
+  app.put('/api/config', async (req, res) => {
+    try {
+      const { companyName, adminName, adminPassword, currentPassword } = req.body;
+
+      const config = await prisma.systemConfig.findFirst();
+      if (!config) {
+        return res.status(404).json({ error: 'Config not found' });
+      }
+
+      // If changing password and current password exists, verify it
+      if (config.adminPassword && adminPassword) {
+        if (currentPassword !== config.adminPassword) {
+          return res.status(401).json({ error: 'Current password is incorrect' });
+        }
+      }
+
+      const updateData = {};
+      if (companyName) updateData.companyName = companyName.trim();
+      if (adminName) updateData.adminName = adminName.trim();
+      if (adminPassword !== undefined) updateData.adminPassword = adminPassword || null;
+
+      const updated = await prisma.systemConfig.update({
+        where: { id: 1 },
+        data: updateData
+      });
+
+      res.json({
+        success: true,
+        companyName: updated.companyName,
+        adminName: updated.adminName,
+        hasPassword: !!updated.adminPassword
+      });
+    } catch (error) {
+      console.error('Error updating config:', error);
+      res.status(500).json({ error: 'Failed to update config' });
+    }
+  });
+
+  // POST /api/config/verify - Verify admin password
+  app.post('/api/config/verify', async (req, res) => {
+    try {
+      const { password } = req.body;
+
+      const config = await prisma.systemConfig.findFirst();
+      if (!config) {
+        return res.status(404).json({ error: 'Config not found', valid: false });
+      }
+
+      // If no password set, consider it valid (open access)
+      if (!config.adminPassword) {
+        return res.json({ valid: true });
+      }
+
+      const valid = password === config.adminPassword;
+      res.json({ valid });
+    } catch (error) {
+      console.error('Error verifying password:', error);
+      res.status(500).json({ error: 'Failed to verify password', valid: false });
     }
   });
 

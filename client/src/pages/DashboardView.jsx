@@ -139,33 +139,12 @@ export default function DashboardView() {
         previousMetrics={previousMetrics}
       />
 
-      {/* Strategic Insights */}
+      {/* Strategic Insights + Automatic Insight */}
       <StrategicInsights
         distributionByCategory={distributionByCategory}
         operationalRisks={prioritizedGaps}
+        automaticInsight={insights.length > 0 ? insights[0] : null}
       />
-
-      {/* Insight Automático */}
-      {insights.length > 0 && (
-        <div className="bg-white p-6 rounded-xl shadow-sm border border-primary/10">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-primary/10">
-              <Lightbulb className="text-primary" size={20} />
-            </div>
-            <div className="flex-1">
-              <h4 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-2">
-                💡 Insight Automático
-              </h4>
-              <p className="text-sm text-gray-700 leading-relaxed">
-                <strong>{insights[0].colaborador}</strong> tiene alto nivel en{' '}
-                <strong>{insights[0].skill}</strong> ({insights[0].nivel.toFixed(1)}),
-                pero esa skill tiene <span className="text-warning font-medium">baja criticidad</span>.
-                {' '}Considera reasignarle a áreas donde el equipo tiene gaps.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Quick Access */}
       <div className="flex justify-center">

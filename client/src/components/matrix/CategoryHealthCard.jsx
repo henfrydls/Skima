@@ -12,6 +12,7 @@ import { ChevronDown, ChevronRight, AlertTriangle, Users } from 'lucide-react';
  */
 
 // Calculate distribution percentages from real data
+// Counts collaborators based on their average level in this category
 const calculateDistribution = (collaborators, skills, categoryId, roleProfiles) => {
   let beginners = 0;  // < 2.5
   let competent = 0;  // 2.5 - 3.5
@@ -22,16 +23,17 @@ const calculateDistribution = (collaborators, skills, categoryId, roleProfiles) 
     .filter(s => s.categoria === categoryId)
     .map(s => s.id);
 
-  collaborators.forEach(col => {
-    const profile = roleProfiles?.[col.rol] || {};
-    const relevantSkillIds = categorySkillIds.filter(id => (profile[id] || 'N') !== 'N');
-    
-    if (relevantSkillIds.length === 0) return;
+  if (categorySkillIds.length === 0) {
+    return { beginners: 0, competent: 0, experts: 0, total: 0, pctBeginners: 0, pctCompetent: 0, pctExperts: 0 };
+  }
 
-    const levels = relevantSkillIds
-      .filter(id => col.skills[id])
+  collaborators.forEach(col => {
+    // Get all skills this collaborator has in this category
+    const levels = categorySkillIds
+      .filter(id => col.skills[id] && col.skills[id].nivel > 0)
       .map(id => col.skills[id].nivel);
 
+    // Only count collaborator if they have at least one evaluated skill in this category
     if (levels.length === 0) return;
 
     const avg = levels.reduce((sum, l) => sum + l, 0) / levels.length;
@@ -54,7 +56,7 @@ const calculateDistribution = (collaborators, skills, categoryId, roleProfiles) 
 };
 
 // Find weakest skills in category
-const findWeakestSkills = (collaborators, skills, categoryId, roleProfiles) => {
+const findWeakestSkills = (collaborators, skills, categoryId) => {
   const categorySkills = skills.filter(s => s.categoria === categoryId);
   
   const skillAverages = categorySkills.map(skill => {
@@ -62,10 +64,7 @@ const findWeakestSkills = (collaborators, skills, categoryId, roleProfiles) => {
     let count = 0;
 
     collaborators.forEach(col => {
-      const profile = roleProfiles?.[col.rol] || {};
-      if ((profile[skill.id] || 'N') === 'N') return;
-      
-      if (col.skills[skill.id]) {
+      if (col.skills[skill.id] && col.skills[skill.id].nivel > 0) {
         sum += col.skills[skill.id].nivel;
         count++;
       }
@@ -173,7 +172,7 @@ export default function CategoryHealthCard({
   const [isExpanded, setIsExpanded] = useState(false);
   
   const distribution = calculateDistribution(collaborators, skills, category.id, roleProfiles);
-  const weakestSkills = findWeakestSkills(collaborators, skills, category.id, roleProfiles);
+  const weakestSkills = findWeakestSkills(collaborators, skills, category.id);
 
   // Overall health indicator
   const healthScore = distribution.total > 0 

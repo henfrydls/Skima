@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { Building2, User, Lock, ArrowRight, Loader2, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 /**
@@ -14,7 +14,8 @@ export default function SetupView({ onSetupComplete }) {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     companyName: '',
-    adminName: ''
+    adminName: '',
+    adminPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState(null);
@@ -36,7 +37,8 @@ export default function SetupView({ onSetupComplete }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           companyName: formData.companyName.trim(),
-          adminName: formData.adminName.trim()
+          adminName: formData.adminName.trim(),
+          adminPassword: formData.adminPassword || null
         })
       });
 
@@ -122,6 +124,28 @@ export default function SetupView({ onSetupComplete }) {
                 disabled={isSubmitting}
               />
             </div>
+          </div>
+
+          {/* Password Input (Optional) */}
+          <div className="mb-6">
+            <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña <span className="text-gray-400 font-normal">(Opcional)</span>
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="password"
+                id="adminPassword"
+                value={formData.adminPassword}
+                onChange={(e) => setFormData(prev => ({ ...prev, adminPassword: e.target.value }))}
+                placeholder="Dejar vacío para acceso abierto"
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl 
+                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                         text-gray-900 placeholder:text-gray-400 transition-all"
+                disabled={isSubmitting}
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1">Para uso local, puedes dejarlo vacío.</p>
           </div>
 
           {/* Error Message */}
