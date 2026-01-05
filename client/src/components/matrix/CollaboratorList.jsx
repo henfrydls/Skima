@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight, GitCompare } from 'lucide-react';
-import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { getTrendColor } from '../../lib/skillsLogic';
 
 /**
@@ -20,6 +20,18 @@ const FILTER_OPTIONS = [
   { id: 'attention', label: 'Requieren Atención', icon: TrendingUp, filter: (c) => c.promedio < 2.5 },
 ];
 
+// Custom tooltip for sparkline
+const SparklineTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg">
+        <span className="font-mono">{payload[0].value.toFixed(1)}</span>
+      </div>
+    );
+  }
+  return null;
+};
+
 // Sparkline mini chart
 function Sparkline({ data, trend }) {
   // TASK 1: Hide empty graphs - if no data or single point, render nothing
@@ -34,12 +46,17 @@ function Sparkline({ data, trend }) {
     <div className="w-[60px] h-[24px]">
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={chartData}>
+          <Tooltip 
+            content={<SparklineTooltip />}
+            cursor={false}
+          />
           <Line
             type="monotone"
             dataKey="value"
             stroke={color}
             strokeWidth={2}
             dot={false}
+            activeDot={{ r: 3, strokeWidth: 0, fill: color }}
             isAnimationActive={false}
           />
         </LineChart>

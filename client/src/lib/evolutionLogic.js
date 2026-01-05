@@ -90,12 +90,22 @@ export const processChartData = (includeInactive = false) => {
       ? Math.round((averages.reduce((a, b) => a + b, 0) / averages.length) * 10) / 10
       : null;
     
+    // Find NEW HIRES for this period
+    // Logic: Look for anyone whose joinedAt falls within the month of this snapshot
+    const snapshotDate = new Date(date);
+    const newHires = activeCollaborators.filter(c => {
+        if (!c.joinedAt) return false;
+        const joinedDate = new Date(c.joinedAt);
+        return joinedDate.getMonth() === snapshotDate.getMonth() && joinedDate.getFullYear() === snapshotDate.getFullYear();
+    }).map(c => c.nombre);
+
     return {
       date,
       quarter: formatQuarter(date),
       month: formatMonth(date),
       teamAverage,
       count: snapshotsAtDate.length,
+      newHires // Array of names
     };
   });
 };
@@ -243,23 +253,31 @@ export const getTopImprover = () => {
 };
 
 /**
- * Get At Risk - collaborator with most negative delta
+ * Calculate aggregated evolution metrics
+ * Returns: { topImprover, attentionCount, teamVelocity }
  */
-export const getAtRisk = () => {
-  const activeCollabs = COLLABORATORS_BASE.filter(c => c.active);
+export const calculateEvolutionMetrics = () => {
+  const teamVelocity = getTeamVelocity();
+  const topImprover = getTopImprover();
   
-  let atRisk = null;
-  let minDelta = Infinity;
+  // Count collaborators requiring attention (delta < -0.3)
+  // Instead of singling out one person ("Name & Shame"), we show the scale of the issue.
+  const activeCollabs = COLLABORATORS_BASE.filter(c => c.active);
+  let attentionCount = 0;
   
   activeCollabs.forEach(collab => {
     const { delta, insufficient } = calculateDelta(collab.id, '6months');
-    if (!insufficient && delta !== null && delta < minDelta && delta < 0) {
-      minDelta = delta;
-      atRisk = { ...collab, delta };
+    // Threshold: < -0.3 (Significant drop)
+    if (!insufficient && delta !== null && delta < -0.3) {
+      attentionCount++;
     }
   });
-  
-  return atRisk;
+
+  return { 
+    topImprover, 
+    attentionCount, 
+    teamVelocity 
+  };
 };
 
 /**

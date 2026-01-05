@@ -32,6 +32,7 @@ model Collaborator {
   email              String?              // Optional email for collaborator
   esDemo             Boolean              @default(false)
   isActive           Boolean              @default(true) // Soft delete flag
+  joinedAt           DateTime             @default(now()) // Start date for evolution correlation
   lastEvaluated      DateTime?            // Timestamp of last evaluation
   assessments        Assessment[]
   evaluationSessions EvaluationSession[]

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine, LabelList } from 'recharts';
+import { SKILL_THRESHOLDS, getSkillLevelStatus } from './lib/skillsLogic';
 // Paleta de colores
 // Paleta de colores para Recharts (debe coincidir con Tailwind config)
 // Paleta de colores para Recharts (debe coincidir con Tailwind config)
@@ -351,25 +352,30 @@ const SkillsDashboard = () => {
     return (sum / valores.length).toFixed(1);
   };
   const getStatusColor = (nivel) => {
-    if (nivel >= 3.5) return COLORS.primary;
-    if (nivel >= 2.5) return COLORS.neutral;
+    if (nivel >= SKILL_THRESHOLDS.STRENGTH) return COLORS.primary;
+    if (nivel >= SKILL_THRESHOLDS.COMPETENT) return COLORS.neutral;
     return COLORS.warning;
   };
   const getStatusInfo = (nivel) => {
-    if (nivel >= 3.5) return { label: 'Fortaleza', color: COLORS.primary };
-    if (nivel >= 2.5) return { label: 'Competente', color: COLORS.neutral };
-    return { label: 'Requiere atención', color: COLORS.warning };
+    const status = getSkillLevelStatus(nivel);
+    // Map centralized status to local COLORS for compatibility
+    const colorMap = {
+      strength: COLORS.primary,
+      competent: COLORS.neutral,
+      attention: COLORS.warning
+    };
+    return { label: status.label, color: colorMap[status.value] || COLORS.warning };
   };
   const getExecutiveInsights = () => {
     const promedios = calcularPromedioEquipo();
     const gaps = Object.entries(promedios)
-      .filter(([, val]) => parseFloat(val) < 2.5)
+      .filter(([, val]) => parseFloat(val) < SKILL_THRESHOLDS.COMPETENT)
       .map(([cat, val]) => ({
         categoria: CATEGORIAS[parseInt(cat.replace('cat', '')) - 1].nombre,
         valor: parseFloat(val)
       }));
     const fortalezas = Object.entries(promedios)
-      .filter(([, val]) => parseFloat(val) >= 3.5)
+      .filter(([, val]) => parseFloat(val) >= SKILL_THRESHOLDS.STRENGTH)
       .map(([cat, val]) => ({
         categoria: CATEGORIAS[parseInt(cat.replace('cat', '')) - 1].nombre,
         valor: parseFloat(val)

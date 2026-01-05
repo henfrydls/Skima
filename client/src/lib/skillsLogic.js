@@ -21,6 +21,47 @@ export const STATUS_COLORS = {
   MUTE: 'text-slate-400'       // Default / N/A
 };
 
+// ============================================
+// CENTRALIZED SKILL THRESHOLDS (Single Source of Truth)
+// ============================================
+export const SKILL_THRESHOLDS = {
+  COMPETENT: 2.5,   // >= 2.5 = Competente
+  STRENGTH: 3.5,    // >= 3.5 = Fortaleza / Experto
+  GOAL: 4.0,        // Meta visual para gráficos
+};
+
+/**
+ * Get skill level status based on score
+ * Single source of truth for level classification
+ * 
+ * @param {number} score - The skill level score (0-5)
+ * @returns {{ label: string, color: string, value: string, tailwindColor: string }}
+ */
+export const getSkillLevelStatus = (score) => {
+  if (score >= SKILL_THRESHOLDS.STRENGTH) {
+    return { 
+      label: 'Fortaleza', 
+      color: '#6366f1', // Indigo
+      value: 'strength',
+      tailwindColor: 'text-primary'
+    };
+  }
+  if (score >= SKILL_THRESHOLDS.COMPETENT) {
+    return { 
+      label: 'Competente', 
+      color: '#a6ae3d', // Lime/Competent
+      value: 'competent',
+      tailwindColor: 'text-competent'
+    };
+  }
+  return { 
+    label: 'Requiere Atención', 
+    color: '#f59e0b', // Amber/Warning
+    value: 'attention',
+    tailwindColor: 'text-warning'
+  };
+};
+
 // --- CORE EVALUATION LOGIC ---
 
 /**

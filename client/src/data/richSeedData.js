@@ -113,28 +113,28 @@ export const JOB_PROFILES = [
 // ============================================
 export const COLLABORATORS_BASE = [
   // 🆕 1. LUCÍA "ONE-SHOT" - Single evaluation
-  { id: 201, nombre: 'Lucía Fernández', rol: 'Frontend Developer', avatar: 'LF', active: true, archetype: 'ONE_SHOT' },
+  { id: 201, nombre: 'Lucía Fernández', rol: 'Frontend Developer', avatar: 'LF', active: true, archetype: 'ONE_SHOT', joinedAt: '2025-12-05' },
   
   // 🔀 2. ANA RODRÍGUEZ - Recent role change (UX→PO)
-  { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', previousRol: 'UX Designer', avatar: 'AR', active: true, archetype: 'ROLE_CHANGE_1' },
+  { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', previousRol: 'UX Designer', avatar: 'AR', active: true, archetype: 'ROLE_CHANGE_1', joinedAt: '2023-06-01' },
   
   // 🔀 3. MIGUEL ÁNGEL - Recent role change (Backend→Tech Lead)
-  { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', previousRol: 'Backend Developer', avatar: 'MT', active: true, archetype: 'ROLE_CHANGE_2' },
+  { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', previousRol: 'Backend Developer', avatar: 'MT', active: true, archetype: 'ROLE_CHANGE_2', joinedAt: '2022-11-15' },
   
   // 💀 4. ROBERTO "EL FANTASMA" - Inactive user (resigned Jan 2025)
-  { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', avatar: 'RF', active: false, archetype: 'INACTIVE', resignedDate: '2025-01-15' },
+  { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', avatar: 'RF', active: false, archetype: 'INACTIVE', resignedDate: '2025-01-15', joinedAt: '2023-02-01' },
   
   // 👻 5. THE CONTRACTOR - Undefined profile
-  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', avatar: 'CO', active: true, archetype: 'NO_PROFILE' },
+  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', avatar: 'CO', active: true, archetype: 'NO_PROFILE', joinedAt: '2025-06-20' },
   
   // 📉 6. LUIS "BURNOUT" - Negative trend
-  { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', avatar: 'LH', active: true, archetype: 'BURNOUT' },
+  { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', avatar: 'LH', active: true, archetype: 'BURNOUT', joinedAt: '2023-01-10' },
   
   // 🦕 7. DON PEDRO - Legacy expert (inactive category skills)
-  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', avatar: 'PM', active: true, archetype: 'LEGACY_EXPERT' },
+  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', avatar: 'PM', active: true, archetype: 'LEGACY_EXPERT', joinedAt: '2022-03-01' },
   
   // 🌟 8. SOFÍA - Perfect reference baseline
-  { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', avatar: 'SM', active: true, archetype: 'REFERENCE' },
+  { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', avatar: 'SM', active: true, archetype: 'REFERENCE', joinedAt: '2021-08-15' },
 ];
 
 // ============================================

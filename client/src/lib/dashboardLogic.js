@@ -4,7 +4,7 @@
  * Funciones de lógica de negocio para el Dashboard Ejecutivo.
  * Incluye: cálculos de métricas, priorización de gaps, detección de insights.
  */
-import { evaluarSkill } from './skillsLogic';
+import { evaluarSkill, SKILL_THRESHOLDS, getSkillLevelStatus } from './skillsLogic';
 
 // ============================================
 // WEIGHTS & CONSTANTS
@@ -12,10 +12,12 @@ import { evaluarSkill } from './skillsLogic';
 const FREQUENCY_WEIGHTS = { D: 4, S: 3, M: 2, T: 1, N: 0 };
 const CRITICALITY_WEIGHTS = { C: 3, I: 2, D: 1, N: 0 };
 
+// NOTE: Use SKILL_THRESHOLDS from skillsLogic.js instead of local definition
+// Keeping this alias for backward compatibility if any code still references it
 const LEVEL_THRESHOLDS = {
-  beginner: 2.5,    // < 2.5 = Principiante
-  competent: 3.5,   // 2.5-3.5 = Competente
-  expert: 3.5       // > 3.5 = Experto
+  beginner: SKILL_THRESHOLDS.COMPETENT,    // < 2.5 = Principiante
+  competent: SKILL_THRESHOLDS.STRENGTH,    // 2.5-3.5 = Competente
+  expert: SKILL_THRESHOLDS.STRENGTH        // >= 3.5 = Experto
 };
 
 // ============================================

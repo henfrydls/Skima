@@ -9,14 +9,15 @@ import {
   calculateSparkline, 
   identifyGaps, 
   identifyStrengths, 
-  buildPreviousSnapshot 
+  buildPreviousSnapshot,
+  SKILL_THRESHOLDS,
+  getSkillLevelStatus
 } from '../lib/skillsLogic';
 
-// Helper: get status color
+// Helper: get status color (uses centralized thresholds)
 const getStatusColor = (nivel) => {
-  if (nivel >= 3.5) return 'text-primary';
-  if (nivel >= 2.5) return 'text-competent';
-  return 'text-warning';
+  const status = getSkillLevelStatus(nivel);
+  return status.tailwindColor;
 };
 
 // Helper: calculate average for a collaborator
@@ -345,11 +346,11 @@ export default function TeamMatrixPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6">
       {/* Header */}
       <div>
-        <h1>Team Matrix</h1>
-        <p className="text-gray-500 mt-1">
+        <h1 className="text-2xl font-light text-slate-800">Team Matrix</h1>
+        <p className="text-sm text-gray-500 mt-1">
           Visualización de competencias del equipo
         </p>
       </div>

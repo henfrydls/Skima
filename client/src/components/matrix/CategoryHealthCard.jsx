@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, AlertTriangle, Users } from 'lucide-react';
+import { SKILL_THRESHOLDS } from '../../lib/skillsLogic';
 
 /**
  * CategoryHealthCard - Shows category with talent distribution bar
@@ -39,8 +40,8 @@ const calculateDistribution = (collaborators, skills, categoryId, roleProfiles) 
     const avg = levels.reduce((sum, l) => sum + l, 0) / levels.length;
     total++;
 
-    if (avg >= 3.5) experts++;
-    else if (avg >= 2.5) competent++;
+    if (avg >= SKILL_THRESHOLDS.STRENGTH) experts++;
+    else if (avg >= SKILL_THRESHOLDS.COMPETENT) competent++;
     else beginners++;
   });
 

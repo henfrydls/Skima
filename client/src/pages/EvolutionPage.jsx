@@ -1,8 +1,14 @@
 import { useState } from 'react';
-import { TrendingUp, Activity, AlertTriangle, Calendar, ChevronDown, Check } from 'lucide-react';
+import { TrendingUp, Activity, AlertTriangle, Calendar, ChevronDown, Check, LifeBuoy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
-import { getTeamVelocity, getTopImprover, getAtRisk } from '../lib/evolutionLogic';
+import EvolutionChart from '../components/evolution/EvolutionChart';
+import EvolutionList from '../components/evolution/EvolutionList';
+import { 
+  calculateEvolutionMetrics,
+  processChartData,
+  getCollaboratorsEvolution
+} from '../lib/evolutionLogic';
 
 /**
  * EvolutionPage - Historical Trends & Team Evolution
@@ -15,10 +21,11 @@ export default function EvolutionPage() {
   const [timeRange, setTimeRange] = useState('12m');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // 1. Get Real Data from Logic Layer
-  const velocity = getTeamVelocity();
-  const topImprover = getTopImprover();
-  const atRisk = getAtRisk();
+  // 1. Get Real Data from Logic Layer (Aggregated)
+  const { topImprover, attentionCount, teamVelocity } = calculateEvolutionMetrics();
+  
+  const chartData = processChartData(false); // Exclude inactives for chart
+  const collaboratorsData = getCollaboratorsEvolution(true); // Include inactives for list
 
   const timeOptions = [
     { id: '12m', label: 'Últimos 12 Meses' },
@@ -81,14 +88,14 @@ export default function EvolutionPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* 1. VELOCITY (Crecimiento del Equipo) */}
+        {/* 1. MATURITY INDEX (Índice de Madurez) */}
         <StatCard
-          title="VELOCIDAD DE EQUIPO"
-          value={velocity.delta !== null ? `${velocity.delta > 0 ? '+' : ''}${velocity.delta}%` : '0.0%'} 
-          subtext="Crecimiento anual vs 2024"
+          title="ÍNDICE DE MADUREZ"
+          value={teamVelocity.current ? teamVelocity.current.toFixed(1) : "0.0"}
+          subtext="vs año anterior"
           icon={Activity}
           color="indigo"
-          trend={velocity.delta} 
+          trend={teamVelocity.delta} 
         />
 
         {/* 2. TOP PERFORMER */}
@@ -101,17 +108,30 @@ export default function EvolutionPage() {
           trend={topImprover ? topImprover.delta : null}
         />
 
-        {/* 3. RETENTION RISK */}
-        <StatCard
-          title="ALERTA DE RENDIMIENTO"
-          value={atRisk ? atRisk.nombre : "Sin alertas"}
-          subtext="Caída sostenida reciente"
-          icon={AlertTriangle}
-          color="rose"
-          trend={atRisk ? atRisk.delta : null}
-          invertDelta={true} 
-        />
+        {/* 3. SUPPORT FOCUS (Constructive approach) */}
+        <div className="cursor-pointer group">
+          <StatCard
+            title="REQUIEREN SOPORTE"
+            value={attentionCount > 0 ? `${attentionCount} Casos` : "Todo en Orden"}
+            subtext="Colaboradores con tendencia a la baja"
+            icon={LifeBuoy}
+            color="amber"
+            trend={attentionCount > 0 ? -1 : 0} 
+            invertDelta={true} 
+          />
+        </div>
       </div>
+
+      {/* Main Chart Section */}
+      <div className="w-full">
+        <EvolutionChart data={chartData} />
+      </div>
+
+      {/* Detailed List Section */}
+      <div className="w-full">
+        <EvolutionList collaborators={collaboratorsData} timeRange={timeRange} />
+      </div>
+
     </div>
   );
 }
