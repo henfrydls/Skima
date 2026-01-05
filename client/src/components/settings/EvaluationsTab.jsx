@@ -255,8 +255,8 @@ function NivelSelector({ value, onChange, readOnly = false }) {
   );
 }
 
-// Frecuencia Selector dropdown
-function FrecuenciaSelector({ value, onChange, readOnly = false }) {
+// Frecuencia Selector dropdown - With reactive filtering
+function FrecuenciaSelector({ value, onChange, readOnly = false, disabledOptions = [], helperText = null }) {
   const selected = FRECUENCIAS.find(f => f.value === value) || FRECUENCIAS[4];
   
   if (readOnly) {
@@ -268,20 +268,31 @@ function FrecuenciaSelector({ value, onChange, readOnly = false }) {
   }
   
   return (
-    <select
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="px-2 py-1.5 text-xs border border-gray-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
-      title={selected.desc}
-    >
-      {FRECUENCIAS.map(f => (
-        <option key={f.value} value={f.value}>{f.label}</option>
-      ))}
-    </select>
+    <div className="flex flex-col gap-0.5">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="px-2 py-1.5 text-xs border border-gray-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+        title={selected.desc}
+      >
+        {FRECUENCIAS.map(f => (
+          <option 
+            key={f.value} 
+            value={f.value}
+            disabled={disabledOptions.includes(f.value)}
+          >
+            {f.label}{disabledOptions.includes(f.value) ? ' (no disponible)' : ''}
+          </option>
+        ))}
+      </select>
+      {helperText && (
+        <span className="text-[10px] text-amber-600 italic">{helperText}</span>
+      )}
+    </div>
   );
 }
 
-// Skill Evaluation Row
+// Skill Evaluation Row - WITH REACTIVE FIELD LOGIC
 function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false }) {
   const nivel = evaluation?.nivel ?? 0;
   const frecuencia = evaluation?.frecuencia ?? 'N';
@@ -297,6 +308,31 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
     'D': { text: 'Deseable', class: 'bg-gray-100 text-gray-500' },
     'N': { text: 'N/A', class: 'bg-gray-50 text-gray-400' },
   }[effectiveCriticidad] || { text: 'N/A', class: 'bg-gray-50 text-gray-400' };
+
+  // REACTIVE LOGIC:
+  // Rule 1: If Criticidad is C or I, disable 'Nunca' option in Frecuencia
+  const disabledFrequencies = ['C', 'I'].includes(effectiveCriticidad) ? ['N'] : [];
+  
+  // Helper text if 'Nunca' is disabled
+  const freqHelperText = disabledFrequencies.includes('N') && frecuencia === 'N' 
+    ? 'Skill crítica/importante requiere uso' 
+    : null;
+
+  // REACTIVE onChange: Auto-adjust values based on business rules
+  const handleFieldChange = (field, value) => {
+    if (field === 'frecuencia') {
+      if (value === 'N') {
+        // Rule: "Nunca es Irrelevante" - Auto-set criticidad to N/A
+        // But since criticidad comes from role profile, we just track it
+        // The UI should show a warning instead
+        onChange({ nivel, frecuencia: value });
+      } else {
+        onChange({ nivel, frecuencia: value });
+      }
+    } else if (field === 'nivel') {
+      onChange({ nivel: value, frecuencia });
+    }
+  };
 
   return (
     <div className={`grid grid-cols-12 gap-4 items-center py-3 px-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 ${isNA ? 'opacity-50' : ''}`}>
@@ -314,17 +350,19 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
       <div className="col-span-4">
         <NivelSelector 
           value={nivel} 
-          onChange={(n) => !readOnly && onChange({ nivel: n, frecuencia })} 
+          onChange={(n) => !readOnly && handleFieldChange('nivel', n)} 
           readOnly={readOnly}
         />
       </div>
 
-      {/* Frecuencia Selector */}
+      {/* Frecuencia Selector - With reactive filtering */}
       <div className="col-span-2">
         <FrecuenciaSelector 
           value={frecuencia} 
-          onChange={(f) => !readOnly && onChange({ nivel, frecuencia: f })} 
+          onChange={(f) => !readOnly && handleFieldChange('frecuencia', f)} 
           readOnly={readOnly}
+          disabledOptions={disabledFrequencies}
+          helperText={freqHelperText}
         />
       </div>
 
