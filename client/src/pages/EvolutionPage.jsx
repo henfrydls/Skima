@@ -1,64 +1,48 @@
-import { TrendingUp, Calendar, ArrowLeft } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { EvolutionMetrics, EvolutionMainChart, EvolutionList } from '../components/evolution';
-import { getAllDates } from '../lib/evolutionLogic';
 
 /**
- * EvolutionPage - Team Evolution & Trends Dashboard
+ * EvolutionPage - Coming Soon Placeholder
  * 
- * Shows historical skill progression, KPIs, and individual trends
- * Using richSeedData.js chaos testing data
+ * Minimalist empty state for the Evolution module.
+ * Replaces the previous implementation as per design decision.
  */
 export default function EvolutionPage() {
   const navigate = useNavigate();
-  const dates = getAllDates();
-  
-  const dateRange = dates.length > 0 
-    ? `${dates[0]} - ${dates[dates.length - 1]}`
-    : 'Sin datos';
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => navigate(-1)}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors text-slate-500"
-              >
-                <ArrowLeft size={20} />
-              </button>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-indigo-50">
-                  <TrendingUp size={24} className="text-indigo-600" />
-                </div>
-                <div>
-                  <h1 className="text-xl font-bold text-slate-800">Evolución del Equipo</h1>
-                  <p className="text-sm text-slate-500">Tendencias históricas y métricas</p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <Calendar size={16} />
-              <span>{dateRange}</span>
-            </div>
+    <div className="min-h-screen bg-slate-50/50">
+
+      {/* Main Content - Centered Message */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="min-h-[60vh] flex flex-col items-center justify-center text-center p-8">
+          
+          {/* Icon Hero */}
+          <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mb-8 shadow-sm">
+            <TrendingUp size={40} className="text-slate-400" />
+          </div>
+          
+          {/* Typography */}
+          <div className="max-w-md space-y-4">
+            <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
+              Módulo de Evolución en Construcción
+            </h2>
+            <p className="text-slate-500 leading-relaxed">
+              Estamos preparando un análisis histórico detallado para tu equipo. 
+              Pronto podrás ver tendencias, ROI y riesgos de retención.
+            </p>
+          </div>
+
+          {/* Optional: Action Button back to Dashboard */}
+          <div className="mt-10">
+            <button
+              onClick={() => navigate('/')}
+              className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 font-medium rounded-lg hover:bg-slate-50 hover:border-slate-300 transition-all shadow-sm"
+            >
+              Volver al Dashboard
+            </button>
           </div>
         </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* KPI Cards */}
-        <EvolutionMetrics />
-        
-        {/* Main Chart */}
-        <EvolutionMainChart />
-        
-        {/* Collaborator List */}
-        <EvolutionList />
       </main>
     </div>
   );
