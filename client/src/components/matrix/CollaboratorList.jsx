@@ -149,26 +149,65 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
         </div>
       </div>
 
-      {/* Category Chips */}
-      <div className="flex flex-wrap gap-2 mt-3">
-        {categoryEntries.map(([key, valor]) => (
-          <span 
-            key={key}
-            className={`text-xs px-2 py-1 rounded-full ${
-              valor >= 3.5 ? 'bg-primary/5 text-primary' :
-              valor >= 2.5 ? 'bg-competent/5 text-competent' :
-              'bg-warning/5 text-warning'
-            }`}
-          >
-            {key}: {valor.toFixed(1)}
-          </span>
-        ))}
-        {Object.keys(collaborator.categorias || {}).length > 3 && (
-          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-            +{Object.keys(collaborator.categorias).length - 3} más
-          </span>
-        )}
-      </div>
+      {/* Category Chips - Smart Sorted & Responsive */}
+      {(() => {
+        // Smart sorting algorithm: Strengths first, zeros last
+        const allEntries = Object.entries(collaborator.categorias || {});
+        const sortedEntries = allEntries.sort((a, b) => {
+          const [, valorA] = a;
+          const [, valorB] = b;
+          
+          // Priority weights: 0 = lowest, higher = better priority
+          const getPriority = (val) => {
+            if (val === 0) return 0;           // Zeros go last
+            if (val >= 4.0) return 3;          // Strengths (high priority)
+            if (val >= 2.5) return 2;          // Competent (medium)
+            return 1;                           // Gaps/Low (show but lower)
+          };
+          
+          const priorityA = getPriority(valorA);
+          const priorityB = getPriority(valorB);
+          
+          // Sort by priority desc, then by value desc
+          if (priorityB !== priorityA) return priorityB - priorityA;
+          return valorB - valorA;
+        });
+        
+        // Responsive limits: 3 mobile, 5 desktop
+        const mobileLimit = 3;
+        const desktopLimit = 5;
+        const remaining = sortedEntries.length - desktopLimit;
+        
+        return (
+          <div className="flex flex-wrap gap-2 mt-3">
+            {sortedEntries.slice(0, desktopLimit).map(([key, valor], index) => (
+              <span 
+                key={key}
+                className={`text-xs px-2 py-1 rounded-full ${
+                  valor >= 3.5 ? 'bg-primary/5 text-primary' :
+                  valor >= 2.5 ? 'bg-competent/5 text-competent' :
+                  valor > 0 ? 'bg-warning/5 text-warning' :
+                  'bg-gray-100 text-gray-400'
+                } ${index >= mobileLimit ? 'hidden lg:inline-flex' : ''}`}
+              >
+                {key}: {valor.toFixed(1)}
+              </span>
+            ))}
+            {/* +N badge - only on desktop if more than 5 */}
+            {remaining > 0 && (
+              <span className="hidden lg:inline-flex text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                +{remaining} más
+              </span>
+            )}
+            {/* Mobile remaining count (if more than 3) */}
+            {sortedEntries.length > mobileLimit && (
+              <span className="lg:hidden text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
+                +{sortedEntries.length - mobileLimit} más
+              </span>
+            )}
+          </div>
+        );
+      })()}
     </button>
   );
 }

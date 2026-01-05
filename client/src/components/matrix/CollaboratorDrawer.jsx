@@ -314,7 +314,9 @@ export default function CollaboratorDrawer({
                 categorias={collaborator.categorias} 
                 previousCategorias={previousSnapshot?.categorias}
               />
-              {previousSnapshot && (
+              {/* Only show legend if there are actual previous values visible */}
+              {previousSnapshot?.categorias && 
+               Object.keys(collaborator.categorias || {}).some(key => previousSnapshot.categorias[key] !== undefined) && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                   <div className="w-3 h-3 rounded-full bg-gray-300" />
                   <span>Valor anterior</span>
