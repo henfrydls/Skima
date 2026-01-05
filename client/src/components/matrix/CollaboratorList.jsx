@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight, GitCompare } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
 import { getTrendColor } from '../../lib/skillsLogic';
 
@@ -22,8 +22,9 @@ const FILTER_OPTIONS = [
 
 // Sparkline mini chart
 function Sparkline({ data, trend }) {
+  // TASK 1: Hide empty graphs - if no data or single point, render nothing
   if (!data || data.length < 2) {
-    return <div className="w-[60px] h-[24px] bg-gray-50 rounded" />;
+    return null; // Clean empty space instead of placeholder box
   }
 
   const chartData = data.map((value, i) => ({ value, index: i }));
@@ -77,10 +78,17 @@ function getCollaboratorBadge(collaborator) {
 }
 
 // Collaborator Card
-function CollaboratorCard({ collaborator, onSelect }) {
+function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
   const badge = getCollaboratorBadge(collaborator);
   // Use sparkline from props (real data), fallback to empty
   const sparkline = collaborator.sparkline || { points: [], trend: 'neutral' };
+  
+  // TASK 2: Role Change Detection
+  const hasRoleChanged = previousSnapshot && previousSnapshot.rol !== collaborator.rol;
+  const previousRole = previousSnapshot?.rol;
+  
+  // TASK 2: Determine if we should show the trend arrow (only if sparkline has data)
+  const showTrendArrow = sparkline.points && sparkline.points.length >= 2;
   
   // Category chips (collapsed)
   const categoryEntries = Object.entries(collaborator.categorias || {}).slice(0, 3);
@@ -105,7 +113,19 @@ function CollaboratorCard({ collaborator, onSelect }) {
               </Badge>
             )}
           </div>
-          <p className="text-sm text-gray-500 truncate">{collaborator.rol}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-gray-500 truncate">{collaborator.rol}</p>
+            {/* Role Change Badge */}
+            {hasRoleChanged && (
+              <span 
+                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"
+                title={`Cambió de puesto desde la última evaluación (${previousRole} → ${collaborator.rol})`}
+              >
+                <GitCompare size={10} />
+                Cambio
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Right: Sparkline + Average */}
@@ -118,9 +138,12 @@ function CollaboratorCard({ collaborator, onSelect }) {
             }`}>
               {collaborator.promedio.toFixed(1)}
             </p>
-            <p className="text-[10px] text-gray-400 uppercase tracking-wide">
-              {sparkline.trend === 'up' ? '↑' : sparkline.trend === 'down' ? '↓' : '→'}
-            </p>
+            {/* TASK 1: Only show trend arrow if we have sparkline data */}
+            {showTrendArrow && (
+              <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                {sparkline.trend === 'up' ? '↑' : sparkline.trend === 'down' ? '↓' : '→'}
+              </p>
+            )}
           </div>
           <ChevronRight size={18} className="text-gray-300 group-hover:text-primary transition-colors" />
         </div>
@@ -260,6 +283,7 @@ export default function CollaboratorList({ collaborators = [], onSelect }) {
             key={collaborator.id}
             collaborator={collaborator}
             onSelect={onSelect}
+            previousSnapshot={collaborator.previousSnapshot}
           />
         ))}
       </div>

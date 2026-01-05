@@ -11,7 +11,8 @@ import {
   Briefcase,
   Calendar,
   AlertTriangle,
-  Star
+  Star,
+  GitCompare
 } from 'lucide-react';
 import { calculateDelta } from '../../lib/skillsLogic';
 
@@ -165,6 +166,12 @@ export default function CollaboratorDrawer({
     return collaborator.previousSnapshot || null;  // Use real data from props
   }, [collaborator]);
 
+  // TASK 2: Role Change Detection
+  const hasRoleChanged = useMemo(() => {
+    if (!collaborator || !previousSnapshot) return false;
+    return previousSnapshot.rol !== collaborator.rol;
+  }, [collaborator, previousSnapshot]);
+
   // Calculate delta
   const promedioDelta = useMemo(() => {
     if (!collaborator || !previousSnapshot) return null;
@@ -223,7 +230,19 @@ export default function CollaboratorDrawer({
                   </div>
                   <div>
                     <h2 className="text-xl font-medium text-gray-900">{collaborator.nombre}</h2>
-                    <p className="text-sm text-gray-500">{collaborator.rol}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm text-gray-500">{collaborator.rol}</p>
+                      {/* TASK 2: Role Change Badge */}
+                      {hasRoleChanged && (
+                        <span 
+                          className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-100"
+                          title={`Rol cambió de "${previousSnapshot.rol}" a "${collaborator.rol}". La comparación numérica puede no ser lineal.`}
+                        >
+                          <GitCompare size={10} />
+                          Cambio de Puesto
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <button
@@ -263,6 +282,8 @@ export default function CollaboratorDrawer({
                     </span>
                     {promedioDelta && (
                       <span className={`flex items-center text-sm ${
+                        /* TASK 2: Neutralize delta color when role changed */
+                        hasRoleChanged ? 'text-slate-500' :
                         promedioDelta.direction === 'up' ? 'text-success' : 
                         promedioDelta.direction === 'down' ? 'text-critical' : 'text-gray-400'
                       }`}>
