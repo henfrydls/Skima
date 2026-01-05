@@ -1,12 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { ChevronDown, Loader2 } from 'lucide-react';
-import LevelDot from '../common/LevelDot';
-
-// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
-const isCriticalGap = (skillData) => {
-  if (!skillData) return false;
-  return skillData.criticidad === 'C' && skillData.nivel < 3;
-};
+import { evaluarSkill } from '../../lib/skillsLogic';
+import SmartTooltip from '../common/SmartTooltip';
 
 /**
  * TransposedMatrixTable Component
@@ -15,18 +10,29 @@ const isCriticalGap = (skillData) => {
  * - Filas: Skills (permite nombres largos sin cortar)
  * - Columnas: Empleados (avatares con iniciales + nombre)
  * - Agrupación visual por categoría (colapsable)
+ * - Smart Tooltip con detección de colisiones
  * 
  * Props:
  * - categories: array of { id, nombre, abrev }
  * - skills: array of { id, categoria, nombre }
  * - collaborators: array of { id, nombre, rol, skills: { [skillId]: { nivel, criticidad, frecuencia } } }
  * - isLoading: boolean
+ * - onCellClick: (collaboratorId, skillId) => void - Drill-down handler
  */
-export default function TransposedMatrixTable({ categories = [], skills = [], collaborators = [], isLoading = false }) {
+export default function TransposedMatrixTable({ 
+  categories = [], 
+  skills = [], 
+  collaborators = [], 
+  isLoading = false,
+  onCellClick = null
+}) {
   // Estado para categorías colapsadas
   const [expandedCategories, setExpandedCategories] = useState(() =>
     categories.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
   );
+  
+  // Estado para el tooltip flotante
+  const [hoverInfo, setHoverInfo] = useState(null);
 
   const toggleCategory = (catId) => {
     setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
@@ -47,6 +53,27 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
     border-r-2 border-gray-200
     shadow-[4px_0_6px_-2px_rgba(0,0,0,0.08)]
   `;
+
+  // Handler para mostrar tooltip
+  const handleCellHover = (e, collab, skill, skillData) => {
+    const nivel = skillData?.nivel ?? 0;
+    const frecuencia = skillData?.frecuencia || 'N';
+    const criticidad = skillData?.criticidad || 'N';
+    const evaluacion = evaluarSkill(nivel, frecuencia, criticidad);
+    
+    setHoverInfo({
+      x: e.clientX,
+      y: e.clientY,
+      data: {
+        collaboratorName: collab.nombre,
+        skillName: skill.nombre,
+        nivel,
+        frecuencia,
+        criticidad,
+        estado: evaluacion.estado
+      }
+    });
+  };
 
   if (isLoading) {
     return (
@@ -94,8 +121,8 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
                 >
                   <div className="flex flex-col items-center gap-1">
                     <div 
-                      className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary"
-                      title={collab.nombre}
+                      className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-medium text-primary cursor-pointer hover:bg-primary/20 transition-colors"
+                      onClick={() => onCellClick?.(collab.id, null)}
                     >
                       {collab.nombre.split(' ').map(w => w[0]).join('').slice(0, 2)}
                     </div>
@@ -107,7 +134,6 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
               ))}
             </tr>
           </thead>
-
 
           {/* Body: Skills como filas, agrupadas por categoría */}
           <tbody>
@@ -153,7 +179,6 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
                       <div className="flex items-center justify-between gap-2">
                         <span 
                           className="text-gray-800 truncate" 
-                          title={skill.nombre}
                         >
                           {skill.nombre}
                         </span>
@@ -168,37 +193,58 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
                     {/* Celdas de nivel por empleado */}
                     {collaborators.map(collab => {
                       const skillData = collab.skills[skill.id];
-                      const hasCriticalGap = isCriticalGap(skillData);
+                      const nivel = skillData?.nivel ?? 0;
+                      const frecuencia = skillData?.frecuencia || 'N';
+                      const criticidad = skillData?.criticidad || 'N';
+                      
+                      // Use evaluarSkill for business logic
+                      const evaluacion = evaluarSkill(nivel, frecuencia, criticidad);
+                      const isCriticalGap = evaluacion.estado === "BRECHA CRÍTICA";
+                      const isAreaMejora = evaluacion.estado === "ÁREA DE MEJORA";
                       
                       return (
                         <td 
                           key={collab.id}
                           className={`
                             p-2 text-center border-t border-gray-100
-                            ${hasCriticalGap ? 'bg-critical/5' : ''}
+                            ${isCriticalGap ? 'bg-rose-50' : isAreaMejora ? 'bg-amber-50/50' : ''}
                           `}
                         >
-                          {/* Rich Tooltip Container */}
-                          <div className="flex items-center justify-center group relative">
-                            <LevelDot 
-                              level={skillData?.nivel ?? 0}
-                              isCriticalGap={hasCriticalGap}
-                            />
-                            {/* Rich Tooltip */}
-                            <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 w-max pointer-events-none">
-                              <div className="bg-gray-900 text-white text-xs rounded-lg px-3 py-2 shadow-lg">
-                                <p className="font-semibold">{collab.nombre}</p>
-                                <p className="text-gray-300 text-[10px] mb-1">{skill.nombre}</p>
-                                <p className="flex items-center gap-2">
-                                  Nivel: <span className="font-bold">{skillData?.nivel?.toFixed(1) ?? 0}</span>
-                                  {hasCriticalGap && (
-                                    <span className="text-red-400 font-medium">⚠️ CRÍTICO</span>
-                                  )}
-                                </p>
-                              </div>
-                              {/* Arrow */}
-                              <div className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900" />
+                          {/* Cell Container - NO title attribute */}
+                          <div 
+                            className={`
+                              flex items-center justify-center relative
+                              ${onCellClick ? 'cursor-pointer' : ''}
+                            `}
+                            onClick={() => onCellClick?.(collab.id, skill.id)}
+                            onMouseEnter={(e) => handleCellHover(e, collab, skill, skillData)}
+                            onMouseLeave={() => setHoverInfo(null)}
+                          >
+                            {/* Level Dot */}
+                            <div 
+                              className={`
+                                w-8 h-8 rounded-full
+                                flex items-center justify-center
+                                text-xs font-medium text-white
+                                ${nivel >= 4 ? 'bg-primary' : 
+                                  nivel >= 3 ? 'bg-competent' : 
+                                  nivel >= 2 ? 'bg-warning' : 
+                                  'bg-gray-300 text-gray-600'}
+                                ${isCriticalGap ? 'ring-2 ring-rose-500 ring-offset-1' : ''}
+                                ${isAreaMejora ? 'ring-2 ring-amber-400 ring-offset-1' : ''}
+                                transition-all duration-150
+                                hover:scale-110 active:scale-95
+                              `}
+                            >
+                              {nivel > 0 ? nivel.toFixed(1) : '—'}
                             </div>
+                            
+                            {/* Critical Gap Badge */}
+                            {isCriticalGap && (
+                              <div className="absolute -top-0.5 -right-0.5 w-3.5 h-3.5 bg-rose-500 rounded-full flex items-center justify-center shadow-sm animate-pulse">
+                                <span className="text-white text-[9px] font-bold leading-none">!</span>
+                              </div>
+                            )}
                           </div>
                         </td>
                       );
@@ -232,11 +278,18 @@ export default function TransposedMatrixTable({ categories = [], skills = [], co
             <span className="text-xs">5</span>
           </div>
           <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
-            <div className="w-4 h-4 rounded-full bg-gray-300 ring-2 ring-critical ring-offset-1" />
+            <div className="w-4 h-4 rounded-full bg-gray-300 ring-2 ring-rose-500 ring-offset-1" />
             <span className="text-xs">Brecha Crítica</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-4 rounded-full bg-gray-300 ring-2 ring-amber-400 ring-offset-1" />
+            <span className="text-xs">Área de Mejora</span>
           </div>
         </div>
       </div>
+      
+      {/* Smart Floating Tooltip - Rendered outside table for proper positioning */}
+      <SmartTooltip info={hoverInfo} />
     </div>
   );
 }

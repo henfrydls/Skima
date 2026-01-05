@@ -398,6 +398,13 @@ export default function TeamMatrixPage() {
               skills={skills}
               collaborators={collaborators}
               isLoading={isLoading}
+              onCellClick={(collaboratorId, skillId) => {
+                const collab = collaboratorsWithAverages.find(c => c.id === collaboratorId);
+                if (collab) {
+                  setSelectedColaborador(collab);
+                  setIsDrawerOpen(true);
+                }
+              }}
             />
           )
         )
