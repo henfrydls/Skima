@@ -102,7 +102,7 @@ export const JOB_PROFILES = [
   'DevOps Engineer',
   'QA Engineer',
   'Data Scientist',
-  'Mainframe Specialist',
+  'Innovation Specialist',
   // CHAOS: Profile exists but no one has it
   'Security Guard',
 ];
@@ -125,13 +125,13 @@ export const COLLABORATORS_BASE = [
   { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', avatar: 'RF', active: false, archetype: 'INACTIVE', resignedDate: '2025-01-15' },
   
   // 👻 5. THE CONTRACTOR - Undefined profile
-  { id: 205, nombre: 'Contractor', rol: 'External Consultant', avatar: 'CO', active: true, archetype: 'NO_PROFILE' },
+  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', avatar: 'CO', active: true, archetype: 'NO_PROFILE' },
   
   // 📉 6. LUIS "BURNOUT" - Negative trend
   { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', avatar: 'LH', active: true, archetype: 'BURNOUT' },
   
   // 🦕 7. DON PEDRO - Legacy expert (inactive category skills)
-  { id: 207, nombre: 'Pedro Mainframe', rol: 'Mainframe Specialist', avatar: 'PM', active: true, archetype: 'LEGACY_EXPERT' },
+  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', avatar: 'PM', active: true, archetype: 'LEGACY_EXPERT' },
   
   // 🌟 8. SOFÍA - Perfect reference baseline
   { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', avatar: 'SM', active: true, archetype: 'REFERENCE' },
@@ -367,7 +367,7 @@ const generateHistorySnapshots = () => {
     snapshots.push({
       collaboratorId: 207,
       date,
-      rol: 'Mainframe Specialist',
+      rol: 'Innovation Specialist',
       skills,
     });
   });

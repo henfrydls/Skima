@@ -89,9 +89,9 @@ const COLLABORATORS = [
   { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', esDemo: true, isActive: true },
   { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', esDemo: true, isActive: true },
   { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', esDemo: true, isActive: false },
-  { id: 205, nombre: 'Contractor', rol: 'External Consultant', esDemo: true, isActive: true },
+  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', esDemo: true, isActive: true },
   { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', esDemo: true, isActive: true },
-  { id: 207, nombre: 'Pedro Mainframe', rol: 'Mainframe Specialist', esDemo: true, isActive: true },
+  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', esDemo: true, isActive: true },
   { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', esDemo: true, isActive: true },
 ];
 
@@ -104,7 +104,7 @@ const ROLE_PROFILES = [
   { rol: 'Tech Lead', skills: JSON.stringify({ "8": "C", "9": "C", "15": "C", "16": "I", "18": "C", "33": "C", "40": "C" }) },
   { rol: 'UX Designer', skills: JSON.stringify({ "1": "C", "2": "C", "4": "C", "36": "C", "5": "I", "18": "I" }) },
   { rol: 'Product Owner', skills: JSON.stringify({ "34": "C", "31": "C", "29": "C", "19": "I", "23": "I", "25": "I" }) },
-  { rol: 'Mainframe Specialist', skills: JSON.stringify({ "97": "C", "98": "C", "8": "I" }) },
+  { rol: 'Innovation Specialist', skills: JSON.stringify({ "97": "C", "98": "C", "8": "I" }) },
   { rol: 'Security Guard', skills: JSON.stringify({}) }, // No one has this role
   // NOTE: 'External Consultant' is NOT here (undefined profile)
 ];
@@ -241,7 +241,7 @@ const generateSnapshots = () => {
     skills[98] = { nivel: 4.8, frecuencia: 'D', criticidad: 'C' };
     skills[35] = { nivel: 0.5, frecuencia: 'N', criticidad: 'N' };
     skills[38] = { nivel: 0, frecuencia: 'N', criticidad: 'N' };
-    snapshots.push({ collaboratorId: 207, date, rol: 'Mainframe Specialist', skills });
+    snapshots.push({ collaboratorId: 207, date, rol: 'Innovation Specialist', skills });
   });
 
   // 🌟 8. SOFÍA - Perfect reference
