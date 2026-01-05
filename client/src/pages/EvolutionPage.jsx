@@ -1,33 +1,33 @@
 import { useState } from 'react';
-import { TrendingUp, Activity, AlertTriangle, Calendar, ChevronDown, Check, LifeBuoy } from 'lucide-react';
+import { TrendingUp, Activity, Calendar, ChevronDown, Check, LifeBuoy, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
 import EvolutionChart from '../components/evolution/EvolutionChart';
 import EvolutionList from '../components/evolution/EvolutionList';
+import { useEvolutionData } from '../hooks/useEvolutionData';
 import { 
-  calculateEvolutionMetrics,
-  processChartData,
-  getCollaboratorsEvolution
+  transformChartData, 
+  transformEmployeesForList,
+  getTopImprover,
+  getSupportCount,
+  calculateTeamVelocity
 } from '../lib/evolutionLogic';
 
 /**
  * EvolutionPage - Historical Trends & Team Evolution
  * 
  * Displays key metrics about team growth, top performers, and retention risks
- * using historical data snapshots.
+ * using real data from the Evolution API.
  */
 export default function EvolutionPage() {
   const navigate = useNavigate();
-  const [timeRange, setTimeRange] = useState('12m');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // 1. Get Real Data from Logic Layer (Aggregated)
-  const { topImprover, attentionCount, teamVelocity } = calculateEvolutionMetrics();
-  
-  const chartData = processChartData(false); // Exclude inactives for chart
-  const collaboratorsData = getCollaboratorsEvolution(true); // Include inactives for list
+  // Fetch evolution data from API
+  const { data, loading, error, timeRange, setTimeRange } = useEvolutionData('12m');
 
   const timeOptions = [
+    { id: '6m', label: 'Últimos 6 Meses' },
     { id: '12m', label: 'Últimos 12 Meses' },
     { id: '24m', label: 'Últimos 24 Meses' },
     { id: 'ytd', label: 'Año Actual (YTD)' },
@@ -35,6 +35,50 @@ export default function EvolutionPage() {
   ];
 
   const selectedOption = timeOptions.find(o => o.id === timeRange);
+
+  // Transform API data for components
+  const chartData = data ? transformChartData(data.chartData) : [];
+  const collaboratorsData = data ? transformEmployeesForList(data.employees) : [];
+  const topImprover = data ? getTopImprover(data.insights) : null;
+  const attentionCount = data ? getSupportCount(data.insights) : 0;
+  const teamVelocity = chartData.length > 0 ? calculateTeamVelocity(chartData) : { current: null, delta: null };
+
+  // Use API meta for maturity index if available
+  const maturityIndex = data?.meta?.currentMaturityIndex ?? teamVelocity.current;
+  const periodDelta = data?.meta?.periodDelta ?? teamVelocity.delta;
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 -m-6 p-6 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 size={40} className="animate-spin text-indigo-600" />
+          <p className="text-sm text-slate-500">Cargando datos de evolución...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 -m-6 p-6 flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-2xl">⚠️</span>
+          </div>
+          <h2 className="text-lg font-medium text-slate-800 mb-2">Error al cargar datos</h2>
+          <p className="text-sm text-slate-500 mb-4">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6">
@@ -49,7 +93,7 @@ export default function EvolutionPage() {
           </p>
         </div>
 
-        {/* Time Travel Selector (Mock) */}
+        {/* Time Travel Selector */}
         <div className="relative">
           <button 
             onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -91,18 +135,18 @@ export default function EvolutionPage() {
         {/* 1. MATURITY INDEX (Índice de Madurez) */}
         <StatCard
           title="ÍNDICE DE MADUREZ"
-          value={teamVelocity.current ? teamVelocity.current.toFixed(1) : "0.0"}
-          subtext="vs año anterior"
+          value={maturityIndex ? maturityIndex.toFixed(1) : "0.0"}
+          subtext="vs período anterior"
           icon={Activity}
           color="indigo"
-          trend={teamVelocity.delta} 
+          trend={periodDelta} 
         />
 
         {/* 2. TOP PERFORMER */}
         <StatCard
           title="MAYOR CRECIMIENTO"
           value={topImprover ? topImprover.nombre : "Sin datos"}
-          subtext="Impacto positivo en el equipo"
+          subtext={topImprover ? "Impacto positivo en el equipo" : "Sin colaboradores con crecimiento positivo"}
           icon={TrendingUp}
           color="emerald"
           trend={topImprover ? topImprover.delta : null}
@@ -113,7 +157,7 @@ export default function EvolutionPage() {
           <StatCard
             title="REQUIEREN SOPORTE"
             value={attentionCount > 0 ? `${attentionCount} Casos` : "Todo en Orden"}
-            subtext="Colaboradores con tendencia a la baja"
+            subtext={attentionCount > 0 ? "Colaboradores con brechas críticas detectadas" : "Sin alertas de rendimiento"}
             icon={LifeBuoy}
             color="amber"
             trend={attentionCount > 0 ? -1 : 0} 
@@ -124,7 +168,7 @@ export default function EvolutionPage() {
 
       {/* Main Chart Section */}
       <div className="w-full">
-        <EvolutionChart data={chartData} />
+        <EvolutionChart data={chartData} meta={data?.meta} />
       </div>
 
       {/* Detailed List Section */}

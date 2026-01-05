@@ -286,17 +286,22 @@ export default function TeamMatrixPage() {
 
   // Transform collaborators for list view - enrich with sparklines, gaps, strengths
   const collaboratorsWithAverages = useMemo(() => {
-    return collaborators.map(col => ({
-      ...col,
-      // Use pre-calculated promedio from backend (which already respects Role Profile)
-      promedio: col.promedio, 
-      categorias: calculateCategoryAverages(col.skills, skills, categories, roleProfiles[col.rol]),
-      // Real data from evaluationSessions
-      sparkline: calculateSparkline(col.evaluationSessions),
-      previousSnapshot: buildPreviousSnapshot(col.evaluationSessions),
-      brechas: identifyGaps(col.skills, skills),
-      fortalezas: identifyStrengths(col.skills, skills)
-    }));
+    return collaborators.map(col => {
+      // Get role profile for this collaborator
+      const profile = roleProfiles?.[col.rol] || {};
+      
+      return {
+        ...col,
+        // Use pre-calculated promedio from backend (which already respects Role Profile)
+        promedio: col.promedio, 
+        categorias: calculateCategoryAverages(col.skills, skills, categories, profile),
+        // Real data from evaluationSessions, now respecting Role Profile for consistency
+        sparkline: calculateSparkline(col.evaluationSessions, profile),
+        previousSnapshot: buildPreviousSnapshot(col.evaluationSessions),
+        brechas: identifyGaps(col.skills, skills),
+        fortalezas: identifyStrengths(col.skills, skills)
+      };
+    });
   }, [collaborators, skills, categories, roleProfiles]);
 
   // Calculate category averages for grid view

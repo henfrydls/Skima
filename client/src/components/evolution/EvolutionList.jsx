@@ -8,9 +8,13 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 // Custom tooltip for sparkline
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
+    const pointData = payload[0].payload;
+    const label = pointData.date || 'Promedio';
+    
     return (
-      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg">
-        <span className="font-mono">{payload[0].value.toFixed(1)}</span>
+      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]">
+        <span className="text-slate-400 text-[9px] uppercase tracking-wider mb-0.5">{label}</span>
+        <span className="font-mono font-bold text-emerald-300">{payload[0].value.toFixed(1)}</span>
       </div>
     );
   }
@@ -38,7 +42,7 @@ const Sparkline = ({ data, color = '#6366f1' }) => {
         <LineChart data={data}>
           <Tooltip 
             content={<SparklineTooltip />}
-            cursor={false}
+            cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
           />
           <Line 
             type="monotone" 
@@ -78,23 +82,23 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
       </div>
       
       <div className="overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-slate-50 text-xs text-slate-400 uppercase tracking-wider">
-              <th className="px-6 py-4 font-bold border-b border-slate-100" style={{ width: '35%' }}>Colaborador</th>
-              <th className="px-4 py-4 font-bold border-b border-slate-100 text-center" style={{ width: '12%' }}>Estado</th>
-              <th className="px-4 py-4 font-bold border-b border-slate-100 text-center" style={{ width: '20%' }}>Tendencia</th>
-              <th className="px-4 py-4 font-bold border-b border-slate-100 text-center" style={{ width: '13%' }}>Nivel</th>
-              <th className="px-4 py-4 font-bold border-b border-slate-100 text-right" style={{ width: '20%' }}>Ingreso</th>
+        <table className="w-full text-sm text-left">
+          <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-medium">
+            <tr>
+              <th className="px-6 py-3 tracking-wider">Colaborador</th>
+              <th className="px-4 py-3 text-center tracking-wider">Estado</th>
+              <th className="px-4 py-3 text-center tracking-wider">Tendencia</th>
+              <th className="px-4 py-3 text-center tracking-wider">Nivel</th>
+              <th className="px-4 py-3 text-right tracking-wider">Ingreso</th>
             </tr>
           </thead>
-          <tbody className="text-sm">
-            {collaborators.map((collab) => {
+          <tbody className="divide-y divide-slate-50">
+            {collaborators.map(collab => {
               // Determine Color for Sparkline
               // Red if trend is specifically "down" (negative delta)
               // We can use the 'deltaTrend' or 'delta' from logic
               const isDecline = collab.deltaTrend === 'down';
-              const sparklineColor = isDecline ? '#e11d48' : '#6366f1'; 
+              const sparklineColor = collab.sparklineColor || (isDecline ? '#e11d48' : '#6366f1'); 
 
               return (
                 <tr key={collab.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">
@@ -125,7 +129,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
                   {/* Micro-Tendencia */}
                   <td className="px-4 py-4">
                     <div className="flex justify-center">
-                      <Sparkline data={collab.trend} color={sparklineColor} />
+                      <Sparkline data={collab.trend} color={collab.sparklineColor} />
                     </div>
                   </td>
 

@@ -1,11 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './db.js';
 import authRoutes from './routes/auth.js';
+import evolutionRoutes from './routes/evolution.js';
 import { authMiddleware } from './middleware/auth.js';
 
-export const prisma = new PrismaClient();
+// Re-export prisma for any routes that still import from index
+export { prisma };
 
 export function createApp() {
   const app = express();
@@ -16,6 +18,9 @@ export function createApp() {
 
   // Auth routes (public)
   app.use('/api/auth', authRoutes);
+
+  // Evolution routes (public - for dashboard)
+  app.use('/api/skills/evolution', evolutionRoutes);
 
   // ============================================================
   // SYSTEM CONFIG ROUTES (Public - needed before login)
@@ -178,7 +183,8 @@ export function createApp() {
         where: { isActive: true },
         orderBy: { id: 'asc' }
       });
-
+      
+      const activeSkillIds = new Set(skills.map(s => s.id));
 
       // Fetch role profiles FIRST to use in average calculation
       const roleProfilesRaw = await prisma.roleProfile.findMany();
@@ -219,16 +225,26 @@ export function createApp() {
         // Get role profile for this collaborator
         const profile = roleProfiles[col.rol] || {};
         
-        col.assessments.forEach(a => {
+        // Determine active assessments source: Prefer latest session, fallback to current table
+        const latestSession = col.evaluationSessions && col.evaluationSessions.length > 0 
+          ? col.evaluationSessions[0] 
+          : null;
+        
+        const sourceAssessments = latestSession ? latestSession.assessments : col.assessments;
+        
+        sourceAssessments.forEach(a => {
+          // Only process ACTIVE skills
+          if (!activeSkillIds.has(a.skillId)) return;
+
           skillsMap[a.skillId] = {
             nivel: a.nivel,
-            criticidad: profile[String(a.skillId)] || 'N', // Use CURRENT role criticality, not historical
+            criticidad: profile[String(a.skillId)] || 'N', // Use CURRENT role criticality
             frecuencia: a.frecuencia
           };
           
           // Calculate average based on nivel (1-5 scale)
-          // STRICT RULE: Only count skills required for the role (C, I, D). Ignore N/A even if evaluated.
-          const skillCriticidad = profile[String(a.skillId)] || 'N'; // Default to N/A if not defined (only explicit skills count)
+          // STRICT RULE: Only count skills required for the role (C, I, D). Ignore N/A.
+          const skillCriticidad = profile[String(a.skillId)] || 'N'; 
           
           if (skillCriticidad !== 'N' && a.nivel && a.nivel > 0) {
             totalNivel += a.nivel;
@@ -245,7 +261,7 @@ export function createApp() {
           esDemo: col.esDemo,
           skills: skillsMap,
           promedio: Math.round(promedio * 10) / 10, // Round to 1 decimal
-          lastEvaluated: col.lastEvaluated,
+          lastEvaluated: latestSession ? latestSession.evaluatedAt : col.lastEvaluated,
           // Include evaluation history for sparklines and comparison
           evaluationSessions: col.evaluationSessions.map(session => ({
             id: session.id,

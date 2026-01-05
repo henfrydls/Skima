@@ -134,14 +134,25 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
 };
 
 /**
- * Calculate average nivel from an array of assessments
- * @param {Array} assessments - Array of { nivel, criticidad }
+ * Calculate average nivel from an array of assessments, respecting Role Profile if provided
+ * @param {Array} assessments - Array of { skillId, nivel }
+ * @param {Object} roleProfile - Map of skillId -> criticality ('C','I','D','N'). If 'N', ignore.
  * @returns {number} Average nivel rounded to 1 decimal
  */
-export const calculateSessionAverage = (assessments = []) => {
+export const calculateSessionAverage = (assessments = [], roleProfile = null) => {
   if (!assessments || assessments.length === 0) return 0;
   
-  const validAssessments = assessments.filter(a => a.nivel && a.nivel > 0);
+  let validAssessments = assessments.filter(a => a.nivel && a.nivel > 0);
+  
+  // If Role Profile provided, filter out N/A skills
+  if (roleProfile) {
+    validAssessments = validAssessments.filter(a => {
+      const skillId = a.skillId?.toString();
+      const criticality = roleProfile[skillId] || 'N';
+      return criticality !== 'N';
+    });
+  }
+
   if (validAssessments.length === 0) return 0;
   
   const sum = validAssessments.reduce((acc, a) => acc + a.nivel, 0);
@@ -151,30 +162,34 @@ export const calculateSessionAverage = (assessments = []) => {
 /**
  * Calculate sparkline data from evaluation sessions
  * @param {Array} sessions - Array of evaluation sessions (ordered by date desc)
+ * @param {Object} roleProfile - Map of skillId -> criticality
  * @returns {{ points: number[], trend: 'up' | 'down' | 'neutral' }}
  */
-export const calculateSparkline = (sessions = []) => {
+export const calculateSparkline = (sessions = [], roleProfile = null) => {
   if (!sessions || sessions.length < 2) {
     return { 
-      points: sessions?.length === 1 ? [calculateSessionAverage(sessions[0].assessments)] : [], 
+      points: sessions?.length === 1 ? [calculateSessionAverage(sessions[0].assessments, roleProfile)] : [], 
       trend: 'neutral' 
     };
   }
   
-  // Take last 3 sessions and reverse to chronological order (oldest first)
-  const recentSessions = sessions.slice(0, 3).reverse();
+  // Create points in chronological order (sessions are usually desc, so reverse)
+  // Take last 6 sessions max for sparkline
+  const sortedSessions = [...sessions].sort((a, b) => new Date(a.evaluatedAt) - new Date(b.evaluatedAt));
+  const recentSessions = sortedSessions.slice(-6);
   
-  const points = recentSessions.map(session => 
-    calculateSessionAverage(session.assessments)
-  );
+  const points = recentSessions.map(s => calculateSessionAverage(s.assessments, roleProfile));
   
-  // Determine trend by comparing first and last points
-  const first = points[0];
-  const last = points[points.length - 1];
-  
+  // Determine trend
   let trend = 'neutral';
-  if (last > first + 0.1) trend = 'up';      // More than 0.1 improvement
-  else if (last < first - 0.1) trend = 'down'; // More than 0.1 decline
+  if (points.length >= 2) {
+    const first = points[0];
+    const last = points[points.length - 1];
+    const diff = last - first;
+    
+    if (diff > 0.1) trend = 'up';
+    else if (diff < -0.1) trend = 'down';
+  }
   
   return { points, trend };
 };

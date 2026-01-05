@@ -1,0 +1,11 @@
+Pedro Found: Pedro Rosario (Innovation Specialist)
+Role Profile Loaded.
+Latest Session Date: Tue Dec 30 2025 20:00:00 GMT-0400 (Atlantic Standard Time)
+Stale Assessments Count: 400
+--- Calculation using Latest Session ---
+Skill 8: Nivel 2.7 (Crit: I) -> INCLUDED
+Skill 97: Nivel 5 (Crit: C) -> INCLUDED
+Skill 98: Nivel 4.8 (Crit: C) -> INCLUDED
+Calculated Average (Smart): 4.17 based on 3 skills.
+--- Calculation using Stale Assessments ---
+Calculated Average (Stale): 4.27 based on 30 skills.

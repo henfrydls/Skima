@@ -82,17 +82,19 @@ const SKILLS = [
 ];
 
 // ============================================
-// COLLABORATORS (8 Archetypes)
+// COLLABORATORS (10 Archetypes with diverse join dates)
 // ============================================
 const COLLABORATORS = [
-  { id: 201, nombre: 'Lucía Fernández', rol: 'Frontend Developer', esDemo: true, isActive: true },
-  { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', esDemo: true, isActive: true },
-  { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', esDemo: true, isActive: true },
-  { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', esDemo: true, isActive: false },
-  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', esDemo: true, isActive: true },
-  { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', esDemo: true, isActive: true },
-  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', esDemo: true, isActive: true },
-  { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', esDemo: true, isActive: true },
+  { id: 201, nombre: 'Lucía Fernández', rol: 'Frontend Developer', esDemo: true, isActive: true, joinedAt: new Date('2025-12-01') }, // Brand new
+  { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', esDemo: true, isActive: true, joinedAt: new Date('2023-05-15') }, // 2.5 years
+  { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', esDemo: true, isActive: true, joinedAt: new Date('2022-11-01') }, // 3+ years
+  { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', esDemo: true, isActive: false, joinedAt: new Date('2023-01-10') }, // Resigned
+  { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', esDemo: true, isActive: true, joinedAt: new Date('2025-06-01') }, // 6 months
+  { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', esDemo: true, isActive: true, joinedAt: new Date('2023-01-20') }, // 3 years (burnout case)
+  { id: 207, nombre: 'Pedro Rosario', rol: 'Innovation Specialist', esDemo: true, isActive: true, joinedAt: new Date('2022-02-01') }, // Legacy veteran
+  { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', esDemo: true, isActive: true, joinedAt: new Date('2021-08-15') }, // 4+ years senior
+  { id: 209, nombre: 'Carmen Rivera', rol: 'Frontend Developer', esDemo: true, isActive: true, joinedAt: new Date('2025-06-15') }, // Rising star (6m)
+  { id: 210, nombre: 'Carlos Mejía', rol: 'UX Designer', esDemo: true, isActive: true, joinedAt: new Date('2022-12-01') }, // Growth champion (long tenure)
 ];
 
 // ============================================
@@ -247,6 +249,20 @@ const generateSnapshots = () => {
   // 🌟 8. SOFÍA - Perfect reference
   SNAPSHOT_DATES.forEach(date => {
     snapshots.push({ collaboratorId: 208, date, rol: 'Tech Lead', skills: generateSkillSet(4.3, { variation: 0.15, highSkills: [7, 8, 9, 15, 16, 40] }) });
+  });
+
+  // 🚀 9. CARMEN - Rising star (positive 6m trend)
+  // Starts lower, grows steadily in last 6 months
+  const carmenTrend = [2.5, 2.8, 3.2, 3.5, 3.8, 4.0]; // Jun -> Dec 2025 
+  ['2025-06-30', '2025-07-31', '2025-08-31', '2025-09-30', '2025-10-31', '2025-12-31'].forEach((date, idx) => {
+    snapshots.push({ collaboratorId: 209, date, rol: 'Frontend Developer', skills: generateSkillSet(carmenTrend[idx], { highSkills: [10, 36, 40] }) });
+  });
+
+  // 📈 10. CARLOS - Growth champion (positive 12m trend)
+  // Steady improvement over the year
+  const carlosTrend = [2.8, 3.0, 3.2, 3.4, 3.5, 3.7, 3.8, 4.0, 4.1, 4.3];
+  SNAPSHOT_DATES.forEach((date, idx) => {
+    snapshots.push({ collaboratorId: 210, date, rol: 'UX Designer', skills: generateSkillSet(carlosTrend[idx], { highSkills: [1, 2, 4, 36] }) });
   });
 
   return snapshots;

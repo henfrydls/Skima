@@ -61,31 +61,71 @@ const LastPointLabel = (props) => {
   );
 };
 
-// Custom Dot renderer - makes last point larger and semantically colored
+// Custom Dot renderer - shows last point special and new hire markers
 const CustomDot = (props) => {
   const { cx, cy, index, dataLength, payload } = props;
   const GOAL = 4.0;
+  const isLast = index === dataLength - 1;
+  const hasNewHire = payload.newHires && payload.newHires.length > 0;
+  
+  // Render new hire vertical line from bottom to top
+  if (hasNewHire) {
+    return (
+      <g key={`newhire-dot-${index}`}>
+        {/* Vertical line */}
+        <line
+          x1={cx}
+          y1={cy}
+          x2={cx}
+          y2={20}
+          stroke="#10b981"
+          strokeWidth={2}
+          strokeDasharray="4 2"
+        />
+        {/* Label at top */}
+        <text
+          x={cx}
+          y={14}
+          fill="#10b981"
+          fontSize={9}
+          fontWeight="bold"
+          textAnchor="middle"
+        >
+          NUEVO
+        </text>
+        {/* Green dot on line */}
+        <circle
+          cx={cx}
+          cy={cy}
+          r={5}
+          fill="#10b981"
+          stroke="white"
+          strokeWidth={2}
+        />
+      </g>
+    );
+  }
   
   // Only render special dot for last point
-  if (index !== dataLength - 1) {
-    return null; // Default dots handled by Recharts
+  if (isLast) {
+    const value = payload.teamAverage;
+    const isBelowGoal = value < GOAL;
+    const fillColor = isBelowGoal ? '#ef4444' : '#10b981';
+
+    return (
+      <circle 
+        cx={cx} 
+        cy={cy} 
+        r={8} 
+        fill={fillColor} 
+        stroke="white" 
+        strokeWidth={2}
+        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+      />
+    );
   }
-
-  const value = payload.teamAverage;
-  const isBelowGoal = value < GOAL;
-  const fillColor = isBelowGoal ? '#ef4444' : '#10b981';
-
-  return (
-    <circle 
-      cx={cx} 
-      cy={cy} 
-      r={8} 
-      fill={fillColor} 
-      stroke="white" 
-      strokeWidth={2}
-      style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
-    />
-  );
+  
+  return null;
 };
 
 export default function EvolutionChart({ data }) {
@@ -184,7 +224,13 @@ export default function EvolutionChart({ data }) {
               tickLine={false} 
               tick={{ fontSize: 11, fill: '#94a3b8' }} 
               dy={10}
-              interval="preserveStartEnd"
+              interval={Math.max(0, Math.floor(data.length / 8))}
+              tickFormatter={(value, index) => {
+                // Show every ~3 months to avoid crowding
+                const dataIndex = data.findIndex(d => d.month === value);
+                if (dataIndex === 0 || dataIndex === data.length - 1) return value;
+                return dataIndex % 3 === 0 ? value : '';
+              }}
             />
             
             <YAxis 
@@ -206,35 +252,6 @@ export default function EvolutionChart({ data }) {
                 dy={-25}
               />
             </ReferenceLine>
-
-             {/* Dynamic New Hire Lines */}
-             {data.map((entry, index) => {
-              if (entry.newHires && entry.newHires.length > 0) {
-                // Shift label based on position to avoid cutoff
-                const isNearEnd = index >= data.length - 2; 
-                const xOffset = isNearEnd ? -22 : -22;
-
-                return (
-                  <ReferenceLine 
-                    key={`hire-${index}`} 
-                    x={entry.month} 
-                    stroke="#10b981" 
-                    strokeDasharray="3 3"
-                    strokeWidth={1.5}
-                    label={{
-                      value: 'NUEVO',
-                      position: 'insideTop',
-                      fill: '#10b981',
-                      fontSize: 10,
-                      fontWeight: 'bold',
-                      dy: 0,
-                      dx: xOffset
-                    }}
-                  />
-                );
-              }
-              return null;
-            })}
 
             <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
             

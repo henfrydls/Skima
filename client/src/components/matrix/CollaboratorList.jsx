@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight, GitCompare } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
-import { getTrendColor } from '../../lib/skillsLogic';
+import { getTrendColor } from '../../lib/evolutionLogic';
 
 /**
  * CollaboratorList - The Talent Hub
@@ -23,9 +23,13 @@ const FILTER_OPTIONS = [
 // Custom tooltip for sparkline
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
+    const pointData = payload[0].payload;
+    const label = pointData.label || 'Promedio';
+    
     return (
-      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg">
-        <span className="font-mono">{payload[0].value.toFixed(1)}</span>
+      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]">
+        <span className="text-slate-400 text-[9px] uppercase tracking-wider mb-0.5">{label}</span>
+        <span className="font-mono font-bold text-emerald-300">{payload[0].value.toFixed(1)}</span>
       </div>
     );
   }
@@ -39,7 +43,13 @@ function Sparkline({ data, trend }) {
     return null; // Clean empty space instead of placeholder box
   }
 
-  const chartData = data.map((value, i) => ({ value, index: i }));
+  // Add labels for tooltip context
+  const chartData = data.map((value, i, arr) => ({ 
+    value, 
+    index: i,
+    label: i === 0 ? 'Inicio' : i === arr.length - 1 ? 'Actual' : 'Histórico'
+  }));
+  
   const color = getTrendColor(trend);
 
   return (
@@ -48,7 +58,7 @@ function Sparkline({ data, trend }) {
         <LineChart data={chartData}>
           <Tooltip 
             content={<SparklineTooltip />}
-            cursor={false}
+            cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
           />
           <Line
             type="monotone"
