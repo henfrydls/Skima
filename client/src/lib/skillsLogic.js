@@ -12,6 +12,15 @@ const WEIGHTS = {
   FRECUENCIA: { 'D': 3, 'S': 2, 'M': 1.5, 'T': 1, 'N': 0 } // D=Diario es lo más alto
 };
 
+// Centralized color palette for skill status (Modern Cool)
+export const STATUS_COLORS = {
+  CRITICAL: 'text-rose-600',   // Para Brecha Crítica (Urgente)
+  WARNING: 'text-amber-600',   // Para Área de Mejora (Atención)
+  STRENGTH: 'text-indigo-600', // Para Fortaleza (Expertos)
+  NEUTRAL: 'text-blue-600',    // Para Competente (Base)
+  MUTE: 'text-slate-400'       // Default / N/A
+};
+
 // --- CORE EVALUATION LOGIC ---
 
 /**
@@ -39,7 +48,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
     return {
       estado: "BRECHA CRÍTICA",
-      color: "text-amber-600", // Amber (Visible but not alarmist red)
+      color: STATUS_COLORS.CRITICAL,
       score: score + 10, // Boost score to ensure it's top priority
       accion: "Capacitación urgente"
     };
@@ -56,7 +65,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   ) {
     return {
       estado: "ÁREA DE MEJORA",
-      color: "text-amber-500", // Amber (Softer)
+      color: STATUS_COLORS.WARNING,
       score: score, // Use calculated score
       accion: "Plan de desarrollo"
     };
@@ -67,7 +76,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   if (nivel >= 4 && criticidad !== 'N') {
     return {
       estado: "FORTALEZA",
-      color: "text-indigo-600", // Indigo (Premium Strength)
+      color: STATUS_COLORS.STRENGTH,
       score: score,
       accion: "Mentorear a otros"
     };
@@ -77,7 +86,7 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   // Default state: doing okay, or skill is not critical
   return {
     estado: "COMPETENTE",
-    color: "text-blue-500", // Blue (Active/Stable)
+    color: STATUS_COLORS.NEUTRAL,
     score: 0, // Low priority
     accion: "Mantener"
   };
