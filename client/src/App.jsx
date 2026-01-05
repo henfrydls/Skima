@@ -1,6 +1,6 @@
 import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { DashboardView, TeamMatrixPage, ReportsPage, SettingsPage } from './pages';
+import { DashboardView, TeamMatrixPage, SettingsPage, EvolutionPage } from './pages';
 import SetupView from './pages/SetupView';
 import ProfilePage from './pages/ProfilePage';
 import { AuthProvider } from './contexts/AuthContext';
@@ -75,8 +75,8 @@ const router = createBrowserRouter([
         element: <TeamMatrixPage />,
       },
       {
-        path: "/reports",
-        element: <ReportsPage />,
+        path: "/evolution",
+        element: <EvolutionPage />,
       },
       {
         path: "/settings",

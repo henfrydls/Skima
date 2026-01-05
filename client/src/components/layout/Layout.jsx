@@ -31,7 +31,7 @@ const getNavItems = (isAuthenticated) => {
   const items = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/team-matrix', icon: Grid3X3, label: 'Team Matrix' },
-    { to: '/reports', icon: TrendingUp, label: 'Evolución' },
+    { to: '/evolution', icon: TrendingUp, label: 'Evolución' },
   ];
   
   // Only show Settings if authenticated
