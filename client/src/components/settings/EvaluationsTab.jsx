@@ -610,8 +610,8 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
                   Rol no registrado
                 </span>
               )}
-              {session.collaboratorRol && session.collaboratorRol !== session.collaborator.rol && (
-                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title={`Rol actual: ${session.collaborator.rol}`}>
+              {session.notes?.includes('Cambio de rol') && (
+                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title="Primera evaluación en este nuevo rol">
                   Rol cambió
                 </span>
               )}
@@ -1206,12 +1206,9 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                     const currentCollab = collaborators.find(c => c.id === selectedCollaborator);
                     const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre || 'Colaborador';
                     
-                    // CRITICAL FIX: Do NOT fallback to current role. Use snapshot role or show "Sim definir" if legacy data.
+                    // CRITICAL FIX: Do NOT fallback to current role. Use snapshot role or show "Sin definir" if legacy data.
                     const snapshotRol = session.collaboratorRol;
                     const hasSnapshotRol = Boolean(snapshotRol);
-                    
-                    // Only show "Role Changed" badge if we have a snapshot role and it differs from current
-                    const rolChanged = hasSnapshotRol && currentCollab?.rol !== snapshotRol;
                     
                     return (
                       <div 
@@ -1239,8 +1236,8 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                                   </span>
                                 )}
                                 
-                                {rolChanged && (
-                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title={`Rol actual: ${currentCollab?.rol}`}>
+                                {session.notes?.includes('Cambio de rol') && (
+                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title="Primera evaluación en este nuevo rol">
                                     Rol cambió
                                   </span>
                                 )}

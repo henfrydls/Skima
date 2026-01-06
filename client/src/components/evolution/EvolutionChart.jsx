@@ -10,9 +10,14 @@ const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     const dataPoint = payload[0].payload;
     const hasNewHires = dataPoint.newHires && dataPoint.newHires.length > 0;
+    // Dynamic offset: more space when showing new hires
+    const offsetY = hasNewHires ? '-80px' : '-30px';
 
     return (
-      <div className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-700 min-w-[150px]">
+      <div 
+        className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-700 min-w-[150px]"
+        style={{ transform: `translateY(${offsetY})` }}
+      >
         <p className="font-bold mb-2 border-b border-slate-600 pb-1">{label}</p>
         <p className="mb-1">Promedio: <span className="font-mono text-indigo-300 text-sm">{payload[0].value}</span></p>
         
@@ -253,7 +258,13 @@ export default function EvolutionChart({ data }) {
               />
             </ReferenceLine>
 
-            <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }} />
+            <Tooltip 
+              content={<CustomTooltip />} 
+              cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
+              position={{ y: 10 }}
+              allowEscapeViewBox={{ x: false, y: true }}
+              offset={10}
+            />
             
             <Area 
               type="monotone" 

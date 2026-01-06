@@ -12,22 +12,58 @@ import { getTrendColor } from '../../lib/evolutionLogic';
  * For SaaS UX: "Filterable list with metadata pattern"
  */
 
-// Filter options
+// Filter options with updated business rules
 const FILTER_OPTIONS = [
   { id: 'all', label: 'Todos', filter: () => true },
-  { id: 'critical', label: 'Con Brechas', icon: AlertTriangle, filter: (c) => c.brechas?.length > 0 },
-  { id: 'experts', label: 'Expertos', icon: Star, filter: (c) => c.promedio >= 3.5 },
-  { id: 'attention', label: 'Requieren Atención', icon: TrendingUp, filter: (c) => c.promedio < 2.5 },
+  { 
+    id: 'critical', 
+    label: 'Con Brechas', 
+    icon: AlertTriangle, 
+    // Only evaluated collaborators with gaps
+    filter: (c) => c.hasEvaluations && c.brechas?.length > 0 
+  },
+  { 
+    id: 'experts', 
+    label: 'Expertos', 
+    icon: Star, 
+    // Updated: >= 4.0, only evaluated collaborators
+    filter: (c) => c.hasEvaluations && c.promedio >= 4.0 
+  },
+  { 
+    id: 'attention', 
+    label: 'Requieren Atención', 
+    icon: TrendingUp, 
+    // Updated: Low average OR critical gaps, only evaluated collaborators
+    filter: (c) => {
+      // Exclude unevaluated collaborators
+      if (!c.hasEvaluations) return false;
+      // Condition 1: Low average
+      if (c.promedio < 2.5) return true;
+      // Condition 2: Has any critical gap
+      const hasCriticalGap = c.brechas?.some(b => b.estado === 'BRECHA CRÍTICA');
+      return hasCriticalGap;
+    }
+  },
+  { 
+    id: 'unevaluated', 
+    label: 'Sin Evaluar', 
+    icon: AlertTriangle, 
+    // Collaborators without evaluations
+    filter: (c) => !c.hasEvaluations
+  },
 ];
 
-// Custom tooltip for sparkline
+// Custom tooltip for sparkline - positioned above using transform
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const pointData = payload[0].payload;
     const label = pointData.label || 'Promedio';
     
     return (
-      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]">
+      <div 
+        className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]"
+        style={{ transform: 'translateY(-15px)' }}
+      >
         <span className="text-slate-400 text-[9px] uppercase tracking-wider mb-0.5">{label}</span>
         <span className="font-mono font-bold text-emerald-300">{payload[0].value.toFixed(1)}</span>
       </div>
@@ -59,6 +95,8 @@ function Sparkline({ data, trend }) {
           <Tooltip 
             content={<SparklineTooltip />}
             cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
+            position={{ y: -30 }}
+            allowEscapeViewBox={{ x: false, y: true }}
           />
           <Line
             type="monotone"
@@ -81,6 +119,7 @@ function Badge({ type, children }) {
     'top-performer': 'bg-primary/10 text-primary border-primary/20',
     'needs-attention': 'bg-warning/10 text-warning border-warning/20',
     'critical': 'bg-critical/10 text-critical border-critical/20',
+    'unevaluated': 'bg-gray-100 text-gray-500 border-gray-200',
   };
 
   return (
@@ -90,13 +129,21 @@ function Badge({ type, children }) {
   );
 }
 
-// Get badge for collaborator
+// Get badge for collaborator (updated business rules)
 function getCollaboratorBadge(collaborator) {
+  // Check if collaborator has no evaluations
+  if (!collaborator.hasEvaluations) {
+    return { type: 'unevaluated', label: 'Sin Evaluar', icon: AlertTriangle };
+  }
+  
+  // Check for critical gaps first (highest priority)
+  const hasCriticalGap = collaborator.brechas?.some(b => b.estado === 'BRECHA CRÍTICA');
+  
+  if (hasCriticalGap) {
+    return { type: 'critical', label: 'Brechas Críticas', icon: AlertTriangle };
+  }
   if (collaborator.promedio >= 4.0) {
     return { type: 'top-performer', label: 'Top Performer', icon: Star };
-  }
-  if (collaborator.brechas?.length > 2) {
-    return { type: 'critical', label: 'Brechas Críticas', icon: AlertTriangle };
   }
   if (collaborator.promedio < 2.5) {
     return { type: 'needs-attention', label: 'Needs Attention', icon: AlertTriangle };
@@ -159,17 +206,23 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
         <div className="flex items-center gap-3">
           <Sparkline data={sparkline.points} trend={sparkline.trend} />
           <div className="text-right">
-            <p className={`text-2xl font-light tabular-nums ${
-              collaborator.promedio >= 3.5 ? 'text-primary' : 
-              collaborator.promedio >= 2.5 ? 'text-competent' : 'text-warning'
-            }`}>
-              {collaborator.promedio.toFixed(1)}
-            </p>
-            {/* TASK 1: Only show trend arrow if we have sparkline data */}
-            {showTrendArrow && (
-              <p className="text-[10px] text-gray-400 uppercase tracking-wide">
-                {sparkline.trend === 'up' ? '↑' : sparkline.trend === 'down' ? '↓' : '→'}
-              </p>
+            {collaborator.promedio !== null ? (
+              <>
+                <p className={`text-2xl font-light tabular-nums ${
+                  collaborator.promedio >= 3.5 ? 'text-primary' : 
+                  collaborator.promedio >= 2.5 ? 'text-competent' : 'text-warning'
+                }`}>
+                  {collaborator.promedio.toFixed(1)}
+                </p>
+                {/* TASK 1: Only show trend arrow if we have sparkline data */}
+                {showTrendArrow && (
+                  <p className="text-[10px] text-gray-400 uppercase tracking-wide">
+                    {sparkline.trend === 'up' ? '↑' : sparkline.trend === 'down' ? '↓' : '→'}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-xl font-light text-gray-400">—</p>
             )}
           </div>
           <ChevronRight size={18} className="text-gray-300 group-hover:text-primary transition-colors" />
@@ -240,9 +293,9 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
 }
 
 // Main Component
-export default function CollaboratorList({ collaborators = [], onSelect }) {
+export default function CollaboratorList({ collaborators = [], onSelect, initialFilter = 'all' }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeFilter, setActiveFilter] = useState('all');
+  const [activeFilter, setActiveFilter] = useState(initialFilter || 'all');
   const [sortBy, setSortBy] = useState('name'); // 'name' | 'score' | 'score-desc'
 
   // Filter and search

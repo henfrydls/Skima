@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Grid3x3, User, Layers, Loader2, AlertCircle } from 'lucide-react';
 import { TransposedMatrixTable } from '../components/matrix';
 import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
@@ -256,7 +257,11 @@ function CategoryGridView({ categories = [] }) {
 // TEAM MATRIX PAGE - Con pestañas
 // ============================================
 export default function TeamMatrixPage() {
-  const [currentView, setCurrentView] = useState('matriz');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab');
+  const filterParam = searchParams.get('filter');
+
+  const [currentView, setCurrentView] = useState(tabParam || 'matriz');
   const [selectedColaborador, setSelectedColaborador] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [data, setData] = useState({ categories: [], skills: [], collaborators: [], roleProfiles: {} });
@@ -290,27 +295,38 @@ export default function TeamMatrixPage() {
       // Get role profile for this collaborator
       const profile = roleProfiles?.[col.rol] || {};
       
+      // Check if collaborator has any evaluations
+      const hasEvaluations = col.evaluationSessions && col.evaluationSessions.length > 0;
+      
       return {
         ...col,
+        // Flag to indicate if collaborator has been evaluated
+        hasEvaluations,
         // Use pre-calculated promedio from backend (which already respects Role Profile)
-        promedio: col.promedio, 
-        categorias: calculateCategoryAverages(col.skills, skills, categories, profile),
+        promedio: hasEvaluations ? col.promedio : null, // null if no evaluations
+        categorias: hasEvaluations ? calculateCategoryAverages(col.skills, skills, categories, profile) : {},
         // Real data from evaluationSessions, now respecting Role Profile for consistency
         sparkline: calculateSparkline(col.evaluationSessions, profile),
         previousSnapshot: buildPreviousSnapshot(col.evaluationSessions),
-        brechas: identifyGaps(col.skills, skills),
-        fortalezas: identifyStrengths(col.skills, skills)
+        brechas: hasEvaluations ? identifyGaps(col.skills, skills) : [],
+        fortalezas: hasEvaluations ? identifyStrengths(col.skills, skills) : []
       };
     });
   }, [collaborators, skills, categories, roleProfiles]);
 
-  // Calculate category averages for grid view
+  // Filter to only collaborators with evaluations for calculations
+  const evaluatedCollaborators = useMemo(() => {
+    return collaboratorsWithAverages.filter(c => c.hasEvaluations);
+  }, [collaboratorsWithAverages]);
+
+  // Calculate category averages for grid view (only from evaluated collaborators)
   const categoriesWithAverages = useMemo(() => {
     return categories.map(cat => {
       const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
       let total = 0;
       let count = 0;
-      collaborators.forEach(col => {
+      // Use only evaluated collaborators for averages
+      evaluatedCollaborators.forEach(col => {
         const profile = roleProfiles?.[col.rol] || {};
         catSkillIds.forEach(skillId => {
           // Strict filtering: Only count if relevant for the role
@@ -327,7 +343,7 @@ export default function TeamMatrixPage() {
         promedio: count > 0 ? total / count : 0
       };
     });
-  }, [categories, skills, collaborators]);
+  }, [categories, skills, evaluatedCollaborators, roleProfiles]);
 
   const tabs = [
     { id: 'matriz', label: 'Matriz de Equipo', Icon: Grid3x3 },
@@ -427,6 +443,7 @@ export default function TeamMatrixPage() {
           ) : (
             <CollaboratorList 
               collaborators={collaboratorsWithAverages} 
+              initialFilter={filterParam}
               onSelect={(col) => {
                 setSelectedColaborador(col);
                 setIsDrawerOpen(true);

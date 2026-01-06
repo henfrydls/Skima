@@ -87,7 +87,8 @@ const SKILLS = [
 const COLLABORATORS = [
   { id: 201, nombre: 'Lucía Fernández', rol: 'Frontend Developer', esDemo: true, isActive: true, joinedAt: new Date('2025-12-01') }, // Brand new
   { id: 202, nombre: 'Ana Rodríguez', rol: 'Product Owner', esDemo: true, isActive: true, joinedAt: new Date('2023-05-15') }, // 2.5 years
-  { id: 203, nombre: 'Miguel Ángel Torres', rol: 'Tech Lead', esDemo: true, isActive: true, joinedAt: new Date('2022-11-01') }, // 3+ years
+  // 🔀 3. MIGUEL (old) - REMOVED
+
   { id: 204, nombre: 'Roberto Fantasma', rol: 'Backend Developer', esDemo: true, isActive: false, joinedAt: new Date('2023-01-10') }, // Resigned
   { id: 205, nombre: 'Juana Díaz', rol: 'External Consultant', esDemo: true, isActive: true, joinedAt: new Date('2025-06-01') }, // 6 months
   { id: 206, nombre: 'Luis Hernández', rol: 'Backend Developer', esDemo: true, isActive: true, joinedAt: new Date('2023-01-20') }, // 3 years (burnout case)
@@ -95,20 +96,229 @@ const COLLABORATORS = [
   { id: 208, nombre: 'Sofía Martínez', rol: 'Tech Lead', esDemo: true, isActive: true, joinedAt: new Date('2021-08-15') }, // 4+ years senior
   { id: 209, nombre: 'Carmen Rivera', rol: 'Frontend Developer', esDemo: true, isActive: true, joinedAt: new Date('2025-06-15') }, // Rising star (6m)
   { id: 210, nombre: 'Carlos Mejía', rol: 'UX Designer', esDemo: true, isActive: true, joinedAt: new Date('2022-12-01') }, // Growth champion (long tenure)
+  { id: 211, nombre: 'Miguel Ángel Torres', rol: 'UX Designer', esDemo: true, isActive: true, joinedAt: new Date('2024-06-01') }, // Specific Evolution Case
 ];
 
 // ============================================
-// ROLE PROFILES
+// ROLE PROFILES (Expanded for 80-85% coverage)
+// Skills: 1-6 Innovation, 7-14/36/37/40 Technical, 15-18 Leadership, 
+//         19-26 Business, 29-34 Delivery, 35/38/39 Emerging
 // ============================================
 const ROLE_PROFILES = [
-  { rol: 'Frontend Developer', skills: JSON.stringify({ "10": "C", "36": "C", "40": "C", "9": "I", "11": "I", "14": "I" }) },
-  { rol: 'Backend Developer', skills: JSON.stringify({ "9": "C", "8": "C", "7": "I", "11": "C", "14": "I", "40": "C" }) },
-  { rol: 'Tech Lead', skills: JSON.stringify({ "8": "C", "9": "C", "15": "C", "16": "I", "18": "C", "33": "C", "40": "C" }) },
-  { rol: 'UX Designer', skills: JSON.stringify({ "1": "C", "2": "C", "4": "C", "36": "C", "5": "I", "18": "I" }) },
-  { rol: 'Product Owner', skills: JSON.stringify({ "34": "C", "31": "C", "29": "C", "19": "I", "23": "I", "25": "I" }) },
-  { rol: 'Innovation Specialist', skills: JSON.stringify({ "97": "C", "98": "C", "8": "I" }) },
-  { rol: 'Security Guard', skills: JSON.stringify({}) }, // No one has this role
-  // NOTE: 'External Consultant' is NOT here (undefined profile)
+  { 
+    rol: 'Frontend Developer', 
+    skills: JSON.stringify({ 
+      // Critical (C) - Core competencies
+      "10": "C", // Frontend Dev
+      "36": "C", // UX/UI Design
+      "40": "C", // Git
+      "14": "C", // Testing/QA
+      "11": "C", // APIs
+      // Important (I) - Key supporting skills
+      "9": "I",  // Backend
+      "12": "I", // Low-code
+      "29": "I", // Agile
+      "33": "I", // Project Mgmt
+      "8": "I",  // Arquitectura
+      "7": "I",  // Cloud/DevOps
+      "13": "I", // Ciberseguridad
+      // Desirable (D) - Complementary
+      "1": "D",  // Design Thinking
+      "2": "D",  // Service Design
+      "4": "D",  // User Research
+      "5": "D",  // Customer Journey
+      "18": "D", // Communication
+      "15": "D", // Change Mgmt
+      "16": "D", // Workshop
+      "21": "D", // Analytics
+      "25": "D", // Exec Comm
+      "31": "D", // Stakeholder
+      "32": "D", // Process Automation
+      "35": "D", // AI Prompt
+      "37": "D", // Observabilidad
+      "34": "D", // Product Mgmt
+      "3": "D",  // Lean Startup
+      "6": "D"   // Stage-Gate
+    }) 
+  },
+  { 
+    rol: 'Backend Developer', 
+    skills: JSON.stringify({ 
+      // Critical
+      "9": "C",  // Backend
+      "8": "C",  // Arquitectura
+      "11": "C", // APIs
+      "40": "C", // Git
+      "13": "C", // Ciberseguridad
+      "7": "C",  // Cloud/DevOps
+      // Important
+      "14": "I", // Testing
+      "37": "I", // Observabilidad
+      "29": "I", // Agile
+      "10": "I", // Frontend
+      "12": "I", // Low-code
+      "33": "I", // Project Mgmt
+      "32": "I", // Process Automation
+      // Desirable
+      "21": "D", // Analytics
+      "35": "D", // AI Prompt
+      "38": "D", // AI Agents
+      "39": "D", // IoT
+      "18": "D", // Communication
+      "15": "D", // Change Mgmt
+      "24": "D", // Strategic
+      "31": "D", // Stakeholder
+      "1": "D",  // Design Thinking
+      "19": "D", // Business Case
+      "22": "D", // Risk Assessment
+      "25": "D", // Exec Comm
+      "34": "D", // Product Mgmt
+      "30": "D"  // Portfolio Mgmt
+    }) 
+  },
+  { 
+    rol: 'Tech Lead', 
+    skills: JSON.stringify({ 
+      // Critical
+      "8": "C",  // Arquitectura
+      "9": "C",  // Backend
+      "15": "C", // Change Mgmt
+      "18": "C", // Communication
+      "33": "C", // Project Mgmt
+      "40": "C", // Git
+      "31": "C", // Stakeholder
+      // Important
+      "7": "I",  // Cloud/DevOps
+      "16": "I", // Workshop
+      "17": "I", // Training
+      "25": "I", // Exec Comm
+      "10": "I", // Frontend
+      "11": "I", // APIs
+      "13": "I", // Ciberseguridad
+      "14": "I", // Testing
+      "29": "I", // Agile
+      "30": "I", // Portfolio
+      // Desirable
+      "21": "D", // Analytics
+      "24": "D", // Strategic
+      "37": "D", // Observabilidad
+      "35": "D", // AI Prompt
+      "38": "D", // AI Agents
+      "1": "D",  // Design Thinking
+      "19": "D", // Business Case
+      "22": "D", // Risk
+      "32": "D", // Process Automation
+      "34": "D", // Product Mgmt
+      "12": "D", // Low-code
+      "23": "D"  // Market Research
+    }) 
+  },
+  { 
+    rol: 'UX Designer', 
+    skills: JSON.stringify({ 
+      // Critical
+      "1": "C",  // Design Thinking
+      "2": "C",  // Service Design
+      "4": "C",  // User Research
+      "36": "C", // UX/UI
+      "5": "C",  // Customer Journey
+      "3": "C",  // Lean Startup
+      // Important
+      "18": "I", // Communication
+      "10": "I", // Frontend
+      "16": "I", // Workshop
+      "6": "I",  // Stage-Gate
+      "17": "I", // Training
+      "23": "I", // Market Research
+      "29": "I", // Agile
+      // Desirable
+      "19": "D", // Business Case
+      "21": "D", // Analytics
+      "25": "D", // Exec Comm
+      "31": "D", // Stakeholder
+      "33": "D", // Project Mgmt
+      "15": "D", // Change Mgmt
+      "35": "D", // AI Prompt
+      "34": "D", // Product Mgmt
+      "24": "D", // Strategic
+      "30": "D", // Portfolio
+      "32": "D", // Process Automation
+      "40": "D", // Git
+      "12": "D", // Low-code
+      "14": "D"  // Testing
+    }) 
+  },
+  { 
+    rol: 'Product Owner', 
+    skills: JSON.stringify({ 
+      // Critical
+      "34": "C", // Product Mgmt
+      "31": "C", // Stakeholder
+      "29": "C", // Agile
+      "25": "C", // Exec Comm
+      "19": "C", // Business Case
+      "30": "C", // Portfolio
+      // Important
+      "23": "I", // Market Research
+      "24": "I", // Strategic
+      "21": "I", // Analytics
+      "33": "I", // Project Mgmt
+      "4": "I",  // User Research
+      "1": "I",  // Design Thinking
+      "18": "I", // Communication
+      "15": "I", // Change Mgmt
+      // Desirable
+      "16": "D", // Workshop
+      "17": "D", // Training
+      "22": "D", // Risk
+      "20": "D", // Financial Modeling
+      "26": "D", // Process Doc
+      "5": "D",  // Customer Journey
+      "2": "D",  // Service Design
+      "3": "D",  // Lean Startup
+      "6": "D",  // Stage-Gate
+      "35": "D", // AI Prompt
+      "32": "D", // Process Automation
+      "36": "D", // UX/UI
+      "10": "D", // Frontend
+      "14": "D"  // Testing
+    }) 
+  },
+  { 
+    rol: 'Innovation Specialist', 
+    skills: JSON.stringify({ 
+      // Critical - Legacy + Innovation core
+      "97": "C", // COBOL
+      "98": "C", // Mainframe
+      "1": "C",  // Design Thinking
+      "3": "C",  // Lean Startup
+      "35": "C", // AI Prompt
+      // Important
+      "2": "I",  // Service Design
+      "38": "I", // AI Agents
+      "8": "I",  // Arquitectura
+      "6": "I",  // Stage-Gate
+      "39": "I", // IoT
+      "24": "I", // Strategic
+      "4": "I",  // User Research
+      "5": "I",  // Customer Journey
+      // Desirable
+      "18": "D", // Communication
+      "15": "D", // Change Mgmt
+      "16": "D", // Workshop
+      "17": "D", // Training
+      "19": "D", // Business Case
+      "21": "D", // Analytics
+      "23": "D", // Market Research
+      "25": "D", // Exec Comm
+      "31": "D", // Stakeholder
+      "33": "D", // Project Mgmt
+      "34": "D", // Product Mgmt
+      "29": "D", // Agile
+      "30": "D"  // Portfolio
+    }) 
+  },
+  { rol: 'Security Guard', skills: JSON.stringify({}) },
 ];
 
 // ============================================
@@ -141,129 +351,209 @@ const ACTIVE_SKILLS = [
 // BUSINESS RULES
 // ============================================
 const generateConsistentFreqCrit = (nivel, isContractor = false) => {
+  // RULE 1: If Level is 0, Freq and Crit MUST be 'N'
+  if (nivel <= 0) {
+    return { frecuencia: 'N', criticidad: 'N' };
+  }
+  
+  // RULE 2: If Level > 0, Freq and Crit MUST NOT be 'N' (unless valid exception)
+  // Contractor check: If user requires "N/A implies no evaluation", then Contractors
+  // with Level > 0 MUST have Crit != 'N'. Let's give them 'D' (Desirable).
   if (isContractor) {
-    return { frecuencia: nivel > 0 ? 'M' : 'N', criticidad: 'N' };
+    return { frecuencia: 'M', criticidad: 'D' };
   }
   
   let frecuencia, criticidad;
+  const rand = Math.random();
   
   if (nivel >= 4.0) {
-    frecuencia = Math.random() > 0.3 ? 'D' : 'S';
-    criticidad = Math.random() > 0.2 ? 'C' : 'I';
+    frecuencia = rand > 0.3 ? 'D' : 'S'; // Daily/Weekly
+    criticidad = rand > 0.2 ? 'C' : 'I'; // Critical/Important
   } else if (nivel >= 3.0) {
-    frecuencia = Math.random() > 0.5 ? 'S' : 'M';
-    criticidad = Math.random() > 0.4 ? 'I' : 'C';
+    frecuencia = rand > 0.4 ? 'S' : 'M'; // Weekly/Monthly
+    criticidad = rand > 0.4 ? 'I' : 'C'; // Important/Critical
   } else if (nivel >= 2.0) {
-    frecuencia = Math.random() > 0.3 ? 'M' : 'S';
-    criticidad = Math.random() > 0.5 ? 'I' : 'D';
-  } else if (nivel > 0) {
-    frecuencia = Math.random() > 0.4 ? 'M' : 'N';
-    criticidad = 'D';
-    if (frecuencia === 'N') criticidad = 'N';
+    frecuencia = rand > 0.3 ? 'M' : 'S'; // Monthly/Weekly
+    criticidad = rand > 0.5 ? 'I' : 'D'; // Important/Desirable
   } else {
-    frecuencia = 'N';
-    criticidad = 'N';
+    // Low level (0.1 - 1.9)
+    frecuencia = rand > 0.5 ? 'M' : 'T'; // Monthly/Trimestral
+    criticidad = 'D'; // Desirable
+  }
+  
+  // Final Safety Check
+  if (frecuencia === 'N' || criticidad === 'N') {
+    // Should not happen with logic above for nivel > 0
+    frecuencia = 'M';
+    criticidad = 'D';
   }
   
   return { frecuencia, criticidad };
 };
 
 const generateSkillSet = (baseLevel, options = {}) => {
-  const { variation = 0.3, isContractor = false, naSkills = [], includeLegacy = false, highSkills = [], lowSkills = [] } = options;
+  const { variation = 0.3, roleProfile = {}, includeLegacy = false, highSkills = [], lowSkills = [] } = options;
   const skills = {};
   const skillList = includeLegacy ? [...ACTIVE_SKILLS, ...SKILL_IDS.LEGACY] : ACTIVE_SKILLS;
   
   skillList.forEach(skillId => {
-    if (naSkills.includes(skillId)) {
+    const skillIdStr = String(skillId);
+    // Get criticality from role profile. If not defined or 'N', skill is N/A.
+    const profileCriticidad = roleProfile[skillIdStr] || 'N';
+    
+    // If skill is N/A for this role, set to zero
+    if (profileCriticidad === 'N') {
       skills[skillId] = { nivel: 0, frecuencia: 'N', criticidad: 'N' };
       return;
     }
     
+    // Skill is required (C/I/D) - generate level
     let nivel = baseLevel + (Math.random() - 0.5) * variation * 2;
     if (highSkills.includes(skillId)) nivel = Math.min(5, nivel + 1.0);
-    if (lowSkills.includes(skillId)) nivel = Math.max(0, nivel - 1.5);
-    nivel = Math.max(0, Math.min(5, nivel));
+    if (lowSkills.includes(skillId)) nivel = Math.max(1, nivel - 1.5); // Min 1 for required skills
+    nivel = Math.max(1, Math.min(5, nivel)); // Required skills must have at least level 1
     nivel = Math.round(nivel * 10) / 10;
     
-    const { frecuencia, criticidad } = generateConsistentFreqCrit(nivel, isContractor);
-    skills[skillId] = { nivel, frecuencia, criticidad };
+    // Generate frequency based on level (but criticidad comes from profile!)
+    const { frecuencia } = generateConsistentFreqCrit(nivel);
+    
+    // Use criticidad from profile, not random
+    skills[skillId] = { nivel, frecuencia, criticidad: profileCriticidad };
   });
   
+  return skills;
+};
+
+// Helper to zero out a category from a skills object
+const zeroCategorySkills = (skills, categorySkillIds) => {
+  categorySkillIds.forEach(skillId => {
+    skills[skillId] = { nivel: 0, frecuencia: 'N', criticidad: 'N' };
+  });
   return skills;
 };
 
 // ============================================
 // GENERATE SNAPSHOTS
 // ============================================
+
+// Helper to get role profile as object
+const getRoleProfile = (roleName) => {
+  const profile = ROLE_PROFILES.find(p => p.rol === roleName);
+  if (!profile) return {};
+  return typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills;
+};
+
 const generateSnapshots = () => {
   const snapshots = [];
   
   // 🆕 1. LUCÍA - Only Dec 2025
-  snapshots.push({ collaboratorId: 201, date: '2025-12-31', rol: 'Frontend Developer', skills: generateSkillSet(3.0, { highSkills: [10, 36, 40] }) });
+  const luciaProfile = getRoleProfile('Frontend Developer');
+  snapshots.push({ collaboratorId: 201, date: '2025-12-31', rol: 'Frontend Developer', skills: generateSkillSet(3.0, { roleProfile: luciaProfile, highSkills: [10, 36, 40] }) });
 
-  // 🔀 2. ANA - 18 months UX, then PO
-  ['2024-03-31', '2024-06-30', '2024-09-30', '2024-12-31', '2025-02-28', '2025-04-30', '2025-06-30', '2025-08-31', '2025-10-31'].forEach(date => {
-    snapshots.push({ collaboratorId: 202, date, rol: 'UX Designer', skills: generateSkillSet(4.2, { highSkills: [1, 2, 4, 36] }) });
-  });
-  snapshots.push({ collaboratorId: 202, date: '2025-12-31', rol: 'Product Owner', rolChanged: true, skills: generateSkillSet(3.0, { highSkills: [34, 31, 29] }) });
 
-  // 🔀 3. MIGUEL - 2 years Backend, then Tech Lead
+  // 🔀 2. ANA - 18 months UX, then PO (NO Technical skills)
+  const uxProfile = getRoleProfile('UX Designer');
+  const poProfile = getRoleProfile('Product Owner');
   ['2024-03-31', '2024-06-30', '2024-09-30', '2024-12-31', '2025-02-28', '2025-04-30', '2025-06-30', '2025-08-31', '2025-10-31'].forEach(date => {
-    snapshots.push({ collaboratorId: 203, date, rol: 'Backend Developer', skills: generateSkillSet(4.0, { highSkills: [9, 8, 7, 40] }) });
+    const skills = generateSkillSet(4.2, { roleProfile: uxProfile, highSkills: [1, 2, 4, 36] });
+    zeroCategorySkills(skills, SKILL_IDS.TECHNICAL); // Remove Desarrollo & Plataforma Técnica
+    snapshots.push({ collaboratorId: 202, date, rol: 'UX Designer', skills });
   });
-  snapshots.push({ collaboratorId: 203, date: '2025-12-31', rol: 'Tech Lead', rolChanged: true, skills: generateSkillSet(3.2, { highSkills: [9, 8], lowSkills: [15, 16, 17, 18] }) });
+  const anaPoSkills = generateSkillSet(3.0, { roleProfile: poProfile, highSkills: [34, 31, 29] });
+  zeroCategorySkills(anaPoSkills, SKILL_IDS.TECHNICAL);
+  snapshots.push({ collaboratorId: 202, date: '2025-12-31', rol: 'Product Owner', rolChanged: true, skills: anaPoSkills });
+
+
 
   // 💀 4. ROBERTO - Only 2024 (resigned Jan 2025)
+  const backendProfile = getRoleProfile('Backend Developer');
   ['2024-03-31', '2024-06-30', '2024-09-30', '2024-12-31'].forEach(date => {
-    snapshots.push({ collaboratorId: 204, date, rol: 'Backend Developer', skills: generateSkillSet(3.5) });
+    snapshots.push({ collaboratorId: 204, date, rol: 'Backend Developer', skills: generateSkillSet(3.5, { roleProfile: backendProfile }) });
   });
 
-  // 👻 5. CONTRACTOR - Sporadic, no profile
-  const naSkills = [...SKILL_IDS.INNOVATION, ...SKILL_IDS.LEADERSHIP, ...SKILL_IDS.DELIVERY];
-  ['2024-06-30', '2025-04-30', '2025-12-31'].forEach(date => {
-    snapshots.push({ collaboratorId: 205, date, rol: 'External Consultant', skills: generateSkillSet(3.5, { isContractor: true, naSkills }) });
-  });
+  // 👻 5. JUANA (CONTRACTOR) - No evaluations (undefined profile)
+  // Removed: External Consultants without Role Profile should not have evaluations.
 
   // 📉 6. LUIS - Burnout trend
   const luisTrend = [3.8, 4.0, 4.0, 3.9, 3.6, 3.3, 3.0, 2.7, 2.4, 2.2];
   SNAPSHOT_DATES.forEach((date, idx) => {
-    const skills = generateSkillSet(luisTrend[idx], { lowSkills: idx >= 6 ? SKILL_IDS.LEADERSHIP : [] });
+    const skills = generateSkillSet(luisTrend[idx], { roleProfile: backendProfile, lowSkills: idx >= 6 ? SKILL_IDS.LEADERSHIP : [] });
+    // Override specific leadership skills to show burnout (these are N/A for Backend, so we need to include them manually)
     if (idx >= 6) {
-      skills[15] = { nivel: 1.5, frecuencia: 'M', criticidad: 'C' };
-      skills[16] = { nivel: 1.2, frecuencia: 'M', criticidad: 'C' };
-      skills[18] = { nivel: 1.3, frecuencia: 'S', criticidad: 'C' };
+      skills[15] = { nivel: 1.5, frecuencia: 'M', criticidad: 'I' }; // Change Management (not in Backend profile, but showing burnout case)
+      skills[16] = { nivel: 1.2, frecuencia: 'M', criticidad: 'I' };
+      skills[18] = { nivel: 1.3, frecuencia: 'S', criticidad: 'I' };
     }
     snapshots.push({ collaboratorId: 206, date, rol: 'Backend Developer', skills });
   });
 
-  // 🦕 7. DON PEDRO - Legacy expert
+  // 🦕 7. DON PEDRO - Legacy expert (NO Delivery skills)
+  const innovationProfile = getRoleProfile('Innovation Specialist');
   SNAPSHOT_DATES.forEach(date => {
-    const skills = generateSkillSet(3.0, { includeLegacy: true });
+    const skills = generateSkillSet(3.0, { roleProfile: innovationProfile, includeLegacy: true });
+    // Override legacy skills (these ARE in his profile as Critical)
     skills[97] = { nivel: 5.0, frecuencia: 'D', criticidad: 'C' };
     skills[98] = { nivel: 4.8, frecuencia: 'D', criticidad: 'C' };
-    skills[35] = { nivel: 0.5, frecuencia: 'N', criticidad: 'N' };
-    skills[38] = { nivel: 0, frecuencia: 'N', criticidad: 'N' };
+    zeroCategorySkills(skills, SKILL_IDS.DELIVERY); // Remove Entrega & Portafolio
     snapshots.push({ collaboratorId: 207, date, rol: 'Innovation Specialist', skills });
   });
 
-  // 🌟 8. SOFÍA - Perfect reference
+  // 🌟 8. SOFÍA - Near perfect but has critical gaps in Business skills
+  const techLeadProfile = getRoleProfile('Tech Lead');
   SNAPSHOT_DATES.forEach(date => {
-    snapshots.push({ collaboratorId: 208, date, rol: 'Tech Lead', skills: generateSkillSet(4.3, { variation: 0.15, highSkills: [7, 8, 9, 15, 16, 40] }) });
+    const skills = generateSkillSet(4.3, { roleProfile: techLeadProfile, variation: 0.15, highSkills: [7, 8, 9, 15, 16, 40] });
+    // 🔴 CRITICAL GAPS: Low scores on Critical skills = Brecha Crítica
+    skills[31] = { nivel: 1.5, frecuencia: 'D', criticidad: 'C' }; // Stakeholder Management - Critical but low
+    skills[33] = { nivel: 1.8, frecuencia: 'D', criticidad: 'C' }; // Project Management - Critical but low
+    snapshots.push({ collaboratorId: 208, date, rol: 'Tech Lead', skills });
   });
 
-  // 🚀 9. CARMEN - Rising star (positive 6m trend)
-  // Starts lower, grows steadily in last 6 months
+  // 🚀 9. CARMEN - Rising star but has critical gaps in Testing (NO Emerging skills)
+  const frontendProfile = getRoleProfile('Frontend Developer');
   const carmenTrend = [2.5, 2.8, 3.2, 3.5, 3.8, 4.0]; // Jun -> Dec 2025 
   ['2025-06-30', '2025-07-31', '2025-08-31', '2025-09-30', '2025-10-31', '2025-12-31'].forEach((date, idx) => {
-    snapshots.push({ collaboratorId: 209, date, rol: 'Frontend Developer', skills: generateSkillSet(carmenTrend[idx], { highSkills: [10, 36, 40] }) });
+    const skills = generateSkillSet(carmenTrend[idx], { roleProfile: frontendProfile, highSkills: [10, 36, 40] });
+    // 🔴 CRITICAL GAPS: Low scores on Critical skills = Brecha Crítica
+    skills[14] = { nivel: 1.2, frecuencia: 'D', criticidad: 'C' }; // Testing/QA - Critical but very low
+    skills[11] = { nivel: 1.6, frecuencia: 'S', criticidad: 'C' }; // APIs - Critical but low
+    zeroCategorySkills(skills, SKILL_IDS.EMERGING); // Remove Tecnologías Emergentes
+    snapshots.push({ collaboratorId: 209, date, rol: 'Frontend Developer', skills });
   });
 
-  // 📈 10. CARLOS - Growth champion (positive 12m trend)
-  // Steady improvement over the year
+  // 📈 10. CARLOS - Growth champion (positive 12m trend, NO Emerging skills)
   const carlosTrend = [2.8, 3.0, 3.2, 3.4, 3.5, 3.7, 3.8, 4.0, 4.1, 4.3];
   SNAPSHOT_DATES.forEach((date, idx) => {
-    snapshots.push({ collaboratorId: 210, date, rol: 'UX Designer', skills: generateSkillSet(carlosTrend[idx], { highSkills: [1, 2, 4, 36] }) });
+    const skills = generateSkillSet(carlosTrend[idx], { roleProfile: uxProfile, highSkills: [1, 2, 4, 36] });
+    zeroCategorySkills(skills, SKILL_IDS.EMERGING); // Remove Tecnologías Emergentes
+    snapshots.push({ collaboratorId: 210, date, rol: 'UX Designer', skills });
   });
+
+  // 🧪 11. MIGUEL (UX) - Gap Resolution Case (NO Innovation skills)
+  const miguelTrend = [
+    { date: '2024-06-30', l: 2.2, low: [1, 2] },
+    { date: '2024-09-30', l: 2.8, low: [1] },
+    { date: '2024-12-31', l: 3.2, low: [] },
+    { date: '2025-06-30', l: 3.8, low: [] },
+    { date: '2025-10-30', l: 4.2, low: [] }
+  ];
+  
+  miguelTrend.forEach(t => {
+    const skills = generateSkillSet(t.l, { roleProfile: uxProfile, lowSkills: t.low });
+    // Force specific gap values (these are Critical in UX profile)
+    if (t.low.includes(1)) { skills[1] = { nivel: 2.0, frecuencia: 'D', criticidad: 'C' }; }
+    if (t.low.includes(2)) { skills[2] = { nivel: 2.2, frecuencia: 'D', criticidad: 'C' }; }
+    
+    // Force strength when solved
+    if (t.l >= 4.0) {
+      skills[1] = { nivel: 4.5, frecuencia: 'D', criticidad: 'C' };
+      skills[2] = { nivel: 4.2, frecuencia: 'D', criticidad: 'C' };
+    }
+    
+    zeroCategorySkills(skills, SKILL_IDS.INNOVATION); // Remove Innovación & Diseño
+
+    snapshots.push({ collaboratorId: 211, date: t.date, rol: 'UX Designer', skills });
+  });
+
 
   return snapshots;
 };
@@ -333,7 +623,7 @@ async function main() {
         collaboratorId,
         collaboratorNombre: collab.nombre,
         collaboratorRol: rol,
-        evaluatedBy: 'Sistema (Chaos Seed)',
+        evaluatedBy: 'Demo',
         notes: rolChanged ? '🔀 Cambio de rol detectado' : `Evaluación ${date}`,
         evaluatedAt: new Date(date)
       }
@@ -341,7 +631,21 @@ async function main() {
     totalSessions++;
 
     for (const [skillId, data] of Object.entries(skills)) {
-      if ((data.criticidad === 'C' || data.criticidad === 'I') && data.frecuencia === 'N') {
+      // COMPREHENSIVE VIOLATION CHECK
+      // Rule 1: If criticidad = 'N' (N/A), nivel MUST be 0 and frecuencia MUST be 'N'
+      if (data.criticidad === 'N') {
+        if (data.nivel > 0) {
+          console.warn(`  ⚠️ VIOLATION: Skill ${skillId} has N/A criticidad but nivel=${data.nivel}`);
+          violations++;
+        }
+        if (data.frecuencia !== 'N') {
+          console.warn(`  ⚠️ VIOLATION: Skill ${skillId} has N/A criticidad but frecuencia=${data.frecuencia}`);
+          violations++;
+        }
+      }
+      // Rule 2: If criticidad != 'N' (C/I/D), frecuencia MUST NOT be 'N'
+      if (data.criticidad !== 'N' && data.frecuencia === 'N') {
+        console.warn(`  ⚠️ VIOLATION: Skill ${skillId} has criticidad=${data.criticidad} but frecuencia=N`);
         violations++;
       }
       

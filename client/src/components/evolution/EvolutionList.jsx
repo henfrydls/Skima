@@ -5,14 +5,17 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
  * Shows micro-trends using sparklines and key metrics.
  */
 
-// Custom tooltip for sparkline
+// Custom tooltip for sparkline - positioned above using transform
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const pointData = payload[0].payload;
     const label = pointData.date || 'Promedio';
     
     return (
-      <div className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]">
+      <div 
+        className="bg-slate-800 text-white text-[10px] px-2 py-1 rounded shadow-lg flex flex-col items-center min-w-[60px]"
+        style={{ transform: 'translateY(-40px)' }}
+      >
         <span className="text-slate-400 text-[9px] uppercase tracking-wider mb-0.5">{label}</span>
         <span className="font-mono font-bold text-emerald-300">{payload[0].value.toFixed(1)}</span>
       </div>
@@ -43,6 +46,9 @@ const Sparkline = ({ data, color = '#6366f1' }) => {
           <Tooltip 
             content={<SparklineTooltip />}
             cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
+            offset={-20}
+            allowEscapeViewBox={{ x: true, y: true }}
+            wrapperStyle={{ zIndex: 100 }}
           />
           <Line 
             type="monotone" 
