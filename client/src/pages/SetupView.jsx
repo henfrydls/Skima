@@ -75,7 +75,7 @@ export default function SetupView({ onSetupComplete }) {
             <Sparkles className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl font-light text-gray-900 mb-2">
-            Bienvenido a <span className="font-medium text-primary">Skills Matrix</span>
+            Bienvenido a <span className="font-medium text-primary">Skima</span>
           </h1>
           <p className="text-gray-500">
             Configuremos tu espacio de trabajo local

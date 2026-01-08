@@ -54,7 +54,7 @@ export function ConfigProvider({ children }) {
     isLoading,
     error,
     isSetup: config?.isSetup ?? false,
-    companyName: config?.companyName ?? 'Skills Matrix',
+    companyName: config?.companyName ?? 'Skima',
     adminName: config?.adminName ?? 'Admin',
     onSetupComplete,
     refetchConfig: fetchConfig

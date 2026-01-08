@@ -17,6 +17,9 @@ import { useConfig } from '../../contexts/ConfigContext';
 import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
 
+// Skima Brand Assets
+import logoFull from '../../assets/skima-full.svg';
+
 /**
  * Layout Component - App Shell
  * 
@@ -69,35 +72,28 @@ export default function Layout() {
           ${isCollapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Header del Sidebar */}
-        <div className="flex flex-col h-16 px-4 border-b border-gray-100 justify-center">
-          {!isCollapsed ? (
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-lg font-light text-primary whitespace-nowrap">
-                  Skills Matrix
-                </h1>
-                <p className="text-xs text-gray-400 truncate" title={companyName}>
-                  {companyName}
-                </p>
-              </div>
-              <button
-                onClick={() => setIsCollapsed(!isCollapsed)}
-                className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors"
-                aria-label="Colapsar sidebar"
-              >
-                <ChevronLeft size={20} />
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={() => setIsCollapsed(!isCollapsed)}
-              className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors mx-auto"
-              aria-label="Expandir sidebar"
-            >
-              <ChevronRight size={20} />
-            </button>
-          )}
+        {/* Header del Sidebar - Skima Logo */}
+        <div className={`
+          flex items-center h-16 px-3 border-b border-gray-100
+          ${isCollapsed ? 'justify-center' : 'justify-between'}
+        `}>
+          {/* Logo with fade transition */}
+          <img
+            src={logoFull}
+            alt="Skima"
+            className={`
+              h-8 transition-all duration-200 ease-out
+              ${isCollapsed ? 'opacity-0 scale-75 w-0 overflow-hidden' : 'opacity-100 scale-100 w-auto'}
+            `}
+          />
+          {/* Collapse/Expand button */}
+          <button
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-all duration-200 flex-shrink-0"
+            aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+          >
+            {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
         </div>
 
         {/* Navegación */}
@@ -164,7 +160,7 @@ export default function Layout() {
           >
             <Menu size={24} />
           </button>
-          <h1 className="ml-3 text-lg font-light text-primary">Skills Matrix</h1>
+          <img src={logoFull} alt="Skima" className="ml-3 h-7 w-auto" />
         </header>
 
         {/* Área de contenido */}

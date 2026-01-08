@@ -563,7 +563,7 @@ const SkillsDashboard = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-2">
           <div className="text-sm uppercase tracking-wide text-gray-400">Cargando</div>
-          <div className="text-2xl font-light text-primary">Preparando dashboard de competencias...</div>
+          <div className="text-2xl font-light text-primary">Cargando Skima...</div>
         </div>
       </div>
     );
@@ -591,7 +591,7 @@ const SkillsDashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-light mb-2 text-primary">
-            Dashboard de Competencias
+            Skima
           </h1>
           <p className="text-base text-gray-500">
             Sistema de evaluación basado en criticidad y frecuencia de uso
