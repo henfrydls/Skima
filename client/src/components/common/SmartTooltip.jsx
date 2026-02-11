@@ -30,10 +30,10 @@ const CRITICALITY_MAP = {
  * @param {Object|null} props.info - { x, y, data } where data contains tooltip content
  */
 export default function SmartTooltip({ info }) {
-  if (!info) return null;
+  const x = info?.x;
+  const y = info?.y;
+  const data = info?.data;
 
-  const { x, y, data } = info;
-  
   // Collision detection - calculate optimal position
   const position = useMemo(() => {
     const tooltipWidth = 220;
@@ -73,6 +73,8 @@ export default function SmartTooltip({ info }) {
     
     return { left, top, alignRight, alignBottom };
   }, [x, y]);
+
+  if (!info) return null;
 
   const { collaboratorName, skillName, nivel, frecuencia, criticidad, estado } = data || {};
   

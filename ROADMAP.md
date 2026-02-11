@@ -110,6 +110,7 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 - Benchmark vs Industria
 - Mobile App
 - Integrations (Slack, Teams, HRIS)
+- Usability Testing (Pruebas con usuarios reales)
 
 ---
 

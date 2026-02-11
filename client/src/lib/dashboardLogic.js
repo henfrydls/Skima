@@ -4,7 +4,7 @@
  * Funciones de lógica de negocio para el Dashboard Ejecutivo.
  * Incluye: cálculos de métricas, priorización de gaps, detección de insights.
  */
-import { evaluarSkill, SKILL_THRESHOLDS, getSkillLevelStatus } from './skillsLogic';
+import { evaluarSkill, SKILL_THRESHOLDS } from './skillsLogic';
 
 // ============================================
 // WEIGHTS & CONSTANTS

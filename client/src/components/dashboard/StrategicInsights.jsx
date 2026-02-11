@@ -49,7 +49,7 @@ function TalentDistributionChart({ data }) {
   }
 
   return (
-    <div className="h-64">
+    <div className="flex-1 min-h-[16rem]">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart 
           data={data}
@@ -220,9 +220,9 @@ export default function StrategicInsights({
   automaticInsight = null
 }) {
   return (
-    <div className="grid lg:grid-cols-3 gap-6">
+    <div className="grid lg:grid-cols-3 gap-6 flex-1">
       {/* Talent Distribution Chart - 2/3 width */}
-      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
         <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4">
           Distribución de Talento por Área
         </h3>
@@ -233,7 +233,7 @@ export default function StrategicInsights({
       </div>
 
       {/* Right Column: Risks + Insight - 1/3 width */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 flex items-center gap-2">
             <AlertTriangle size={14} />

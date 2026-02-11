@@ -188,7 +188,7 @@ export default function Layout() {
         <DemoBanner />
 
         {/* Área de contenido - flex-1 fills remaining height */}
-        <div className="p-6 flex-1">
+        <div className="p-6 flex-1 bg-gray-50 flex flex-col">
           <Outlet />
         </div>
       </main>

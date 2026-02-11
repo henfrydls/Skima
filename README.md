@@ -70,6 +70,7 @@ El proyecto opera como un **Monorepo** con la siguiente estructura:
 - [x] **Fase 1.1:** Nueva UX/UI (Dashboard Pro, Matriz Visual).
 - [x] **Fase 1.5:** DevOps & CI/CD Pipelines.
 - [ ] **Fase 2:** Admin Power (Auth, CRUD Real de Skills/Categorías).
+- [ ] **Fase 2.1:** Demo Mode (Datos de ejemplo en primera corrida + flujo de bienvenida).
 - [ ] **Fase 3:** Time Travel (Historial de Snapshots).
 - [ ] **Fase 4:** Packaging (Electron Desktop App).
 

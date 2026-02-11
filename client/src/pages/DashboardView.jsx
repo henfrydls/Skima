@@ -168,7 +168,7 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6">
+    <div className="flex-1 flex flex-col bg-gray-50 -m-6 p-6 space-y-6">
       {/* Header with Time Travel */}
       <DashboardHeader
         periods={availableSnapshots}
