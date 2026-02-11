@@ -367,7 +367,7 @@ export default function TeamMatrixPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-light text-slate-800">Team Matrix</h1>

@@ -2,9 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Lightbulb } from 'lucide-react';
 import {
-  calculateDelta,
   prioritizeGaps,
-  calculateDistribution,
   detectUnderutilizedTalent,
   calculateExecutiveMetrics,
   calculateDistributionByCategory
@@ -170,7 +168,7 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6">
       {/* Header with Time Travel */}
       <DashboardHeader
         periods={availableSnapshots}

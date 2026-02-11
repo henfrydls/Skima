@@ -56,7 +56,7 @@ export default function EvolutionPage() {
   // Error state
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 -m-6 p-6 flex items-center justify-center">
+      <div className="min-h-full bg-gray-50 -m-6 p-6 flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
@@ -75,7 +75,7 @@ export default function EvolutionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6">
       {/* Header Standardized */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

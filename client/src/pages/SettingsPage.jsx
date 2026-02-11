@@ -78,7 +78,7 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-light text-slate-800">Configuración</h1>

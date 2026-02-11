@@ -249,7 +249,7 @@ export function CollaboratorListSkeleton({ count = 5 }) {
  */
 export function EvolutionSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6 animate-pulse">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-pulse">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

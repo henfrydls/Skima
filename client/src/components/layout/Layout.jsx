@@ -169,7 +169,7 @@ export default function Layout() {
       {/* Contenido Principal */}
       <main
         className={`
-          flex-1 transition-all duration-300
+          flex-1 flex flex-col transition-all duration-300
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
@@ -184,9 +184,11 @@ export default function Layout() {
           <img src={logoFull} alt="Skima" className="ml-3 h-7 w-auto" />
         </header>
 
-        {/* Área de contenido */}
-        <div className="p-6">
-          <DemoBanner />
+        {/* Demo banner - outside padding, sticky at top */}
+        <DemoBanner />
+
+        {/* Área de contenido - flex-1 fills remaining height */}
+        <div className="p-6 flex-1">
           <Outlet />
         </div>
       </main>
