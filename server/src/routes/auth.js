@@ -1,46 +1,58 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import { generateToken, JWT_SECRET } from '../middleware/auth.js';
+import { prisma } from '../db.js';
 
 const router = express.Router();
 
-// Admin password - in production, store hashed in DB
-// For now, use environment variable or default
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
-
 /**
  * POST /api/auth/login
- * Authenticate admin user with password
+ * Authenticate admin user with password from SystemConfig
  */
 router.post('/login', async (req, res) => {
   try {
     const { password } = req.body;
 
+    // Get password from SystemConfig
+    const config = await prisma.systemConfig.findFirst();
+    const storedPassword = config?.adminPassword || process.env.ADMIN_PASSWORD || 'admin123';
+
+    // If no password configured, grant access with any input
+    if (!config?.adminPassword && !process.env.ADMIN_PASSWORD) {
+      const token = generateToken({
+        role: 'admin',
+        loginTime: new Date().toISOString()
+      });
+      return res.json({
+        success: true,
+        token,
+        message: 'Acceso concedido (sin contraseña configurada)'
+      });
+    }
+
     if (!password) {
-      return res.status(400).json({ 
+      return res.status(400).json({
         message: 'Contraseña requerida',
         code: 'PASSWORD_REQUIRED'
       });
     }
 
-    // For MVP: simple password comparison
-    // In future: fetch hashed password from Admin table
-    const isValid = password === ADMIN_PASSWORD;
+    const isValid = password === storedPassword;
 
     if (!isValid) {
-      return res.status(401).json({ 
+      return res.status(401).json({
         message: 'Contraseña incorrecta',
         code: 'INVALID_PASSWORD'
       });
     }
 
     // Generate JWT token
-    const token = generateToken({ 
+    const token = generateToken({
       role: 'admin',
       loginTime: new Date().toISOString()
     });
 
-    res.json({ 
+    res.json({
       success: true,
       token,
       message: 'Inicio de sesión exitoso'

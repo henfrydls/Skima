@@ -243,6 +243,75 @@ export function CollaboratorListSkeleton({ count = 5 }) {
   );
 }
 
+/**
+ * EvolutionSkeleton - Full Evolution page loading state
+ * Matches the layout of EvolutionPage: header, 3 stat cards, chart, list
+ */
+export function EvolutionSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-50 -m-6 p-6 space-y-6 animate-pulse">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="h-8 bg-gray-200 rounded w-64 mb-2" />
+          <div className="h-4 bg-gray-200 rounded w-96" />
+        </div>
+        <div className="h-10 bg-gray-200 rounded-lg w-48" />
+      </div>
+
+      {/* Metrics Grid - 3 StatCards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+            <div className="h-3 bg-gray-200 rounded w-32 mb-4" />
+            <div className="h-10 bg-gray-200 rounded w-20 mb-3" />
+            <div className="h-3 bg-gray-200 rounded w-40" />
+          </div>
+        ))}
+      </div>
+
+      {/* Chart Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="h-5 bg-gray-200 rounded w-48" />
+          <div className="h-4 bg-gray-200 rounded w-32" />
+        </div>
+        <div className="h-80 bg-gray-100 rounded-lg flex items-end gap-1 px-8 pb-4">
+          {/* Fake chart bars/area silhouette */}
+          {[40, 45, 42, 50, 48, 55, 52, 58, 60, 55, 62, 65].map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 bg-gray-200 rounded-t"
+              style={{ height: `${h}%` }}
+            />
+          ))}
+        </div>
+      </div>
+
+      {/* List Area */}
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+        <div className="h-5 bg-gray-200 rounded w-56 mb-6" />
+        <div className="space-y-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="flex items-center gap-4 p-4 border border-gray-100 rounded-lg">
+              <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <div className="h-4 bg-gray-200 rounded w-36 mb-2" />
+                <div className="h-3 bg-gray-200 rounded w-24" />
+              </div>
+              <div className="w-24 h-8 bg-gray-100 rounded" />
+              <div className="text-right">
+                <div className="h-6 bg-gray-200 rounded w-12 mb-1" />
+                <div className="h-3 bg-gray-200 rounded w-16" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default {
   TableSkeleton,
   MatrixSkeleton,
@@ -250,5 +319,6 @@ export default {
   CardSkeleton,
   DashboardSkeleton,
   CollaboratorListSkeleton,
+  EvolutionSkeleton,
 };
 

@@ -4,6 +4,7 @@ import cookieParser from 'cookie-parser';
 import { prisma } from './db.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
+import demoRoutes from './routes/demo.js';
 import { authMiddleware } from './middleware/auth.js';
 
 // Re-export prisma for any routes that still import from index
@@ -22,6 +23,9 @@ export function createApp() {
   // Evolution routes (public - for dashboard)
   app.use('/api/skills/evolution', evolutionRoutes);
 
+  // Demo seed routes (public - needed before login)
+  app.use('/api/seed-demo', demoRoutes);
+
   // ============================================================
   // SYSTEM CONFIG ROUTES (Public - needed before login)
   // ============================================================
@@ -30,18 +34,23 @@ export function createApp() {
   app.get('/api/config', async (req, res) => {
     try {
       const config = await prisma.systemConfig.findFirst();
-      
+
       if (!config) {
-        return res.json({ 
+        return res.json({
           isSetup: false,
+          isDemo: false,
           companyName: null,
           adminName: null,
           hasPassword: false
         });
       }
-      
+
+      // Check if there are demo collaborators
+      const demoCount = await prisma.collaborator.count({ where: { esDemo: true } });
+
       res.json({
         isSetup: config.isSetup,
+        isDemo: demoCount > 0,
         companyName: config.companyName,
         adminName: config.adminName,
         hasPassword: !!config.adminPassword
@@ -52,23 +61,38 @@ export function createApp() {
     }
   });
 
-  // POST /api/setup - Initial system setup
+  // POST /api/setup - Initial system setup (or re-setup from demo mode)
   app.post('/api/setup', async (req, res) => {
     try {
       const { companyName, adminName, adminPassword } = req.body;
 
       if (!companyName || !adminName) {
-        return res.status(400).json({ 
-          error: 'Company name and admin name are required' 
+        return res.status(400).json({
+          error: 'Company name and admin name are required'
         });
       }
 
       // Check if already set up
       const existingConfig = await prisma.systemConfig.findFirst();
-      if (existingConfig?.isSetup) {
-        return res.status(400).json({ 
-          error: 'System is already configured' 
+      const demoCount = await prisma.collaborator.count({ where: { esDemo: true } });
+      const isInDemoMode = demoCount > 0;
+
+      // Block re-setup only if already configured AND not in demo mode
+      if (existingConfig?.isSetup && !isInDemoMode) {
+        return res.status(400).json({
+          error: 'System is already configured'
         });
+      }
+
+      // If transitioning from demo, clean demo data
+      if (isInDemoMode) {
+        const demoIds = (await prisma.collaborator.findMany({
+          where: { esDemo: true }, select: { id: true }
+        })).map(c => c.id);
+
+        await prisma.assessment.deleteMany({ where: { collaboratorId: { in: demoIds } } });
+        await prisma.evaluationSession.deleteMany({ where: { collaboratorId: { in: demoIds } } });
+        await prisma.collaborator.deleteMany({ where: { esDemo: true } });
       }
 
       // Create or update config (upsert)
@@ -92,6 +116,7 @@ export function createApp() {
       res.json({
         success: true,
         isSetup: config.isSetup,
+        isDemo: false,
         companyName: config.companyName,
         adminName: config.adminName,
         hasPassword: !!config.adminPassword

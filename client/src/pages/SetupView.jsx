@@ -1,35 +1,71 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, ArrowRight, Loader2, Sparkles } from 'lucide-react';
+import { Building2, User, Lock, ArrowRight, Loader2, Sparkles, Play, AlertTriangle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useConfig } from '../contexts/ConfigContext';
 
 /**
  * SetupView - Initial onboarding screen
- * 
+ *
  * Full screen, no sidebar. Collects company name and admin name
- * to initialize the system.
+ * to initialize the system. Also offers a "Demo Mode" to explore
+ * the app with sample data before configuring.
+ *
+ * When accessed from demo mode, shows a confirmation before
+ * replacing demo data with real configuration.
  */
 
 export default function SetupView({ onSetupComplete }) {
   const navigate = useNavigate();
+  const { isDemo } = useConfig();
   const [formData, setFormData] = useState({
     companyName: '',
     adminName: '',
     adminPassword: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingDemo, setIsLoadingDemo] = useState(false);
+  const [demoError, setDemoError] = useState(null);
   const [error, setError] = useState(null);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleExploreDemo = async () => {
     setError(null);
+    setDemoError(null);
+    setIsLoadingDemo(true);
 
-    if (!formData.companyName.trim() || !formData.adminName.trim()) {
-      setError('Por favor completa todos los campos.');
-      return;
+    try {
+      const response = await fetch('/api/seed-demo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al crear datos demo');
+      }
+
+      // Clear any dismissed banner so it shows in demo mode
+      try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
+
+      toast.success('¡Datos demo cargados! Explora la app libremente.');
+
+      if (onSetupComplete) {
+        onSetupComplete(data);
+      }
+
+      navigate('/');
+    } catch (err) {
+      console.error('Demo setup error:', err);
+      setDemoError(err.message || 'Error al cargar datos demo.');
+    } finally {
+      setIsLoadingDemo(false);
     }
+  };
 
+  const doSetup = async () => {
     setIsSubmitting(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/setup', {
@@ -48,14 +84,15 @@ export default function SetupView({ onSetupComplete }) {
         throw new Error(data.error || 'Failed to setup');
       }
 
+      // Clear demo banner dismissed state
+      try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
+
       toast.success('¡Configuración guardada!');
-      
-      // Notify parent that setup is complete
+
       if (onSetupComplete) {
         onSetupComplete(data);
       }
-      
-      // Navigate to dashboard
+
       navigate('/');
     } catch (err) {
       console.error('Setup error:', err);
@@ -66,6 +103,26 @@ export default function SetupView({ onSetupComplete }) {
     }
   };
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null);
+
+    if (!formData.companyName.trim() || !formData.adminName.trim()) {
+      setError('Por favor completa todos los campos.');
+      return;
+    }
+
+    // If transitioning from demo, confirm before replacing data
+    if (isDemo) {
+      const confirmed = window.confirm(
+        'Los datos demo serán reemplazados por tu configuración real. ¿Deseas continuar?'
+      );
+      if (!confirmed) return;
+    }
+
+    await doSetup();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-primary/5 flex items-center justify-center p-6">
       <div className="w-full max-w-md">
@@ -74,12 +131,25 @@ export default function SetupView({ onSetupComplete }) {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-6">
             <Sparkles className="w-8 h-8 text-primary" />
           </div>
-          <h1 className="text-3xl font-light text-gray-900 mb-2">
-            Bienvenido a <span className="font-medium text-primary">Skima</span>
-          </h1>
-          <p className="text-gray-500">
-            Configuremos tu espacio de trabajo local
-          </p>
+          {isDemo ? (
+            <>
+              <h1 className="text-3xl font-light text-gray-900 mb-2">
+                Configura tu <span className="font-medium text-primary">Skima</span>
+              </h1>
+              <p className="text-gray-500">
+                Los datos demo serán reemplazados por tu configuración
+              </p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-3xl font-light text-gray-900 mb-2">
+                Bienvenido a <span className="font-medium text-primary">Skima</span>
+              </h1>
+              <p className="text-gray-500">
+                Configuremos tu espacio de trabajo local
+              </p>
+            </>
+          )}
         </div>
 
         {/* Form Card */}
@@ -179,9 +249,77 @@ export default function SetupView({ onSetupComplete }) {
           </button>
         </form>
 
+        {/* Demo Mode section - only shown on fresh install (not when coming from demo) */}
+        {!isDemo && (
+          <>
+            <div className="flex items-center gap-3 mt-6">
+              <div className="flex-1 border-t border-gray-200" />
+              <span className="text-xs text-gray-400 uppercase tracking-wider">o</span>
+              <div className="flex-1 border-t border-gray-200" />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleExploreDemo}
+              disabled={isSubmitting || isLoadingDemo}
+              className="mt-6 w-full flex items-center justify-center gap-2 py-3 px-6
+                       bg-white text-gray-700 font-medium rounded-xl
+                       border-2 border-gray-200 hover:border-primary/40 hover:text-primary
+                       transition-all duration-200
+                       disabled:opacity-50 disabled:cursor-not-allowed
+                       focus:outline-none focus:ring-2 focus:ring-primary/30 focus:ring-offset-2"
+            >
+              {isLoadingDemo ? (
+                <>
+                  <Loader2 className="animate-spin" size={18} />
+                  Cargando demo...
+                </>
+              ) : (
+                <>
+                  <Play size={18} />
+                  Explorar con datos demo
+                </>
+              )}
+            </button>
+
+            {/* Demo error with retry */}
+            {demoError && (
+              <div className="mt-3 p-3 bg-critical/5 border border-critical/20 rounded-xl flex items-center gap-3">
+                <AlertTriangle size={16} className="text-critical flex-shrink-0" />
+                <span className="text-sm text-critical flex-1">{demoError}</span>
+                <button
+                  type="button"
+                  onClick={handleExploreDemo}
+                  disabled={isLoadingDemo}
+                  className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-critical
+                           hover:bg-critical/10 rounded-lg transition-colors"
+                >
+                  <RefreshCw size={12} />
+                  Reintentar
+                </button>
+              </div>
+            )}
+
+            <p className="text-center text-xs text-gray-400 mt-2">
+              Navega la app con datos de ejemplo. Puedes configurar tu espacio después.
+            </p>
+          </>
+        )}
+
+        {/* Back to demo link (only when coming from demo) */}
+        {isDemo && (
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="mt-6 w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            ← Volver al modo demo
+          </button>
+        )}
+
         {/* Footer */}
-        <p className="text-center text-xs text-gray-400 mt-8">
-          Esta información se almacena localmente y puede ser modificada después.
+        <p className="text-center text-xs text-gray-400 mt-6">
+          Toda la información se almacena localmente y puede ser modificada después.
         </p>
       </div>
     </div>

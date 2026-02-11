@@ -32,9 +32,9 @@ function SetupGuard({ children }) {
   return children;
 }
 
-// Route guard: Prevents accessing /setup if already set up
+// Route guard: Prevents accessing /setup if already set up (unless in demo mode)
 function SetupPageGuard({ children }) {
-  const { isLoading, isSetup, onSetupComplete } = useConfig();
+  const { isLoading, isSetup, isDemo, onSetupComplete } = useConfig();
 
   // Show loading while checking config
   if (isLoading) {
@@ -45,8 +45,8 @@ function SetupPageGuard({ children }) {
     );
   }
 
-  // If already setup, redirect to home
-  if (isSetup) {
+  // If already setup AND not in demo mode, redirect to home
+  if (isSetup && !isDemo) {
     return <Navigate to="/" replace />;
   }
 

@@ -584,6 +584,10 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.roleProfile.deleteMany();
 
+  // Reset SystemConfig so setup wizard shows on next launch
+  await prisma.systemConfig.deleteMany();
+  console.log('  🔧 SystemConfig reset (setup wizard will show on next launch)');
+
   console.log('  📁 Seeding categories...');
   for (const cat of CATEGORIES) {
     await prisma.category.create({ data: cat });

@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  Grid3X3, 
+import {
+  LayoutDashboard,
+  Grid3X3,
   TrendingUp,
-  Settings, 
-  ChevronLeft, 
+  Settings,
+  ChevronLeft,
   ChevronRight,
   Menu,
   LogIn,
   LogOut,
-  User
+  User,
+  FlaskConical
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
+import DemoBanner from '../common/DemoBanner';
 
 // Skima Brand Assets
 import logoFull from '../../assets/skima-full.svg';
@@ -50,7 +52,7 @@ export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, login, logout } = useAuth();
-  const { companyName, adminName } = useConfig();
+  const { companyName, adminName, isDemo } = useConfig();
   
   const navItems = getNavItems(isAuthenticated);
 
@@ -119,6 +121,25 @@ export default function Layout() {
           ))}
         </nav>
 
+        {/* Demo indicator */}
+        {isDemo && (
+          <div className="px-2 mb-1">
+            <button
+              onClick={() => navigate('/setup')}
+              className={`
+                w-full flex items-center gap-2 px-3 py-2 rounded-lg
+                bg-amber-50 text-amber-700 hover:bg-amber-100
+                transition-all duration-150 text-xs font-medium
+                ${isCollapsed ? 'justify-center' : ''}
+              `}
+              title={isCollapsed ? 'Modo Demo - Configurar' : undefined}
+            >
+              <FlaskConical size={16} className="flex-shrink-0" />
+              {!isCollapsed && <span>Modo Demo</span>}
+            </button>
+          </div>
+        )}
+
         {/* User Info + Login/Logout - Bottom */}
         <div className="mt-auto">
           {isAuthenticated ? (
@@ -165,6 +186,7 @@ export default function Layout() {
 
         {/* Área de contenido */}
         <div className="p-6">
+          <DemoBanner />
           <Outlet />
         </div>
       </main>

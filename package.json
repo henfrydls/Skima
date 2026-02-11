@@ -13,6 +13,9 @@
     "test": "npm run test:client && npm run test:server",
     "test:client": "cd client && npm test",
     "test:server": "cd server && npm test",
+    "test:coverage": "npm run test:coverage:client && npm run test:coverage:server",
+    "test:coverage:client": "cd client && npx vitest run --coverage",
+    "test:coverage:server": "cd server && npx vitest run --coverage",
     "db:migrate": "cd server && npm run db:migrate",
     "db:push": "cd server && npm run db:push"
   },

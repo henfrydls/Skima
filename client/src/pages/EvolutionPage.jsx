@@ -1,12 +1,13 @@
 import { useState } from 'react';
-import { TrendingUp, Activity, Calendar, ChevronDown, Check, LifeBuoy, Loader2 } from 'lucide-react';
+import { TrendingUp, Activity, Calendar, ChevronDown, Check, LifeBuoy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
 import EvolutionChart from '../components/evolution/EvolutionChart';
 import EvolutionList from '../components/evolution/EvolutionList';
 import { useEvolutionData } from '../hooks/useEvolutionData';
-import { 
-  transformChartData, 
+import { EvolutionSkeleton } from '../components/common/LoadingSkeleton';
+import {
+  transformChartData,
   transformEmployeesForList,
   getTopImprover,
   getSupportCount,
@@ -47,16 +48,9 @@ export default function EvolutionPage() {
   const maturityIndex = data?.meta?.currentMaturityIndex ?? teamVelocity.current;
   const periodDelta = data?.meta?.periodDelta ?? teamVelocity.delta;
 
-  // Loading state
+  // Loading state - skeleton matching page layout
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 -m-6 p-6 flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 size={40} className="animate-spin text-indigo-600" />
-          <p className="text-sm text-slate-500">Cargando datos de evolución...</p>
-        </div>
-      </div>
-    );
+    return <EvolutionSkeleton />;
   }
 
   // Error state

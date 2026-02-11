@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Lock, Loader2, X, AlertCircle } from 'lucide-react';
 import Button from '../common/Button';
+import { useConfig } from '../../contexts/ConfigContext';
 
 /**
  * LoginModal - Simple password-based admin login
@@ -15,6 +16,10 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { config } = useConfig();
+
+  // Only show dev hint when NO custom password has been set
+  const showDevHint = !config?.hasPassword;
 
   if (!isOpen) return null;
 
@@ -106,12 +111,14 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
           </Button>
         </form>
 
-        {/* Footer hint */}
-        <div className="px-6 pb-4">
-          <p className="text-xs text-gray-400 text-center">
-            Para desarrollo: contraseña por defecto es <code className="bg-gray-100 px-1 rounded">admin123</code>
-          </p>
-        </div>
+        {/* Footer hint - only shown when no custom password is configured */}
+        {showDevHint && (
+          <div className="px-6 pb-4">
+            <p className="text-xs text-gray-400 text-center">
+              Contraseña por defecto: <code className="bg-gray-100 px-1 rounded">admin123</code>
+            </p>
+          </div>
+        )}
       </div>
     </div>,
     document.body
