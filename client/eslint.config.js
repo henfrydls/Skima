@@ -30,4 +30,13 @@ export default defineConfig([
       'react-refresh/only-export-components': 'warn',
     },
   },
+  {
+    files: ['**/__tests__/**/*.{js,jsx}', '**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: {
+        global: 'readonly',
+        vi: 'readonly',
+      },
+    },
+  },
 ])
