@@ -11,13 +11,9 @@ vi.mock('../../../contexts/AuthContext', () => ({
 }));
 
 // Mock ConfigContext (ProtectedRoute uses useConfig for auto-auth)
+const mockUseConfig = vi.fn();
 vi.mock('../../../contexts/ConfigContext', () => ({
-  useConfig: () => ({
-    config: { hasPassword: true },
-    isLoading: false,
-    isSetup: true,
-    isDemo: false,
-  }),
+  useConfig: () => mockUseConfig(),
 }));
 
 // Mock LoginModal
@@ -33,9 +29,18 @@ vi.mock('../../auth/LoginModal', () => ({
   }
 }));
 
+// Default config mock
+const defaultConfig = {
+  config: { hasPassword: true },
+  isLoading: false,
+  isSetup: true,
+  isDemo: false,
+};
+
 describe('ProtectedRoute', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockUseConfig.mockReturnValue(defaultConfig);
   });
 
   it('renders children when user is authenticated', () => {
@@ -319,5 +324,68 @@ describe('ProtectedRoute', () => {
     );
 
     expect(mockLogin).not.toHaveBeenCalled();
+  });
+
+  it('auto-authenticates when no password is configured', async () => {
+    mockUseConfig.mockReturnValue({
+      config: { hasPassword: false },
+      isLoading: false,
+      isSetup: true,
+      isDemo: false,
+    });
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      login: mockLogin
+    });
+
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: true,
+      json: () => Promise.resolve({ token: 'auto-token' }),
+    });
+
+    render(
+      <ProtectedRoute>
+        <div>Protected Content</div>
+      </ProtectedRoute>
+    );
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/api/auth/login'),
+        expect.objectContaining({ method: 'POST' })
+      );
+    });
+
+    await vi.waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith('auto-token');
+    });
+  });
+
+  it('handles auto-auth failure gracefully', async () => {
+    mockUseConfig.mockReturnValue({
+      config: { hasPassword: false },
+      isLoading: false,
+      isSetup: true,
+      isDemo: false,
+    });
+    mockUseAuth.mockReturnValue({
+      isAuthenticated: false,
+      login: mockLogin
+    });
+
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
+
+    render(
+      <ProtectedRoute>
+        <div>Protected Content</div>
+      </ProtectedRoute>
+    );
+
+    await vi.waitFor(() => {
+      expect(global.fetch).toHaveBeenCalled();
+    });
+
+    // Should not crash - still shows restricted view
+    expect(screen.getByText('Acceso Restringido')).toBeInTheDocument();
   });
 });
