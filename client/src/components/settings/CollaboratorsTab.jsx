@@ -16,6 +16,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../lib/apiBase';
 import ConfirmModal from '../common/ConfirmModal';
 import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
@@ -484,7 +485,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/data?includeArchived=true'); // Need updated API/Data logic or separate fetch? 
+        const response = await fetch(`${API_BASE}/api/data?includeArchived=true`); // Need updated API/Data logic or separate fetch?
         // /api/data usually returns active only. Ideally we should use /api/collaborators?includeArchived=true if /api/data doesn't support it.
         // But the previous code used /api/data. 
         // Let's stick to /api/collaborators for now to be safe, OR rely on my backend change to /api/collaborators.
@@ -495,8 +496,8 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
         // Fetching separately is safer.
         
         const [dataRes, collabRes] = await Promise.all([
-             fetch('/api/data'),
-             fetch('/api/collaborators?includeArchived=true') 
+             fetch(`${API_BASE}/api/data`),
+             fetch(`${API_BASE}/api/collaborators?includeArchived=true`)
         ]);
         
         const dataJson = await dataRes.json();

@@ -57,3 +57,12 @@ credentials/
 # Backup files that might contain sensitive data
 *.bak
 *.backup
+
+# Tauri
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/resources/
+
+# pkg output
+*.exe
+!src-tauri/icons/**

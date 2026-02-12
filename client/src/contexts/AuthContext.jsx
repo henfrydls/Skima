@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '../lib/apiBase';
 
 const AuthContext = createContext(null);
 
@@ -48,7 +49,8 @@ export function AuthProvider({ children }) {
       ...(options.headers || {})
     };
     
-    const response = await fetch(url, { ...options, headers });
+    const fullUrl = url.startsWith('/') ? `${API_BASE}${url}` : url;
+    const response = await fetch(fullUrl, { ...options, headers });
     
     // Intercept 401 - Session Expired
     if (response.status === 401) {
@@ -63,7 +65,7 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     const initialToken = localStorage.getItem('auth_token');
     if (initialToken) {
-      fetch('/api/auth/verify', {
+      fetch(`${API_BASE}/api/auth/verify`, {
         headers: { 'Authorization': `Bearer ${initialToken}` }
       })
         .then(res => res.json())

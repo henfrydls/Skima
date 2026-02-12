@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, ArrowRight, Loader2, Sparkles, Play, AlertTriangle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
+import { API_BASE } from '../lib/apiBase';
 
 /**
  * SetupView - Initial onboarding screen
@@ -34,7 +35,7 @@ export default function SetupView({ onSetupComplete }) {
     setIsLoadingDemo(true);
 
     try {
-      const response = await fetch('/api/seed-demo', {
+      const response = await fetch(`${API_BASE}/api/seed-demo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -68,7 +69,7 @@ export default function SetupView({ onSetupComplete }) {
     setError(null);
 
     try {
-      const response = await fetch('/api/setup', {
+      const response = await fetch(`${API_BASE}/api/setup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { Lock, Loader2, X, AlertCircle } from 'lucide-react';
 import Button from '../common/Button';
 import { useConfig } from '../../contexts/ConfigContext';
+import { API_BASE } from '../../lib/apiBase';
 
 /**
  * LoginModal - Simple password-based admin login
@@ -29,7 +30,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password })

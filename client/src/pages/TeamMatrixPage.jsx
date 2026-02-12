@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Grid3x3, User, Layers, Loader2, AlertCircle } from 'lucide-react';
+import { API_BASE } from '../lib/apiBase';
 import { TransposedMatrixTable } from '../components/matrix';
 import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../components/common/LoadingSkeleton';
 import CollaboratorList from '../components/matrix/CollaboratorList';
@@ -273,7 +274,7 @@ export default function TeamMatrixPage() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/data');
+        const response = await fetch(`${API_BASE}/api/data`);
         if (!response.ok) throw new Error('Error fetching data');
         const result = await response.json();
         setData(result);

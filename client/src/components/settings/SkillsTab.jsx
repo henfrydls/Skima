@@ -24,7 +24,7 @@ import Button from '../common/Button';
  * SkillsTab — Gestión de Skills por Categoría (Connected to API)
  */
 
-const API_BASE = '/api';
+import { API_BASE } from '../../lib/apiBase';
 
 // Edit Skill Modal with Rubric
 function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading }) {
@@ -253,8 +253,8 @@ export default function SkillsTab({ isActive = false }) {
       if (categories.length === 0) setIsLoading(true);
       
       const [catRes, skillRes] = await Promise.all([
-        fetch(`${API_BASE}/categories`),
-        fetch(`${API_BASE}/skills`)
+        fetch(`${API_BASE}/api/categories`),
+        fetch(`${API_BASE}/api/skills`)
       ]);
       
       if (!catRes.ok || !skillRes.ok) {
@@ -314,7 +314,7 @@ export default function SkillsTab({ isActive = false }) {
     return withAuth(async () => {
       setIsSaving(true);
       try {
-        const res = await fetch(`${API_BASE}/skills`, {
+        const res = await fetch(`${API_BASE}/api/skills`, {
           method: 'POST',
           headers: getHeaders(),
           body: JSON.stringify({
@@ -349,7 +349,7 @@ export default function SkillsTab({ isActive = false }) {
     return withAuth(async () => {
       setIsSaving(true);
       try {
-        const res = await fetch(`${API_BASE}/skills/${editingSkill.id}`, {
+        const res = await fetch(`${API_BASE}/api/skills/${editingSkill.id}`, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify(data)
@@ -377,7 +377,7 @@ export default function SkillsTab({ isActive = false }) {
 
   const executeDelete = async (skill) => {
       try {
-        const res = await fetch(`${API_BASE}/skills/${skill.id}`, {
+        const res = await fetch(`${API_BASE}/api/skills/${skill.id}`, {
           method: 'DELETE',
           headers: getHeaders()
         });

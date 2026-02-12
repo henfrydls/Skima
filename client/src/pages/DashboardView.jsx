@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Lightbulb } from 'lucide-react';
+import { API_BASE } from '../lib/apiBase';
 import {
   prioritizeGaps,
   detectUnderutilizedTalent,
@@ -65,7 +66,7 @@ export default function DashboardView() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/data');
+        const response = await fetch(`${API_BASE}/api/data`);
         if (!response.ok) throw new Error('Error fetching data');
         const result = await response.json();
         setData(result);

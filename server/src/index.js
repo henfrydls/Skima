@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
-import { prisma } from './db.js';
+import bcrypt from 'bcryptjs';
+import { prisma, ensureDatabase } from './db.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -95,20 +96,23 @@ export function createApp() {
         await prisma.collaborator.deleteMany({ where: { esDemo: true } });
       }
 
+      // Hash password if provided
+      const hashedPassword = adminPassword ? await bcrypt.hash(adminPassword, 10) : null;
+
       // Create or update config (upsert)
       const config = await prisma.systemConfig.upsert({
         where: { id: 1 },
         update: {
           companyName: companyName.trim(),
           adminName: adminName.trim(),
-          adminPassword: adminPassword || null,
+          adminPassword: hashedPassword,
           isSetup: true
         },
         create: {
           id: 1,
           companyName: companyName.trim(),
           adminName: adminName.trim(),
-          adminPassword: adminPassword || null,
+          adminPassword: hashedPassword,
           isSetup: true
         }
       });
@@ -139,7 +143,13 @@ export function createApp() {
 
       // If changing password and current password exists, verify it
       if (config.adminPassword && adminPassword) {
-        if (currentPassword !== config.adminPassword) {
+        let currentValid = false;
+        if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
+          currentValid = await bcrypt.compare(currentPassword || '', config.adminPassword);
+        } else {
+          currentValid = currentPassword === config.adminPassword;
+        }
+        if (!currentValid) {
           return res.status(401).json({ error: 'Current password is incorrect' });
         }
       }
@@ -147,7 +157,9 @@ export function createApp() {
       const updateData = {};
       if (companyName) updateData.companyName = companyName.trim();
       if (adminName) updateData.adminName = adminName.trim();
-      if (adminPassword !== undefined) updateData.adminPassword = adminPassword || null;
+      if (adminPassword !== undefined) {
+        updateData.adminPassword = adminPassword ? await bcrypt.hash(adminPassword, 10) : null;
+      }
 
       const updated = await prisma.systemConfig.update({
         where: { id: 1 },
@@ -181,7 +193,12 @@ export function createApp() {
         return res.json({ valid: true });
       }
 
-      const valid = password === config.adminPassword;
+      let valid = false;
+      if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
+        valid = await bcrypt.compare(password || '', config.adminPassword);
+      } else {
+        valid = password === config.adminPassword;
+      }
       res.json({ valid });
     } catch (error) {
       console.error('Error verifying password:', error);
@@ -584,54 +601,6 @@ export function createApp() {
     } catch (error) {
       console.error('[API] PUT /api/categories/:id/restore failed:', error);
       res.status(500).json({ message: 'Error restaurando categoría' });
-    }
-  });
-
-  // PUT /api/categories/reorder - Reorder categories
-
-  app.put('/api/categories/reorder', authMiddleware, async (req, res) => {
-    try {
-      const { order } = req.body; // Array of category IDs in new order: [3, 1, 2, 4, ...]
-      
-      if (!Array.isArray(order)) {
-        return res.status(400).json({ message: 'order must be an array of category IDs' });
-      }
-
-      // Update each category's orden field
-      for (let i = 0; i < order.length; i++) {
-        await prisma.category.update({
-          where: { id: order[i] },
-          data: { orden: i }
-        });
-      }
-
-      res.json({ success: true });
-    } catch (error) {
-      console.error('[API] PUT /api/categories/reorder failed:', error);
-      res.status(500).json({ message: 'Error reordering categories' });
-    }
-  });
-
-  // POST /api/collaborators - Create collaborator
-  app.post('/api/collaborators', authMiddleware, async (req, res) => {
-    try {
-      const { nombre, rol, email, esDemo } = req.body;
-      if (!nombre || !rol) {
-        return res.status(400).json({ message: 'Nombre y rol son requeridos' });
-      }
-
-      const collaborator = await prisma.collaborator.create({
-        data: {
-          nombre,
-          rol,
-          email,
-          esDemo: esDemo || false
-        }
-      });
-      res.json(collaborator);
-    } catch (error) {
-      console.error('[API] POST /api/collaborators failed:', error);
-      res.status(500).json({ message: 'Error creating collaborator' });
     }
   });
 
@@ -1306,12 +1275,29 @@ export function createApp() {
 // ============================================================
 // SERVER START (only when run directly)
 // ============================================================
-const PORT = process.env.PORT || 3001;
+
+// Parse --port from CLI args (passed by Tauri sidecar)
+function getPort() {
+  const portIdx = process.argv.indexOf('--port');
+  if (portIdx !== -1 && process.argv[portIdx + 1]) {
+    return parseInt(process.argv[portIdx + 1], 10);
+  }
+  return parseInt(process.env.PORT, 10) || 3001;
+}
 
 // Only start server if this file is run directly (not imported for tests)
-if (process.argv[1] && process.argv[1].includes('index.js')) {
+// process.pkg is set when running as a compiled pkg binary (sidecar)
+const isDirectRun = process.pkg || (process.argv[1] && process.argv[1].includes('index.js'));
+if (isDirectRun) {
+  const PORT = getPort();
   const app = createApp();
-  app.listen(PORT, () => {
-    console.log(`[Server] Skills Matrix API running on http://localhost:${PORT}`);
+  // Auto-initialize DB schema in sidecar mode before starting
+  ensureDatabase().then(() => {
+    app.listen(PORT, () => {
+      console.log(`[Skima Server] API running on http://localhost:${PORT}`);
+    });
+  }).catch(err => {
+    console.error('[Skima Server] Failed to initialize database:', err);
+    process.exit(1);
   });
 }

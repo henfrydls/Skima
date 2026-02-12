@@ -1,7 +1,7 @@
 {
   "name": "skima",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
+    "@tauri-apps/api": "^2.10.1",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.23.26",
     "lucide-react": "^0.562.0",

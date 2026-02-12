@@ -10,39 +10,67 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
-          
-      # Install Root Dependencies
+
       - name: Install Root Dependencies
         run: npm install
 
-      # Install Client Dependencies
       - name: Install Client Dependencies
-        run: |
-          cd client
-          npm install
+        run: cd client && npm install
 
-      # Install Server Dependencies
       - name: Install Server Dependencies
-        run: |
-          cd server
-          npm install
+        run: cd server && npm install
 
-      # Linting (Client)
-      - name: Linting (Client)
+      # Linting
+      - name: Lint Client
         run: npm run lint
         working-directory: ./client
 
-      # Testing (Unit & Integration)
-      - name: Run Tests (Client & Server)
-        run: npm test
+      # Tests with Coverage
+      - name: Run Client Tests with Coverage
+        run: npx vitest run --coverage
+        working-directory: ./client
+
+      - name: Run Server Tests with Coverage
+        run: npx vitest run --coverage
+        working-directory: ./server
+
+      # Build Check
+      - name: Build Client
+        run: npm run build
+        working-directory: ./client
+
+      # Upload Coverage Artifacts
+      - name: Upload Client Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-coverage
+          path: client/coverage/
+
+      - name: Upload Server Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage/
 
       # Security Audit
-      - name: Security Audit
+      - name: Security Audit (Root)
         run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Security Audit (Client)
+        run: npm audit --audit-level=high
+        working-directory: ./client
+        continue-on-error: true
+
+      - name: Security Audit (Server)
+        run: npm audit --audit-level=high
+        working-directory: ./server
         continue-on-error: true

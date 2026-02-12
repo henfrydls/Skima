@@ -4,6 +4,7 @@ import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, Ch
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { useAuth } from '../contexts/AuthContext';
+import { API_BASE } from '../lib/apiBase';
 
 /**
  * ProfilePage - Dedicated profile management page
@@ -31,7 +32,7 @@ export default function ProfilePage() {
 
   // Check if password exists on mount
   useState(() => {
-    fetch('/api/config')
+    fetch(`${API_BASE}/api/config`)
       .then(res => res.json())
       .then(data => setHasPassword(data.hasPassword))
       .catch(console.error);
@@ -60,7 +61,7 @@ export default function ProfilePage() {
         }
       }
 
-      const response = await fetch('/api/config', {
+      const response = await fetch(`${API_BASE}/api/config`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)

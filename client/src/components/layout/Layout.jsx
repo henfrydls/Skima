@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,10 +11,13 @@ import {
   LogIn,
   LogOut,
   User,
-  FlaskConical
+  FlaskConical,
+  Package,
+  Check
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
+import { useAppVersion } from '../../hooks/useAppVersion';
 import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
 import DemoBanner from '../common/DemoBanner';
@@ -23,8 +26,45 @@ import DemoBanner from '../common/DemoBanner';
 import logoFull from '../../assets/skima-full.svg';
 
 /**
+ * VersionBadge - Click-to-copy version indicator
+ */
+function VersionBadge({ version, isCollapsed }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = useCallback(() => {
+    navigator.clipboard.writeText(`Skima v${version}`);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  }, [version]);
+
+  return (
+    <div className="px-2 mb-1">
+      <button
+        onClick={handleCopy}
+        title={`v${version} — Click to copy`}
+        className={`
+          w-full flex items-center gap-2 px-3 py-1.5 rounded-lg
+          text-xs text-gray-400 bg-gray-50 hover:bg-gray-100
+          transition-colors cursor-pointer
+          ${isCollapsed ? 'justify-center' : ''}
+        `}
+      >
+        {copied ? (
+          <Check size={14} className="flex-shrink-0 text-green-500" />
+        ) : (
+          <Package size={14} className="flex-shrink-0" />
+        )}
+        {!isCollapsed && (
+          <span>{copied ? 'Copied!' : `v${version}`}</span>
+        )}
+      </button>
+    </div>
+  );
+}
+
+/**
  * Layout Component - App Shell
- * 
+ *
  * Estructura principal de la aplicación:
  * - Sidebar lateral colapsable con navegación
  * - Settings solo visible si está autenticado
@@ -53,6 +93,7 @@ export default function Layout() {
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, login, logout } = useAuth();
   const { companyName, adminName, isDemo } = useConfig();
+  const version = useAppVersion();
   
   const navItems = getNavItems(isAuthenticated);
 
@@ -120,6 +161,9 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        {/* Version badge - click to copy */}
+        <VersionBadge version={version} isCollapsed={isCollapsed} />
 
         {/* Demo indicator */}
         {isDemo && (

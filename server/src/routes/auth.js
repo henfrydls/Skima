@@ -1,9 +1,37 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import { generateToken, JWT_SECRET } from '../middleware/auth.js';
 import { prisma } from '../db.js';
 
 const router = express.Router();
+
+// Simple in-memory rate limiter for login attempts
+const loginAttempts = new Map();
+const MAX_ATTEMPTS = 10;
+const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+function checkRateLimit(ip) {
+  const now = Date.now();
+  const record = loginAttempts.get(ip);
+
+  if (!record || now - record.firstAttempt > WINDOW_MS) {
+    loginAttempts.set(ip, { count: 1, firstAttempt: now });
+    return true;
+  }
+
+  if (record.count >= MAX_ATTEMPTS) {
+    return false;
+  }
+
+  record.count++;
+  return true;
+}
+
+// Allow tests to reset rate limiter state
+export function resetRateLimiter() {
+  loginAttempts.clear();
+}
 
 /**
  * POST /api/auth/login
@@ -11,14 +39,22 @@ const router = express.Router();
  */
 router.post('/login', async (req, res) => {
   try {
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
+
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({
+        message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.',
+        code: 'RATE_LIMITED'
+      });
+    }
+
     const { password } = req.body;
 
     // Get password from SystemConfig
     const config = await prisma.systemConfig.findFirst();
-    const storedPassword = config?.adminPassword || process.env.ADMIN_PASSWORD || 'admin123';
 
     // If no password configured, grant access with any input
-    if (!config?.adminPassword && !process.env.ADMIN_PASSWORD) {
+    if (!config?.adminPassword) {
       const token = generateToken({
         role: 'admin',
         loginTime: new Date().toISOString()
@@ -37,7 +73,21 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const isValid = password === storedPassword;
+    // Compare using bcrypt if the stored password is a hash, otherwise plain compare for migration
+    let isValid = false;
+    if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
+      isValid = await bcrypt.compare(password, config.adminPassword);
+    } else {
+      // Legacy plaintext comparison - auto-upgrade to bcrypt on successful login
+      isValid = password === config.adminPassword;
+      if (isValid) {
+        const hashed = await bcrypt.hash(password, 10);
+        await prisma.systemConfig.update({
+          where: { id: config.id },
+          data: { adminPassword: hashed }
+        });
+      }
+    }
 
     if (!isValid) {
       return res.status(401).json({
@@ -69,7 +119,7 @@ router.post('/login', async (req, res) => {
  */
 router.get('/verify', (req, res) => {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.json({ authenticated: false });
   }
@@ -85,4 +135,3 @@ router.get('/verify', (req, res) => {
 });
 
 export default router;
-

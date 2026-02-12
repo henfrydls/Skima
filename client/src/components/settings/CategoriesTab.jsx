@@ -31,7 +31,7 @@ import toast from 'react-hot-toast';
  * - Login modal on 401
  */
 
-const API_BASE = '/api';
+import { API_BASE } from '../../lib/apiBase';
 
 // Color Picker Popover
 const PRESET_COLORS = [
@@ -385,8 +385,8 @@ export default function CategoriesTab() {
         setIsLoading(true);
         // Fetch ALL data (including archived) and filter client-side for smooth transitions
         const responseParam = '?includeArchived=true';
-        const catUrl = `${API_BASE}/categories${responseParam}`;
-        const skillUrl = `${API_BASE}/skills${responseParam}`;
+        const catUrl = `${API_BASE}/api/categories${responseParam}`;
+        const skillUrl = `${API_BASE}/api/skills${responseParam}`;
         const [catRes, skillRes] = await Promise.all([
           fetch(catUrl),
           fetch(skillUrl)
@@ -434,7 +434,7 @@ export default function CategoriesTab() {
     return withAuth(async () => {
       setIsSaving(true);
       try {
-        const res = await fetch(`${API_BASE}/categories`, {
+        const res = await fetch(`${API_BASE}/api/categories`, {
           method: 'POST',
           headers: getHeaders(),
           body: JSON.stringify(data)
@@ -465,7 +465,7 @@ export default function CategoriesTab() {
     return withAuth(async () => {
       setIsSaving(true);
       try {
-        const res = await fetch(`${API_BASE}/categories/${editingCategory.id}`, {
+        const res = await fetch(`${API_BASE}/api/categories/${editingCategory.id}`, {
           method: 'PUT',
           headers: getHeaders(),
           body: JSON.stringify(data)
@@ -536,7 +536,7 @@ export default function CategoriesTab() {
     setTimeout(async () => {
       if (!isUndone) {
          try {
-            const res = await fetch(`${API_BASE}/categories/${category.id}`, {
+            const res = await fetch(`${API_BASE}/api/categories/${category.id}`, {
               method: 'DELETE',
               headers: getHeaders()
             });
@@ -559,7 +559,7 @@ export default function CategoriesTab() {
   const handleRestore = async (category) => {
     return withAuth(async () => {
       try {
-        const res = await fetch(`${API_BASE}/categories/${category.id}/restore`, {
+        const res = await fetch(`${API_BASE}/api/categories/${category.id}/restore`, {
           method: 'PUT',
           headers: getHeaders()
         });
@@ -637,7 +637,7 @@ export default function CategoriesTab() {
     // Persist final order to API
     if (draggedId !== null) {
       const order = categories.map(c => c.id);
-      fetch(`${API_BASE}/categories/reorder`, {
+      fetch(`${API_BASE}/api/categories/reorder`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

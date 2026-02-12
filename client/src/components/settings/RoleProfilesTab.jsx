@@ -23,12 +23,13 @@ import {
   Edit3
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../lib/apiBase';
 import toast from 'react-hot-toast';
 import Button from '../common/Button';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
- * 
+ *
  * UX Focus:
  * - Clear segmented controls for criticality (C/I/D/N/A)
  * - Progressive disclosure with category accordions
@@ -37,8 +38,6 @@ import Button from '../common/Button';
  * - Create new role profiles
  * - DIRTY STATE PROTECTION: Prevents accidental data loss
  */
-
-const API_BASE = '/api';
 
 // Criticality options with colors and descriptions
 const CRITICIDAD_OPTIONS = [
@@ -183,7 +182,7 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
     
     setIsLoading(true);
     try {
-      const response = await fetch(`/api/role-profiles/${encodeURIComponent(currentName)}/rename`, {
+      const response = await fetch(`${API_BASE}/api/role-profiles/${encodeURIComponent(currentName)}/rename`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -529,7 +528,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       try {
         // Only show spinner on first load to make tab switching instant
         if (roles.length === 0) setIsLoading(true);
-        const response = await fetch(`${API_BASE}/data`);
+        const response = await fetch(`${API_BASE}/api/data`);
         if (!response.ok) throw new Error('Error fetching data');
         const data = await response.json();
         
@@ -620,7 +619,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
     setIsSaving(true);
     try {
       // Call API to persist
-      const response = await fetch(`${API_BASE}/role-profiles/${encodeURIComponent(selectedRole)}`, {
+      const response = await fetch(`${API_BASE}/api/role-profiles/${encodeURIComponent(selectedRole)}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

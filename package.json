@@ -1,8 +1,8 @@
 {
-  "name": "skills-matrix",
-  "version": "0.1.0",
+  "name": "skima",
+  "version": "1.0.0",
   "private": true,
-  "description": "Skills Matrix & Tracking - FOSS Edition",
+  "description": "Skima - Skills Management App",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "cd client && npm run dev",
@@ -17,7 +17,12 @@
     "test:coverage:client": "cd client && npx vitest run --coverage",
     "test:coverage:server": "cd server && npx vitest run --coverage",
     "db:migrate": "cd server && npm run db:migrate",
-    "db:push": "cd server && npm run db:push"
+    "db:push": "cd server && npm run db:push",
+    "db:seed": "cd server && npm run db:seed",
+    "tauri": "cargo tauri",
+    "tauri:dev": "cargo tauri dev",
+    "tauri:build": "cargo tauri build",
+    "version:bump": "node scripts/bump-version.js"
   },
   "devDependencies": {
     "concurrently": "^9.1.0"

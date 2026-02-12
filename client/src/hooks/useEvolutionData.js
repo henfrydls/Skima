@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '../lib/apiBase';
 
 /**
  * useEvolutionData - Custom hook for fetching evolution data from API
@@ -19,7 +20,7 @@ export function useEvolutionData(initialRange = '12m') {
     setError(null);
     
     try {
-      const response = await fetch(`/api/skills/evolution?range=${range}`);
+      const response = await fetch(`${API_BASE}/api/skills/evolution?range=${range}`);
       
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);

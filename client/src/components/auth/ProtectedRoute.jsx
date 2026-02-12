@@ -1,5 +1,6 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
+import { API_BASE } from '../../lib/apiBase';
 import LoginModal from '../auth/LoginModal';
 import { useState, useEffect } from 'react';
 
@@ -26,7 +27,7 @@ export default function ProtectedRoute({ children }) {
   useEffect(() => {
     if (!isAuthenticated && config && !config.hasPassword && !autoLogging) {
       setAutoLogging(true);
-      fetch('/api/auth/login', {
+      fetch(`${API_BASE}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({})

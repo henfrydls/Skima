@@ -4,12 +4,14 @@ import jwt from 'jsonwebtoken';
 import { createApp } from '../index.js';
 import { prisma } from '../db.js';
 import { JWT_SECRET, generateToken } from '../middleware/auth.js';
+import { resetRateLimiter } from '../routes/auth.js';
 
 describe('Auth Routes', () => {
   let app;
 
   beforeEach(async () => {
     app = createApp();
+    resetRateLimiter();
     // Ensure SystemConfig has a known password for auth tests
     await prisma.systemConfig.upsert({
       where: { id: 1 },

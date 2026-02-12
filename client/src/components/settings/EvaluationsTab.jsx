@@ -27,21 +27,20 @@ import {
   User
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { API_BASE } from '../../lib/apiBase';
 import Button from '../common/Button';
 import EmptyState from '../common/EmptyState';
 import toast from 'react-hot-toast';
 
 /**
  * EvaluationsTab — Evaluar Skills por Colaborador (v2)
- * 
+ *
  * UX Improvements:
  * - Segmented controls with descriptive labels
  * - Progressive disclosure for frecuencia
  * - Fixed edge cases in evaluation logic
  * - Freshness indicator for last evaluation date
  */
-
-const API_BASE = '/api';
 
 // Nivel options with descriptive labels - More vibrant colors for visibility
 const NIVELES = [
@@ -545,7 +544,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
   useEffect(() => {
     const fetchSession = async () => {
       try {
-        const response = await fetch(`/api/evaluations/${uuid}`);
+        const response = await fetch(`${API_BASE}/api/evaluations/${uuid}`);
         if (response.ok) {
           const data = await response.json();
           setSession(data);
@@ -707,8 +706,8 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       
       // Fetch all collaborators including archived ones to ensure historical data works
       const [dataRes, collabsRes] = await Promise.all([
-        fetch(`${API_BASE}/data?t=${Date.now()}`, { cache: 'no-store' }),
-        fetch(`${API_BASE}/collaborators?includeArchived=true`, { cache: 'no-store' })
+        fetch(`${API_BASE}/api/data?t=${Date.now()}`, { cache: 'no-store' }),
+        fetch(`${API_BASE}/api/collaborators?includeArchived=true`, { cache: 'no-store' })
       ]);
 
       if (!dataRes.ok || !collabsRes.ok) throw new Error('Error fetching data');
@@ -756,7 +755,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       // Fetch evaluation history
       const fetchHistory = async () => {
         try {
-          const response = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
+          const response = await fetch(`${API_BASE}/api/collaborators/${selectedCollaborator}/evaluations`);
           if (response.ok) {
             const history = await response.json();
             setEvaluationHistory(history);
@@ -829,7 +828,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
     setLastSavedUuid(null);
     
     try {
-      const response = await fetch(`${API_BASE}/evaluations`, {
+      const response = await fetch(`${API_BASE}/api/evaluations`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -854,7 +853,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       toast.success('Evaluación guardada correctamente');
 
       // Refresh history
-      const historyResponse = await fetch(`${API_BASE}/collaborators/${selectedCollaborator}/evaluations`);
+      const historyResponse = await fetch(`${API_BASE}/api/collaborators/${selectedCollaborator}/evaluations`);
       if (historyResponse.ok) {
         const history = await historyResponse.json();
         setEvaluationHistory(history);

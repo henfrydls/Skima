@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '../lib/apiBase';
 
 /**
  * ConfigContext - Manages system configuration state
@@ -17,7 +18,7 @@ export function ConfigProvider({ children }) {
   // Fetch config on mount
   const fetchConfig = useCallback(async () => {
     try {
-      const response = await fetch('/api/config');
+      const response = await fetch(`${API_BASE}/api/config`);
       const data = await response.json();
       
       if (!response.ok) {
