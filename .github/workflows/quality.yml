@@ -36,9 +36,17 @@ jobs:
         run: npx vitest run --coverage
         working-directory: ./client
 
+      - name: Setup Server Test Database
+        run: npx prisma db push --skip-generate
+        working-directory: ./server
+        env:
+          DATABASE_URL: file:./prisma/test.db
+
       - name: Run Server Tests with Coverage
         run: npx vitest run --coverage
         working-directory: ./server
+        env:
+          DATABASE_URL: file:./prisma/test.db
 
       # Build Check
       - name: Build Client
