@@ -34,12 +34,11 @@ if (customDbPath) {
 export const prisma = new PrismaClient();
 
 /**
- * Auto-initialize the database schema when running as sidecar.
+ * Auto-initialize the database schema on first run.
  * Uses raw SQL from the init migration to create tables if they don't exist.
+ * Works in all environments: dev, sidecar (Tauri), Docker.
  */
 export async function ensureDatabase() {
-  if (!customDbPath) return; // Dev mode uses existing DB
-
   try {
     // Check if tables exist by querying SystemConfig
     await prisma.systemConfig.findFirst();

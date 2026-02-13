@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { 
@@ -211,6 +211,174 @@ function evaluarSkill(nivel, frecuencia, criticidad) {
   
   // Default
   return { estado: nivel >= 3 ? 'COMPETENTE' : 'EN DESARROLLO' };
+}
+
+// Custom Collaborator Dropdown
+function CollaboratorSelect({ collaborators, value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const containerRef = useRef(null);
+
+  const selected = collaborators.find(c => c.id === value);
+
+  // Close on outside click
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e) => {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isOpen]);
+
+  // Close on Escape
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+        setSearch('');
+      }
+    };
+    document.addEventListener('keydown', handleKey);
+    return () => document.removeEventListener('keydown', handleKey);
+  }, [isOpen]);
+
+  const filtered = collaborators.filter(c =>
+    c.nombre.toLowerCase().includes(search.toLowerCase()) ||
+    c.rol.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const active = filtered.filter(c => c.isActive !== false).sort((a, b) => a.nombre.localeCompare(b.nombre));
+  const inactive = filtered.filter(c => c.isActive === false).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+  const handleSelect = (id) => {
+    onChange(id);
+    setIsOpen(false);
+    setSearch('');
+  };
+
+  return (
+    <div className="relative min-w-[280px]" ref={containerRef}>
+      {/* Trigger button */}
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className={`
+          w-full flex items-center gap-2 pl-3 pr-3 py-2 rounded-lg border bg-white text-sm text-left
+          transition-all duration-150
+          ${isOpen
+            ? 'border-primary ring-2 ring-primary/20'
+            : 'border-gray-200 hover:border-gray-300'
+          }
+        `}
+      >
+        <User size={16} className="text-gray-400 flex-shrink-0" />
+        <span className={`flex-1 truncate ${selected ? 'text-gray-800' : 'text-gray-400'}`}>
+          {selected ? `${selected.nombre} — ${selected.rol}` : 'Seleccionar colaborador...'}
+        </span>
+        <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* Dropdown panel */}
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-30 overflow-hidden">
+          {/* Search input */}
+          <div className="p-2 border-b border-gray-100">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar..."
+                autoFocus
+                className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary"
+              />
+            </div>
+          </div>
+
+          {/* Options list */}
+          <div className="max-h-[280px] overflow-y-auto">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-sm text-gray-400 text-center">Sin resultados</div>
+            ) : (
+              <>
+                {/* Placeholder option */}
+                <button
+                  type="button"
+                  onClick={() => handleSelect(null)}
+                  className={`
+                    w-full text-left px-3 py-2 text-sm transition-colors
+                    ${!value ? 'bg-primary/5 text-primary' : 'text-gray-400 hover:bg-gray-50'}
+                  `}
+                >
+                  Seleccionar colaborador...
+                </button>
+
+                {/* Active group */}
+                {active.length > 0 && (
+                  <>
+                    {inactive.length > 0 && (
+                      <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wider">
+                        Activos
+                      </div>
+                    )}
+                    {active.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelect(c.id)}
+                        className={`
+                          w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors
+                          ${c.id === value ? 'bg-primary/5 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
+                        `}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-competent flex-shrink-0" />
+                        <span className="truncate">{c.nombre}</span>
+                        <span className="text-gray-400 text-xs ml-auto flex-shrink-0">
+                          {c.rol}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )}
+
+                {/* Inactive group */}
+                {inactive.length > 0 && (
+                  <>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wider border-t border-gray-100">
+                      Desactivados
+                    </div>
+                    {inactive.map(c => (
+                      <button
+                        key={c.id}
+                        type="button"
+                        onClick={() => handleSelect(c.id)}
+                        className={`
+                          w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors
+                          ${c.id === value ? 'bg-primary/5 text-primary font-medium' : 'text-gray-500 hover:bg-gray-50'}
+                        `}
+                      >
+                        <span className="w-1.5 h-1.5 rounded-full bg-gray-300 flex-shrink-0" />
+                        <span className="truncate opacity-60">{c.nombre}</span>
+                        <span className="text-gray-400 text-xs ml-auto flex-shrink-0">
+                          {c.rol}
+                        </span>
+                      </button>
+                    ))}
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Nivel Selector with descriptive segmented control
@@ -982,43 +1150,11 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       {/* Header with inline status badges */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4 flex-1">
-          <div className="relative min-w-[280px]">
-            <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <select
-              value={selectedCollaborator || ''}
-              onChange={(e) => handleCollaboratorSwitch(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none bg-white text-sm"
-            >
-              <option value="">Seleccionar colaborador...</option>
-              {collaborators.some(c => c.isActive === false) ? (
-                <>
-                  <optgroup label="Activos">
-                    {collaborators
-                      .filter(c => c.isActive !== false)
-                      .sort((a,b) => a.nombre.localeCompare(b.nombre))
-                      .map(c => (
-                        <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
-                      ))}
-                  </optgroup>
-                  <optgroup label="Desactivados">
-                    {collaborators
-                      .filter(c => c.isActive === false)
-                      .sort((a,b) => a.nombre.localeCompare(b.nombre))
-                      .map(c => (
-                        <option key={c.id} value={c.id}>{c.nombre} (Desactivado) — {c.rol}</option>
-                      ))}
-                  </optgroup>
-                </>
-              ) : (
-                collaborators
-                  .sort((a,b) => a.nombre.localeCompare(b.nombre))
-                  .map(c => (
-                    <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
-                  ))
-              )}
-            </select>
-            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <CollaboratorSelect
+            collaborators={collaborators}
+            value={selectedCollaborator}
+            onChange={handleCollaboratorSwitch}
+          />
           
           {/* Inline Status Badges - only show when collaborator selected */}
           {selectedCollaborator && (() => {

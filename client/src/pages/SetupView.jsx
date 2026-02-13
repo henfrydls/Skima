@@ -4,6 +4,7 @@ import { Building2, User, Lock, ArrowRight, Loader2, Sparkles, Play, AlertTriang
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { API_BASE } from '../lib/apiBase';
+import { invalidatePreload } from '../lib/dataPreload';
 
 /**
  * SetupView - Initial onboarding screen
@@ -18,7 +19,7 @@ import { API_BASE } from '../lib/apiBase';
 
 export default function SetupView({ onSetupComplete }) {
   const navigate = useNavigate();
-  const { isDemo } = useConfig();
+  const { isDemo, refetchConfig } = useConfig();
   const [formData, setFormData] = useState({
     companyName: '',
     adminName: '',
@@ -50,11 +51,8 @@ export default function SetupView({ onSetupComplete }) {
       try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
 
       toast.success('¡Datos demo cargados! Explora la app libremente.');
-
-      if (onSetupComplete) {
-        onSetupComplete(data);
-      }
-
+      invalidatePreload();
+      await refetchConfig();
       navigate('/');
     } catch (err) {
       console.error('Demo setup error:', err);
@@ -89,11 +87,8 @@ export default function SetupView({ onSetupComplete }) {
       try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
 
       toast.success('¡Configuración guardada!');
-
-      if (onSetupComplete) {
-        onSetupComplete(data);
-      }
-
+      invalidatePreload();
+      await refetchConfig();
       navigate('/');
     } catch (err) {
       console.error('Setup error:', err);
