@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, Lightbulb } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Lightbulb, Settings, FlaskConical } from 'lucide-react';
+import { useConfig } from '../contexts/ConfigContext';
 import { API_BASE } from '../lib/apiBase';
 import { preloadData } from '../lib/dataPreload';
 import {
@@ -27,6 +28,9 @@ const isCriticalGap = (skillData) => {
 // DASHBOARD VIEW - Executive Summary (Redesigned)
 // ============================================
 export default function DashboardView() {
+  const { isDemo } = useConfig();
+  const navigate = useNavigate();
+
   // Data state
   const [data, setData] = useState({ categories: [], skills: [], collaborators: [], roleProfiles: {} });
   const [isLoading, setIsLoading] = useState(true);
@@ -197,10 +201,30 @@ export default function DashboardView() {
         automaticInsight={insights.length > 0 ? insights[0] : null}
       />
 
+      {/* Demo mode: Setup prompt card */}
+      {isDemo && (
+        <div className="flex items-center gap-4 p-4 bg-white border border-amber-200 rounded-xl shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <FlaskConical size={20} className="text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800">Estás explorando con datos de ejemplo</p>
+            <p className="text-xs text-gray-500">Cuando estés listo, configura tu espacio con tus datos reales.</p>
+          </div>
+          <button
+            onClick={() => navigate('/setup')}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary bg-primary/5 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors flex-shrink-0"
+          >
+            <Settings size={14} />
+            Configurar mi espacio
+          </button>
+        </div>
+      )}
+
       {/* Quick Access */}
       <div className="flex justify-center">
-        <Link 
-          to="/team-matrix" 
+        <Link
+          to="/team-matrix"
           className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-gray-600 hover:text-primary"
         >
           Explorar Team Matrix

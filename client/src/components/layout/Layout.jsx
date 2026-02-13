@@ -35,7 +35,14 @@ function VersionBadge({ version, isCollapsed }) {
           ${isCollapsed ? 'px-[18px]' : 'px-5'}
         `}
       >
-        <span className="text-[11px] leading-none">v{version}</span>
+        <span
+          className={`
+            text-[11px] leading-none whitespace-nowrap transition-opacity duration-300 ease-in-out
+            ${isCollapsed ? 'opacity-0' : 'opacity-100'}
+          `}
+        >
+          v{version}
+        </span>
       </div>
     </div>
   );
@@ -101,14 +108,14 @@ export default function Layout() {
             src={logoFull}
             alt="Skima"
             className={`
-              h-8 transition-opacity duration-300 ease-in-out overflow-hidden
+              h-8 transition-all duration-300 ease-in-out overflow-hidden
               ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px]'}
             `}
           />
           {/* Collapse/Expand button */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-all duration-200 flex-shrink-0"
+            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-300 ease-in-out flex-shrink-0"
             aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -123,7 +130,7 @@ export default function Layout() {
               to={to}
               className={({ isActive }) => `
                 flex items-center px-3 py-2.5 rounded-lg
-                transition-all duration-150 relative overflow-hidden
+                transition-colors duration-150 relative overflow-hidden
                 ${isActive
                   ? 'bg-primary/10 text-primary font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-primary'
@@ -151,10 +158,14 @@ export default function Layout() {
           <div className="px-2 mb-1">
             <button
               onClick={() => navigate('/setup')}
-              className="w-full flex items-center px-3 py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all duration-150 text-xs font-medium overflow-hidden"
-              title={isCollapsed ? 'Modo Demo - Configurar' : undefined}
+              className={`
+                w-full flex items-center py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100
+                transition-all duration-300 ease-in-out text-xs font-medium overflow-hidden
+                ${isCollapsed ? 'px-[14px]' : 'px-3'}
+              `}
+              title={isCollapsed ? 'Modo Demo' : undefined}
             >
-              <FlaskConical size={16} className="flex-shrink-0 min-w-[16px]" />
+              <FlaskConical size={16} className="flex-shrink-0" />
               <span
                 className={`
                   whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
@@ -162,6 +173,25 @@ export default function Layout() {
                 `}
               >
                 Modo Demo
+              </span>
+            </button>
+            <button
+              onClick={() => navigate('/setup')}
+              className={`
+                w-full flex items-center py-2 mt-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20
+                transition-all duration-300 ease-in-out text-xs font-medium overflow-hidden
+                ${isCollapsed ? 'px-[14px]' : 'px-3'}
+              `}
+              title={isCollapsed ? 'Configurar mi espacio' : undefined}
+            >
+              <Settings size={16} className="flex-shrink-0" />
+              <span
+                className={`
+                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                `}
+              >
+                Configurar mi espacio
               </span>
             </button>
           </div>
@@ -175,7 +205,7 @@ export default function Layout() {
             <div className="p-2 border-t border-gray-100">
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="w-full flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all duration-150 overflow-hidden"
+                className="w-full flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-colors duration-150 overflow-hidden"
                 title="Iniciar Sesión"
               >
                 <LogIn size={20} className="flex-shrink-0 min-w-[20px]" />
@@ -196,7 +226,7 @@ export default function Layout() {
       {/* Contenido Principal */}
       <main
         className={`
-          flex-1 flex flex-col transition-all duration-300
+          flex-1 flex flex-col transition-all duration-300 ease-in-out
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
