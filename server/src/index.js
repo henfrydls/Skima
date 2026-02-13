@@ -215,25 +215,24 @@ export function createApp() {
     try {
       res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private');
       
-      // Only fetch active categories and skills
-      const categories = await prisma.category.findMany({
-        where: { isActive: true },
-        orderBy: { orden: 'asc' }
-      });
+      // Fetch independent data in parallel
+      const [categories, skills, roleProfilesRaw] = await Promise.all([
+        prisma.category.findMany({ where: { isActive: true }, orderBy: { orden: 'asc' } }),
+        prisma.skill.findMany({ where: { isActive: true }, orderBy: { id: 'asc' } }),
+        prisma.roleProfile.findMany(),
+      ]);
 
-      const skills = await prisma.skill.findMany({
-        where: { isActive: true },
-        orderBy: { id: 'asc' }
-      });
-      
       const activeSkillIds = new Set(skills.map(s => s.id));
-
-      // Fetch role profiles FIRST to use in average calculation
-      const roleProfilesRaw = await prisma.roleProfile.findMany();
       const roleProfiles = {};
       roleProfilesRaw.forEach(p => {
         roleProfiles[p.rol] = typeof p.skills === 'string' ? JSON.parse(p.skills) : p.skills;
       });
+
+      // Pre-compute lookup maps to avoid N+1 deep includes
+      const skillsById = {};
+      skills.forEach(s => { skillsById[s.id] = s; });
+      const categoriesById = {};
+      categories.forEach(c => { categoriesById[c.id] = c; });
 
       const collaboratorsRaw = await prisma.collaborator.findMany({
         where: { isActive: true },
@@ -246,13 +245,7 @@ export function createApp() {
             orderBy: { evaluatedAt: 'desc' },
             take: 5, // Last 5 sessions for sparkline (use last 3)
             include: {
-              assessments: {
-                include: {
-                  skill: {
-                    include: { categoria: true }
-                  }
-                }
-              }
+              assessments: true // Flat — join skill/category from maps
             }
           }
         }
@@ -309,14 +302,17 @@ export function createApp() {
             id: session.id,
             evaluatedAt: session.evaluatedAt,
             collaboratorRol: session.collaboratorRol,
-            assessments: session.assessments.map(a => ({
-              skillId: a.skillId,
-              skillNombre: a.skill.nombre,
-              nivel: a.nivel,
-              criticidad: a.criticidad,
-              categoriaId: a.skill.categoriaId,
-              categoriaNombre: a.skill.categoria.nombre
-            }))
+            assessments: session.assessments.map(a => {
+              const skill = skillsById[a.skillId];
+              return {
+                skillId: a.skillId,
+                skillNombre: skill?.nombre || 'Unknown',
+                nivel: a.nivel,
+                criticidad: a.criticidad,
+                categoriaId: skill?.categoriaId,
+                categoriaNombre: categoriesById[skill?.categoriaId]?.nombre || 'Unknown'
+              };
+            })
           }))
         };
       });

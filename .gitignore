@@ -51,6 +51,7 @@ server/prisma/*.db
 *.pem
 *.key
 *.cert
+.jwt-secret
 secrets/
 credentials/
 

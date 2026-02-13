@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Lightbulb } from 'lucide-react';
 import { API_BASE } from '../lib/apiBase';
+import { preloadData } from '../lib/dataPreload';
 import {
   prioritizeGaps,
   detectUnderutilizedTalent,
@@ -61,15 +62,19 @@ export default function DashboardView() {
     }
   };
 
-  // Fetch data from API
+  // Fetch data — uses preloaded promise if available, otherwise fetches fresh
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch(`${API_BASE}/api/data`);
-        if (!response.ok) throw new Error('Error fetching data');
-        const result = await response.json();
-        setData(result);
+        const preloaded = await preloadData();
+        if (preloaded) {
+          setData(preloaded);
+        } else {
+          const response = await fetch(`${API_BASE}/api/data`);
+          if (!response.ok) throw new Error('Error fetching data');
+          setData(await response.json());
+        }
       } catch (err) {
         setError('Error cargando datos del dashboard');
         console.error(err);

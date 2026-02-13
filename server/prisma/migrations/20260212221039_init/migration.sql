@@ -86,6 +86,18 @@ CREATE TABLE "SystemConfig" (
 );
 
 -- CreateIndex
+CREATE INDEX "Assessment_collaboratorId_idx" ON "Assessment"("collaboratorId");
+
+-- CreateIndex
+CREATE INDEX "Assessment_skillId_idx" ON "Assessment"("skillId");
+
+-- CreateIndex
+CREATE INDEX "Assessment_snapshotId_idx" ON "Assessment"("snapshotId");
+
+-- CreateIndex
+CREATE INDEX "Assessment_evaluationSessionId_idx" ON "Assessment"("evaluationSessionId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Assessment_collaboratorId_skillId_snapshotId_key" ON "Assessment"("collaboratorId", "skillId", "snapshotId");
 
 -- CreateIndex
@@ -93,3 +105,9 @@ CREATE UNIQUE INDEX "RoleProfile_rol_key" ON "RoleProfile"("rol");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "EvaluationSession_uuid_key" ON "EvaluationSession"("uuid");
+
+-- CreateIndex
+CREATE INDEX "EvaluationSession_collaboratorId_idx" ON "EvaluationSession"("collaboratorId");
+
+-- CreateIndex
+CREATE INDEX "EvaluationSession_evaluatedAt_idx" ON "EvaluationSession"("evaluatedAt");

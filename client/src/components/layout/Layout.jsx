@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -11,9 +11,7 @@ import {
   LogIn,
   LogOut,
   User,
-  FlaskConical,
-  Package,
-  Check
+  FlaskConical
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
@@ -26,38 +24,23 @@ import DemoBanner from '../common/DemoBanner';
 import logoFull from '../../assets/skima-full.svg';
 
 /**
- * VersionBadge - Click-to-copy version indicator
+ * VersionBadge - Version indicator in sidebar
  */
 function VersionBadge({ version, isCollapsed }) {
-  const [copied, setCopied] = useState(false);
-
-  const handleCopy = useCallback(() => {
-    navigator.clipboard.writeText(`Skima v${version}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  }, [version]);
-
   return (
-    <div className="px-2 mb-1">
-      <button
-        onClick={handleCopy}
-        title={`v${version} — Click to copy`}
+    <div className="mb-1">
+      <div
         className={`
-          w-full flex items-center gap-2 px-3 py-1.5 rounded-lg
-          text-xs text-gray-400 bg-gray-50 hover:bg-gray-100
-          transition-colors cursor-pointer
-          ${isCollapsed ? 'justify-center' : ''}
+          w-full flex items-center text-gray-400
+          ${isCollapsed ? 'justify-center py-1.5' : 'px-5 py-1.5'}
         `}
       >
-        {copied ? (
-          <Check size={14} className="flex-shrink-0 text-green-500" />
+        {isCollapsed ? (
+          <span className="text-[11px] leading-none">v{version}</span>
         ) : (
-          <Package size={14} className="flex-shrink-0" />
+          <span className="text-xs">v{version}</span>
         )}
-        {!isCollapsed && (
-          <span>{copied ? 'Copied!' : `v${version}`}</span>
-        )}
-      </button>
+      </div>
     </div>
   );
 }
@@ -162,7 +145,7 @@ export default function Layout() {
           ))}
         </nav>
 
-        {/* Version badge - click to copy */}
+        {/* Version badge */}
         <VersionBadge version={version} isCollapsed={isCollapsed} />
 
         {/* Demo indicator */}

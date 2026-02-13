@@ -1,7 +1,5 @@
 import jwt from 'jsonwebtoken';
-
-// JWT secret - in production, use environment variable
-const JWT_SECRET = process.env.JWT_SECRET || 'skills-matrix-secret-key-change-in-production';
+import { JWT_SECRET } from '../jwtSecret.js';
 
 /**
  * Auth middleware - verifies JWT token from Authorization header

@@ -56,8 +56,14 @@ export async function ensureDatabase() {
       `CREATE TABLE IF NOT EXISTS "RoleProfile" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "rol" TEXT NOT NULL, "skills" TEXT NOT NULL, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL)`,
       `CREATE TABLE IF NOT EXISTS "SystemConfig" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT DEFAULT 1, "companyName" TEXT NOT NULL, "adminName" TEXT NOT NULL, "adminPassword" TEXT, "isSetup" BOOLEAN NOT NULL DEFAULT false, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL)`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "Assessment_collaboratorId_skillId_snapshotId_key" ON "Assessment"("collaboratorId", "skillId", "snapshotId")`,
+      `CREATE INDEX IF NOT EXISTS "Assessment_collaboratorId_idx" ON "Assessment"("collaboratorId")`,
+      `CREATE INDEX IF NOT EXISTS "Assessment_skillId_idx" ON "Assessment"("skillId")`,
+      `CREATE INDEX IF NOT EXISTS "Assessment_snapshotId_idx" ON "Assessment"("snapshotId")`,
+      `CREATE INDEX IF NOT EXISTS "Assessment_evaluationSessionId_idx" ON "Assessment"("evaluationSessionId")`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "RoleProfile_rol_key" ON "RoleProfile"("rol")`,
       `CREATE UNIQUE INDEX IF NOT EXISTS "EvaluationSession_uuid_key" ON "EvaluationSession"("uuid")`,
+      `CREATE INDEX IF NOT EXISTS "EvaluationSession_collaboratorId_idx" ON "EvaluationSession"("collaboratorId")`,
+      `CREATE INDEX IF NOT EXISTS "EvaluationSession_evaluatedAt_idx" ON "EvaluationSession"("evaluatedAt")`,
     ];
     for (const sql of statements) {
       await prisma.$executeRawUnsafe(sql);

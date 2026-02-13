@@ -16,13 +16,13 @@ const router = Router();
 // ============================================================
 router.post('/', async (req, res) => {
   try {
-    // Check if data already exists
-    const existingCollabs = await prisma.collaborator.count();
-    if (existingCollabs > 0) {
-      return res.status(409).json({
-        error: 'Ya existen datos. Usa "Limpiar datos demo" primero.'
-      });
-    }
+    // Clear any existing data before seeding (idempotent)
+    await prisma.assessment.deleteMany();
+    await prisma.evaluationSession.deleteMany();
+    await prisma.collaborator.deleteMany();
+    await prisma.skill.deleteMany();
+    await prisma.category.deleteMany();
+    await prisma.roleProfile.deleteMany();
 
     // Create categories
     for (const cat of CATEGORIES) {

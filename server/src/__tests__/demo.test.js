@@ -36,15 +36,20 @@ describe('Demo Routes', () => {
       expect(res.body.stats.evaluationSessions).toBe(66);
     }, 30000);
 
-    it('should return 409 if data already exists', async () => {
+    it('should re-seed cleanly when data already exists', async () => {
       // Seed first
       await request(app).post('/api/seed-demo');
 
-      // Try again
+      // Seed again — should clear and re-seed
       const res = await request(app).post('/api/seed-demo');
 
-      expect(res.status).toBe(409);
-      expect(res.body.error).toContain('Ya existen datos');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.stats.collaborators).toBe(10);
+
+      // Verify no duplicate data
+      const collabs = await prisma.collaborator.findMany();
+      expect(collabs.length).toBe(10);
     }, 30000);
 
     it('should create demo collaborators with esDemo flag', async () => {

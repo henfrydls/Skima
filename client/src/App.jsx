@@ -1,14 +1,29 @@
+import { lazy, Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'react-router-dom';
 import { Layout } from './components/layout';
-import { DashboardView, TeamMatrixPage, SettingsPage, EvolutionPage } from './pages';
-import SetupView from './pages/SetupView';
-import ProfilePage from './pages/ProfilePage';
 import { AuthProvider } from './contexts/AuthContext';
 import { ConfigProvider, useConfig } from './contexts/ConfigContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SessionExpiredModal from './components/common/SessionExpiredModal';
 import { Toaster } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
+import './lib/dataPreload'; // Prefetch /api/data in parallel with config
+
+// Code-split page components
+const DashboardView = lazy(() => import('./pages/DashboardView'));
+const TeamMatrixPage = lazy(() => import('./pages/TeamMatrixPage'));
+const EvolutionPage = lazy(() => import('./pages/EvolutionPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+const SetupView = lazy(() => import('./pages/SetupView'));
+
+function PageLoader() {
+  return (
+    <div className="flex-1 flex items-center justify-center">
+      <Loader2 className="animate-spin text-primary" size={32} />
+    </div>
+  );
+}
 
 // Route guard: Redirects to /setup if system is not set up
 function SetupGuard({ children }) {
@@ -51,7 +66,11 @@ function SetupPageGuard({ children }) {
   }
 
   // Pass onSetupComplete to SetupView
-  return <SetupView onSetupComplete={onSetupComplete} />;
+  return (
+    <Suspense fallback={<PageLoader />}>
+      <SetupView onSetupComplete={onSetupComplete} />
+    </Suspense>
+  );
 }
 
 const router = createBrowserRouter([
@@ -68,21 +87,21 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <DashboardView />,
+        element: <Suspense fallback={<PageLoader />}><DashboardView /></Suspense>,
       },
       {
         path: "/team-matrix",
-        element: <TeamMatrixPage />,
+        element: <Suspense fallback={<PageLoader />}><TeamMatrixPage /></Suspense>,
       },
       {
         path: "/evolution",
-        element: <EvolutionPage />,
+        element: <Suspense fallback={<PageLoader />}><EvolutionPage /></Suspense>,
       },
       {
         path: "/settings",
         element: (
           <ProtectedRoute>
-            <SettingsPage />
+            <Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>
           </ProtectedRoute>
         ),
       },
@@ -90,7 +109,7 @@ const router = createBrowserRouter([
         path: "/profile",
         element: (
           <ProtectedRoute>
-            <ProfilePage />
+            <Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>
           </ProtectedRoute>
         ),
       },

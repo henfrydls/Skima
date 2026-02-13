@@ -1,7 +1,8 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
-import { generateToken, JWT_SECRET } from '../middleware/auth.js';
+import { generateToken } from '../middleware/auth.js';
+import { JWT_SECRET } from '../jwtSecret.js';
 import { prisma } from '../db.js';
 
 const router = express.Router();
