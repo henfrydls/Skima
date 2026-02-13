@@ -31,15 +31,11 @@ function VersionBadge({ version, isCollapsed }) {
     <div className="mb-1">
       <div
         className={`
-          w-full flex items-center text-gray-400
-          ${isCollapsed ? 'justify-center py-1.5' : 'px-5 py-1.5'}
+          w-full flex items-center py-1.5 text-gray-400 transition-all duration-300 ease-in-out
+          ${isCollapsed ? 'px-[18px]' : 'px-5'}
         `}
       >
-        {isCollapsed ? (
-          <span className="text-[11px] leading-none">v{version}</span>
-        ) : (
-          <span className="text-xs">v{version}</span>
-        )}
+        <span className="text-[11px] leading-none">v{version}</span>
       </div>
     </div>
   );
@@ -99,17 +95,14 @@ export default function Layout() {
         `}
       >
         {/* Header del Sidebar - Skima Logo */}
-        <div className={`
-          flex items-center h-16 px-3 border-b border-gray-100
-          ${isCollapsed ? 'justify-center' : 'justify-between'}
-        `}>
-          {/* Logo with fade transition */}
+        <div className="flex items-center justify-between h-16 px-3 border-b border-gray-100 relative">
+          {/* Logo with fade transition - stays in place */}
           <img
             src={logoFull}
             alt="Skima"
             className={`
-              h-8 transition-all duration-200 ease-out
-              ${isCollapsed ? 'opacity-0 scale-75 w-0 overflow-hidden' : 'opacity-100 scale-100 w-auto'}
+              h-8 transition-opacity duration-300 ease-in-out overflow-hidden
+              ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px]'}
             `}
           />
           {/* Collapse/Expand button */}
@@ -129,18 +122,23 @@ export default function Layout() {
               key={to}
               to={to}
               className={({ isActive }) => `
-                flex items-center gap-3 px-3 py-2.5 rounded-lg
-                transition-all duration-150 relative
-                ${isActive 
-                  ? 'bg-primary/10 text-primary font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r' 
+                flex items-center px-3 py-2.5 rounded-lg
+                transition-all duration-150 relative overflow-hidden
+                ${isActive
+                  ? 'bg-primary/10 text-primary font-medium before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r'
                   : 'text-gray-600 hover:bg-gray-100 hover:text-primary'
                 }
               `}
             >
-              <Icon size={20} className="flex-shrink-0" />
-              {!isCollapsed && (
-                <span className="whitespace-nowrap">{label}</span>
-              )}
+              <Icon size={20} className="flex-shrink-0 min-w-[20px]" />
+              <span
+                className={`
+                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3'}
+                `}
+              >
+                {label}
+              </span>
             </NavLink>
           ))}
         </nav>
@@ -153,16 +151,18 @@ export default function Layout() {
           <div className="px-2 mb-1">
             <button
               onClick={() => navigate('/setup')}
-              className={`
-                w-full flex items-center gap-2 px-3 py-2 rounded-lg
-                bg-amber-50 text-amber-700 hover:bg-amber-100
-                transition-all duration-150 text-xs font-medium
-                ${isCollapsed ? 'justify-center' : ''}
-              `}
+              className="w-full flex items-center px-3 py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-all duration-150 text-xs font-medium overflow-hidden"
               title={isCollapsed ? 'Modo Demo - Configurar' : undefined}
             >
-              <FlaskConical size={16} className="flex-shrink-0" />
-              {!isCollapsed && <span>Modo Demo</span>}
+              <FlaskConical size={16} className="flex-shrink-0 min-w-[16px]" />
+              <span
+                className={`
+                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                `}
+              >
+                Modo Demo
+              </span>
             </button>
           </div>
         )}
@@ -175,18 +175,18 @@ export default function Layout() {
             <div className="p-2 border-t border-gray-100">
               <button
                 onClick={() => setShowLoginModal(true)}
-                className={`
-                  w-full flex items-center gap-3 px-3 py-2.5 rounded-lg
-                  text-gray-600 hover:bg-primary/10 hover:text-primary
-                  transition-all duration-150
-                  ${isCollapsed ? 'justify-center' : ''}
-                `}
+                className="w-full flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-all duration-150 overflow-hidden"
                 title="Iniciar Sesión"
               >
-                <LogIn size={20} />
-                {!isCollapsed && (
-                  <span className="whitespace-nowrap font-medium">Iniciar Sesión</span>
-                )}
+                <LogIn size={20} className="flex-shrink-0 min-w-[20px]" />
+                <span
+                  className={`
+                    whitespace-nowrap font-medium overflow-hidden transition-all duration-300 ease-in-out
+                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3'}
+                  `}
+                >
+                  Iniciar Sesión
+                </span>
               </button>
             </div>
           )}

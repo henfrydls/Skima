@@ -55,10 +55,12 @@ describe('SidebarUser', () => {
     expect(screen.getByText('Administrador')).toBeInTheDocument();
   });
 
-  it('hides name and role when collapsed', () => {
+  it('hides name and role when collapsed (via opacity and width)', () => {
     renderWithContext(true);
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
-    expect(screen.queryByText('Administrador')).not.toBeInTheDocument();
+    // Text is still in DOM but visually hidden via max-w-0 opacity-0
+    const nameEl = screen.getByText('John Doe');
+    const wrapper = nameEl.closest('.transition-all');
+    expect(wrapper).toHaveClass('max-w-0', 'opacity-0');
   });
 
   it('shows chevron icon when not collapsed', () => {
@@ -67,9 +69,12 @@ describe('SidebarUser', () => {
     expect(chevron).toBeInTheDocument();
   });
 
-  it('hides chevron icon when collapsed', () => {
+  it('hides chevron icon when collapsed (via opacity and width)', () => {
     renderWithContext(true);
-    expect(screen.queryByText('Administrador')).not.toBeInTheDocument();
+    // Chevron is inside the same transition wrapper, visually hidden
+    const adminEl = screen.getByText('Administrador');
+    const wrapper = adminEl.closest('.transition-all');
+    expect(wrapper).toHaveClass('max-w-0', 'opacity-0');
   });
 
   it('generates correct initials for two-word name', () => {
@@ -140,16 +145,21 @@ describe('SidebarUser', () => {
     expect(link).not.toHaveAttribute('title');
   });
 
-  it('centers avatar when collapsed', () => {
+  it('collapses text content when collapsed (overflow hidden)', () => {
     const { container } = renderWithContext(true);
     const link = container.querySelector('a');
-    expect(link).toHaveClass('justify-center');
+    expect(link).toHaveClass('overflow-hidden');
+    // Text wrapper collapses to max-w-0
+    const nameEl = screen.getByText('John Doe');
+    const wrapper = nameEl.closest('.transition-all');
+    expect(wrapper).toHaveClass('max-w-0', 'ml-0');
   });
 
-  it('does not center content when not collapsed', () => {
+  it('expands text content when not collapsed', () => {
     const { container } = renderWithContext(false);
-    const link = container.querySelector('a');
-    expect(link).not.toHaveClass('justify-center');
+    const nameEl = screen.getByText('John Doe');
+    const wrapper = nameEl.closest('.transition-all');
+    expect(wrapper).toHaveClass('opacity-100', 'ml-3');
   });
 
   it('truncates long admin name', () => {
