@@ -24,7 +24,7 @@ jobs:
         run: cd client && npm install
 
       - name: Install Server Dependencies
-        run: cd server && npm install
+        run: cd server && npm install --force
 
       # Linting
       - name: Lint Client
