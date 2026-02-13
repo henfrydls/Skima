@@ -65,6 +65,12 @@
 
 ## Installation
 
+Skima runs entirely on your device — no account, no cloud, no tracking.
+
+- **[Desktop app](#desktop-app)** (Windows, macOS, Linux) — Download from GitHub Releases
+- **[Docker](#docker)** — Self-hosted via `docker compose`
+- **[From source](#from-source)** — Clone and build
+
 ### Desktop App
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/henfrydls/skills-dashboard/releases):
@@ -75,30 +81,36 @@ Download the latest release for your platform from [GitHub Releases](https://git
 | macOS | `.dmg` disk image |
 | Linux | `.deb` / `.AppImage` |
 
+Just install and open — no setup, no accounts, no internet required.
+
+### Docker
+
+Run Skima as a local web service with a single command. Requires [Docker](https://docs.docker.com/get-docker/).
+
+```bash
+docker compose up -d
+```
+
+Open `http://localhost:3000` in your browser. Data persists in a Docker volume.
+
 ### From Source
 
-Requires **Node.js 20+**. Optionally install **Rust** if you want to build the desktop app.
+Requires [Node.js](https://nodejs.org/) 20+.
 
 ```bash
 git clone https://github.com/henfrydls/skills-dashboard.git
 cd skills-dashboard
 npm install
-```
-
-Initialize the database on first run:
-
-```bash
-npm run db:migrate
-npm run db:seed          # Optional: load demo data
-```
-
-Start the development server:
-
-```bash
 npm run dev
 ```
 
-The frontend runs at `http://localhost:5173` and the API at `http://localhost:3001`.
+Open `http://localhost:5173` in your browser. The API runs at `http://localhost:3001`.
+
+To build the desktop app from source, you also need [Rust](https://www.rust-lang.org/tools/install):
+
+```bash
+npm run tauri:build
+```
 
 ---
 

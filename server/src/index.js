@@ -2,11 +2,16 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
+import { existsSync } from 'fs';
+import { resolve, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import { prisma, ensureDatabase } from './db.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
 import { authMiddleware } from './middleware/auth.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // Re-export prisma for any routes that still import from index
 export { prisma };
@@ -1264,6 +1269,22 @@ export function createApp() {
       res.status(500).json({ message: 'Error deleting evaluation' });
     }
   });
+
+  // ============================================================
+  // STATIC FILE SERVING (Docker / production web mode)
+  // ============================================================
+  const clientDist = resolve(__dirname, '../../client/dist');
+  if (existsSync(clientDist)) {
+    app.use(express.static(clientDist));
+    // SPA fallback: non-API routes serve index.html
+    app.use((req, res, next) => {
+      if (req.method === 'GET' && !req.path.startsWith('/api')) {
+        res.sendFile(resolve(clientDist, 'index.html'));
+      } else {
+        next();
+      }
+    });
+  }
 
   return app;
 }
