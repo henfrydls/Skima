@@ -1,10 +1,7 @@
 import { randomBytes } from 'crypto';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { resolve, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { customDbPath } from './db.js';
-
-const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /**
  * JWT Secret management — unique per installation.
@@ -19,8 +16,8 @@ function getSecretPath() {
     // Tauri sidecar: store next to the DB in app_data_dir
     return resolve(dirname(customDbPath), '.jwt-secret');
   }
-  // Dev mode: store next to skills.db
-  return resolve(__dirname, '../prisma/.jwt-secret');
+  // Dev mode: store next to skills.db in server/prisma/
+  return resolve(process.cwd(), 'prisma/.jwt-secret');
 }
 
 function loadOrCreateSecret() {

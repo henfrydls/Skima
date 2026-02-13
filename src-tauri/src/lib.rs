@@ -1,10 +1,30 @@
 use std::sync::Mutex;
+use std::net::TcpStream;
+use std::time::Duration;
 use tauri::Manager;
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
 /// Holds the sidecar child process so we can kill it on exit
 struct SidecarState(Mutex<Option<CommandChild>>);
+
+/// Wait for the sidecar to start accepting TCP connections
+fn wait_for_sidecar(port: u16, max_seconds: u32) -> bool {
+    let addr = format!("127.0.0.1:{}", port);
+    for attempt in 1..=max_seconds {
+        if let Ok(stream) = TcpStream::connect_timeout(
+            &addr.parse().unwrap(),
+            Duration::from_millis(500),
+        ) {
+            drop(stream);
+            println!("[Skima] Sidecar ready (attempt {}/{})", attempt, max_seconds);
+            return true;
+        }
+        std::thread::sleep(Duration::from_secs(1));
+    }
+    eprintln!("[Skima] WARNING: Sidecar not ready after {} seconds", max_seconds);
+    false
+}
 
 /// Get the app data directory path for the SQLite database
 fn get_db_path(app: &tauri::App) -> String {
@@ -68,6 +88,10 @@ pub fn run() {
             // Store child handle for cleanup
             let state = app.state::<SidecarState>();
             *state.0.lock().unwrap() = Some(child);
+
+            // Wait for sidecar to accept connections before showing UI
+            let port_num: u16 = port.parse().unwrap();
+            wait_for_sidecar(port_num, 30);
 
             Ok(())
         })

@@ -15,19 +15,26 @@ export function ConfigProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch config on mount
-  const fetchConfig = useCallback(async () => {
+  // Fetch config with retry for sidecar startup delay
+  const fetchConfig = useCallback(async (retries = 0) => {
+    const maxRetries = API_BASE ? 10 : 0; // Only retry in Tauri mode (sidecar may be starting)
     try {
       const response = await fetch(`${API_BASE}/api/config`);
       const data = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch config');
       }
-      
+
       setConfig(data);
       setError(null);
     } catch (err) {
+      // If server not ready yet, retry with delay (Tauri sidecar startup)
+      if (retries < maxRetries) {
+        console.log(`[Config] Server not ready, retrying (${retries + 1}/${maxRetries})...`);
+        await new Promise(r => setTimeout(r, 1000));
+        return fetchConfig(retries + 1);
+      }
       console.error('Error fetching config:', err);
       setError(err.message);
       // Set default empty config on error
