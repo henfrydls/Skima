@@ -1,19 +1,22 @@
 <p align="center">
-  <img src="client/public/skima-full.svg" alt="Skima" width="280" />
+  <img src="docs/skima-banner.png" alt="Skima" width="450" />
 </p>
+
 <p align="center">
   A local-first talent intelligence platform for tracking team competencies.<br/>
   No account, no cloud, no tracking — all data stays on your device.
 </p>
+
 <p align="center">
-  <a href="#installation">Install</a> &middot;
-  <a href="#features">Features</a> &middot;
-  <a href="#screenshots">Screenshots</a> &middot;
-  <a href="#tech-stack">Tech Stack</a> &middot;
-  <a href="#license">License</a>
+  <a href="#installation">Install</a> &nbsp;&middot;&nbsp;
+  <a href="#features">Features</a> &nbsp;&middot;&nbsp;
+  <a href="#screenshots">Screenshots</a> &nbsp;&middot;&nbsp;
+  <a href="#tech-stack">Tech Stack</a>
 </p>
 
----
+<p align="center">
+  <img src="docs/skima-dashboard.png" alt="Skima — Executive Dashboard" width="100%" />
+</p>
 
 ## Features
 
@@ -33,11 +36,30 @@
 ## Screenshots
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/d1f1dd4e-ad8a-48b5-aa3d-890d3cacd373" alt="Executive Dashboard" width="800" />
+  <img src="docs/skima-dashboard.png" alt="Executive Dashboard" width="100%" />
 </p>
+<p align="center"><sub>Executive Dashboard — KPIs, gap analysis, and trend tracking at a glance</sub></p>
+
+<br/>
+
 <p align="center">
-  <em>Executive Dashboard — Team KPIs, gap analysis, and trend tracking</em>
+  <img src="docs/skima-matrix.png" alt="Team Skills Matrix" width="100%" />
 </p>
+<p align="center"><sub>Team Skills Matrix — Transposed heatmap showing strengths and gaps</sub></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/skima-evolution.png" alt="Evolution Tracking" width="100%" />
+</p>
+<p align="center"><sub>Evolution — Track team progress over time</sub></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/skima-setup.png" alt="Setup Wizard" width="100%" />
+</p>
+<p align="center"><sub>Setup — Get started with demo data or configure your own space</sub></p>
 
 ---
 
