@@ -1137,9 +1137,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
         description="Primero crea colaboradores en la pestaña correspondiente para poder evaluarlos."
         actionLabel="Ir a Colaboradores"
         onAction={() => {
-          // Ideally switch tab, but for now just show state
-          // We could use navigate('/settings?tab=colaboradores') if supported
-          window.location.search = '?tab=colaboradores';
+          navigate('/settings?tab=colaboradores');
         }}
       />
     );

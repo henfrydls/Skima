@@ -595,7 +595,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
     const originalItem = collaborators.find(c => c.id === id);
     
     // Optimistic update
-    setCollaborators(prev => prev.map(c => c.id == id ? updated : c));
+    setCollaborators(prev => prev.map(c => c.id === id ? updated : c));
     
     try {
       const response = await authFetch(`/api/collaborators/${id}`, {

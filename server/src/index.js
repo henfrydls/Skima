@@ -695,10 +695,29 @@ export function createApp() {
   // DELETE /api/skills/:id - Delete skill
   app.delete('/api/skills/:id', authMiddleware, async (req, res) => {
     try {
-      const { id } = req.params;
-      // Delete related assessments first
-      await prisma.assessment.deleteMany({ where: { skillId: parseInt(id) } });
-      await prisma.skill.delete({ where: { id: parseInt(id) } });
+      const skillId = parseInt(req.params.id);
+
+      await prisma.$transaction(async (tx) => {
+        // Delete ALL assessments (current + historical)
+        await tx.assessment.deleteMany({ where: { skillId } });
+
+        // Clean up role profiles that reference this skill
+        const profiles = await tx.roleProfile.findMany();
+        for (const profile of profiles) {
+          const skills = typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills;
+          if (skills[String(skillId)]) {
+            delete skills[String(skillId)];
+            await tx.roleProfile.update({
+              where: { id: profile.id },
+              data: { skills: JSON.stringify(skills) }
+            });
+          }
+        }
+
+        // Now safe to delete skill
+        await tx.skill.delete({ where: { id: skillId } });
+      });
+
       res.json({ success: true });
     } catch (error) {
       console.error('[API] DELETE /api/skills failed:', error);
@@ -1177,81 +1196,86 @@ export function createApp() {
         ? (typeof roleProfile.skills === 'string' ? JSON.parse(roleProfile.skills) : roleProfile.skills)
         : {};
 
-      // Create evaluation session with collaborator snapshot
-      const session = await prisma.evaluationSession.create({
-        data: {
-          collaboratorId,
-          collaboratorNombre: collab.nombre,  // Snapshot at time of evaluation
-          collaboratorRol: collab.rol,        // Snapshot at time of evaluation
-          evaluatedBy: evaluatedBy || null,
-          notes: notes || null
-        }
-      });
-
-      // Create assessments if skills provided
-      if (skills && Object.keys(skills).length > 0) {
-        const validFrecuencias = ['D', 'S', 'M', 'T', 'N'];
-        
-        for (const [skillId, data] of Object.entries(skills)) {
-          // Validate
-          if (data.nivel < 0 || data.nivel > 5) {
-            continue; // Skip invalid
+      // Wrap all DB operations in a transaction for data integrity
+      const session = await prisma.$transaction(async (tx) => {
+        // Create evaluation session with collaborator snapshot
+        const newSession = await tx.evaluationSession.create({
+          data: {
+            collaboratorId,
+            collaboratorNombre: collab.nombre,  // Snapshot at time of evaluation
+            collaboratorRol: collab.rol,        // Snapshot at time of evaluation
+            evaluatedBy: evaluatedBy || null,
+            notes: notes || null
           }
-          if (!validFrecuencias.includes(data.frecuencia)) {
-            continue;
-          }
+        });
 
-          const criticidad = profileSkills[skillId] || 'N';
+        // Create assessments if skills provided
+        if (skills && Object.keys(skills).length > 0) {
+          const validFrecuencias = ['D', 'S', 'M', 'T', 'N'];
 
-          await prisma.assessment.create({
-            data: {
-              collaboratorId,
-              skillId: parseInt(skillId),
-              nivel: data.nivel,
-              frecuencia: data.frecuencia,
-              criticidad,
-              evaluationSessionId: session.id
+          for (const [skillId, data] of Object.entries(skills)) {
+            // Validate
+            if (data.nivel < 0 || data.nivel > 5) {
+              continue; // Skip invalid
             }
-          });
-
-          // Also update/create the current assessment (snapshotId: null)
-          // Can't use upsert with null in composite key, so use findFirst + update/create
-          const existingAssessment = await prisma.assessment.findFirst({
-            where: {
-              collaboratorId,
-              skillId: parseInt(skillId),
-              snapshotId: null
+            if (!validFrecuencias.includes(data.frecuencia)) {
+              continue;
             }
-          });
 
-          if (existingAssessment) {
-            await prisma.assessment.update({
-              where: { id: existingAssessment.id },
-              data: {
-                nivel: data.nivel,
-                frecuencia: data.frecuencia,
-                criticidad
-              }
-            });
-          } else {
-            await prisma.assessment.create({
+            const criticidad = profileSkills[skillId] || 'N';
+
+            await tx.assessment.create({
               data: {
                 collaboratorId,
                 skillId: parseInt(skillId),
                 nivel: data.nivel,
                 frecuencia: data.frecuencia,
                 criticidad,
+                evaluationSessionId: newSession.id
+              }
+            });
+
+            // Also update/create the current assessment (snapshotId: null)
+            // Can't use upsert with null in composite key, so use findFirst + update/create
+            const existingAssessment = await tx.assessment.findFirst({
+              where: {
+                collaboratorId,
+                skillId: parseInt(skillId),
                 snapshotId: null
               }
             });
+
+            if (existingAssessment) {
+              await tx.assessment.update({
+                where: { id: existingAssessment.id },
+                data: {
+                  nivel: data.nivel,
+                  frecuencia: data.frecuencia,
+                  criticidad
+                }
+              });
+            } else {
+              await tx.assessment.create({
+                data: {
+                  collaboratorId,
+                  skillId: parseInt(skillId),
+                  nivel: data.nivel,
+                  frecuencia: data.frecuencia,
+                  criticidad,
+                  snapshotId: null
+                }
+              });
+            }
           }
         }
-      }
 
-      // Update lastEvaluated
-      await prisma.collaborator.update({
-        where: { id: collaboratorId },
-        data: { lastEvaluated: new Date() }
+        // Update lastEvaluated
+        await tx.collaborator.update({
+          where: { id: collaboratorId },
+          data: { lastEvaluated: new Date() }
+        });
+
+        return newSession;
       });
 
       res.json({

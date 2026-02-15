@@ -31,8 +31,11 @@ const LEVEL_THRESHOLDS = {
  * @returns {{ delta: string, percentage: string, trend: 'up'|'down'|'stable' }}
  */
 export function calculateDelta(current, previous) {
+  if (current == null || previous == null) {
+    return { delta: '0.0', deltaRaw: 0, percentage: '0.0', trend: 'stable' };
+  }
   const delta = current - previous;
-  const percentage = (previous != null && previous !== 0) ? ((delta / previous) * 100) : 0;
+  const percentage = previous !== 0 ? ((delta / previous) * 100) : 0;
   
   return {
     delta: delta.toFixed(1),
