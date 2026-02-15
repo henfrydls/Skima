@@ -40,15 +40,16 @@ const FILTER_OPTIONS = [
     id: 'attention',
     label: 'Requieren Atención',
     icon: TrendingUp,
-    description: 'Promedio < 2.5 o tiene al menos una brecha crítica. Priorizar desarrollo',
-    // Updated: Low average OR critical gaps, only evaluated collaborators
+    description: 'Promedio < 2.5 o skill crítica (C) con nivel bajo. Priorizar desarrollo',
+    // Aligned with Evolution "Requieren Soporte" server logic
     filter: (c) => {
-      // Exclude unevaluated collaborators
       if (!c.hasEvaluations) return false;
       // Condition 1: Low average
       if (c.promedio < 2.5) return true;
-      // Condition 2: Has any critical gap
-      const hasCriticalGap = c.brechas?.some(b => b.estado === 'BRECHA CRÍTICA');
+      // Condition 2: Any skill marked Critical (C) with nivel < 2.5
+      const hasCriticalGap = Object.values(c.skills || {}).some(
+        s => s.criticidad === 'C' && (s.nivel || 0) < 2.5
+      );
       return hasCriticalGap;
     }
   },
