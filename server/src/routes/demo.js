@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
 import {
   CATEGORIES,
@@ -101,18 +102,21 @@ router.post('/', async (req, res) => {
         }
       }
 
-      // Set up SystemConfig as demo
+      // Set up SystemConfig as demo (password: admin123)
+      const demoPassword = await bcrypt.hash('admin123', 10);
       await tx.systemConfig.upsert({
         where: { id: 1 },
         update: {
           companyName: 'Empresa Demo',
           adminName: 'Administrador',
+          adminPassword: demoPassword,
           isSetup: true,
         },
         create: {
           id: 1,
           companyName: 'Empresa Demo',
           adminName: 'Administrador',
+          adminPassword: demoPassword,
           isSetup: true,
         },
       });

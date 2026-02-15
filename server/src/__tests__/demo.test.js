@@ -77,7 +77,7 @@ describe('Demo Routes', () => {
       expect(config.isSetup).toBe(true);
       expect(config.companyName).toBe('Empresa Demo');
       expect(config.adminName).toBe('Administrador');
-      expect(config.adminPassword).toBeNull();
+      expect(config.adminPassword).toMatch(/^\$2[ab]\$/); // bcrypt hash of 'admin123'
     }, 30000);
 
     it('should set lastEvaluated on evaluated collaborators', async () => {
@@ -133,7 +133,7 @@ describe('Demo Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.isDemo).toBe(true);
       expect(res.body.isSetup).toBe(true);
-      expect(res.body.hasPassword).toBe(false);
+      expect(res.body.hasPassword).toBe(true);
     }, 30000);
 
     it('should return isDemo false when no demo data', async () => {
