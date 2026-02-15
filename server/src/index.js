@@ -89,13 +89,15 @@ export function createApp() {
 
       // If transitioning from demo, wipe ALL data (everything is demo data)
       if (isInDemoMode) {
-        await prisma.assessment.deleteMany();
-        await prisma.evaluationSession.deleteMany();
-        await prisma.collaborator.deleteMany();
-        await prisma.roleProfile.deleteMany();
-        await prisma.snapshot.deleteMany();
-        await prisma.skill.deleteMany();
-        await prisma.category.deleteMany();
+        await prisma.$transaction([
+          prisma.assessment.deleteMany(),
+          prisma.evaluationSession.deleteMany(),
+          prisma.collaborator.deleteMany(),
+          prisma.roleProfile.deleteMany(),
+          prisma.snapshot.deleteMany(),
+          prisma.skill.deleteMany(),
+          prisma.category.deleteMany(),
+        ]);
       }
 
       // Hash password if provided
@@ -143,8 +145,9 @@ export function createApp() {
         return res.status(404).json({ error: 'Config not found' });
       }
 
-      // If changing password and current password exists, verify it
-      if (config.adminPassword && adminPassword) {
+      // If changing password, verify current password first
+      // Also require verification when removing password (empty string)
+      if (config.adminPassword && adminPassword !== undefined) {
         let currentValid = false;
         if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
           currentValid = await bcrypt.compare(currentPassword || '', config.adminPassword);
@@ -708,7 +711,7 @@ export function createApp() {
   // ============================================================
 
   // GET /api/export - Full JSON dump
-  app.get('/api/export', async (req, res) => {
+  app.get('/api/export', authMiddleware, async (req, res) => {
     try {
       const categories = await prisma.category.findMany();
       const skills = await prisma.skill.findMany();

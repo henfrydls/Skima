@@ -456,9 +456,9 @@ describe('calculateDistribution', () => {
   it('should handle boundary at 3.5 (expert threshold)', () => {
     const collabs = [makeCollab({ nombre: 'Upper', promedio: 3.5 })];
     const dist = calculateDistribution(collabs);
-    // 3.5 is NOT < 2.5, and 3.5 <= 3.5, so competent
-    expect(dist.competent.count).toBe(1);
-    expect(dist.experts.count).toBe(0);
+    // 3.5 is NOT < 2.5, and 3.5 is NOT < 3.5, so expert (STRENGTH >= 3.5)
+    expect(dist.experts.count).toBe(1);
+    expect(dist.competent.count).toBe(0);
   });
 
   it('should classify just above 3.5 as expert', () => {

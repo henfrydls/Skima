@@ -32,7 +32,7 @@ const LEVEL_THRESHOLDS = {
  */
 export function calculateDelta(current, previous) {
   const delta = current - previous;
-  const percentage = previous !== 0 ? ((delta / previous) * 100) : 0;
+  const percentage = (previous != null && previous !== 0) ? ((delta / previous) * 100) : 0;
   
   return {
     delta: delta.toFixed(1),
@@ -91,7 +91,7 @@ export function prioritizeGaps(collaborators, skills, categories, isCriticalGap)
 
     categorySkills.forEach(skill => {
       collaborators.forEach(collab => {
-        const skillData = collab.skills[skill.id];
+        const skillData = collab.skills?.[skill.id];
 
         if (isCriticalGap(skillData)) {
           const freqWeight = FREQUENCY_WEIGHTS[skillData?.frecuencia] || 0;
@@ -145,7 +145,7 @@ export function calculateDistribution(collaborators) {
     if (avg < LEVEL_THRESHOLDS.beginner) {
       distribution.beginners.count++;
       distribution.beginners.names.push(collab.nombre);
-    } else if (avg <= LEVEL_THRESHOLDS.competent) {
+    } else if (avg < LEVEL_THRESHOLDS.competent) {
       distribution.competent.count++;
       distribution.competent.names.push(collab.nombre);
     } else {
@@ -242,7 +242,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     let count = 0;
     collaborators.forEach(c => {
       catSkillIds.forEach(skillId => {
-        if (c.skills[skillId]) {
+        if (c.skills?.[skillId]) {
           sum += c.skills[skillId].nivel;
           count++;
         }

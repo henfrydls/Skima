@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -33,12 +33,12 @@ export default function ProfilePage() {
   const [isResetting, setIsResetting] = useState(false);
 
   // Check if password exists on mount
-  useState(() => {
+  useEffect(() => {
     fetch(`${API_BASE}/api/config`)
       .then(res => res.json())
       .then(data => setHasPassword(data.hasPassword))
       .catch(console.error);
-  });
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

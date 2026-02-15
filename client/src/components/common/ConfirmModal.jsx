@@ -59,8 +59,8 @@ export default function ConfirmModal({
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity" 
-        onClick={onClose}
+        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        onClick={isLoading ? undefined : onClose}
       />
       
       {/* Modal */}

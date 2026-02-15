@@ -273,7 +273,7 @@ router.get('/', async (req, res) => {
     // ============================================
     const chartDataRaw = Object.values(byMonth).map(m => ({
       date: m.date,
-      avgScore: Math.round((m.scores.reduce((a, b) => a + b, 0) / m.scores.length) * 10) / 10,
+      avgScore: m.scores.length > 0 ? Math.round((m.scores.reduce((a, b) => a + b, 0) / m.scores.length) * 10) / 10 : 0,
       count: m.collaboratorIds.size,
       newHires: [] // Will be filled from newHiresByMonth
     })).sort((a, b) => a.date - b.date);

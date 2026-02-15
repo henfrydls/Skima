@@ -366,7 +366,7 @@ export default function SkillsTab({ isActive = false }) {
         setSkills(skills.map(s => s.id === updated.id ? updated : s));
         setIsModalOpen(false);
         setEditingSkill(null);
-        toast.success('Skill actualizada correctaemente');
+        toast.success('Skill actualizada correctamente');
       } catch (err) {
         toast.error('Error actualizando skill');
       } finally {
