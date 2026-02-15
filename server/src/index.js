@@ -87,15 +87,15 @@ export function createApp() {
         });
       }
 
-      // If transitioning from demo, clean demo data
+      // If transitioning from demo, wipe ALL data (everything is demo data)
       if (isInDemoMode) {
-        const demoIds = (await prisma.collaborator.findMany({
-          where: { esDemo: true }, select: { id: true }
-        })).map(c => c.id);
-
-        await prisma.assessment.deleteMany({ where: { collaboratorId: { in: demoIds } } });
-        await prisma.evaluationSession.deleteMany({ where: { collaboratorId: { in: demoIds } } });
-        await prisma.collaborator.deleteMany({ where: { esDemo: true } });
+        await prisma.assessment.deleteMany();
+        await prisma.evaluationSession.deleteMany();
+        await prisma.collaborator.deleteMany();
+        await prisma.roleProfile.deleteMany();
+        await prisma.snapshot.deleteMany();
+        await prisma.skill.deleteMany();
+        await prisma.category.deleteMany();
       }
 
       // Hash password if provided
@@ -484,6 +484,25 @@ export function createApp() {
   // ============================================================
   // PROTECTED CRUD ROUTES (Require Auth)
   // ============================================================
+
+  // POST /api/reset-database - Wipe all data and return to setup
+  app.post('/api/reset-database', authMiddleware, async (req, res) => {
+    try {
+      await prisma.assessment.deleteMany();
+      await prisma.evaluationSession.deleteMany();
+      await prisma.collaborator.deleteMany();
+      await prisma.roleProfile.deleteMany();
+      await prisma.snapshot.deleteMany();
+      await prisma.skill.deleteMany();
+      await prisma.category.deleteMany();
+      await prisma.systemConfig.deleteMany();
+
+      res.json({ success: true });
+    } catch (error) {
+      console.error('[API] POST /api/reset-database failed:', error);
+      res.status(500).json({ message: 'Error resetting database' });
+    }
+  });
 
   // POST /api/categories - Create category
   app.post('/api/categories', authMiddleware, async (req, res) => {

@@ -26,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
 import toast from 'react-hot-toast';
 import Button from '../common/Button';
+import ConfirmModal from '../common/ConfirmModal';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
@@ -401,6 +402,8 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [pendingNewRole, setPendingNewRole] = useState(null);
   const [error, setError] = useState(null);
   const [showNewRoleModal, setShowNewRoleModal] = useState(false);
   
@@ -502,21 +505,23 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
   }, [blocker.state]);
 
   // Handler to create new role
-  const handleCreateNewRole = (roleName) => {
-    // If dirty, warn first? Ideally yes, but simplified here assuming explicit create action
-    if (isDirty) {
-      if (!confirm('Tienes cambios sin guardar. ¿Deseas descartarlos y crear un nuevo rol?')) {
-        return;
-      }
-    }
+  const applyNewRole = (roleName) => {
     setRoles(prev => [...prev, roleName]);
     setSelectedRole(roleName);
-    // Initialize new role empty
     const defaults = {};
     skills.forEach(s => { defaults[s.id] = 'N'; });
     setRequirements(defaults);
     setInitialRequirements(defaults);
     setSaveSuccess(false);
+  };
+
+  const handleCreateNewRole = (roleName) => {
+    if (isDirty) {
+      setPendingNewRole(roleName);
+      setShowDiscardConfirm(true);
+      return;
+    }
+    applyNewRole(roleName);
   };
 
   // Fetch data on mount and when tab becomes active
@@ -1124,6 +1129,26 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
         </div>
       )}
 
+      {/* Discard unsaved changes confirmation */}
+      <ConfirmModal
+        isOpen={showDiscardConfirm}
+        onClose={() => {
+          setShowDiscardConfirm(false);
+          setPendingNewRole(null);
+        }}
+        onConfirm={() => {
+          setShowDiscardConfirm(false);
+          if (pendingNewRole) {
+            applyNewRole(pendingNewRole);
+            setPendingNewRole(null);
+          }
+        }}
+        title="Cambios sin guardar"
+        message="Tienes cambios sin guardar. ¿Deseas descartarlos y crear un nuevo rol?"
+        confirmText="Descartar"
+        cancelText="Cancelar"
+        variant="warning"
+      />
     </div>
   );
 }

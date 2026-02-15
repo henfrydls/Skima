@@ -717,17 +717,12 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
   if (collaborators.length === 0) {
     return (
       <>
-        <EmptyState 
+        <EmptyState
           icon={UserPlus}
           title="No hay colaboradores aún"
-          description="Agrega a los miembros del equipo que evaluarás. Puedes importar desde CSV o crear manualmente."
+          description="Agrega a los miembros del equipo que evaluarás."
           actionLabel="Crear uno"
           onAction={() => setShowCreateModal(true)}
-          secondaryAction={
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors shadow-sm font-medium text-sm">
-              Importar CSV
-            </button>
-          }
         />
         <CreateCollaboratorModal
           isOpen={showCreateModal}

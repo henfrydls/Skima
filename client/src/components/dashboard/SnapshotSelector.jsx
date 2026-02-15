@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Camera, Calendar, ChevronDown, ChevronUp, Clock, ArrowLeft } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 /**
  * SnapshotSelector Component - Versión Compacta
@@ -178,7 +179,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
 
             {/* Crear Snapshot */}
             <button
-              onClick={(e) => { e.stopPropagation(); alert('📸 Próximamente: Crear snapshots'); }}
+              onClick={(e) => { e.stopPropagation(); toast('Crear snapshots estará disponible próximamente', { icon: '📸' }); }}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Camera size={16} />

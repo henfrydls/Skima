@@ -792,7 +792,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
         
         {/* PDF Download Button */}
         <button
-          onClick={() => alert('📄 Exportar PDF\n\nEsta funcionalidad estará disponible próximamente.')}
+          onClick={() => toast('Exportar PDF estará disponible próximamente', { icon: '📄' })}
           className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           <Download size={16} />
@@ -1408,8 +1408,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  // For now, show a simple alert - PDF will be implemented later
-                                  alert('📄 Exportar PDF\n\nEsta funcionalidad estará disponible próximamente.');
+                                  toast('Exportar PDF estará disponible próximamente', { icon: '📄' });
                                 }}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
                                 title="Descargar PDF"

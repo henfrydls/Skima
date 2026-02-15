@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight } from 'lucide-react';
+import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -16,7 +16,7 @@ import { API_BASE } from '../lib/apiBase';
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { companyName, adminName, refetchConfig } = useConfig();
-  const { logout } = useAuth();
+  const { logout, authFetch } = useAuth();
   
   const [formData, setFormData] = useState({
     companyName: companyName || '',
@@ -29,6 +29,8 @@ export default function ProfilePage() {
   const [hasPassword, setHasPassword] = useState(false);
   const [showSecurity, setShowSecurity] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [resetConfirmText, setResetConfirmText] = useState('');
+  const [isResetting, setIsResetting] = useState(false);
 
   // Check if password exists on mount
   useState(() => {
@@ -99,6 +101,26 @@ export default function ProfilePage() {
     logout();
     toast.success('Sesión cerrada');
     navigate('/');
+  };
+
+  const handleResetDatabase = async () => {
+    if (resetConfirmText !== 'BORRAR') return;
+    setIsResetting(true);
+    try {
+      const response = await authFetch('/api/reset-database', {
+        method: 'POST'
+      });
+      if (!response.ok) throw new Error('Reset failed');
+      logout();
+      navigate('/setup');
+    } catch (err) {
+      console.error('Reset error:', err);
+      toast.error('Error al resetear la base de datos');
+    } finally {
+      setIsResetting(false);
+      setShowResetConfirm(false);
+      setResetConfirmText('');
+    }
   };
 
   return (
@@ -296,10 +318,8 @@ export default function ProfilePage() {
             </div>
             <button
               onClick={() => setShowResetConfirm(true)}
-              disabled
               className="flex items-center gap-2 px-4 py-2 border border-critical text-critical rounded-lg
-                       hover:bg-critical/10 transition-colors text-sm opacity-50 cursor-not-allowed"
-              title="Próximamente"
+                       hover:bg-critical/10 transition-colors text-sm"
             >
               <Trash2 size={14} />
               Resetear
@@ -307,6 +327,64 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
+
+      {/* Reset Database Confirmation Modal */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h2 className="text-lg font-medium text-critical flex items-center gap-2">
+                <AlertTriangle size={18} />
+                Resetear Base de Datos
+              </h2>
+              <button
+                onClick={() => { setShowResetConfirm(false); setResetConfirmText(''); }}
+                className="p-1 hover:bg-gray-100 rounded transition-colors"
+              >
+                <X size={20} className="text-gray-500" />
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              <p className="text-sm text-gray-600">
+                Esta acción eliminará <strong>permanentemente</strong> todos los datos: colaboradores, evaluaciones, categorías, skills, perfiles de rol y configuración del sistema.
+              </p>
+              <p className="text-sm text-gray-600">
+                Escribe <strong className="text-critical">BORRAR</strong> para confirmar.
+              </p>
+              <input
+                type="text"
+                value={resetConfirmText}
+                onChange={(e) => setResetConfirmText(e.target.value)}
+                placeholder="Escribe BORRAR"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-critical/20 focus:border-critical text-sm"
+                autoFocus
+              />
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  onClick={() => { setShowResetConfirm(false); setResetConfirmText(''); }}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleResetDatabase}
+                  disabled={resetConfirmText !== 'BORRAR' || isResetting}
+                  className="flex items-center gap-2 px-4 py-2 bg-critical text-white rounded-lg
+                           hover:bg-critical/90 transition-colors text-sm
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isResetting ? (
+                    <Loader2 className="animate-spin" size={14} />
+                  ) : (
+                    <Trash2 size={14} />
+                  )}
+                  Resetear
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { API_BASE } from '../lib/apiBase';
 import { invalidatePreload } from '../lib/dataPreload';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 /**
  * SetupView - Initial onboarding screen
@@ -29,6 +30,7 @@ export default function SetupView({ onSetupComplete }) {
   const [isLoadingDemo, setIsLoadingDemo] = useState(false);
   const [demoError, setDemoError] = useState(null);
   const [error, setError] = useState(null);
+  const [showDemoWarning, setShowDemoWarning] = useState(false);
 
   const handleExploreDemo = async () => {
     setError(null);
@@ -108,12 +110,10 @@ export default function SetupView({ onSetupComplete }) {
       return;
     }
 
-    // If transitioning from demo, confirm before replacing data
+    // If transitioning from demo, show modal before replacing data
     if (isDemo) {
-      const confirmed = window.confirm(
-        'Los datos demo serán reemplazados por tu configuración real. ¿Deseas continuar?'
-      );
-      if (!confirmed) return;
+      setShowDemoWarning(true);
+      return;
     }
 
     await doSetup();
@@ -318,6 +318,22 @@ export default function SetupView({ onSetupComplete }) {
           Toda la información se almacena localmente y puede ser modificada después.
         </p>
       </div>
+
+      {/* Demo → Real confirmation modal */}
+      <ConfirmModal
+        isOpen={showDemoWarning}
+        onClose={() => setShowDemoWarning(false)}
+        onConfirm={async () => {
+          setShowDemoWarning(false);
+          await doSetup();
+        }}
+        title="Reemplazar datos demo"
+        message="Los datos demo serán reemplazados por tu configuración real. Esta acción no se puede deshacer."
+        confirmText="Continuar"
+        cancelText="Cancelar"
+        variant="warning"
+        isLoading={isSubmitting}
+      />
     </div>
   );
 }
