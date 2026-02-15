@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { 
@@ -1018,6 +1019,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
       setLastSavedUuid(result.uuid);
       setInitialEvaluations(evaluations); // Update baseline
       
+      invalidatePreload();
       toast.success('Evaluación guardada correctamente');
 
       // Refresh history

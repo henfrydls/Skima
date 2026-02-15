@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { 
   Search, 
@@ -579,6 +580,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       };
       
       setCollaborators([createdWithUIProps, ...collaborators]);
+      invalidatePreload();
       toast.success('Colaborador creado');
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') return; // Modal will handle this
@@ -606,7 +608,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       if (!response.ok) {
         throw new Error('Failed to update');
       }
-      // Success - data is already updated optimistically
+      invalidatePreload();
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') {
         // Rollback since auth failed
@@ -659,6 +661,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
                method: 'DELETE'
             });
             if (!response.ok) throw new Error('Error deleting');
+            invalidatePreload();
          } catch(err) {
              if (err.message !== 'SESSION_EXPIRED') {
                 toast.error('Error sincronizando desactivación');
@@ -682,6 +685,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             method: 'PUT'
         });
         if (!response.ok) throw new Error('Failed');
+        invalidatePreload();
         toast.success('Colaborador restaurado');
      } catch (err) {
         setCollaborators(prevCollaborators);

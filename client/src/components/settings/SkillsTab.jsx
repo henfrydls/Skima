@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { invalidatePreload } from '../../lib/dataPreload';
 import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { 
@@ -334,6 +335,7 @@ export default function SkillsTab({ isActive = false }) {
         
         const newSkill = await res.json();
         setSkills([...skills, newSkill]);
+        invalidatePreload();
         setIsModalOpen(false);
         toast.success('Skill creada exitosamente');
       } catch (err) {
@@ -366,6 +368,7 @@ export default function SkillsTab({ isActive = false }) {
         
         const updated = await res.json();
         setSkills(skills.map(s => s.id === updated.id ? updated : s));
+        invalidatePreload();
         setIsModalOpen(false);
         setEditingSkill(null);
         toast.success('Skill actualizada correctamente');
@@ -384,6 +387,7 @@ export default function SkillsTab({ isActive = false }) {
           headers: getHeaders()
         });
         if (!res.ok) throw new Error('Failed');
+        invalidatePreload();
       } catch (err) {
         toast.error('Error sincronizando eliminación');
         // force fetch to reset

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { useBlocker, useSearchParams } from 'react-router-dom';
 import { 
@@ -197,6 +198,7 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
         throw new Error(data.message || 'Error al renombrar');
       }
       
+      invalidatePreload();
       onRename(currentName, newName.trim());
       onClose();
     } catch (err) {
@@ -643,9 +645,8 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
         [selectedRole]: requirements
       }));
       setInitialRequirements(requirements); // Reset dirty state
-      
-      setInitialRequirements(requirements); // Reset dirty state
-      
+
+      invalidatePreload();
       toast.success('Perfil guardado correctamente');
 
       // Handle pending navigation if save was triggered from dialog

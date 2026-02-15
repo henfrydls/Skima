@@ -149,7 +149,7 @@ export default function EvolutionPage() {
         {/* 3. SUPPORT FOCUS (Constructive approach) - Clickable to Team Matrix */}
         <div 
           className="cursor-pointer group"
-          onClick={() => navigate('/team-matrix?tab=colaboradores&filter=critical')}
+          onClick={() => navigate('/team-matrix?tab=colaboradores&filter=attention')}
         >
           <StatCard
             title="REQUIEREN SOPORTE"

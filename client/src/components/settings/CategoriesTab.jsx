@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { 
   Search,
@@ -449,6 +450,7 @@ export default function CategoriesTab() {
         
         const newCategory = await res.json();
         setCategories([...categories, newCategory]);
+        invalidatePreload();
         setShowModal(false);
       } catch (_err) {
         setError('Error creando categoría');
@@ -480,6 +482,7 @@ export default function CategoriesTab() {
         
         const updated = await res.json();
         setCategories(categories.map(c => c.id === updated.id ? updated : c));
+        invalidatePreload();
         setShowModal(false);
         setEditingCategory(null);
       } catch (_err) {
@@ -541,6 +544,7 @@ export default function CategoriesTab() {
               headers: getHeaders()
             });
             if (!res.ok) throw new Error('Failed');
+            invalidatePreload();
          } catch {
             toast.error('Error sincronizando archivado');
             // Revert on error if needed, or force reload
@@ -577,9 +581,10 @@ export default function CategoriesTab() {
         ));
         
         // Also mark associated skills as active
-        setSkills(skills.map(s => 
+        setSkills(skills.map(s =>
           s.categoriaId === category.id ? { ...s, isActive: true } : s
         ));
+        invalidatePreload();
       } catch (_err) {
         setError('Error restaurando categoría');
       }
@@ -644,7 +649,8 @@ export default function CategoriesTab() {
           ...getHeaders()
         },
         body: JSON.stringify({ order })
-      }).catch(err => console.error('Error saving order:', err));
+      }).then(() => invalidatePreload())
+        .catch(err => console.error('Error saving order:', err));
     }
     
     setDraggedId(null);
