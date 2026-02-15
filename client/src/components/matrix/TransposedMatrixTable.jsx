@@ -92,9 +92,9 @@ export default function TransposedMatrixTable({
   }
 
   return (
-    <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in">
+    <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in h-full flex flex-col">
       {/* Contenedor con scroll */}
-      <div className="overflow-x-auto max-h-[calc(100vh-200px)] border border-gray-100 rounded-lg">
+      <div className="overflow-auto flex-1 min-h-0 border border-gray-100 rounded-lg">
         <table className="w-full border-collapse">
           {/* Header: Empleados como columnas */}
           <thead>
@@ -268,7 +268,7 @@ export default function TransposedMatrixTable({
       </div>
 
       {/* Leyenda */}
-      <div className="p-4 border-t border-gray-200 bg-gray-50">
+      <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
           <span className="font-medium">Niveles:</span>
           <div className="flex items-center gap-1">

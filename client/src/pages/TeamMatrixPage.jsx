@@ -374,9 +374,13 @@ export default function TeamMatrixPage() {
   }
 
   return (
-    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6">
+    <div className={
+      currentView === 'matriz'
+        ? "flex-1 flex flex-col min-h-0 gap-6"
+        : "min-h-full bg-gray-50 -m-6 p-6 space-y-6"
+    }>
       {/* Header */}
-      <div>
+      <div className={currentView === 'matriz' ? 'flex-shrink-0' : ''}>
         <h1 className="text-2xl font-light text-slate-800">Team Matrix</h1>
         <p className="text-sm text-gray-500 mt-1">
           Visualización de competencias del equipo
@@ -384,7 +388,7 @@ export default function TeamMatrixPage() {
       </div>
 
       {/* Pestañas de navegación */}
-      <div className="border-b border-gray-200">
+      <div className={`border-b border-gray-200 ${currentView === 'matriz' ? 'flex-shrink-0' : ''}`}>
         <nav className="flex gap-6" aria-label="Tabs">
           {tabs.map(tab => (
             <button
@@ -430,19 +434,21 @@ export default function TeamMatrixPage() {
               </button>
             </div>
           ) : (
-            <TransposedMatrixTable 
-              categories={categories}
-              skills={skills}
-              collaborators={collaborators}
-              isLoading={isLoading}
-              onCellClick={(collaboratorId, skillId) => {
-                const collab = collaboratorsWithAverages.find(c => c.id === collaboratorId);
-                if (collab) {
-                  setSelectedColaborador(collab);
-                  setIsDrawerOpen(true);
-                }
-              }}
-            />
+            <div className="flex-1 min-h-0">
+              <TransposedMatrixTable
+                categories={categories}
+                skills={skills}
+                collaborators={collaborators}
+                isLoading={isLoading}
+                onCellClick={(collaboratorId, skillId) => {
+                  const collab = collaboratorsWithAverages.find(c => c.id === collaboratorId);
+                  if (collab) {
+                    setSelectedColaborador(collab);
+                    setIsDrawerOpen(true);
+                  }
+                }}
+              />
+            </div>
           )
         )
       )}
