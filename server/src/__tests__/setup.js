@@ -1,5 +1,10 @@
 import { beforeAll, afterAll, beforeEach } from 'vitest';
-import { prisma } from '../index.js';
+import { prisma, ensureDatabase } from '../db.js';
+
+// Initialize test database schema
+beforeAll(async () => {
+  await ensureDatabase();
+});
 
 // Clean database before each test
 beforeEach(async () => {

@@ -1,9 +1,15 @@
 import { defineConfig } from 'vitest/config';
+import { resolve } from 'path';
+
+const testDbPath = resolve(import.meta.dirname, 'prisma', 'test.db');
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    env: {
+      DATABASE_URL: `file:${testDbPath}`,
+    },
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
