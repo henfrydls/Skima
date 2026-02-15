@@ -19,6 +19,11 @@
   .data-text {
     @apply font-medium;
   }
+
+  /* Remove focus outline on Recharts SVG elements */
+  .recharts-wrapper svg {
+    outline: none;
+  }
 }
 
 @layer utilities {
