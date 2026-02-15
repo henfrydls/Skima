@@ -104,6 +104,21 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 
 ---
 
+## 📋 Post v1.0.0 — UX Audit Findings
+
+**Origen:** Auditoría UX/UI + Roleplay de 7 personas corporativas (HR, Ops, Engineering, Analyst, Technician, CEO, CFO)
+
+| Feature | Solicitado por | Priority |
+|---------|---------------|----------|
+| Export/PDF (evaluaciones, reportes, dashboard) | Todos (7/7) | P0 |
+| Vista personal "My Skills" (individual contributor) | Technician, HR, Engineering | P0 |
+| Role-based access control (RBAC) | HR, Ops, CEO | P1 |
+| Bulk operations (evaluaciones, colaboradores) | Forms audit, Ops, HR | P1 |
+| Comparación entre departamentos | CEO, CFO, Ops | P2 |
+| Contexto financiero/costo de brechas | CFO, CEO | P2 |
+
+---
+
 ## 🔮 Future Considerations (No Committed)
 
 - AI/ML Recommendations

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { createPortal } from 'react-dom';
 import { 
   ChevronDown, 
@@ -203,6 +204,7 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
 
 // Main Component
 export default function SkillsTab({ isActive = false }) {
+  const [, setSearchParams] = useSearchParams();
   const { isAuthenticated, getHeaders, login } = useAuth();
   const [categories, setCategories] = useState([]);
   const [skills, setSkills] = useState([]);
@@ -481,7 +483,7 @@ export default function SkillsTab({ isActive = false }) {
         title="Primero crea categorías"
         description="Las skills se organizan dentro de categorías. Necesitas crear al menos una categoría antes de agregar skills."
         actionLabel="Ir a Categorías"
-        onAction={null}
+        onAction={() => setSearchParams({ tab: 'categorias' })}
       />
     );
   }

@@ -85,13 +85,13 @@ describe('SessionExpiredModal', () => {
     expect(mockLogout).toHaveBeenCalledTimes(1);
   });
 
-  it('redirects to /login when login button is clicked', () => {
+  it('redirects to root when login button is clicked', () => {
     renderWithAuthContext(true);
 
     const loginButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
     fireEvent.click(loginButton);
 
-    expect(window.location.href).toBe('/login');
+    expect(window.location.href).toBe('/');
   });
 
   it('applies correct styling to modal backdrop', () => {

@@ -126,7 +126,10 @@ export default function StatCard({
       </div>
       
       <div className="flex items-baseline gap-3">
-        <p className={`text-4xl font-light tabular-nums text-slate-800`}>
+        <p
+          key={typeof value === 'number' ? value.toFixed(1) : String(value)}
+          className="text-4xl font-light tabular-nums text-slate-800 animate-value-pop"
+        >
           {typeof value === 'number' ? value.toFixed(1) : value}{suffix}
         </p>
         <DeltaBadge 

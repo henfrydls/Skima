@@ -165,7 +165,7 @@ export default function EvolutionPage() {
 
       {/* Main Chart Section */}
       <div className="w-full">
-        <EvolutionChart data={chartData} meta={data?.meta} />
+        <EvolutionChart data={chartData} meta={data?.meta} onNavigateToEvaluations={() => navigate('/settings?tab=evaluaciones')} />
       </div>
 
       {/* Detailed List Section */}

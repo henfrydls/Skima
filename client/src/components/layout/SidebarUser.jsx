@@ -28,7 +28,7 @@ export default function SidebarUser({ isCollapsed }) {
         to="/profile"
         className={`
           flex items-center py-2.5 rounded-lg w-full
-          transition-all duration-300 ease-in-out group overflow-hidden
+          transition-[padding] duration-[250ms] ease-out group overflow-hidden
           ${isCollapsed ? 'px-[5.5px]' : 'px-3'}
           ${isActive
             ? 'bg-primary/10 text-primary'
@@ -40,7 +40,7 @@ export default function SidebarUser({ isCollapsed }) {
         {/* Avatar */}
         <div className={`
           flex-shrink-0 w-9 h-9 min-w-[36px] rounded-full flex items-center justify-center
-          text-sm font-medium transition-colors duration-300 ease-in-out
+          text-sm font-medium transition-colors duration-200 ease-out
           ${isActive
             ? 'bg-primary text-white'
             : 'bg-primary/10 text-primary group-hover:bg-primary/20'
@@ -52,8 +52,8 @@ export default function SidebarUser({ isCollapsed }) {
         {/* Name & Role - Fade transition */}
         <div
           className={`
-            flex items-center flex-1 min-w-0 overflow-hidden transition-all duration-300 ease-in-out
-            ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3'}
+            flex items-center flex-1 min-w-0 overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+            ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[200px] opacity-100 ml-3 delay-75'}
           `}
         >
           <div className="flex-1 min-w-0">

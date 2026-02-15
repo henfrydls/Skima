@@ -16,8 +16,8 @@ export default function SessionExpiredModal() {
 
   const handleLogin = () => {
     logout();
-    // Use window.location because we're outside RouterProvider
-    window.location.href = '/login';
+    // Redirect to root — app will show login modal via ProtectedRoute if needed
+    window.location.href = '/';
   };
 
   return createPortal(

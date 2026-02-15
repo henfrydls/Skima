@@ -902,7 +902,11 @@ describe('calculateExecutiveMetrics', () => {
   });
 
   it('should return correct metadata counts', () => {
-    const collabs = [makeCollab({ skills: {} }), makeCollab({ skills: {} })];
+    // teamSize counts only collaborators with skill data (active/evaluated)
+    const collabs = [
+      makeCollab({ skills: { 1: makeSkillData({ nivel: 3 }) } }),
+      makeCollab({ skills: { 2: makeSkillData({ nivel: 4 }) } })
+    ];
     const skills = [makeSkill({ id: 1 }), makeSkill({ id: 2 }), makeSkill({ id: 3 })];
     const categories = [makeCategory({ id: 1 }), makeCategory({ id: 2 })];
 
@@ -910,6 +914,18 @@ describe('calculateExecutiveMetrics', () => {
     expect(result.teamSize).toBe(2);
     expect(result.totalSkills).toBe(3);
     expect(result.totalCategories).toBe(2);
+  });
+
+  it('should exclude unevaluated collaborators from teamSize', () => {
+    const collabs = [
+      makeCollab({ skills: { 1: makeSkillData({ nivel: 3 }) } }),
+      makeCollab({ skills: {} }) // No evaluations
+    ];
+    const skills = [makeSkill({ id: 1 })];
+    const categories = [makeCategory({ id: 1 })];
+
+    const result = calculateExecutiveMetrics(collabs, skills, categories, isCriticalGap);
+    expect(result.teamSize).toBe(1); // Only the evaluated one counts
   });
 
   it('should handle empty collaborators', () => {

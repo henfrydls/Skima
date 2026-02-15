@@ -211,11 +211,21 @@ export default function TransposedMatrixTable({
                           `}
                         >
                           {/* Cell Container - NO title attribute */}
-                          <div 
+                          <div
                             className={`
-                              flex items-center justify-center relative
+                              flex items-center justify-center relative rounded-full
                               ${onCellClick ? 'cursor-pointer' : ''}
+                              focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2
                             `}
+                            tabIndex={onCellClick ? 0 : undefined}
+                            role={onCellClick ? 'button' : undefined}
+                            aria-label={`${collab.nombre}: ${skill.nombre} - Nivel ${nivel}`}
+                            onKeyDown={(e) => {
+                              if (onCellClick && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                onCellClick(collab.id, skill.id);
+                              }
+                            }}
                             onClick={() => onCellClick?.(collab.id, skill.id)}
                             onMouseEnter={(e) => handleCellHover(e, collab, skill, skillData)}
                             onMouseLeave={() => setHoverInfo(null)}

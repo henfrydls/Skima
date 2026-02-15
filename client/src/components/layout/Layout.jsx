@@ -31,14 +31,14 @@ function VersionBadge({ version, isCollapsed }) {
     <div className="mb-1">
       <div
         className={`
-          w-full flex items-center py-1.5 text-gray-400 transition-all duration-300 ease-in-out
+          w-full flex items-center py-1.5 text-gray-400 transition-[padding] duration-[250ms] ease-out
           ${isCollapsed ? 'px-[18px]' : 'px-5'}
         `}
       >
         <span
           className={`
-            text-[11px] leading-none whitespace-nowrap transition-opacity duration-300 ease-in-out
-            ${isCollapsed ? 'opacity-0' : 'opacity-100'}
+            text-[11px] leading-none whitespace-nowrap transition-opacity duration-200 ease-out
+            ${isCollapsed ? 'opacity-0' : 'opacity-100 delay-75'}
           `}
         >
           v{version}
@@ -96,7 +96,7 @@ export default function Layout() {
         className={`
           fixed left-0 top-0 z-30 h-screen
           bg-surface shadow-lg
-          transition-all duration-300 ease-in-out
+          transition-[width] duration-[250ms] ease-out
           flex flex-col
           ${isCollapsed ? 'w-16' : 'w-64'}
         `}
@@ -108,14 +108,14 @@ export default function Layout() {
             src={logoFull}
             alt="Skima"
             className={`
-              h-8 transition-all duration-300 ease-in-out overflow-hidden
-              ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px]'}
+              h-8 transition-[max-width,opacity] duration-200 ease-out overflow-hidden
+              ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px] delay-75'}
             `}
           />
           {/* Collapse/Expand button */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-300 ease-in-out flex-shrink-0"
+            className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-150 ease-out flex-shrink-0"
             aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
@@ -140,8 +140,8 @@ export default function Layout() {
               <Icon size={20} className="flex-shrink-0 min-w-[20px]" />
               <span
                 className={`
-                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
-                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3'}
+                  whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3 delay-75'}
                 `}
               >
                 {label}
@@ -160,7 +160,7 @@ export default function Layout() {
               onClick={() => navigate('/setup')}
               className={`
                 w-full flex items-center py-2 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100
-                transition-all duration-300 ease-in-out text-xs font-medium overflow-hidden
+                transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
                 ${isCollapsed ? 'px-[14px]' : 'px-3'}
               `}
               title={isCollapsed ? 'Modo Demo' : undefined}
@@ -168,8 +168,8 @@ export default function Layout() {
               <FlaskConical size={16} className="flex-shrink-0" />
               <span
                 className={`
-                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
-                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                  whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
                 `}
               >
                 Modo Demo
@@ -179,7 +179,7 @@ export default function Layout() {
               onClick={() => navigate('/setup')}
               className={`
                 w-full flex items-center py-2 mt-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20
-                transition-all duration-300 ease-in-out text-xs font-medium overflow-hidden
+                transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
                 ${isCollapsed ? 'px-[14px]' : 'px-3'}
               `}
               title={isCollapsed ? 'Configurar mi espacio' : undefined}
@@ -187,8 +187,8 @@ export default function Layout() {
               <Settings size={16} className="flex-shrink-0" />
               <span
                 className={`
-                  whitespace-nowrap overflow-hidden transition-all duration-300 ease-in-out
-                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2'}
+                  whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
                 `}
               >
                 Configurar mi espacio
@@ -211,8 +211,8 @@ export default function Layout() {
                 <LogIn size={20} className="flex-shrink-0 min-w-[20px]" />
                 <span
                   className={`
-                    whitespace-nowrap font-medium overflow-hidden transition-all duration-300 ease-in-out
-                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3'}
+                    whitespace-nowrap font-medium overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3 delay-75'}
                   `}
                 >
                   Iniciar Sesión
@@ -226,7 +226,7 @@ export default function Layout() {
       {/* Contenido Principal */}
       <main
         className={`
-          flex-1 flex flex-col transition-all duration-300 ease-in-out
+          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >

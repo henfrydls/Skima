@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import { Grid3x3, User, Layers, Loader2, AlertCircle } from 'lucide-react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { Grid3x3, User, Layers, Loader2, AlertCircle, Settings, UserPlus, FolderTree } from 'lucide-react';
 import { API_BASE } from '../lib/apiBase';
 import { preloadData } from '../lib/dataPreload';
 import { TransposedMatrixTable } from '../components/matrix';
@@ -259,6 +259,7 @@ function CategoryGridView({ categories = [] }) {
 // TEAM MATRIX PAGE - Con pestañas
 // ============================================
 export default function TeamMatrixPage() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const tabParam = searchParams.get('tab');
   const filterParam = searchParams.get('filter');
@@ -416,9 +417,17 @@ export default function TeamMatrixPage() {
         ) : (
           collaborators.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
-              <Grid3x3 size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">Matriz vacía</h3>
-              <p className="text-gray-500">No hay datos suficientes para generar la matriz de competencias.</p>
+              <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
+                <Grid3x3 size={40} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Matriz vacía</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">No hay datos suficientes para generar la matriz. Crea colaboradores y evaluaciones primero.</p>
+              <button
+                onClick={() => navigate('/settings?tab=evaluaciones')}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
+              >
+                Ir a Evaluaciones
+              </button>
             </div>
           ) : (
             <TransposedMatrixTable 
@@ -442,9 +451,17 @@ export default function TeamMatrixPage() {
         isLoading ? <CollaboratorListSkeleton /> : (
           collaboratorsWithAverages.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
-              <User size={48} className="mx-auto text-gray-300 mb-4 " />
-              <h3 className="text-lg font-medium text-gray-900">No hay colaboradores</h3>
-              <p className="text-gray-500">Aún no se han registrado colaboradores en el sistema.</p>
+              <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
+                <UserPlus size={40} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay colaboradores</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">Aún no se han registrado colaboradores en el sistema.</p>
+              <button
+                onClick={() => navigate('/settings?tab=colaboradores')}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
+              >
+                Agregar Colaborador
+              </button>
             </div>
           ) : (
             <CollaboratorList 
@@ -475,9 +492,17 @@ export default function TeamMatrixPage() {
         ) : (
           categoriesWithAverages.length === 0 ? (
             <div className="text-center py-16 bg-white rounded-lg border border-dashed border-gray-200 animate-fade-in">
-              <Layers size={48} className="mx-auto text-gray-300 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">No hay categorías</h3>
-              <p className="text-gray-500">Aún no se han definido áreas o categorías de competencias.</p>
+              <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
+                <FolderTree size={40} className="text-gray-400" />
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay categorías</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">Aún no se han definido áreas o categorías de competencias.</p>
+              <button
+                onClick={() => navigate('/settings?tab=categorias')}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
+              >
+                Crear Categoría
+              </button>
             </div>
           ) : (
             <div className="grid md:grid-cols-2 gap-6">

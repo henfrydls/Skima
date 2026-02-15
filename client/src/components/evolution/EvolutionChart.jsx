@@ -133,11 +133,25 @@ const CustomDot = (props) => {
   return null;
 };
 
-export default function EvolutionChart({ data }) {
+export default function EvolutionChart({ data, onNavigateToEvaluations }) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-96 flex items-center justify-center">
-        <p className="text-slate-400 text-sm">Sin datos históricos suficientes</p>
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-96 flex flex-col items-center justify-center">
+        <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 ring-8 ring-slate-50/50">
+          <svg className="w-8 h-8 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </div>
+        <p className="text-slate-700 font-medium mb-1">Sin datos históricos suficientes</p>
+        <p className="text-slate-400 text-sm mb-4 max-w-xs text-center">Necesitas al menos 2 evaluaciones para visualizar la evolución del equipo.</p>
+        {onNavigateToEvaluations && (
+          <button
+            onClick={onNavigateToEvaluations}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
+          >
+            Ir a Evaluaciones
+          </button>
+        )}
       </div>
     );
   }

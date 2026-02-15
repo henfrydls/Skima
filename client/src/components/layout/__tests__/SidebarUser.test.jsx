@@ -59,7 +59,7 @@ describe('SidebarUser', () => {
     renderWithContext(true);
     // Text is still in DOM but visually hidden via max-w-0 opacity-0
     const nameEl = screen.getByText('John Doe');
-    const wrapper = nameEl.closest('.transition-all');
+    const wrapper = nameEl.parentElement.parentElement;
     expect(wrapper).toHaveClass('max-w-0', 'opacity-0');
   });
 
@@ -73,7 +73,7 @@ describe('SidebarUser', () => {
     renderWithContext(true);
     // Chevron is inside the same transition wrapper, visually hidden
     const adminEl = screen.getByText('Administrador');
-    const wrapper = adminEl.closest('.transition-all');
+    const wrapper = adminEl.parentElement.parentElement;
     expect(wrapper).toHaveClass('max-w-0', 'opacity-0');
   });
 
@@ -151,14 +151,14 @@ describe('SidebarUser', () => {
     expect(link).toHaveClass('overflow-hidden');
     // Text wrapper collapses to max-w-0
     const nameEl = screen.getByText('John Doe');
-    const wrapper = nameEl.closest('.transition-all');
+    const wrapper = nameEl.parentElement.parentElement;
     expect(wrapper).toHaveClass('max-w-0', 'ml-0');
   });
 
   it('expands text content when not collapsed', () => {
     const { container } = renderWithContext(false);
     const nameEl = screen.getByText('John Doe');
-    const wrapper = nameEl.closest('.transition-all');
+    const wrapper = nameEl.parentElement.parentElement;
     expect(wrapper).toHaveClass('opacity-100', 'ml-3');
   });
 

@@ -230,12 +230,15 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     return vals.reduce((sum, v) => sum + v, 0) / vals.length;
   };
 
+  // Filter to collaborators that have skill data (active in this period)
+  const activeCollaborators = collaborators.filter(c => Object.keys(c.skills).length > 0);
+
   // Promedio general - calculate dynamically from skills
   let totalSum = 0;
-  collaborators.forEach(c => {
+  activeCollaborators.forEach(c => {
     totalSum += calcAvg(c.skills);
   });
-  const totalAvg = collaborators.length > 0 ? totalSum / collaborators.length : 0;
+  const totalAvg = activeCollaborators.length > 0 ? totalSum / activeCollaborators.length : 0;
   
   // Contar fortalezas (categorías con promedio > 3.5)
   // Calculate category averages from collaborator skills
@@ -243,7 +246,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
     let sum = 0;
     let count = 0;
-    collaborators.forEach(c => {
+    activeCollaborators.forEach(c => {
       catSkillIds.forEach(skillId => {
         if (c.skills?.[skillId]) {
           sum += c.skills[skillId].nivel;
@@ -260,8 +263,8 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
   let criticalGapsCount = 0;
   let totalSkillAssessments = 0;
   let expertSkillsCount = 0;
-  
-  collaborators.forEach(collab => {
+
+  activeCollaborators.forEach(collab => {
     Object.values(collab.skills).forEach(skillData => {
       if (skillData.nivel > 0) {
         totalSkillAssessments++;
@@ -285,7 +288,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
 
   // Cobertura de Roles: % de colaboradores cumpliendo requisitos mínimos
   let meetingRequirements = 0;
-  collaborators.forEach(collab => {
+  activeCollaborators.forEach(collab => {
     const profile = roleProfiles[collab.rol];
     if (!profile) return; // No profile = can't evaluate
     
@@ -307,8 +310,8 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     }
   });
   
-  const roleCoverage = collaborators.length > 0 
-    ? Math.round((meetingRequirements / collaborators.length) * 100)
+  const roleCoverage = activeCollaborators.length > 0
+    ? Math.round((meetingRequirements / activeCollaborators.length) * 100)
     : 0;
 
   return {
@@ -316,7 +319,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     teamAverageRaw: totalAvg,
     strengths,
     criticalGaps: criticalGapsCount,
-    teamSize: collaborators.length,
+    teamSize: activeCollaborators.length,
     totalSkills: skills.length,
     totalCategories: categories.length,
     expertDensity,

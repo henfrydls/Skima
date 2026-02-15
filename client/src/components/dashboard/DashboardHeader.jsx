@@ -8,12 +8,13 @@ import { Calendar, ChevronDown, Check, Clock, RotateCcw } from 'lucide-react';
  * Uses Headless UI Popover for a robust period selector.
  * Supports: Year, Quarter, Month granularity.
  */
-export default function DashboardHeader({ 
-  periods = [], 
-  selectedPeriod, 
+export default function DashboardHeader({
+  periods = [],
+  selectedPeriod,
   onPeriodChange,
   granularity,
-  onGranularityChange
+  onGranularityChange,
+  teamSize = null
 }) {
   
   // Helper to get button text
@@ -38,9 +39,16 @@ export default function DashboardHeader({
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
       <div>
-        <h1 className="text-2xl font-light text-gray-900">
-          Resumen Ejecutivo
-        </h1>
+        <div className="flex items-baseline gap-3">
+          <h1 className="text-2xl font-light text-gray-900">
+            Resumen Ejecutivo
+          </h1>
+          {teamSize != null && (
+            <span className="relative -top-px px-2.5 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
+              {teamSize} {teamSize === 1 ? 'colaborador' : 'colaboradores'}
+            </span>
+          )}
+        </div>
         <p className="text-sm text-gray-500 mt-1 capitalize">
           {isLive ? currentDate : `Viendo snapshot: ${getPeriodLabel()}`}
         </p>

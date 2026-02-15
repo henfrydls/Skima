@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, Lightbulb, Settings, FlaskConical } from 'lucide-react';
 import { useConfig } from '../contexts/ConfigContext';
@@ -39,6 +39,20 @@ export default function DashboardView() {
   // Time Travel state
   const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
   const [granularity, setGranularity] = useState('quarter'); // Default granularity
+
+  // Smooth transition when period changes
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 150);
+    return () => clearTimeout(timer);
+  }, [selectedSnapshotId, granularity]);
 
   // Intelligent Context Switching
   const handleGranularityChange = (newGranularity) => {
@@ -186,20 +200,24 @@ export default function DashboardView() {
         onPeriodChange={setSelectedSnapshotId}
         granularity={granularity}
         onGranularityChange={handleGranularityChange}
+        teamSize={metrics.teamSize}
       />
 
-      {/* KPI Grid */}
-      <ExecutiveKPIGrid 
-        metrics={metrics} 
-        previousMetrics={previousMetrics}
-      />
+      {/* Data section with smooth transition on period change */}
+      <div className={`space-y-6 transition-opacity duration-200 ease-out ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
+        {/* KPI Grid */}
+        <ExecutiveKPIGrid
+          metrics={metrics}
+          previousMetrics={previousMetrics}
+        />
 
-      {/* Strategic Insights + Automatic Insight */}
-      <StrategicInsights
-        distributionByCategory={distributionByCategory}
-        operationalRisks={prioritizedGaps}
-        automaticInsight={insights.length > 0 ? insights[0] : null}
-      />
+        {/* Strategic Insights + Automatic Insight */}
+        <StrategicInsights
+          distributionByCategory={distributionByCategory}
+          operationalRisks={prioritizedGaps}
+          automaticInsight={insights.length > 0 ? insights[0] : null}
+        />
+      </div>
 
       {/* Demo mode: Setup prompt card */}
       {isDemo && (
