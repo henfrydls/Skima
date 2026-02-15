@@ -133,7 +133,8 @@ export default function EvolutionPage() {
           subtext="vs período anterior"
           icon={Activity}
           color="indigo"
-          trend={periodDelta} 
+          trend={periodDelta}
+          helpText="Promedio ponderado por rol · Meta: 4.0"
         />
 
         {/* 2. TOP PERFORMER */}
@@ -144,10 +145,11 @@ export default function EvolutionPage() {
           icon={TrendingUp}
           color="emerald"
           trend={topImprover ? topImprover.delta : null}
+          helpText="Colaborador con mayor delta positivo en el período"
         />
 
         {/* 3. SUPPORT FOCUS (Constructive approach) - Clickable to Team Matrix */}
-        <div 
+        <div
           className="cursor-pointer group"
           onClick={() => navigate('/team-matrix?tab=colaboradores&filter=attention')}
         >
@@ -157,8 +159,9 @@ export default function EvolutionPage() {
             subtext={attentionCount > 0 ? "Colaboradores con brechas críticas detectadas" : "Sin alertas de rendimiento"}
             icon={LifeBuoy}
             color="amber"
-            trend={attentionCount > 0 ? -1 : 0} 
-            invertDelta={true} 
+            trend={attentionCount > 0 ? -1 : 0}
+            invertDelta={true}
+            helpText="Skills críticas (C) con nivel < 2.5"
           />
         </div>
       </div>

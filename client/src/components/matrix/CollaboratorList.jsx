@@ -14,25 +14,33 @@ import { getTrendColor } from '../../lib/evolutionLogic';
 
 // Filter options with updated business rules
 const FILTER_OPTIONS = [
-  { id: 'all', label: 'Todos', filter: () => true },
-  { 
-    id: 'critical', 
-    label: 'Con Brechas', 
-    icon: AlertTriangle, 
+  {
+    id: 'all',
+    label: 'Todos',
+    description: 'Mostrar todos los colaboradores',
+    filter: () => true
+  },
+  {
+    id: 'critical',
+    label: 'Con Brechas',
+    icon: AlertTriangle,
+    description: 'Colaboradores con al menos una skill en nivel inferior al requerido por su rol',
     // Only evaluated collaborators with gaps
-    filter: (c) => c.hasEvaluations && c.brechas?.length > 0 
+    filter: (c) => c.hasEvaluations && c.brechas?.length > 0
   },
-  { 
-    id: 'experts', 
-    label: 'Expertos', 
-    icon: Star, 
+  {
+    id: 'experts',
+    label: 'Expertos',
+    icon: Star,
+    description: 'Colaboradores con promedio general ≥ 4.0. Candidatos a mentorías',
     // Updated: >= 4.0, only evaluated collaborators
-    filter: (c) => c.hasEvaluations && c.promedio >= 4.0 
+    filter: (c) => c.hasEvaluations && c.promedio >= 4.0
   },
-  { 
-    id: 'attention', 
-    label: 'Requieren Atención', 
-    icon: TrendingUp, 
+  {
+    id: 'attention',
+    label: 'Requieren Atención',
+    icon: TrendingUp,
+    description: 'Promedio < 2.5 o tiene al menos una brecha crítica. Priorizar desarrollo',
     // Updated: Low average OR critical gaps, only evaluated collaborators
     filter: (c) => {
       // Exclude unevaluated collaborators
@@ -44,10 +52,11 @@ const FILTER_OPTIONS = [
       return hasCriticalGap;
     }
   },
-  { 
-    id: 'unevaluated', 
-    label: 'Sin Evaluar', 
-    icon: AlertTriangle, 
+  {
+    id: 'unevaluated',
+    label: 'Sin Evaluar',
+    icon: AlertTriangle,
+    description: 'Colaboradores que aún no tienen sesiones de evaluación registradas',
     // Collaborators without evaluations
     filter: (c) => !c.hasEvaluations
   },
@@ -329,55 +338,68 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
     return result;
   }, [collaborators, searchQuery, activeFilter, sortBy]);
 
+  // Get active filter description
+  const activeFilterOption = FILTER_OPTIONS.find(f => f.id === activeFilter);
+  const activeFilterDescription = activeFilterOption?.description;
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex flex-col md:flex-row gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Buscar por nombre o rol..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg 
-                       focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
-                       text-sm"
-          />
-        </div>
+      <div className="flex flex-col gap-4 p-4 bg-white rounded-lg border border-gray-200 shadow-sm">
+        <div className="flex flex-col md:flex-row gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o rol..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg
+                         focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
+                         text-sm"
+            />
+          </div>
 
-        {/* Filter Buttons */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {FILTER_OPTIONS.map(option => (
-            <button
-              key={option.id}
-              onClick={() => setActiveFilter(option.id)}
-              className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
-                activeFilter === option.id
-                  ? 'bg-primary text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+          {/* Filter Buttons */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1">
+            {FILTER_OPTIONS.map(option => (
+              <button
+                key={option.id}
+                onClick={() => setActiveFilter(option.id)}
+                className={`flex items-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-colors ${
+                  activeFilter === option.id
+                    ? 'bg-primary text-white'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {option.icon && <option.icon size={14} />}
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="flex items-center gap-2">
+            <Filter size={16} className="text-gray-400" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
             >
-              {option.icon && <option.icon size={14} />}
-              {option.label}
-            </button>
-          ))}
+              <option value="name">Por nombre</option>
+              <option value="score-desc">Mayor promedio</option>
+              <option value="score">Menor promedio</option>
+            </select>
+          </div>
         </div>
 
-        {/* Sort */}
-        <div className="flex items-center gap-2">
-          <Filter size={16} className="text-gray-400" />
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-          >
-            <option value="name">Por nombre</option>
-            <option value="score-desc">Mayor promedio</option>
-            <option value="score">Menor promedio</option>
-          </select>
-        </div>
+        {/* Filter Description - Contextual Hint */}
+        {activeFilterDescription && (
+          <div className="text-xs text-gray-500 transition-opacity duration-200">
+            {activeFilterDescription}
+          </div>
+        )}
       </div>
 
       {/* Results count */}

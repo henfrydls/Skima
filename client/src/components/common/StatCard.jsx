@@ -1,5 +1,6 @@
 import { TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer } from 'recharts';
+import { InfoPopover } from '../help';
 
 /**
  * StatCard - Reusable KPI Card Component
@@ -74,17 +75,20 @@ function Sparkline({ data, color = '#6366f1' }) {
 }
 
 // Main Component
-export default function StatCard({ 
-  title, 
-  value, 
+export default function StatCard({
+  title,
+  value,
   subtext, // mapped to subtitle
-  icon: Icon, 
+  icon: Icon,
   trend, // explicit delta
   previousValue, // calculation fallback
   color = 'indigo', // default color if not specified
   invertDelta = false,
   sparklineData = null,
-  suffix = ''
+  suffix = '',
+  helpContent = null, // Optional: InfoPopover content (JSX or string)
+  helpAlign = 'center', // Optional: InfoPopover alignment ('center', 'left', 'right')
+  helpText = null // Optional: Inline contextual help below subtext
 }) {
   // Map abstract colors to Tailwind classes
   // Supporting both semantic names (primary) and direct colors (indigo)
@@ -140,12 +144,23 @@ export default function StatCard({
         />
       </div>
       
-      <p className="text-xs font-bold uppercase tracking-wide text-gray-400 mt-2">
-        {title}
-      </p>
-      
+      <div className="flex items-center gap-1.5 mt-2">
+        <p className="text-xs font-bold uppercase tracking-wide text-gray-400">
+          {title}
+        </p>
+        {helpContent && (
+          <InfoPopover title={title} align={helpAlign}>
+            {helpContent}
+          </InfoPopover>
+        )}
+      </div>
+
       {subtext && (
         <p className="text-xs text-gray-500 mt-1">{subtext}</p>
+      )}
+
+      {helpText && (
+        <p className="text-[11px] text-gray-400 italic mt-1.5">{helpText}</p>
       )}
     </div>
   );

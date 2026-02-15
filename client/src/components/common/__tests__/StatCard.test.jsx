@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import StatCard from '../StatCard';
 import { TrendingUp, AlertTriangle } from 'lucide-react';
 
@@ -8,6 +8,14 @@ vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }) => <div data-testid="responsive-container">{children}</div>,
   LineChart: ({ children }) => <div data-testid="line-chart">{children}</div>,
   Line: () => <div data-testid="line" />
+}));
+
+// Mock framer-motion for InfoPopover
+vi.mock('framer-motion', () => ({
+  motion: {
+    div: ({ children, ...props }) => <div {...props}>{children}</div>
+  },
+  AnimatePresence: ({ children }) => <>{children}</>
 }));
 
 describe('StatCard', () => {
@@ -230,5 +238,86 @@ describe('StatCard', () => {
 
     const card = container.querySelector('.hover\\:shadow-md');
     expect(card).toBeInTheDocument();
+  });
+
+  it('renders InfoPopover when helpContent is provided', () => {
+    render(
+      <StatCard
+        title="Test Metric"
+        value={75}
+        icon={TrendingUp}
+        helpContent="This is help content for the metric"
+      />
+    );
+
+    // Help icon button should be present
+    const helpButton = screen.getByRole('button', { name: /Ayuda: Test Metric/i });
+    expect(helpButton).toBeInTheDocument();
+  });
+
+  it('shows help popover content when help icon is clicked', () => {
+    render(
+      <StatCard
+        title="Test Metric"
+        value={75}
+        icon={TrendingUp}
+        helpContent="This is help content for the metric"
+      />
+    );
+
+    const helpButton = screen.getByRole('button', { name: /Ayuda: Test Metric/i });
+    fireEvent.click(helpButton);
+
+    // Popover content should be visible
+    expect(screen.getByText('This is help content for the metric')).toBeInTheDocument();
+  });
+
+  it('does not render InfoPopover when helpContent is not provided', () => {
+    render(
+      <StatCard
+        title="Test Metric"
+        value={75}
+        icon={TrendingUp}
+      />
+    );
+
+    // Help button should not exist
+    expect(screen.queryByRole('button', { name: /Ayuda:/i })).not.toBeInTheDocument();
+  });
+
+  it('renders helpText when provided', () => {
+    render(
+      <StatCard
+        title="Test Metric"
+        value={75}
+        icon={TrendingUp}
+        helpText="Additional inline help text"
+      />
+    );
+
+    expect(screen.getByText('Additional inline help text')).toBeInTheDocument();
+  });
+
+  it('can render both helpContent and helpText together', () => {
+    render(
+      <StatCard
+        title="Test Metric"
+        value={75}
+        icon={TrendingUp}
+        helpContent="Popover help content"
+        helpText="Inline help text"
+      />
+    );
+
+    // Inline text visible immediately
+    expect(screen.getByText('Inline help text')).toBeInTheDocument();
+
+    // Popover content only visible after click
+    expect(screen.queryByText('Popover help content')).not.toBeInTheDocument();
+
+    const helpButton = screen.getByRole('button', { name: /Ayuda: Test Metric/i });
+    fireEvent.click(helpButton);
+
+    expect(screen.getByText('Popover help content')).toBeInTheDocument();
   });
 });

@@ -8,6 +8,7 @@ import { MatrixSkeleton, CollaboratorListSkeleton, CardSkeleton } from '../compo
 import CollaboratorList from '../components/matrix/CollaboratorList';
 import CollaboratorDrawer from '../components/matrix/CollaboratorDrawer';
 import CategoryHealthCard from '../components/matrix/CategoryHealthCard';
+import { SkillStateLegend } from '../components/help';
 import { 
   calculateSparkline, 
   identifyGaps, 
@@ -434,20 +435,25 @@ export default function TeamMatrixPage() {
               </button>
             </div>
           ) : (
-            <div className="flex-1 min-h-0">
-              <TransposedMatrixTable
-                categories={categories}
-                skills={skills}
-                collaborators={collaborators}
-                isLoading={isLoading}
-                onCellClick={(collaboratorId, skillId) => {
-                  const collab = collaboratorsWithAverages.find(c => c.id === collaboratorId);
-                  if (collab) {
-                    setSelectedColaborador(collab);
-                    setIsDrawerOpen(true);
-                  }
-                }}
-              />
+            <div className="flex-1 min-h-0 flex flex-col gap-4">
+              <div className="flex-1 min-h-0">
+                <TransposedMatrixTable
+                  categories={categories}
+                  skills={skills}
+                  collaborators={collaborators}
+                  isLoading={isLoading}
+                  onCellClick={(collaboratorId, skillId) => {
+                    const collab = collaboratorsWithAverages.find(c => c.id === collaboratorId);
+                    if (collab) {
+                      setSelectedColaborador(collab);
+                      setIsDrawerOpen(true);
+                    }
+                  }}
+                />
+              </div>
+              <div className="flex-shrink-0">
+                <SkillStateLegend />
+              </div>
             </div>
           )
         )
