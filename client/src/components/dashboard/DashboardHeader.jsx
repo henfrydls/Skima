@@ -155,10 +155,6 @@ export default function DashboardHeader({
           </Transition>
         </Popover>
 
-        {/* Primary Action */}
-        <button className="hidden md:flex bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors shadow-sm">
-          Exportar
-        </button>
       </div>
     </div>
   );
