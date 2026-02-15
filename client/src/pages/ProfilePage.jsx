@@ -309,21 +309,23 @@ export default function ProfilePage() {
         </h3>
         
         <div className="space-y-3">
-          {/* Logout Button */}
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Cerrar Sesión</p>
-              <p className="text-xs text-gray-500">Salir de tu cuenta de administrador</p>
+          {/* Logout Button - only shown when password is set */}
+          {(hasPassword || isDemo) && (
+            <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Cerrar Sesión</p>
+                <p className="text-xs text-gray-500">Salir de tu cuenta de administrador</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
+                         hover:bg-gray-100 transition-colors text-sm"
+              >
+                <LogOut size={14} />
+                Cerrar Sesión
+              </button>
             </div>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg
-                       hover:bg-gray-100 transition-colors text-sm"
-            >
-              <LogOut size={14} />
-              Cerrar Sesión
-            </button>
-          </div>
+          )}
 
           {/* Reset Database / Exit Demo */}
           {isDemo ? (

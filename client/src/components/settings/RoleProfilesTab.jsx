@@ -506,12 +506,32 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
     }
   }, [blocker.state]);
 
-  // Handler to create new role
-  const applyNewRole = (roleName) => {
-    setRoles(prev => [...prev, roleName]);
-    setSelectedRole(roleName);
+  // Handler to create new role - persists immediately so it appears in other tabs
+  const applyNewRole = async (roleName) => {
     const defaults = {};
     skills.forEach(s => { defaults[s.id] = 'N'; });
+
+    // Persist to DB immediately
+    try {
+      const response = await fetch(`${API_BASE}/api/role-profiles/${encodeURIComponent(roleName)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...getHeaders()
+        },
+        body: JSON.stringify(defaults)
+      });
+      if (!response.ok) throw new Error('Error creating role');
+      invalidatePreload();
+    } catch (err) {
+      console.error('Error persisting new role:', err);
+      toast.error('Error al crear el rol');
+      return;
+    }
+
+    setRoles(prev => [...prev, roleName]);
+    setAllProfiles(prev => ({ ...prev, [roleName]: defaults }));
+    setSelectedRole(roleName);
     setRequirements(defaults);
     setInitialRequirements(defaults);
     setSaveSuccess(false);
@@ -723,11 +743,26 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
   // Empty roles
   if (roles.length === 0) {
     return (
-      <div className="text-center py-16">
-        <Briefcase size={48} className="mx-auto text-gray-300 mb-4" />
-        <h3 className="text-lg font-medium text-gray-800 mb-2">No hay roles definidos</h3>
-        <p className="text-gray-500">Los roles se extraen automáticamente de los colaboradores existentes.</p>
-      </div>
+      <>
+        <div className="text-center py-16">
+          <Briefcase size={48} className="mx-auto text-gray-300 mb-4" />
+          <h3 className="text-lg font-medium text-gray-800 mb-2">No hay roles definidos</h3>
+          <p className="text-gray-500 mb-6">Crea tu primer rol para luego asignar colaboradores y evaluar competencias.</p>
+          <button
+            onClick={() => setShowNewRoleModal(true)}
+            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors inline-flex items-center gap-2 text-sm font-medium"
+          >
+            <Plus size={18} />
+            Crear Primer Rol
+          </button>
+        </div>
+        <NewRoleModal
+          isOpen={showNewRoleModal}
+          onClose={() => setShowNewRoleModal(false)}
+          onCreateRole={handleCreateNewRole}
+          existingRoles={roles}
+        />
+      </>
     );
   }
 
@@ -781,7 +816,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       )}
 
       {/* 2. MAIN CONTENT CARD */}
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px]' : ''}`}>
+      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px] overflow-hidden' : ''}`}>
         
         {/* VIEW 1: ROLE LIST / GRID */}
         {!selectedRole && (
@@ -878,7 +913,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                  </div>
               ) : (
                  /* LIST VIEW - Redesigned with action menu and collaborator count */
-                 <div className="border border-gray-100 rounded-xl overflow-hidden">
+                 <div className="border border-gray-100 rounded-xl">
                     <table className="w-full">
                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-medium">
                           <tr>
