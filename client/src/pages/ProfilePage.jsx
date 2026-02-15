@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight, X } from 'lucide-react';
+import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight, X, FlaskConical, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -15,7 +15,7 @@ import { API_BASE } from '../lib/apiBase';
 
 export default function ProfilePage() {
   const navigate = useNavigate();
-  const { companyName, adminName, refetchConfig } = useConfig();
+  const { companyName, adminName, isDemo, refetchConfig } = useConfig();
   const { logout, authFetch } = useAuth();
   
   const [formData, setFormData] = useState({
@@ -133,6 +133,16 @@ export default function ProfilePage() {
         </p>
       </div>
 
+      {/* Demo mode notice */}
+      {isDemo && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
+          <FlaskConical size={16} className="text-amber-600 flex-shrink-0" />
+          <span className="text-amber-800">
+            Estos son datos de ejemplo. Los cambios se perderán al configurar tu espacio real.
+          </span>
+        </div>
+      )}
+
       {/* Profile Form */}
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 space-y-6">
         {/* Organization Section */}
@@ -205,7 +215,12 @@ export default function ProfilePage() {
             showSecurity ? 'grid-rows-[1fr] opacity-100 mt-4' : 'grid-rows-[0fr] opacity-0'
           }`}>
              <div className="overflow-hidden">
-                <div className="bg-gray-50/50 p-4 rounded-lg border border-gray-100 space-y-4">
+                <div className={`bg-gray-50/50 p-4 rounded-lg border border-gray-100 space-y-4 ${isDemo ? 'opacity-50' : ''}`}>
+                  {isDemo && (
+                    <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
+                      En modo demo la contraseña es <strong>admin123</strong>. Podrás configurar tu propia contraseña al crear tu espacio.
+                    </p>
+                  )}
                   {/* Current Password (only if exists) */}
                   {hasPassword && (
                     <div>
@@ -217,10 +232,10 @@ export default function ProfilePage() {
                         id="currentPassword"
                         value={formData.currentPassword}
                         onChange={(e) => setFormData(prev => ({ ...prev, currentPassword: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg
                                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                                  text-gray-900 text-sm bg-white"
-                        disabled={isLoading}
+                        disabled={isLoading || isDemo}
                       />
                     </div>
                   )}
@@ -236,10 +251,10 @@ export default function ProfilePage() {
                         id="newPassword"
                         value={formData.newPassword}
                         onChange={(e) => setFormData(prev => ({ ...prev, newPassword: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg
                                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                                  text-gray-900 text-sm bg-white"
-                        disabled={isLoading}
+                        disabled={isLoading || isDemo}
                       />
                     </div>
                     <div>
@@ -251,10 +266,10 @@ export default function ProfilePage() {
                         id="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={(e) => setFormData(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg 
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-lg
                                  focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                                  text-gray-900 text-sm bg-white"
-                        disabled={isLoading}
+                        disabled={isLoading || isDemo}
                       />
                     </div>
                   </div>
@@ -310,26 +325,43 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Reset Database (placeholder) */}
-          <div className="flex items-center justify-between p-4 bg-critical/5 rounded-lg border border-critical/10">
-            <div>
-              <p className="text-sm font-medium text-gray-700">Resetear Base de Datos</p>
-              <p className="text-xs text-gray-500">Eliminar todos los datos y empezar de cero</p>
+          {/* Reset Database / Exit Demo */}
+          {isDemo ? (
+            <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Salir del Modo Demo</p>
+                <p className="text-xs text-gray-500">Configura tu espacio real con tus propios datos</p>
+              </div>
+              <button
+                onClick={() => navigate('/setup')}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg
+                         hover:bg-primary/90 transition-colors text-sm"
+              >
+                <Settings size={14} />
+                Configurar mi espacio
+              </button>
             </div>
-            <button
-              onClick={() => setShowResetConfirm(true)}
-              className="flex items-center gap-2 px-4 py-2 border border-critical text-critical rounded-lg
-                       hover:bg-critical/10 transition-colors text-sm"
-            >
-              <Trash2 size={14} />
-              Resetear
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-center justify-between p-4 bg-critical/5 rounded-lg border border-critical/10">
+              <div>
+                <p className="text-sm font-medium text-gray-700">Resetear Base de Datos</p>
+                <p className="text-xs text-gray-500">Eliminar todos los datos y empezar de cero</p>
+              </div>
+              <button
+                onClick={() => setShowResetConfirm(true)}
+                className="flex items-center gap-2 px-4 py-2 border border-critical text-critical rounded-lg
+                         hover:bg-critical/10 transition-colors text-sm"
+              >
+                <Trash2 size={14} />
+                Resetear
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Reset Database Confirmation Modal */}
-      {showResetConfirm && (
+      {!isDemo && showResetConfirm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
