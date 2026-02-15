@@ -6,10 +6,10 @@ import LoginModal from '../LoginModal';
 // Mock ConfigContext (LoginModal uses useConfig for password hint)
 vi.mock('../../../contexts/ConfigContext', () => ({
   useConfig: () => ({
-    config: { hasPassword: false },
+    config: { hasPassword: true, isDemo: true },
     isLoading: false,
     isSetup: true,
-    isDemo: false,
+    isDemo: true,
     companyName: 'Test',
     adminName: 'Admin',
   }),

@@ -19,8 +19,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   const [isLoading, setIsLoading] = useState(false);
   const { config } = useConfig();
 
-  // Only show dev hint when NO custom password has been set
-  const showDevHint = !config?.hasPassword;
+  // Show default password hint in demo mode
+  const showDevHint = config?.isDemo;
 
   if (!isOpen) return null;
 
