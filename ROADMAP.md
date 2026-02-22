@@ -1,22 +1,22 @@
-# Product Roadmap — Skills Matrix
+# Product Roadmap — Skima (Skills Management App)
 
-> Last Updated: 2025-12-30
+> Last Updated: 2026-02-21
 
 ## Vision
-Sistema de gestión de competencias técnicas para equipos, desde evaluación básica hasta talent management completo.
+Sistema de gestion de competencias tecnicas para equipos, desde evaluacion basica hasta talent management completo. Empaquetado como app desktop multiplataforma con Tauri v2.
 
 ---
 
 ## Phase Map
 
 ```
- M1-2      M3-4         M5-7         M8-10       M11-12
-┌──────┬──────────┬──────────┬──────────┬──────────┐
-│ MVP  │ Analytics│  Action  │  Talent  │ Perform  │
-│ Core │ Insights │  Layer   │  Mgmt    │  Mgmt    │
-├──────┼──────────┼──────────┼──────────┼──────────┤
-│✅Done│🔄Current │⏳Planned │⏳Planned │⏳Planned │
-└──────┴──────────┴──────────┴──────────┴──────────┘
+ Phase 1    Phase 1.5     Phase 2       Phase 3       Phase 4-5
+┌────────┬───────────┬───────────┬───────────┬───────────┐
+│  MVP   │  Polish   │ Analytics │  Action   │  Talent & │
+│  Core  │  Desktop  │ Insights  │  Layer    │  Perform  │
+├────────┼───────────┼───────────┼───────────┼───────────┤
+│ ✅Done │ ✅ v1.0.0 │ ⏳Planned │ ⏳Planned │ ⏳Planned │
+└────────┴───────────┴───────────┴───────────┴───────────┘
 ```
 
 ---
@@ -27,32 +27,54 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Dashboard KPIs | ✅ | Promedio, distribución, alertas |
-| Team Matrix | ✅ | Vista transpuesta, por persona, por área |
-| Settings CRUD | ✅ | Colaboradores, Skills, Categorías |
-| Reports básico | ✅ | Exports CSV/JSON, gap analysis |
-| Snapshot Selector | ✅ | Contexto temporal |
+| Dashboard KPIs | ✅ | Promedio, distribucion, alertas, executive metrics |
+| Team Matrix | ✅ | Vista transpuesta, por persona, por area |
+| Settings CRUD | ✅ | Colaboradores, Skills, Categorias, Role Profiles, Evaluaciones |
+| Snapshot Selector | ✅ | Contexto temporal con comparacion |
+| Evolution Page | ✅ | Graficas de evolucion, lista de mejora, metricas |
+| Auth System | ✅ | JWT, bcrypt passwords, rate limiting, cross-tab sync |
+| Profile Page | ✅ | Cambio de password, roles, preferencias |
+| Demo Mode | ✅ | Modo de demo con datos de ejemplo |
+| Contextual Help | ✅ | InfoPopovers en KPIs y metricas clave |
 
 ---
 
-## 🔄 Phase 2: Analytics & Insights (En Progreso)
+## ✅ Phase 1.5: Polish, Testing, Desktop & CI/CD (v1.0.0)
+
+**Objetivo:** Estabilizar, testear, empaquetar como desktop app
+
+| Feature | Status | Notes |
+|---------|--------|-------|
+| Component Refactoring | ✅ | SkillsDashboard monolito descompuesto en modulos |
+| Test Coverage 80%+ | ✅ | 696 tests, 86/87/82/87 coverage |
+| Tauri v2 Setup | ✅ | Desktop app con sidecar Node.js |
+| Sidecar Lifecycle | ✅ | Spawn, health check, graceful shutdown |
+| Dynamic DB Path | ✅ | SQLite en app data dir via --db-path |
+| CI/CD Pipelines | ✅ | quality.yml (lint+test+coverage+audit) |
+| Release Pipeline | ✅ | release.yml (Tauri matrix build Win/Linux/macOS) |
+| Version Management | ✅ | v1.0.0 unificado, bump script |
+| Security Hardening | ✅ | bcrypt passwords, rate limiting auth endpoints |
+| README + Docs | ✅ | Screenshots, instalacion, arquitectura |
+
+---
+
+## ⏳ Phase 2: Analytics & Insights
 
 **Objetivo:** Managers toman decisiones basadas en datos
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| Stakeholder Views | ✅ | Manager/Director/HR toggle |
-| Manager Metrics | ✅ | Gaps, Bus Factor, Acciones |
-| Director Metrics | ✅ | Health Score, Competency Map |
-| HR Metrics (básico) | ✅ | Distribución de talento |
-| Evaluation Snapshots | ✅ | Collaborator name/role stored at eval time |
-| Trend Analysis | 🔲 | Comparación temporal real |
-| Recommendations Engine | 🔲 | Reglas básicas if/then |
+| Stakeholder Views | ✅ | Manager/Director/HR toggle (MVP) |
+| Manager Metrics | ✅ | Gaps, Bus Factor, Acciones (MVP) |
+| Director Metrics | ✅ | Health Score, Competency Map (MVP) |
+| HR Metrics (basico) | ✅ | Distribucion de talento (MVP) |
+| Trend Analysis | 🔲 | Comparacion temporal real |
+| Recommendations Engine | 🔲 | Reglas basicas if/then |
 | PDF Export | 🔲 | Export evaluation as PDF from history |
 
 ---
 
-## ⏳ Phase 3: Action Layer (Q2 2025)
+## ⏳ Phase 3: Action Layer
 
 **Objetivo:** Managers pueden ACTUAR sobre insights
 
@@ -64,15 +86,11 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 | Notification System | 🔲 | P1 |
 | Training Recommendations → Actions | 🔲 | P1 |
 
-**Validation Gate:**
-- ¿Managers crean IDPs desde la app?
-- ¿Colaboradores completan trainings asignados?
-
 ---
 
-## ⏳ Phase 4: Talent Management (Q3 2025)
+## ⏳ Phase 4: Talent Management
 
-**Objetivo:** HR usa el sistema para planificación de talento
+**Objetivo:** HR usa el sistema para planificacion de talento
 
 | Feature | Status | Priority |
 |---------|--------|----------|
@@ -81,13 +99,9 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 | 9-Box Grid | 🔲 | P2 |
 | High/Low Performer Tracking | 🔲 | P2 |
 
-**Dependencies:**
-- Requiere IDPs maduros (Phase 3)
-- Requiere skill requirements por rol
-
 ---
 
-## ⏳ Phase 5: Performance Management (Q4 2025)
+## ⏳ Phase 5: Performance Management
 
 **Objetivo:** Conectar skills con performance (OKRs/KPIs)
 
@@ -95,18 +109,14 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 |---------|--------|----------|
 | OKR Tracking | 🔲 | P1 |
 | Goal Setting | 🔲 | P1 |
-| Skills ↔ Goals Mapping | 🔲 | P2 |
+| Skills <-> Goals Mapping | 🔲 | P2 |
 | Performance Reviews | 🔲 | P2 |
-
-**Validation Gate:**
-- ¿Managers usan OKRs o prefieren solo skills?
-- ¿Integración añade valor o complejidad?
 
 ---
 
-## 📋 Post v1.0.0 — UX Audit Findings
+## Post v1.0.0 — UX Audit Findings
 
-**Origen:** Auditoría UX/UI + Roleplay de 7 personas corporativas (HR, Ops, Engineering, Analyst, Technician, CEO, CFO)
+**Origen:** Auditoria UX/UI + Roleplay de 7 personas corporativas
 
 | Feature | Solicitado por | Priority |
 |---------|---------------|----------|
@@ -114,18 +124,21 @@ Sistema de gestión de competencias técnicas para equipos, desde evaluación b�
 | Vista personal "My Skills" (individual contributor) | Technician, HR, Engineering | P0 |
 | Role-based access control (RBAC) | HR, Ops, CEO | P1 |
 | Bulk operations (evaluaciones, colaboradores) | Forms audit, Ops, HR | P1 |
-| Comparación entre departamentos | CEO, CFO, Ops | P2 |
+| Comparacion entre departamentos | CEO, CFO, Ops | P2 |
 | Contexto financiero/costo de brechas | CFO, CEO | P2 |
 
 ---
 
-## 🔮 Future Considerations (No Committed)
+## Future Considerations (No Committed)
 
+- TypeScript migration
+- Tauri SQL Plugin (Rust nativo, eliminar sidecar Node.js)
 - AI/ML Recommendations
 - Benchmark vs Industria
 - Mobile App
+- i18n (internationalization)
 - Integrations (Slack, Teams, HRIS)
-- Usability Testing (Pruebas con usuarios reales)
+- In-App Help Phase 2 (GlossaryDrawer, FormulaExplainer, guided tour)
 
 ---
 

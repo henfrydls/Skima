@@ -6,7 +6,8 @@ import {
   KPISkeleton,
   CardSkeleton,
   DashboardSkeleton,
-  CollaboratorListSkeleton
+  CollaboratorListSkeleton,
+  EvolutionSkeleton
 } from '../LoadingSkeleton';
 
 describe('LoadingSkeleton Components', () => {
@@ -198,6 +199,37 @@ describe('LoadingSkeleton Components', () => {
 
     it('applies animate-pulse class', () => {
       const { container } = render(<CollaboratorListSkeleton />);
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+    });
+  });
+
+  describe('EvolutionSkeleton', () => {
+    it('renders header skeleton', () => {
+      const { container } = render(<EvolutionSkeleton />);
+      const header = container.querySelector('.h-8.bg-gray-200');
+      expect(header).toBeInTheDocument();
+    });
+
+    it('renders 3 stat cards', () => {
+      const { container } = render(<EvolutionSkeleton />);
+      const statCards = container.querySelectorAll('.grid-cols-1.md\\:grid-cols-3 > div');
+      expect(statCards.length).toBe(3);
+    });
+
+    it('renders chart area with bars', () => {
+      const { container } = render(<EvolutionSkeleton />);
+      const chartBars = container.querySelectorAll('.bg-gray-200.rounded-t');
+      expect(chartBars.length).toBe(12);
+    });
+
+    it('renders list area with 4 items', () => {
+      const { container } = render(<EvolutionSkeleton />);
+      const listItems = container.querySelectorAll('.border.border-gray-100.rounded-lg');
+      expect(listItems.length).toBe(4);
+    });
+
+    it('applies animate-pulse class', () => {
+      const { container } = render(<EvolutionSkeleton />);
       expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
     });
   });
