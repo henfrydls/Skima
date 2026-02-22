@@ -78,7 +78,7 @@ export default function SettingsPage() {
 
 
   return (
-    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in">
+    <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in flex-1 flex flex-col">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-light text-slate-800">Configuración</h1>
@@ -115,7 +115,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Tab Content - Keep Alive Pattern */}
-      <div className="min-h-[400px]">
+      <div className="min-h-[400px] flex-1 flex flex-col">
         
         {mountedTabs.includes('categorias') && (
           <div className={activeTab === 'categorias' ? 'block' : 'hidden'}>
@@ -146,7 +146,7 @@ export default function SettingsPage() {
         )}
 
         {mountedTabs.includes('evaluaciones') && (
-          <div className={activeTab === 'evaluaciones' ? 'block' : 'hidden'}>
+          <div className={activeTab === 'evaluaciones' ? 'flex flex-col flex-1' : 'hidden'}>
             <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} dataVersion={dataVersion} />
           </div>
         )}

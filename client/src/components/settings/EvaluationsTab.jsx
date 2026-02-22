@@ -1163,7 +1163,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 flex flex-col flex-1">
       {/* Header with inline status badges */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4 flex-1">
@@ -1261,7 +1261,7 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
           )}
           
           {viewMode === 'edit' && hasValidProfile && (
-            <div className="animate-fade-in space-y-6">
+            <div className="animate-fade-in space-y-6 flex-1 flex flex-col">
 
           {/* Summary Stats */}
           <div className="grid grid-cols-5 gap-4">
@@ -1302,10 +1302,13 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
           </div>
 
 
-          {/* Sticky Footer for Save Actions - Only visible when dirty */}
-          <div 
+          {/* Spacer to push save bar to bottom */}
+          <div className="flex-1" />
+
+          {/* Footer for Save Actions - Only visible when dirty */}
+          <div
             className={`
-              sticky bottom-2 z-20 flex justify-end gap-3 p-4 rounded-xl shadow-lg border border-gray-100 bg-white/90 backdrop-blur-sm transition-all duration-300
+              mt-auto flex justify-end gap-3 p-4 rounded-xl shadow-[0_-4px_12px_rgba(0,0,0,0.05)] border-t border-gray-100 bg-white/95 backdrop-blur-sm transition-all duration-300
               ${isDirty ? 'translate-y-0 opacity-100' : 'translate-y-20 opacity-0 pointer-events-none'}
             `}
           >
