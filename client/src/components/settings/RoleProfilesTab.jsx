@@ -28,6 +28,7 @@ import { API_BASE } from '../../lib/apiBase';
 import toast from 'react-hot-toast';
 import Button from '../common/Button';
 import ConfirmModal from '../common/ConfirmModal';
+import { EmptyState } from '../common/EmptyState';
 
 /**
  * RoleProfilesTab — Define skill requirements per role (Perfil de Puesto)
@@ -744,18 +745,13 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
   if (roles.length === 0) {
     return (
       <>
-        <div className="text-center py-16">
-          <Briefcase size={48} className="mx-auto text-gray-300 mb-4" />
-          <h3 className="text-lg font-medium text-gray-800 mb-2">No hay roles definidos</h3>
-          <p className="text-gray-500 mb-6">Crea tu primer rol para luego asignar colaboradores y evaluar competencias.</p>
-          <button
-            onClick={() => setShowNewRoleModal(true)}
-            className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors inline-flex items-center gap-2 text-sm font-medium"
-          >
-            <Plus size={18} />
-            Crear Primer Rol
-          </button>
-        </div>
+        <EmptyState
+          icon={Briefcase}
+          title="No hay roles definidos"
+          description="Crea tu primer rol para luego asignar colaboradores y evaluar competencias."
+          actionLabel="Crear Primer Rol"
+          onAction={() => setShowNewRoleModal(true)}
+        />
         <NewRoleModal
           isOpen={showNewRoleModal}
           onClose={() => setShowNewRoleModal(false)}
@@ -767,7 +763,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
   }
 
   return (
-    <div className="space-y-6 relative z-0">
+    <div className="space-y-6 relative z-0 animate-fade-in">
       {/* 1. EXTERNAL TOOLBAR (Controls) - Only visible when NO role is selected (Overview) */}
       {!selectedRole && (
        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -816,13 +812,13 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       )}
 
       {/* 2. MAIN CONTENT CARD */}
-      <div className={`bg-white rounded-xl shadow-sm border border-gray-200 flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px] overflow-hidden' : ''}`}>
+      <div className={`bg-surface rounded-lg shadow-sm border border-gray-100 flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px] overflow-hidden' : ''}`}>
         
         {/* VIEW 1: ROLE LIST / GRID */}
         {!selectedRole && (
            <div className="p-6">
               {filteredRoles.length === 0 ? (
-                 <div className="py-20 text-center bg-gray-50/50 rounded-xl border border-dashed border-gray-200">
+                 <div className="py-20 text-center bg-gray-50/50 rounded-lg border border-dashed border-gray-100">
                     <Search size={48} className="mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg font-medium text-gray-700 mb-1">No se encontraron roles</h3>
                     <p className="text-gray-500">Prueba con otro término de búsqueda o crea un nuevo perfil.</p>
@@ -836,7 +832,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                        return (
                           <div
                              key={role}
-                             className="bg-white p-5 rounded-xl border border-gray-200 hover:border-primary/30 hover:shadow-md transition-all text-left group relative"
+                             className="bg-surface p-5 rounded-lg border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all text-left group relative"
                           >
                              {/* Header with icon and action menu */}
                              <div className="flex items-start justify-between mb-3">
@@ -913,7 +909,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                  </div>
               ) : (
                  /* LIST VIEW - Redesigned with action menu and collaborator count */
-                 <div className="border border-gray-100 rounded-xl">
+                 <div className="border border-gray-100 rounded-lg">
                     <table className="w-full">
                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-medium">
                           <tr>
@@ -1009,7 +1005,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       {selectedRole && (
         <div className="flex flex-col h-full animate-in slide-in-from-right-4 duration-300">
             {/* Context Header */}
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-white/95 backdrop-blur z-20">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between sticky top-0 bg-surface/95 backdrop-blur z-20">
               <div className="flex items-center gap-4">
                 <button 
                   onClick={() => handleRoleSwitch(null)}
