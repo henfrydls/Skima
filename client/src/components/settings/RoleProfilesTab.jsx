@@ -536,6 +536,8 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
     setRequirements(defaults);
     setInitialRequirements(defaults);
     setSaveSuccess(false);
+
+    if (onDataChange) onDataChange();
   };
 
   const handleCreateNewRole = (roleName) => {

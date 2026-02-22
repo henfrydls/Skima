@@ -44,8 +44,12 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
     email: ''
   });
   const [showOptional, setShowOptional] = useState(false);
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false);
 
   if (!isOpen) return null;
+
+  const roles = Object.keys(roleProfiles).sort();
+  const hasRoles = roles.length > 0;
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -62,7 +66,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-800">Nuevo Colaborador</h2>
-          <button 
+          <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
           >
@@ -90,22 +94,52 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Rol / Posición *
             </label>
-            <select
-              value={formData.rol}
-              onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white"
-              required
-            >
-              <option value="">Seleccionar rol...</option>
-              {Object.keys(roleProfiles).map(rol => (
-                <option key={rol} value={rol}>{rol}</option>
-              ))}
-            </select>
-            {Object.keys(roleProfiles).length === 0 && (
-              <p className="mt-1 text-xs text-warning flex items-center gap-1">
-                <AlertCircle size={12} />
-                No hay perfiles creados. Ve a la pestaña Perfiles primero.
-              </p>
+            {hasRoles ? (
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setRoleDropdownOpen(!roleDropdownOpen)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white text-sm"
+                >
+                  <span className={formData.rol ? 'text-gray-800' : 'text-gray-400'}>
+                    {formData.rol || 'Seleccionar rol...'}
+                  </span>
+                  <svg className={`w-4 h-4 text-gray-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                {roleDropdownOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setRoleDropdownOpen(false)} />
+                    <div className="absolute left-0 top-full mt-1 w-full bg-white rounded-lg shadow-xl border border-gray-100 py-1 z-20 max-h-52 overflow-y-auto">
+                      {roles.map(rol => (
+                        <button
+                          type="button"
+                          key={rol}
+                          onClick={() => { setFormData({ ...formData, rol }); setRoleDropdownOpen(false); }}
+                          className={`w-full px-4 py-2 text-left text-sm flex items-center justify-between transition-colors
+                            ${formData.rol === rol ? 'bg-primary/10 text-primary font-medium' : 'text-gray-700 hover:bg-gray-50'}
+                          `}
+                        >
+                          <span className="flex items-center gap-2">
+                            <Briefcase size={14} className="text-gray-400" />
+                            {rol}
+                          </span>
+                          {formData.rol === rol && <Check size={14} className="text-primary" />}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="px-3 py-3 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm">
+                <p className="text-amber-700 flex items-center gap-1.5">
+                  <AlertCircle size={14} />
+                  No hay perfiles creados. Ve a la pestaña <strong>Perfiles de Puesto</strong> primero.
+                </p>
+              </div>
             )}
           </div>
 
@@ -144,7 +178,12 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              disabled={!hasRoles}
+              className={`px-4 py-2 rounded-lg transition-colors ${
+                hasRoles
+                  ? 'bg-primary text-white hover:bg-primary/90'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
             >
               Crear
             </button>
@@ -525,7 +564,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       }
     };
     fetchData();
-  }, [dataVersion]); 
+  }, [dataVersion, isActive]);
 
   // Filter collaborators
   const filteredCollaborators = collaborators
