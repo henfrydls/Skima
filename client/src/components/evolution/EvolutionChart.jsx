@@ -1,8 +1,38 @@
+import { useState, useEffect, useRef } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine, Label } from 'recharts';
+
+const CHART_ANIMATION_MS = 1500;
+// DOT_REVEAL_DELAY is kept as a single source-of-truth for the CSS animation-delay value.
+// It is expressed in milliseconds and interpolated into the CSS animation shorthand string.
+const DOT_REVEAL_DELAY = 800;
+
+// CSS keyframes injected once by the parent EvolutionChart component.
+//
+// animation-fill-mode: both
+//   - 'backwards' holds opacity:0 BEFORE the delay starts (prevents flash-of-visible)
+//   - 'forwards'  holds opacity:1 AFTER the animation ends (prevents revert-to-invisible)
+//
+// Together these make the animation completely immune to React remounts: if Recharts
+// re-renders/remounts a dot or label component (which it does when the Area path
+// animation completes at ~1500ms), the browser simply restarts the CSS animation from
+// t=0 and the element stays invisible until the delay elapses again -- but because the
+// delay is only 800ms and the chart animation is 1500ms, the second reveal (after
+// remount) completes well before the user can perceive a gap.
+//
+// Why not useState/useEffect?
+// Those reset to false on every remount. Recharts calls the dot/label render-prop
+// functions and re-creates the component instances when its internal SVG path
+// animation finishes, causing the state reset -> disappear -> 800ms wait -> reappear flicker.
+const EVOLUTION_CHART_STYLES = `
+  @keyframes dotFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+`;
 
 /**
  * EvolutionChart - "Storytelling with Data" Edition
- * 
+ *
  * Refactored to include Dynamic Narrative and optimized visual context.
  */
 
@@ -14,13 +44,13 @@ const CustomTooltip = ({ active, payload, label }) => {
     const offsetY = hasNewHires ? '-80px' : '-30px';
 
     return (
-      <div 
+      <div
         className="bg-slate-800 text-white text-xs p-3 rounded shadow-lg border border-slate-700 min-w-[150px]"
         style={{ transform: `translateY(${offsetY})` }}
       >
         <p className="font-bold mb-2 border-b border-slate-600 pb-1">{label}</p>
         <p className="mb-1">Promedio: <span className="font-mono text-indigo-300 text-sm">{payload[0].value}</span></p>
-        
+
         {hasNewHires && (
           <div className="mt-2 pt-2 border-t border-slate-600">
             <p className="text-emerald-400 font-bold mb-1 flex items-center gap-1">
@@ -39,101 +69,85 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// Custom Label for the last data point - Red if below goal, with bold styling
+// Custom Label for the last data point - fades in after chart animation.
+// CSS-only: no useState/useEffect so React remounts do not reset visibility.
 const LastPointLabel = (props) => {
-  const { x, y, value, index, dataLength } = props;
+  const { x, y, value, index, dataLength, revealed } = props;
   const GOAL = 4.0;
-  
+
   if (index !== dataLength - 1) return null;
 
-  // Determine color based on whether value meets goal
-  const isBelowGoal = value < GOAL;
-  const fillColor = isBelowGoal ? '#ef4444' : '#10b981'; // Red if below, Green if at/above
+  const fillColor = value < GOAL ? '#ef4444' : '#10b981';
+  const style = revealed
+    ? { opacity: 1 }
+    : { animation: `dotFadeIn 400ms ease-in ${DOT_REVEAL_DELAY}ms both` };
 
   return (
-    <text 
-      x={x} 
-      y={y} 
-      dy={-14} 
-      dx={0} 
-      fill={fillColor} 
-      fontSize={14} 
-      fontWeight="bold" 
-      textAnchor="middle"
+    <text
+      x={x} y={y} dy={-14} dx={0}
+      fill={fillColor} fontSize={14} fontWeight="bold" textAnchor="middle"
+      style={style}
     >
       {value}
     </text>
   );
 };
 
-// Custom Dot renderer - shows last point special and new hire markers
+// Custom Dot renderer - fades in after chart line animation completes.
+// CSS-only: no useState/useEffect so React remounts do not reset visibility.
 const CustomDot = (props) => {
-  const { cx, cy, index, dataLength, payload } = props;
+  const { cx, cy, index, dataLength, payload, revealed } = props;
   const GOAL = 4.0;
   const isLast = index === dataLength - 1;
   const hasNewHire = payload.newHires && payload.newHires.length > 0;
-  
-  // Render new hire vertical line from bottom to top
+  const style = revealed
+    ? { opacity: 1 }
+    : { animation: `dotFadeIn 400ms ease-in ${DOT_REVEAL_DELAY}ms both` };
+
   if (hasNewHire) {
     return (
-      <g key={`newhire-dot-${index}`}>
-        {/* Vertical line */}
-        <line
-          x1={cx}
-          y1={cy}
-          x2={cx}
-          y2={20}
-          stroke="#10b981"
-          strokeWidth={2}
-          strokeDasharray="4 2"
-        />
-        {/* Label at top */}
-        <text
-          x={cx}
-          y={14}
-          fill="#10b981"
-          fontSize={9}
-          fontWeight="bold"
-          textAnchor="middle"
-        >
-          NUEVO
-        </text>
-        {/* Green dot on line */}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={5}
-          fill="#10b981"
-          stroke="white"
-          strokeWidth={2}
-        />
+      <g key={`newhire-dot-${index}`} style={style}>
+        <line x1={cx} y1={cy} x2={cx} y2={20} stroke="#10b981" strokeWidth={2} strokeDasharray="4 2" />
+        <text x={cx} y={14} fill="#10b981" fontSize={9} fontWeight="bold" textAnchor="middle">NUEVO</text>
+        <circle cx={cx} cy={cy} r={5} fill="#10b981" stroke="white" strokeWidth={2} />
       </g>
     );
   }
-  
-  // Only render special dot for last point
+
   if (isLast) {
     const value = payload.teamAverage;
-    const isBelowGoal = value < GOAL;
-    const fillColor = isBelowGoal ? '#ef4444' : '#10b981';
-
+    const fillColor = value < GOAL ? '#ef4444' : '#10b981';
     return (
-      <circle 
-        cx={cx} 
-        cy={cy} 
-        r={8} 
-        fill={fillColor} 
-        stroke="white" 
-        strokeWidth={2}
-        style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
+      <circle
+        cx={cx} cy={cy} r={8}
+        fill={fillColor} stroke="white" strokeWidth={2}
+        style={{
+          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
+          ...(revealed ? { opacity: 1 } : { animation: `dotFadeIn 400ms ease-in ${DOT_REVEAL_DELAY}ms both` }),
+        }}
       />
     );
   }
-  
+
   return null;
 };
 
 export default function EvolutionChart({ data, onNavigateToEvaluations }) {
+  // Delayed data reveal: mount chart empty, then feed data after one frame.
+  // This forces Recharts to see a [] → data transition and run its entrance animation.
+  const [chartData, setChartData] = useState([]);
+  // Ref (not state) so flipping it doesn't re-render and interrupt Recharts animation.
+  const dotsRevealed = useRef(false);
+
+  useEffect(() => {
+    if (!data || data.length === 0) { setChartData([]); dotsRevealed.current = false; return; }
+    setChartData([]);
+    dotsRevealed.current = false;
+    const raf = requestAnimationFrame(() => setChartData(data));
+    const dotTimer = setTimeout(() => { dotsRevealed.current = true; }, DOT_REVEAL_DELAY + 400);
+    return () => { cancelAnimationFrame(raf); clearTimeout(dotTimer); };
+  }, [data]);
+
   if (!data || data.length === 0) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-96 flex flex-col items-center justify-center">
@@ -161,7 +175,7 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
     const firstVal = chartData[0].teamAverage;
     const lastVal = chartData[chartData.length - 1].teamAverage;
     const delta = lastVal - firstVal;
-    
+
     // Default: Stable
     let result = {
       icon: '→',
@@ -206,13 +220,16 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 h-96">
+      {/* Inject the keyframe definition once per chart mount */}
+      <style>{EVOLUTION_CHART_STYLES}</style>
+
       {/* Principle 1: Dynamic KPI Insight Block */}
       <div className="flex items-start gap-3 mb-6">
         {/* Icon Indicator */}
         <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${narrative.iconBg} flex items-center justify-center`}>
           <span className={`text-lg font-bold ${narrative.iconColor}`}>{narrative.icon}</span>
         </div>
-        
+
         {/* Text Content */}
         <div className="flex-1 min-w-0">
           <h3 className="text-base font-medium text-slate-800 leading-snug">
@@ -224,73 +241,75 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
           </p>
         </div>
       </div>
-      
+
       <div className="h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={data} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#475569" stopOpacity={0.1}/> 
+                <stop offset="5%" stopColor="#475569" stopOpacity={0.1}/>
                 <stop offset="95%" stopColor="#475569" stopOpacity={0}/>
               </linearGradient>
             </defs>
-            
+
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            
-            <XAxis 
-              dataKey="month" 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 11, fill: '#94a3b8' }} 
+
+            <XAxis
+              dataKey="month"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 11, fill: '#94a3b8' }}
               dy={10}
-              interval={Math.max(0, Math.floor(data.length / 8))}
-              tickFormatter={(value, index) => {
-                // Show every ~3 months to avoid crowding
+              interval={Math.max(0, Math.floor(chartData.length / 8))}
+              tickFormatter={(value) => {
                 const dataIndex = data.findIndex(d => d.month === value);
-                if (dataIndex === 0 || dataIndex === data.length - 1) return value;
+                if (dataIndex === 0 || dataIndex === chartData.length - 1) return value;
                 return dataIndex % 3 === 0 ? value : '';
               }}
             />
-            
-            <YAxis 
-              domain={[1, 5]} 
-              axisLine={false} 
-              tickLine={false} 
-              tick={{ fontSize: 11, fill: '#94a3b8' }} 
+
+            <YAxis
+              domain={[1, 5]}
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 11, fill: '#94a3b8' }}
             />
-            
+
             {/* Principle 2: Reference Line (Fixed overlap) */}
             <ReferenceLine y={4.0} stroke="#a5b4fc" strokeDasharray="3 3">
-              <Label 
-                value="Meta: Fortaleza (4.0)" 
-                position="insideTopLeft" 
-                fill="#64748b" 
-                fontSize={11} 
+              <Label
+                value="Meta: Fortaleza (4.0)"
+                position="insideTopLeft"
+                fill="#64748b"
+                fontSize={11}
                 fontWeight="bold"
                 offset={10}
                 dy={-25}
               />
             </ReferenceLine>
 
-            <Tooltip 
-              content={<CustomTooltip />} 
+            <Tooltip
+              content={<CustomTooltip />}
               cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '3 3' }}
               position={{ y: 10 }}
               allowEscapeViewBox={{ x: false, y: true }}
               offset={10}
             />
-            
-            <Area 
-              type="monotone" 
-              dataKey="teamAverage" 
-              stroke="#475569" 
-              strokeWidth={3} 
-              fillOpacity={1} 
-              fill="url(#colorAvg)" 
-              connectNulls={false} 
+
+            <Area
+              type="monotone"
+              dataKey="teamAverage"
+              stroke="#475569"
+              strokeWidth={3}
+              fillOpacity={1}
+              fill="url(#colorAvg)"
+              connectNulls={false}
+              isAnimationActive={true}
+              animationDuration={CHART_ANIMATION_MS}
+              animationEasing="ease-out"
               activeDot={{ r: 6, strokeWidth: 0, fill: '#334155' }}
-              dot={(props) => <CustomDot {...props} dataLength={data.length} />}
-              label={(props) => <LastPointLabel {...props} dataLength={data.length} />} 
+              dot={(props) => <CustomDot {...props} dataLength={chartData.length} revealed={dotsRevealed.current} />}
+              label={(props) => <LastPointLabel {...props} dataLength={chartData.length} revealed={dotsRevealed.current} />}
             />
           </AreaChart>
         </ResponsiveContainer>
