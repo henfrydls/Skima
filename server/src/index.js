@@ -1196,6 +1196,17 @@ export function createApp() {
         ? (typeof roleProfile.skills === 'string' ? JSON.parse(roleProfile.skills) : roleProfile.skills)
         : {};
 
+      // Detect role change: compare current role with last evaluation's snapshot
+      const lastSession = await prisma.evaluationSession.findFirst({
+        where: { collaboratorId },
+        orderBy: { evaluatedAt: 'desc' },
+        select: { collaboratorRol: true }
+      });
+      const roleChanged = lastSession && lastSession.collaboratorRol && lastSession.collaboratorRol !== collab.rol;
+      const autoNotes = roleChanged
+        ? `Cambio de rol: ${lastSession.collaboratorRol} → ${collab.rol}${notes ? `. ${notes}` : ''}`
+        : (notes || null);
+
       // Wrap all DB operations in a transaction for data integrity
       const session = await prisma.$transaction(async (tx) => {
         // Create evaluation session with collaborator snapshot
@@ -1205,7 +1216,7 @@ export function createApp() {
             collaboratorNombre: collab.nombre,  // Snapshot at time of evaluation
             collaboratorRol: collab.rol,        // Snapshot at time of evaluation
             evaluatedBy: evaluatedBy || null,
-            notes: notes || null
+            notes: autoNotes
           }
         });
 
