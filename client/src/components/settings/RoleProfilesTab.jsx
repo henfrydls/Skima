@@ -814,7 +814,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       )}
 
       {/* 2. MAIN CONTENT CARD */}
-      <div className={`bg-surface rounded-lg shadow-sm border border-gray-100 flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px] overflow-hidden' : ''}`}>
+      <div className={`bg-surface rounded-lg shadow-sm border border-gray-100 flex flex-col relative z-0 ${selectedRole ? 'min-h-[600px]' : ''}`}>
         
         {/* VIEW 1: ROLE LIST / GRID */}
         {!selectedRole && (

@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight, GitCompare } from 'lucide-react';
+import { Search, Filter, Star, AlertTriangle, TrendingUp, ChevronRight, ChevronDown, Check, GitCompare } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 import { getTrendColor } from '../../lib/evolutionLogic';
 
@@ -302,6 +302,50 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
   );
 }
 
+const SORT_OPTIONS = [
+  { value: 'name', label: 'Por nombre' },
+  { value: 'score-desc', label: 'Mayor promedio' },
+  { value: 'score', label: 'Menor promedio' },
+];
+
+function SortDropdown({ value, onChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const selected = SORT_OPTIONS.find(o => o.value === value) || SORT_OPTIONS[0];
+
+  return (
+    <div className="relative flex items-center gap-2">
+      <Filter size={16} className="text-gray-400" />
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-3 py-2 text-sm border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+      >
+        <span className="text-gray-700 font-medium">{selected.label}</span>
+        <ChevronDown size={14} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
+          <div className="absolute right-0 top-full mt-1 w-48 bg-surface rounded-lg shadow-xl border border-gray-100 py-1 z-20">
+            {SORT_OPTIONS.map(o => (
+              <button
+                key={o.value}
+                type="button"
+                onClick={() => { onChange(o.value); setIsOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors
+                  ${value === o.value ? 'bg-primary/5 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                {o.label}
+                {value === o.value && <Check size={14} className="text-primary" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 // Main Component
 export default function CollaboratorList({ collaborators = [], onSelect, initialFilter = 'all' }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -381,18 +425,7 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
           </div>
 
           {/* Sort */}
-          <div className="flex items-center gap-2">
-            <Filter size={16} className="text-gray-400" />
-            <select
-              value={sortBy}
-              onChange={(e) => setSortBy(e.target.value)}
-              className="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/20"
-            >
-              <option value="name">Por nombre</option>
-              <option value="score-desc">Mayor promedio</option>
-              <option value="score">Menor promedio</option>
-            </select>
-          </div>
+          <SortDropdown value={sortBy} onChange={setSortBy} />
         </div>
 
         {/* Filter Description - Contextual Hint */}

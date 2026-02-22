@@ -823,7 +823,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       </div>
 
       {/* Table */}
-      <div className="bg-surface rounded-lg shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-surface rounded-lg shadow-sm border border-gray-100">
         <table className="w-full">
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">

@@ -167,6 +167,7 @@ Category, Skill, Collaborator, Assessment, Snapshot, RoleProfile, EvaluationSess
 - Fases 4-5: Talent Management, Performance Management
 - i18n, Mobile App, AI/ML, Integraciones (Slack/Teams)
 - Electron Desktop App → reemplazado por Tauri
+- Exportar evaluación a PDF desde historial de evaluaciones
 - In-App Help Phase 2: GlossaryDrawer (cajón lateral con glosario completo, accesible desde icono ? en nav)
 - In-App Help Phase 2: FormulaExplainer (visualización interactiva: nivel × frecuencia × criticidad = score)
 - In-App Help Phase 2: HelpBanner (banner contextual dismissible en primera visita a cada página)

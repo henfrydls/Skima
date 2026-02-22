@@ -12,6 +12,7 @@ import {
   Layers,
   Loader2,
   AlertCircle,
+  Check,
   Search
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -34,6 +35,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
     nombre: '',
     categoriaId: categories[0]?.id || ''
   });
+  const [catDropdownOpen, setCatDropdownOpen] = useState(false);
 
   useEffect(() => {
     if (skill) {
@@ -92,15 +94,37 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Categoría *
             </label>
-            <select
-              value={formData.categoriaId}
-              onChange={(e) => setFormData({ ...formData, categoriaId: parseInt(e.target.value) })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-            >
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.id}>{cat.nombre}</option>
-              ))}
-            </select>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setCatDropdownOpen(!catDropdownOpen)}
+                className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
+              >
+                <span className="text-gray-700 font-medium">
+                  {categories.find(c => c.id === formData.categoriaId)?.nombre || 'Seleccionar categoría'}
+                </span>
+                <ChevronDown size={16} className={`text-gray-400 transition-transform ${catDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
+              {catDropdownOpen && (
+                <>
+                  <div className="fixed inset-0 z-[110]" onClick={() => setCatDropdownOpen(false)} />
+                  <div className="absolute left-0 top-full mt-1 w-full bg-surface rounded-lg shadow-xl border border-gray-100 py-1 z-[120] max-h-52 overflow-y-auto">
+                    {categories.map(cat => (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => { setFormData({ ...formData, categoriaId: cat.id }); setCatDropdownOpen(false); }}
+                        className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between transition-colors
+                          ${formData.categoriaId === cat.id ? 'bg-primary/5 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+                      >
+                        {cat.nombre}
+                        {formData.categoriaId === cat.id && <Check size={14} className="text-primary" />}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
