@@ -72,7 +72,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 // Custom Label for the last data point - fades in after chart animation.
 // CSS-only: no useState/useEffect so React remounts do not reset visibility.
 const LastPointLabel = (props) => {
-  const { x, y, value, index, dataLength, revealed } = props;
+  const { x, y, value, index, dataLength, revealed, lastPointIsNewHire } = props;
   const GOAL = 4.0;
 
   if (index !== dataLength - 1) return null;
@@ -82,9 +82,13 @@ const LastPointLabel = (props) => {
     ? { opacity: 1 }
     : { animation: `dotFadeIn 400ms ease-in ${DOT_REVEAL_DELAY}ms both` };
 
+  // Offset label to the right when NUEVO line occupies the same vertical space
+  const dx = lastPointIsNewHire ? 28 : 0;
+  const dy = lastPointIsNewHire ? 6 : -14;
+
   return (
     <text
-      x={x} y={y} dy={-14} dx={0}
+      x={x} y={y} dy={dy} dx={dx}
       fill={fillColor} fontSize={14} fontWeight="bold" textAnchor="middle"
       style={style}
     >
@@ -105,11 +109,16 @@ const CustomDot = (props) => {
     : { animation: `dotFadeIn 400ms ease-in ${DOT_REVEAL_DELAY}ms both` };
 
   if (hasNewHire) {
+    const dotRadius = isLast ? 8 : 5;
     return (
       <g key={`newhire-dot-${index}`} style={style}>
         <line x1={cx} y1={cy} x2={cx} y2={20} stroke="#10b981" strokeWidth={2} strokeDasharray="4 2" />
         <text x={cx} y={14} fill="#10b981" fontSize={9} fontWeight="bold" textAnchor="middle">NUEVO</text>
-        <circle cx={cx} cy={cy} r={5} fill="#10b981" stroke="white" strokeWidth={2} />
+        <circle
+          cx={cx} cy={cy} r={dotRadius}
+          fill="#10b981" stroke="white" strokeWidth={2}
+          style={isLast ? { filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' } : undefined}
+        />
       </g>
     );
   }
@@ -224,7 +233,7 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
       <style>{EVOLUTION_CHART_STYLES}</style>
 
       {/* Principle 1: Dynamic KPI Insight Block */}
-      <div className="flex items-start gap-3 mb-6">
+      <div className="flex items-center gap-3 mb-6">
         {/* Icon Indicator */}
         <div className={`flex-shrink-0 w-10 h-10 rounded-lg ${narrative.iconBg} flex items-center justify-center`}>
           <span className={`text-lg font-bold ${narrative.iconColor}`}>{narrative.icon}</span>
@@ -309,7 +318,10 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
               animationEasing="ease-out"
               activeDot={{ r: 6, strokeWidth: 0, fill: '#334155' }}
               dot={(props) => <CustomDot {...props} dataLength={chartData.length} revealed={dotsRevealed.current} />}
-              label={(props) => <LastPointLabel {...props} dataLength={chartData.length} revealed={dotsRevealed.current} />}
+              label={(props) => {
+                const lastPt = chartData[chartData.length - 1];
+                return <LastPointLabel {...props} dataLength={chartData.length} revealed={dotsRevealed.current} lastPointIsNewHire={!!(lastPt?.newHires?.length)} />;
+              }}
             />
           </AreaChart>
         </ResponsiveContainer>
