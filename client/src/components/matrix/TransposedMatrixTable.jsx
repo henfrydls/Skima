@@ -92,9 +92,9 @@ export default function TransposedMatrixTable({
   }
 
   return (
-    <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in h-full flex flex-col">
-      {/* Contenedor con scroll */}
-      <div className="overflow-auto flex-1 min-h-0 border border-gray-100 rounded-lg">
+    <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in flex flex-col">
+      {/* Contenedor con scroll - max-h caps height for large datasets, shrinks naturally for small ones */}
+      <div className="overflow-auto border border-gray-100 rounded-lg max-h-[calc(100vh-280px)]">
         <table className="w-full border-collapse">
           {/* Header: Empleados como columnas */}
           <thead>
