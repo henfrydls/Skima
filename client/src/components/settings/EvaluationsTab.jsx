@@ -9,6 +9,7 @@ import {
   Save,
   Loader2,
   AlertCircle,
+  Check,
   CheckCircle,
   HelpCircle,
   Info,
@@ -423,10 +424,12 @@ function NivelSelector({ value, onChange, readOnly = false }) {
   );
 }
 
-// Frecuencia Selector dropdown - With reactive filtering
-function FrecuenciaSelector({ value, onChange, readOnly = false, disabledOptions = [], helperText = null }) {
-  const selected = FRECUENCIAS.find(f => f.value === value) || FRECUENCIAS[4];
-  
+// Frecuencia Selector dropdown - Custom styled, filters out "No usa" for C/I skills
+function FrecuenciaSelector({ value, onChange, readOnly = false, hiddenOptions = [], helperText = null }) {
+  const availableOptions = FRECUENCIAS.filter(f => !hiddenOptions.includes(f.value));
+  const selected = availableOptions.find(f => f.value === value) || availableOptions[availableOptions.length - 1];
+  const [isOpen, setIsOpen] = useState(false);
+
   if (readOnly) {
     return (
       <span className="text-sm text-gray-700 font-medium px-2 py-1 bg-gray-50 rounded border border-gray-100">
@@ -434,25 +437,39 @@ function FrecuenciaSelector({ value, onChange, readOnly = false, disabledOptions
       </span>
     );
   }
-  
+
   return (
-    <div className="flex flex-col gap-0.5">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="px-2 py-1.5 text-xs border border-gray-200 rounded bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
-        title={selected.desc}
+    <div className="relative flex flex-col gap-0.5">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center justify-between gap-2 px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors min-w-[110px]"
       >
-        {FRECUENCIAS.map(f => (
-          <option 
-            key={f.value} 
-            value={f.value}
-            disabled={disabledOptions.includes(f.value)}
-          >
-            {f.label}{disabledOptions.includes(f.value) ? ' (no disponible)' : ''}
-          </option>
-        ))}
-      </select>
+        <span className="text-gray-700 font-medium">{selected.label}</span>
+        <ChevronDown size={12} className={`text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-40" onClick={() => setIsOpen(false)} />
+          <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-lg shadow-lg border border-gray-100 py-1 z-50">
+            {availableOptions.map(f => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => { onChange(f.value); setIsOpen(false); }}
+                className={`w-full text-left px-3 py-2 text-xs flex items-center justify-between transition-colors
+                  ${value === f.value ? 'bg-primary/5 text-primary font-medium' : 'text-gray-600 hover:bg-gray-50'}`}
+              >
+                <div>
+                  <div className="font-medium">{f.label}</div>
+                  <div className="text-[10px] text-gray-400 mt-0.5">{f.desc}</div>
+                </div>
+                {value === f.value && <Check size={12} className="text-primary flex-shrink-0" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       {helperText && (
         <span className="text-[10px] text-amber-600 italic">{helperText}</span>
       )}
@@ -478,12 +495,12 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
   }[effectiveCriticidad] || { text: 'N/A', class: 'bg-gray-50 text-gray-400' };
 
   // REACTIVE LOGIC:
-  // Rule 1: If Criticidad is C or I, disable 'Nunca' option in Frecuencia
-  const disabledFrequencies = ['C', 'I'].includes(effectiveCriticidad) ? ['N'] : [];
-  
-  // Helper text if 'Nunca' is disabled
-  const freqHelperText = disabledFrequencies.includes('N') && frecuencia === 'N' 
-    ? 'Skill crítica/importante requiere uso' 
+  // Rule 1: If Criticidad is C or I, hide 'No usa' option in Frecuencia (only available for Deseable)
+  const hiddenFrequencies = ['C', 'I'].includes(effectiveCriticidad) ? ['N'] : [];
+
+  // Helper text if 'No usa' was auto-cleared
+  const freqHelperText = hiddenFrequencies.includes('N') && frecuencia === 'N'
+    ? 'Skill crítica/importante requiere uso'
     : null;
 
   // REACTIVE onChange: Auto-adjust values based on business rules
@@ -525,11 +542,11 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
 
       {/* Frecuencia Selector - With reactive filtering */}
       <div className="col-span-2">
-        <FrecuenciaSelector 
-          value={frecuencia} 
-          onChange={(f) => !readOnly && handleFieldChange('frecuencia', f)} 
+        <FrecuenciaSelector
+          value={frecuencia}
+          onChange={(f) => !readOnly && handleFieldChange('frecuencia', f)}
           readOnly={readOnly}
-          disabledOptions={disabledFrequencies}
+          hiddenOptions={hiddenFrequencies}
           helperText={freqHelperText}
         />
       </div>
@@ -585,7 +602,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
   if (categorySkills.length === 0) return null;
 
   return (
-    <div className="bg-surface rounded-lg border border-gray-100 overflow-hidden mb-4">
+    <div className="bg-surface rounded-lg border border-gray-100 mb-4">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
         className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
