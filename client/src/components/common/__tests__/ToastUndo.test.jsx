@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import ToastUndo from '../ToastUndo';
 import { toast } from 'react-hot-toast';
 
@@ -225,7 +225,7 @@ describe('ToastUndo', () => {
   });
 
   it('includes rotation icon in undo button', () => {
-    const { container } = render(
+    render(
       <ToastUndo
         t={mockToast}
         message="Item deleted"

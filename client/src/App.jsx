@@ -48,7 +48,7 @@ function SetupGuard({ children }) {
 }
 
 // Route guard: Prevents accessing /setup if already set up (unless in demo mode)
-function SetupPageGuard({ children }) {
+function SetupPageGuard() {
   const { isLoading, isSetup, isDemo, onSetupComplete } = useConfig();
 
   // Show loading while checking config

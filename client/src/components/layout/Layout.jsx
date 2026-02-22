@@ -77,8 +77,8 @@ export default function Layout() {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const { isAuthenticated, login, logout } = useAuth();
-  const { companyName, adminName, isDemo } = useConfig();
+  const { isAuthenticated, login } = useAuth();
+  const { adminName, isDemo } = useConfig();
   const version = useAppVersion();
   
   const navItems = getNavItems(isAuthenticated);

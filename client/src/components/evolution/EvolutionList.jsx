@@ -115,8 +115,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
               // Determine Color for Sparkline
               // Red if trend is specifically "down" (negative delta)
               // We can use the 'deltaTrend' or 'delta' from logic
-              const isDecline = collab.deltaTrend === 'down';
-              const sparklineColor = collab.sparklineColor || (isDecline ? '#e11d48' : '#6366f1'); 
+              // sparklineColor comes from collab.sparklineColor (set by transformEmployeesForList)
 
               return (
                 <tr key={collab.id} className="border-b border-slate-50 hover:bg-slate-50/80 transition-colors">

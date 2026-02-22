@@ -47,7 +47,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       // Pass token to parent - let AuthContext handle storage
       onSuccess(data.token);
       setPassword('');
-    } catch (_err) {
+    } catch {
       setError('Error de conexión con el servidor');
     } finally {
       setIsLoading(false);
