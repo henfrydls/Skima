@@ -896,10 +896,20 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                              
                              {/* Status Row */}
                              <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
-                                <div className="flex items-center gap-2">
-                                   <div className={`w-2 h-2 rounded-full ${status.color}`} />
-                                   <span className="text-xs text-gray-500">{status.text}</span>
-                                </div>
+                                {status.count === 0 ? (
+                                   <button
+                                      onClick={() => handleRoleSwitch(role)}
+                                      className="flex items-center gap-2 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                                   >
+                                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                                      Definir skills →
+                                   </button>
+                                ) : (
+                                   <div className="flex items-center gap-2">
+                                      <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                      <span className="text-xs text-gray-500">{status.text}</span>
+                                   </div>
+                                )}
                                 <div className="flex items-center gap-1 text-xs text-gray-400">
                                    <Users size={12} />
                                    <span>{collabCount}</span>
@@ -939,10 +949,20 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                       </button>
                                    </td>
                                    <td className="px-6 py-4">
-                                      <div className="flex items-center gap-2">
-                                         <div className={`w-2 h-2 rounded-full ${status.color}`} />
-                                         <span className="text-sm text-gray-600">{status.text}</span>
-                                      </div>
+                                      {status.count === 0 ? (
+                                         <button
+                                            onClick={() => handleRoleSwitch(role)}
+                                            className="flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
+                                         >
+                                            <div className="w-2 h-2 rounded-full bg-amber-400" />
+                                            Definir skills →
+                                         </button>
+                                      ) : (
+                                         <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${status.color}`} />
+                                            <span className="text-sm text-gray-600">{status.text}</span>
+                                         </div>
+                                      )}
                                    </td>
                                    <td className="px-6 py-4">
                                       <div className="flex items-center gap-1.5 text-sm text-gray-500">
