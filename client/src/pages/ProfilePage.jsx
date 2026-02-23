@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
 import { useAuth } from '../contexts/AuthContext';
 import { API_BASE } from '../lib/apiBase';
+import { invalidatePreload } from '../lib/dataPreload';
 
 /**
  * ProfilePage - Dedicated profile management page
@@ -112,7 +113,9 @@ export default function ProfilePage() {
         method: 'POST'
       });
       if (!response.ok) throw new Error('Reset failed');
+      invalidatePreload();
       logout();
+      await refetchConfig();
       navigate('/setup');
     } catch (err) {
       console.error('Reset error:', err);

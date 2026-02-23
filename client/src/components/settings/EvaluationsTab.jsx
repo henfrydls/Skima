@@ -836,7 +836,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
 }
 
 // Main Component
-export default function EvaluationsTab({ initialContext, isActive = false }) {
+export default function EvaluationsTab({ initialContext, isActive = false, dataVersion }) {
   const { getHeaders } = useAuth();
   const navigate = useNavigate();
   const [collaborators, setCollaborators] = useState([]);
@@ -922,12 +922,12 @@ export default function EvaluationsTab({ initialContext, isActive = false }) {
     fetchData();
   }, []);
 
-  // Refetch when tab becomes active
+  // Refetch when tab becomes active or data changes in other tabs
   useEffect(() => {
     if (isActive) {
       fetchData();
     }
-  }, [isActive]);
+  }, [isActive, dataVersion]);
 
   // Load evaluations and history when collaborator is selected
   useEffect(() => {
