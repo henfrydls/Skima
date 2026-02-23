@@ -325,10 +325,11 @@ router.get('/', async (req, res) => {
     // ============================================
     // STEP 6: Calculate meta & insights
     // ============================================
-    const currentScores = employees.map(e => e.currentScore);
-    const currentMaturityIndex = currentScores.length > 0
-      ? Math.round((currentScores.reduce((a, b) => a + b, 0) / currentScores.length) * 10) / 10
+    // Use chart's last data point so KPI matches the visible chart endpoint
+    const lastChartPoint = formattedChartData.length > 0
+      ? formattedChartData[formattedChartData.length - 1]
       : null;
+    const currentMaturityIndex = lastChartPoint ? lastChartPoint.avgScore : null;
     
     // Period delta: compare first and last chart points
     const periodDelta = formattedChartData.length >= 2
