@@ -191,4 +191,4 @@ server/src/
 
 ## License
 
-[MIT](LICENSE) -- DLSLabs
+[PolyForm Noncommercial 1.0.0](LICENSE) -- DLSLabs
