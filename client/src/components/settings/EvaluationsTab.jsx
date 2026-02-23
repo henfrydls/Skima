@@ -83,8 +83,8 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
   if (!isOpen) return null;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
+    <div className="modal-overlay z-[100]">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning animate-scale-in">
         <div className="p-6">
           <div className="flex items-center gap-3 text-warning mb-2">
             <AlertTriangle size={24} />

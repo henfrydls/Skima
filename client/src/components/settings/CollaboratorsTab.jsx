@@ -61,8 +61,8 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+    <div className="modal-overlay z-50">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-800">Nuevo Colaborador</h2>

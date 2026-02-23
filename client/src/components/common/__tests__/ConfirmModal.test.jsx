@@ -113,8 +113,8 @@ describe('ConfirmModal', () => {
       />
     );
 
-    const backdrop = document.querySelector('.backdrop-blur-sm');
-    fireEvent.click(backdrop);
+    const overlay = document.querySelector('.modal-overlay');
+    fireEvent.click(overlay);
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
@@ -221,7 +221,7 @@ describe('ConfirmModal', () => {
     );
 
     // Modal should be attached to body
-    const modalBackdrop = document.querySelector('.fixed.inset-0.z-\\[60\\]');
+    const modalBackdrop = document.querySelector('.modal-overlay');
     expect(modalBackdrop).toBeInTheDocument();
     expect(modalBackdrop.parentElement).toBe(document.body);
   });

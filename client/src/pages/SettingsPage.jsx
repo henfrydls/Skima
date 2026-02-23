@@ -154,8 +154,8 @@ export default function SettingsPage() {
 
       {/* Unsaved Changes Dialog - Portal to body for full screen coverage */}
       {pendingTab && createPortal(
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning">
+        <div className="modal-overlay z-50">
+          <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 border-l-4 border-warning animate-scale-in">
             <div className="p-6">
               <div className="flex items-center gap-3 text-warning mb-2">
                 <AlertTriangle size={24} />

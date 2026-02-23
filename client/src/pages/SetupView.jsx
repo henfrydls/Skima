@@ -324,7 +324,6 @@ export default function SetupView({ onSetupComplete }) {
         isOpen={showDemoWarning}
         onClose={() => setShowDemoWarning(false)}
         onConfirm={async () => {
-          setShowDemoWarning(false);
           await doSetup();
         }}
         title="Reemplazar datos demo"

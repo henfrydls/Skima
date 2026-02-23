@@ -114,7 +114,7 @@ describe('CategoriesTab', () => {
 
     // Modal should appear with create form
     await waitFor(() => {
-      expect(document.querySelector('.fixed.inset-0')).toBeInTheDocument();
+      expect(document.querySelector('.modal-overlay')).toBeInTheDocument();
     });
   });
 

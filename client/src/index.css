@@ -43,6 +43,17 @@
     animation: fade-in 0.3s ease-out;
   }
 
+  /* Modal overlay — opacity-only fade (no translateY to avoid line artifact) */
+  @keyframes overlay-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center;
+    animation: overlay-fade 0.2s ease-out;
+  }
+
   /* Scale-in para modales */
   @keyframes scale-in {
     from {

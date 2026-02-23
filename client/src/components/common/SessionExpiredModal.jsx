@@ -21,8 +21,8 @@ export default function SessionExpiredModal() {
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[200] animate-fade-in">
-      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div className="modal-overlay z-[200]">
+      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden animate-scale-in">
         {/* Header with warning color */}
         <div className="bg-warning/10 p-6 flex flex-col items-center">
           <div className="w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center mb-3">

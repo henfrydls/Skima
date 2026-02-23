@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, Save, Loader2, LogOut, AlertTriangle, Trash2, ChevronRight, X, FlaskConical, Settings } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -363,9 +364,9 @@ export default function ProfilePage() {
       </div>
 
       {/* Reset Database Confirmation Modal */}
-      {!isDemo && showResetConfirm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+      {!isDemo && showResetConfirm && createPortal(
+        <div className="modal-overlay z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-lg font-medium text-critical flex items-center gap-2">
                 <AlertTriangle size={18} />
@@ -417,7 +418,8 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

@@ -96,8 +96,8 @@ describe('SessionExpiredModal', () => {
 
   it('applies correct styling to modal backdrop', () => {
     renderWithAuthContext(true);
-    const backdrop = document.querySelector('.fixed');
-    expect(backdrop).toHaveClass('inset-0', 'backdrop-blur-sm');
+    const backdrop = document.querySelector('.modal-overlay');
+    expect(backdrop).toBeInTheDocument();
   });
 
   it('applies correct styling to modal content', () => {
@@ -114,15 +114,15 @@ describe('SessionExpiredModal', () => {
 
   it('centers modal on screen', () => {
     renderWithAuthContext(true);
-    const backdrop = document.querySelector('.fixed');
-    expect(backdrop).toHaveClass('flex', 'items-center', 'justify-center');
+    const backdrop = document.querySelector('.modal-overlay');
+    expect(backdrop).toBeInTheDocument();
   });
 
   it('renders into document.body via portal', () => {
     renderWithAuthContext(true);
 
     // Modal should be rendered directly in body, not in the react root
-    const modalInBody = document.body.querySelector('.fixed');
+    const modalInBody = document.body.querySelector('.modal-overlay');
     expect(modalInBody).toBeInTheDocument();
   });
 });

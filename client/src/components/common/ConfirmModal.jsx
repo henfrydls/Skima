@@ -3,7 +3,7 @@ import { AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
 
 /**
  * ConfirmModal - Generic confirmation dialog to replace window.confirm
- * 
+ *
  * Props:
  * - isOpen: boolean
  * - onClose: function
@@ -15,10 +15,10 @@ import { AlertTriangle, AlertCircle, Loader2 } from 'lucide-react';
  * - variant: 'danger' | 'warning' | 'info' (default: 'danger')
  * - isLoading: boolean
  */
-export default function ConfirmModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+export default function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
   title = '¿Estás seguro?',
   message = 'Esta acción no se puede deshacer.',
   confirmText = 'Confirmar',
@@ -56,21 +56,18 @@ export default function ConfirmModal({
   const Icon = style.icon;
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-fade-in">
-      {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
-        onClick={isLoading ? undefined : onClose}
-      />
-      
+    <div
+      className="modal-overlay z-[60] p-4"
+      onClick={isLoading ? undefined : (e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       {/* Modal */}
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm relative z-10 overflow-hidden animate-scale-in">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-scale-in">
         <div className="p-6">
           <div className="flex items-start gap-4">
             <div className={`p-3 rounded-full flex-shrink-0 ${style.bgIcon} ${style.color}`}>
               <Icon size={24} />
             </div>
-            
+
             <div className="flex-1">
               <h3 className="text-lg font-semibold text-gray-900 mb-1">
                 {title}
@@ -90,7 +87,7 @@ export default function ConfirmModal({
           >
             {cancelText}
           </button>
-          
+
           <button
             onClick={onConfirm}
             disabled={isLoading}

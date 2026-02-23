@@ -95,8 +95,8 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   const isEdit = !!category;
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4">
+    <div className="modal-overlay z-50">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-800">
             {isEdit ? 'Editar Categoría' : 'Nueva Categoría'}
@@ -277,8 +277,8 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
   const affectedSkills = skills.filter(s => s.categoriaId === category.id);
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4">
+    <div className="modal-overlay z-50">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
         <div className="flex items-center gap-3 p-4 border-b border-gray-100 bg-warning/5">
           <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
             <AlertTriangle size={20} className="text-warning" />

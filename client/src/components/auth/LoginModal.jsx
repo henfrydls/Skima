@@ -56,8 +56,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 animate-fade-in">
-      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden">
+    <div className="modal-overlay z-[100]">
+      <div className="bg-surface rounded-xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="bg-primary/5 px-6 py-4 flex items-center justify-between border-b border-gray-100">
           <div className="flex items-center gap-3">

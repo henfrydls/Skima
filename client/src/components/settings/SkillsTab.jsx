@@ -61,8 +61,8 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
   };
 
   return createPortal(
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100] animate-fade-in">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="modal-overlay z-[100]">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-surface">
           <h2 className="text-lg font-medium text-gray-800">
             {skill ? 'Editar Skill' : 'Nueva Skill'}
