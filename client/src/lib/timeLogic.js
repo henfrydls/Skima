@@ -1,0 +1,260 @@
+// Time Travel Logic - Version 1.0
+import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, format, isValid } from 'date-fns';
+import { es } from 'date-fns/locale';
+
+/**
+ * timeLogic.js
+ * 
+ * Core engine for "Time Travel" functionality.
+ * Allows reconstructing the state of the team at any point in the past
+ * without server-side snapshots.
+ */
+
+/**
+ * Validates if a date is valid and not in the distant future (e.g. > current year + 1)
+ */
+const isValidDate = (date) => {
+  if (!isValid(date)) return false;
+  const nextYear = new Date().getFullYear() + 1;
+  return date.getFullYear() <= nextYear; // Basic sanity check against 2050 dates
+};
+
+/**
+ * Generates available time periods (Year, Quarter, Month) based on data history
+ * with intelligent grouping.
+ * 
+ * @param {Array} collaborators - Full list of collaborators with evaluationSessions
+ * @returns {Array} List of period objects { id, label, type, startDate, endDate }
+ */
+export const generateTimePeriods = (collaborators = []) => {
+  // 1. Collect all valid assessment dates
+  const dates = [];
+  collaborators.forEach(c => {
+    if (c.evaluationSessions && Array.isArray(c.evaluationSessions)) {
+      c.evaluationSessions.forEach(s => {
+        const d = new Date(s.evaluatedAt);
+        if (isValidDate(d)) {
+          dates.push(d);
+        }
+      });
+    }
+  });
+
+  if (dates.length === 0) return [];
+
+  // Sort dates to find range
+  dates.sort((a, b) => a - b);
+  const earliestDate = dates[0];
+  const now = new Date();
+
+  const periods = [];
+  
+  // Helper to add period if it has data or is recent
+  const addPeriod = (period) => {
+    // Optional: Check if period actually has data before adding? 
+    // For now, we generate continuous ranges to avoid gaps.
+    periods.push(period);
+  };
+
+  // 2. Generate Years (From earliest to current)
+  const currentYear = now.getFullYear();
+  const startYearNum = earliestDate.getFullYear();
+  
+  for (let y = currentYear; y >= startYearNum; y--) {
+    addPeriod({
+      id: `Y-${y}`,
+      label: `Año ${y}`,
+      type: 'year',
+      startDate: startOfYear(new Date(y, 0, 1)),
+      endDate: endOfYear(new Date(y, 0, 1))
+    });
+  }
+
+  // 3. Generate Quarters (Look back 2 years max)
+  const quartersBack = 8; 
+  let qDate = startOfQuarter(now);
+  
+  for (let i = 0; i < quartersBack; i++) {
+    if (qDate < earliestDate && i > 0) break;
+    
+    // Format: "Q1 2025"
+    const qNum = Math.floor(qDate.getMonth() / 3) + 1;
+    const year = qDate.getFullYear();
+    const qLabel = `Q${qNum} ${year}`;
+    
+    addPeriod({
+      id: `Q-${year}-${qNum}`,
+      label: qLabel,
+      type: 'quarter',
+      startDate: startOfQuarter(qDate),
+      endDate: endOfQuarter(qDate)
+    });
+    
+    // Move back 3 months
+    qDate = new Date(qDate.setMonth(qDate.getMonth() - 3)); 
+  }
+
+  // 4. Generate Months (Look back 18 months max)
+  const monthsBack = 18;
+  let mDate = startOfMonth(now);
+  
+  for (let i = 0; i < monthsBack; i++) {
+    if (mDate < earliestDate && i > 0) break;
+    
+    // Format: "Enero 2025"
+    const mLabel = format(mDate, 'MMMM yyyy', { locale: es });
+    
+    addPeriod({
+      id: `M-${format(mDate, 'yyyy-MM')}`,
+      label: mLabel.charAt(0).toUpperCase() + mLabel.slice(1), // Capitalize first letter
+      type: 'month',
+      startDate: startOfMonth(mDate),
+      endDate: endOfMonth(mDate)
+    });
+    
+    // Move back 1 month
+    mDate = new Date(mDate.setMonth(mDate.getMonth() - 1));
+  }
+
+  return periods;
+};
+
+/**
+ * Reconstructs the state of collaborators at a specific point in time (snapshotDate).
+ * Uses "Last Known Value" logic: checking assessments <= snapshotDate.
+ * 
+ * @param {Array} collaborators - Full list of collaborators with evaluationSessions
+ * @param {Date|string} snapshotDate - The cut-off date for the snapshot (end of a period)
+ * @returns {Array} Array of collaborators with 'skills' and properties mapped to that point in time
+ */
+export const getSnapshotData = (collaborators, snapshotDate) => {
+  if (!snapshotDate) return collaborators; // Live view
+  
+  const dateLimit = new Date(snapshotDate); 
+
+  return collaborators.map(collab => {
+    // 1. Filter sessions that happened BEFORE or ON the snapshot date
+    // AND filter out future dating errors relative to NOW (Sanity check)
+    const relevantSessions = (collab.evaluationSessions || [])
+      .filter(session => {
+        const d = new Date(session.evaluatedAt);
+        return d <= dateLimit && isValidDate(d);
+      })
+      .sort((a, b) => new Date(b.evaluatedAt) - new Date(a.evaluatedAt)); // Newest first
+
+    // If no sessions before this date, this collaborator "didn't exist" or hasn't been evaluated
+    if (relevantSessions.length === 0) {
+      return {
+        ...collab,
+        skills: {}, // No skills at this time
+        promedio: 0,
+        lastEvaluated: null,
+        isSnapshot: true,
+        isActive: false // Treat as inactive for calculations if no data
+      };
+    }
+
+    // 2. Reconstruct Skills State (Last Known Value)
+    // We assume the LATEST session captured the state of the employee at that time.
+    // Ideally, if a session only evaluated Skill A, we should keep Skill B from previous session.
+    // For robust "Last Known Value", we iterate backwards.
+    
+    const reconstructedSkills = {};
+    const skillTimestamps = {}; // To track freshness if needed
+    
+    // Iterate from OLDEST to NEWEST to apply updates sequentially
+    const ascendingSessions = [...relevantSessions].reverse();
+    
+    ascendingSessions.forEach(session => {
+        if (session.assessments) {
+            session.assessments.forEach(ass => {
+                reconstructedSkills[ass.skillId] = {
+                    ...ass,
+                    evaluatedAt: session.evaluatedAt
+                };
+                skillTimestamps[ass.skillId] = session.evaluatedAt;
+            });
+        }
+    });
+
+    // 3. Calculate Average for this snapshot
+    const skillValues = Object.values(reconstructedSkills).map(s => s.nivel);
+    const avg = skillValues.length > 0 
+      ? skillValues.reduce((a, b) => a + b, 0) / skillValues.length
+      : 0;
+      
+    // Determine the "Effective Date" of this snapshot state (freshness)
+    const latestUpdate = relevantSessions[0].evaluatedAt;
+
+    return {
+      ...collab,
+      skills: reconstructedSkills,
+      promedio: avg,
+      lastEvaluated: latestUpdate, 
+      isSnapshot: true,
+      // If the latest data is OLDER than 1 year relative to snapshot date, maybe flag it?
+      // isStale: (dateLimit - new Date(latestUpdate)) > ONE_YEAR_MS
+    };
+  });
+};
+
+/**
+ * Calculates the end date of the previous period based on granularity.
+ * Used for comparison deltas (e.g. Current Month vs Previous Month).
+ */
+export const getPreviousPeriodDate = (referenceDate = new Date(), granularity = 'month') => {
+  const date = new Date(referenceDate);
+  
+  // Logic: Go to start of current period, then subtract 1 day to get end of previous.
+  let startOfPeriod;
+  const year = date.getFullYear();
+  const month = date.getMonth();
+
+  if (granularity === 'year') {
+    startOfPeriod = new Date(year, 0, 1);
+  } else if (granularity === 'quarter') {
+    const qMonth = Math.floor(month / 3) * 3;
+    startOfPeriod = new Date(year, qMonth, 1);
+  } else {
+    // month
+    startOfPeriod = new Date(year, month, 1);
+  }
+
+  // Subtract 1 day/ms to get end of previous period
+  const endOfPrevious = new Date(startOfPeriod);
+  endOfPrevious.setDate(endOfPrevious.getDate() - 1);
+  
+  return endOfPrevious;
+};
+
+/**
+ * Finds the best matching period ID when switching granularity.
+ * Goals: Maintain the temporal context (e.g., Year 2025 -> Q4 2025 or Dec 2025).
+ * Logic: Find the latest period of the new type that ends on or before the current period's end date.
+ */
+export const findBestMatchingPeriod = (currentPeriodId, targetGranularity, allPeriods) => {
+  if (!currentPeriodId) return null; // Live view stays Live
+
+  const currentPeriod = allPeriods.find(p => p.id === currentPeriodId);
+  if (!currentPeriod) return null;
+
+  // Filter candidates of new type
+  const candidates = allPeriods.filter(p => p.type === targetGranularity);
+  
+  // Sort by date descending (newest first)
+  candidates.sort((a, b) => new Date(b.endDate) - new Date(a.endDate));
+
+  // Strategy 1: Containment (Best for Drill-Up, e.g. Sep 2025 -> Year 2025)
+  // Find a target period that fully contains the reference end date
+  const containingPeriod = candidates.find(p => 
+    p.startDate <= currentPeriod.endDate && p.endDate >= currentPeriod.endDate
+  );
+  
+  if (containingPeriod) return containingPeriod.id;
+
+  // Strategy 2: Latest Available within range (Best for Drill-Down, e.g. Year 2025 -> Latest Q)
+  // Find the first candidate that ends on or before current period end
+  const bestFallback = candidates.find(p => p.endDate <= currentPeriod.endDate);
+  
+  return bestFallback ? bestFallback.id : (candidates.length > 0 ? candidates[0].id : null);
+};

@@ -1,0 +1,11 @@
+services:
+  skima:
+    build: .
+    ports:
+      - "3000:3001"
+    volumes:
+      - skima-data:/app/data
+    restart: unless-stopped
+
+volumes:
+  skima-data:

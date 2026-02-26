@@ -1,0 +1,137 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-sidecar:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            target: node20-linux-x64
+            sidecar-name: skima-server-x86_64-unknown-linux-gnu
+          - platform: windows-latest
+            target: node20-win-x64
+            sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
+          - platform: macos-latest
+            target: node20-macos-x64
+            sidecar-name: skima-server-x86_64-apple-darwin
+          - platform: macos-latest
+            target: node20-macos-arm64
+            sidecar-name: skima-server-aarch64-apple-darwin
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Server Dependencies
+        run: cd server && npm install
+
+      - name: Generate Prisma Client
+        run: cd server && npx prisma generate
+
+      - name: Build Sidecar
+        run: |
+          cd server
+          npx @yao-pkg/pkg . --target ${{ matrix.target }} --output "../src-tauri/binaries/${{ matrix.sidecar-name }}" --compress GZip
+
+      - name: Upload Sidecar Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: sidecar-${{ matrix.target }}
+          path: src-tauri/binaries/${{ matrix.sidecar-name }}
+
+  build-tauri:
+    needs: build-sidecar
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: ubuntu-22.04
+            args: ''
+          - platform: windows-latest
+            args: ''
+          - platform: macos-latest
+            args: '--target universal-apple-darwin'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+
+      - name: Install Linux Dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          cd client && npm install
+
+      # Download sidecar binaries for this platform
+      - name: Download Sidecar (Linux)
+        if: matrix.platform == 'ubuntu-22.04'
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar-node20-linux-x64
+          path: src-tauri/binaries/
+
+      - name: Download Sidecar (Windows)
+        if: matrix.platform == 'windows-latest'
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar-node20-win-x64
+          path: src-tauri/binaries/
+
+      - name: Download Sidecar (macOS x64)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar-node20-macos-x64
+          path: src-tauri/binaries/
+
+      - name: Download Sidecar (macOS ARM)
+        if: matrix.platform == 'macos-latest'
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar-node20-macos-arm64
+          path: src-tauri/binaries/
+
+      - name: Make Sidecar Executable
+        if: matrix.platform != 'windows-latest'
+        run: chmod +x src-tauri/binaries/skima-server-*
+
+      - name: Build Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'Skima ${{ github.ref_name }}'
+          releaseBody: 'See the assets to download this version and install.'
+          releaseDraft: true
+          prerelease: false
+          args: ${{ matrix.args }}

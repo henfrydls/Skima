@@ -1,0 +1,103 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Category {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  abrev     String
+  orden     Int      @default(0)  // Order for display sorting
+  isActive  Boolean  @default(true)  // Soft delete flag
+  skills    Skill[]
+}
+
+model Skill {
+  id          Int          @id @default(autoincrement())
+  nombre      String
+  categoria   Category     @relation(fields: [categoriaId], references: [id])
+  categoriaId Int
+  isActive    Boolean      @default(true)  // Soft delete flag
+  assessments Assessment[]
+}
+
+model Collaborator {
+  id                 Int                  @id @default(autoincrement())
+  nombre             String
+  rol                String
+  email              String?              // Optional email for collaborator
+  esDemo             Boolean              @default(false)
+  isActive           Boolean              @default(true) // Soft delete flag
+  joinedAt           DateTime             @default(now()) // Start date for evolution correlation
+  lastEvaluated      DateTime?            // Timestamp of last evaluation
+  assessments        Assessment[]
+  evaluationSessions EvaluationSession[]
+}
+
+model Assessment {
+  id                  Int                @id @default(autoincrement())
+  collaborator        Collaborator       @relation(fields: [collaboratorId], references: [id])
+  collaboratorId      Int
+  skill               Skill              @relation(fields: [skillId], references: [id])
+  skillId             Int
+  nivel               Float
+  criticidad          String             // C, I, D, N
+  frecuencia          String             // D, S, M, T, N
+  snapshot            Snapshot?          @relation(fields: [snapshotId], references: [id])
+  snapshotId          Int?
+  evaluationSession   EvaluationSession? @relation(fields: [evaluationSessionId], references: [id])
+  evaluationSessionId Int?
+  createdAt           DateTime           @default(now())
+
+  @@unique([collaboratorId, skillId, snapshotId])
+  @@index([collaboratorId])
+  @@index([skillId])
+  @@index([snapshotId])
+  @@index([evaluationSessionId])
+}
+
+model Snapshot {
+  id          Int          @id @default(autoincrement())
+  nombre      String       // e.g., "Q1 2024"
+  createdAt   DateTime     @default(now())
+  assessments Assessment[]
+}
+
+model RoleProfile {
+  id        Int      @id @default(autoincrement())
+  rol       String   @unique  // "UX Designer", "Developer", etc.
+  skills    String   // JSON: { "1": "C", "2": "I", "3": "D" } - stored as string for SQLite
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EvaluationSession {
+  id                 Int          @id @default(autoincrement())
+  uuid               String       @unique @default(uuid())  // UUID for URL references
+  collaborator       Collaborator @relation(fields: [collaboratorId], references: [id])
+  collaboratorId     Int
+  collaboratorNombre String?      // Snapshot: collaborator name at time of evaluation
+  collaboratorRol    String?      // Snapshot: collaborator role at time of evaluation
+  evaluatedBy        String?      // Who performed the evaluation
+  notes              String?      // Optional notes about the evaluation
+  evaluatedAt        DateTime     @default(now())
+  assessments        Assessment[]
+
+  @@index([collaboratorId])
+  @@index([evaluatedAt])
+}
+
+// System configuration for initial setup
+model SystemConfig {
+  id            Int     @id @default(1)  // Singleton pattern - only one row
+  companyName   String  // e.g., "Acme Corp"
+  adminName     String  // e.g., "Jane Doe"
+  adminPassword String? // Simple password for local MVP (optional for migration)
+  isSetup       Boolean @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

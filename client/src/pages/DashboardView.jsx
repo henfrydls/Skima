@@ -1,0 +1,254 @@
+import { useState, useEffect, useMemo, useRef } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowRight, Lightbulb, Settings, FlaskConical } from 'lucide-react';
+import { useConfig } from '../contexts/ConfigContext';
+import { API_BASE } from '../lib/apiBase';
+import { preloadData } from '../lib/dataPreload';
+import {
+  prioritizeGaps,
+  detectUnderutilizedTalent,
+  calculateExecutiveMetrics,
+  calculateDistributionByCategory
+} from '../lib/dashboardLogic';
+import { generateTimePeriods, getSnapshotData, getPreviousPeriodDate, findBestMatchingPeriod } from '../lib/timeLogic';
+import DashboardHeader from '../components/dashboard/DashboardHeader';
+import ExecutiveKPIGrid from '../components/dashboard/ExecutiveKPIGrid';
+import StrategicInsights from '../components/dashboard/StrategicInsights';
+import { DashboardSkeleton } from '../components/common/LoadingSkeleton';
+
+// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
+const isCriticalGap = (skillData) => {
+  if (!skillData) return false;
+  return skillData.criticidad === 'C' && skillData.nivel < 3;
+};
+
+
+
+// ============================================
+// DASHBOARD VIEW - Executive Summary (Redesigned)
+// ============================================
+export default function DashboardView() {
+  const { isDemo } = useConfig();
+  const navigate = useNavigate();
+
+  // Data state
+  const [data, setData] = useState({ categories: [], skills: [], collaborators: [], roleProfiles: {} });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Time Travel state
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState(null);
+  const [granularity, setGranularity] = useState('quarter'); // Default granularity
+
+  // Smooth transition when period changes
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    setIsTransitioning(true);
+    const timer = setTimeout(() => setIsTransitioning(false), 150);
+    return () => clearTimeout(timer);
+  }, [selectedSnapshotId, granularity]);
+
+  // Intelligent Context Switching
+  const handleGranularityChange = (newGranularity) => {
+    if (newGranularity === granularity) return;
+
+    // Try to find the best matching period in the new granularity
+    // to preserve the user's "temporal context"
+    const newSnapshotId = findBestMatchingPeriod(selectedSnapshotId, newGranularity, availableSnapshots);
+    
+    // Update both states
+    setGranularity(newGranularity);
+    if (newSnapshotId) {
+        setSelectedSnapshotId(newSnapshotId);
+    } else {
+        // If no match found (e.g. switching to a grain with no data?), 
+        // fallback or stay selected? 
+        // If we return null, it goes to "Live". 
+        // It's safer to go to Live or keep current selection?
+        // But current selection ID is of wrong type (e.g. Year ID while in Month grain).
+        // This might break dropdown logic if filtered by type.
+        // DashboardHeader filters periods by type: periods.filter(p => p.type === granularity)
+        // So keeping a Year ID while in Month grain effectively selects "Nothing" (valid).
+        // But better to be explicit. Let's default to Live if no match.
+        setSelectedSnapshotId(null);
+    }
+  };
+
+  // Fetch data — uses preloaded promise if available, otherwise fetches fresh
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const preloaded = await preloadData();
+        if (preloaded) {
+          setData(preloaded);
+        } else {
+          const response = await fetch(`${API_BASE}/api/data`);
+          if (!response.ok) throw new Error('Error fetching data');
+          setData(await response.json());
+        }
+      } catch (err) {
+        setError('Error cargando datos del dashboard');
+        console.error(err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  const { categories, skills, collaborators, roleProfiles = {} } = data;
+
+  // 1. Generate Available Time Periods (Virtual Snapshots)
+  const availableSnapshots = useMemo(() => {
+    return generateTimePeriods(collaborators);
+  }, [collaborators]);
+
+  // 2. Derive Current State (Live or Reconstructed)
+  const currentData = useMemo(() => {
+    if (!selectedSnapshotId) return collaborators; // Live View
+    
+    const snapshot = availableSnapshots.find(s => s.id === selectedSnapshotId);
+    if (!snapshot) return collaborators; // Fallback
+    
+    // Virtual Snapshot: Reconstruct state at that date
+    return getSnapshotData(collaborators, snapshot.endDate);
+  }, [collaborators, selectedSnapshotId, availableSnapshots]);
+
+  const isComparing = selectedSnapshotId !== null;
+
+  // Calcular métricas ejecutivas
+  const metrics = useMemo(() => {
+    if (!currentData.length) {
+      return { 
+        teamAverage: '0.0', 
+        teamAverageRaw: 0, 
+        criticalGaps: 0, 
+        teamSize: 0,
+        expertDensity: 0,
+        roleCoverage: 0
+      };
+    }
+    return calculateExecutiveMetrics(currentData, skills, categories, isCriticalGap, roleProfiles);
+  }, [currentData, skills, categories, roleProfiles]);
+
+  // Previous metrics for comparison (Auto-compare with previous period)
+  // Logic: If looking at Q4, compare with Q3. If Live, compare with last Q.
+  // Previous metrics for comparison (Auto-compare with previous period)
+  // Logic: Respects granularity (Month vs Prev Month, Year vs Prev Year)
+  // Works for both Live (Now vs Prev) and Time Travel (Snapshot vs Prev)
+  const previousMetrics = useMemo(() => {
+    let anchorDate;
+
+    if (isComparing) {
+        // Snapshot Mode: Anchor is the END date of the selected snapshot
+        const currentSnapshot = availableSnapshots.find(s => s.id === selectedSnapshotId);
+        if (currentSnapshot) {
+           anchorDate = new Date(currentSnapshot.endDate);
+        }
+    } else {
+        // Live Mode: Anchor is NOW
+        anchorDate = new Date();
+    }
+    
+    if (anchorDate) {
+        // Calculate the end date of the PREVIOUS equivalent period
+        const compareDate = getPreviousPeriodDate(anchorDate, granularity);
+        
+        // Reconstruct state at that previous point
+        const prevCollaborators = getSnapshotData(collaborators, compareDate);
+        return calculateExecutiveMetrics(prevCollaborators, skills, categories, isCriticalGap, roleProfiles);
+    }
+    return null;
+  }, [isComparing, selectedSnapshotId, availableSnapshots, collaborators, skills, categories, roleProfiles, granularity]);
+
+  // Distribución por categoría para gráfico apilado
+  const distributionByCategory = useMemo(() => {
+    if (!currentData.length) return [];
+    return calculateDistributionByCategory(currentData, skills, categories);
+  }, [currentData, skills, categories]);
+
+  // Gaps priorizados (para lista de riesgos)
+  const prioritizedGaps = useMemo(() => {
+    if (!currentData.length) return [];
+    return prioritizeGaps(currentData, skills, categories, isCriticalGap);
+  }, [currentData, skills, categories]);
+
+  // Insights automáticos
+  const insights = useMemo(() => {
+    if (!currentData.length) return [];
+    return detectUnderutilizedTalent(currentData, skills);
+  }, [currentData, skills]);
+
+  // Show skeleton while loading
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
+  return (
+    <div className="flex-1 flex flex-col bg-gray-50 -m-6 p-6 space-y-6">
+      {/* Header with Time Travel */}
+      <DashboardHeader
+        periods={availableSnapshots}
+        selectedPeriod={selectedSnapshotId}
+        onPeriodChange={setSelectedSnapshotId}
+        granularity={granularity}
+        onGranularityChange={handleGranularityChange}
+        teamSize={metrics.teamSize}
+      />
+
+      {/* Data section with smooth transition on period change */}
+      <div className={`space-y-6 transition-opacity duration-200 ease-out ${isTransitioning ? 'opacity-60' : 'opacity-100'}`}>
+        {/* KPI Grid */}
+        <ExecutiveKPIGrid
+          metrics={metrics}
+          previousMetrics={previousMetrics}
+        />
+
+        {/* Strategic Insights + Automatic Insight */}
+        <StrategicInsights
+          distributionByCategory={distributionByCategory}
+          operationalRisks={prioritizedGaps}
+          automaticInsight={insights.length > 0 ? insights[0] : null}
+        />
+      </div>
+
+      {/* Demo mode: Setup prompt card */}
+      {isDemo && (
+        <div className="flex items-center gap-4 p-4 bg-white border border-amber-200 rounded-xl shadow-sm">
+          <div className="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center flex-shrink-0">
+            <FlaskConical size={20} className="text-amber-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium text-gray-800">Estás explorando con datos de ejemplo</p>
+            <p className="text-xs text-gray-500">Cuando estés listo, configura tu espacio con tus datos reales.</p>
+          </div>
+          <button
+            onClick={() => navigate('/setup')}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary bg-primary/5 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors flex-shrink-0"
+          >
+            <Settings size={14} />
+            Configurar mi espacio
+          </button>
+        </div>
+      )}
+
+      {/* Quick Access */}
+      <div className="flex justify-center">
+        <Link
+          to="/team-matrix"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-gray-600 hover:text-primary"
+        >
+          Explorar Team Matrix
+          <ArrowRight size={16} />
+        </Link>
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,150 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply text-4xl font-light text-primary;
+  }
+  
+  h2 {
+    @apply text-2xl font-light text-primary;
+  }
+  
+  h3 {
+    @apply text-xl font-medium text-primary;
+  }
+  
+  /* Texto de datos - más peso visual */
+  .data-text {
+    @apply font-medium;
+  }
+
+}
+
+@layer utilities {
+  /* Animación fade-in para transiciones de vista */
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in {
+    animation: fade-in 0.3s ease-out;
+  }
+
+  /* Modal overlay — opacity-only fade (no translateY to avoid line artifact) */
+  @keyframes overlay-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  .modal-overlay {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center;
+    animation: overlay-fade 0.2s ease-out;
+  }
+
+  /* Scale-in para modales */
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scale-in 0.2s ease-out;
+  }
+
+  /* Value pop for KPI number changes */
+  @keyframes value-pop {
+    from {
+      opacity: 0.4;
+      transform: scale(0.97);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-value-pop {
+    animation: value-pop 0.3s ease-out;
+  }
+
+  /* Variante más lenta para cards */
+  .animate-fade-in-slow {
+    animation: fade-in 0.5s ease-out;
+  }
+
+  /* Animación para progress bars */
+  @keyframes progress-grow {
+    from {
+      width: 0;
+    }
+  }
+
+  .animate-progress {
+    animation: progress-grow 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Stagger animation para listas - aplica fade-in con delay incremental */
+  .animate-stagger > * {
+    animation: fade-in 0.3s ease-out backwards;
+  }
+  .animate-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .animate-stagger > *:nth-child(2) { animation-delay: 50ms; }
+  .animate-stagger > *:nth-child(3) { animation-delay: 100ms; }
+  .animate-stagger > *:nth-child(4) { animation-delay: 150ms; }
+  .animate-stagger > *:nth-child(5) { animation-delay: 200ms; }
+  .animate-stagger > *:nth-child(6) { animation-delay: 250ms; }
+  .animate-stagger > *:nth-child(n+7) { animation-delay: 300ms; }
+
+  /* Tooltip con delay - para evitar tooltips accidentales */
+  @keyframes tooltip-fade-in {
+    from { 
+      opacity: 0; 
+      transform: translateY(4px); 
+    }
+    to { 
+      opacity: 1; 
+      transform: translateY(0); 
+    }
+  }
+
+  .tooltip-delayed {
+    animation: tooltip-fade-in 0.2s ease-out 0.3s both;
+  }
+
+  /* Micro-lift para cards interactivos */
+  .hover-lift {
+    @apply transition-all duration-200;
+  }
+  .hover-lift:hover {
+    @apply shadow-md -translate-y-0.5;
+  }
+}
+
+/* Remove focus border on Recharts SVG elements (the outline appears on inner <g> groups) */
+svg.recharts-surface,
+svg.recharts-surface *:focus {
+  outline: none !important;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  @apply bg-background;
+}

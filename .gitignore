@@ -10,7 +10,11 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+dist-ssr
 *.local
+coverage
+.claude
+CLAUDE.md
 
 # Editor directories and files
 .vscode/*
@@ -25,3 +29,42 @@ dist-ssr
 
 # Local data files (user-specific, not tracked)
 data/database.json
+
+# ===========================================
+# SECURITY: Sensitive files - NEVER COMMIT
+# ===========================================
+
+# Environment files (may contain secrets)
+.env
+.env.*
+!.env.example
+*.env
+server/.env
+client/.env
+
+# Database files (contain user data)
+*.db
+*.sqlite
+*.sqlite3
+server/prisma/*.db
+
+# Secret/credential files
+*.pem
+*.key
+*.cert
+.jwt-secret
+secrets/
+credentials/
+
+# Backup files that might contain sensitive data
+*.bak
+*.backup
+
+# Tauri
+src-tauri/target/
+src-tauri/binaries/
+src-tauri/resources/
+
+# pkg output
+*.exe
+!src-tauri/icons/**

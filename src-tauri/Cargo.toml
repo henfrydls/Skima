@@ -1,0 +1,19 @@
+[package]
+name = "skima"
+version = "1.0.0"
+description = "Skima - Skills Management App"
+authors = ["DLSLabs"]
+edition = "2024"
+
+[lib]
+name = "skima_lib"
+crate-type = ["lib", "cdylib", "staticlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = ["tray-icon"] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

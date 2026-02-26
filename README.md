@@ -1,80 +1,101 @@
-# Dashboard de Competencias
+<p align="center">
+  <img src="docs/skima-banner.png" alt="Skima" width="450" />
+</p>
 
-Visualizador interactivo del marco de competencias de referencia de I+D+i y Transformación Digital. El tablero permite revisar el estado de cada persona, categoría y skill, identificando brechas críticas y fortalezas. Los datos se persisten localmente en `data/database.json`.
+<p align="center">
+  A local-first talent intelligence platform for tracking team competencies.<br/>
+  No account, no cloud, no tracking — all data stays on your device.
+</p>
 
-**Marco de Competencias:** 6 categorías | 40 skills | Evaluación tridimensional (Nivel, Criticidad, Frecuencia)
+<p align="center">
+  <a href="#installation">Install</a> &nbsp;&middot;&nbsp;
+  <a href="#features">Features</a> &nbsp;&middot;&nbsp;
+  <a href="#screenshots">Screenshots</a> &nbsp;&middot;&nbsp;
+  <a href="#tech-stack">Tech Stack</a>
+</p>
+
+<p align="center">
+  <img src="docs/skima-dashboard.png" alt="Skima — Executive Dashboard" width="100%" />
+</p>
+
+## Features
+
+- **Executive Dashboard** — KPIs, gap analysis, and trend tracking at a glance
+- **Team Skills Matrix** — transposed heatmap view showing strengths and gaps across the team
+- **Collaborator Profiles** — individual evolution sparklines and skill breakdowns
+- **Evaluation System** — weighted formula (level x frequency x criticality) for objective scoring
+- **Role Profiles** — define expected competencies per role and track alignment
+- **Time Travel** — compare team state across quarters, semesters, and years
+- **Demo Mode** — explore with rich sample data before configuring your own
+- **Export / Import** — move data in and out as needed
+- **Cross-platform Desktop** — Windows, macOS, and Linux via Tauri 2
+- **Offline-first** — works 100% offline, all data stored locally in SQLite
 
 ---
 
-## Funcionalidades principales
+## Screenshots
 
-- **Resumen ejecutivo** con prioridades ordenadas por el *gap* frente al objetivo ponderado por criticidad.
-- **Vista por colaborador** con análisis automático (brechas, áreas de mejora, fortalezas, talento subutilizado) y gráfica tipo *lollipop* por categoría.
-- **Vista por categoría** con comparativos entre personas y detalle de cada skill.
-- **Alta de colaboradores** desde la UI; al guardar se actualiza `data/database.json`.
-- **Reset de demo**: botón “Iniciar desde cero” (una sola vez) que elimina los perfiles demo y bloquea futuros reseteos automáticos.
+<p align="center">
+  <img src="docs/skima-dashboard.png" alt="Executive Dashboard" width="100%" />
+</p>
+<p align="center"><sub>Executive Dashboard — KPIs, gap analysis, and trend tracking at a glance</sub></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/skima-matrix.png" alt="Team Skills Matrix" width="100%" />
+</p>
+<p align="center"><sub>Team Skills Matrix — Transposed heatmap showing strengths and gaps</sub></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/skima-evolution.png" alt="Evolution Tracking" width="100%" />
+</p>
+<p align="center"><sub>Evolution — Track team progress over time</sub></p>
+
+<br/>
+
+<p align="center">
+  <img src="docs/skima-setup.png" alt="Setup Wizard" width="100%" />
+</p>
+<p align="center"><sub>Setup — Get started with demo data or configure your own space</sub></p>
 
 ---
 
-## Estructura de archivos de datos
+## Installation
 
-El proyecto utiliza dos archivos para gestionar los datos:
+Skima runs entirely on your device — no account, no cloud, no tracking.
 
-- **`data/database.template.json`** (trackeado en Git)
-  Contiene los datos demo iniciales con 9 colaboradores de ejemplo, 6 categorías y 40 skills. Este archivo se incluye en el repositorio y sirve como plantilla.
+- **[Desktop app](#desktop-app)** (Windows, macOS, Linux) — Download from GitHub Releases
+- **[Docker](#docker)** — Self-hosted via `docker compose`
+- **[From source](#from-source)** — Clone and build
 
-- **`data/database.json`** (NO trackeado en Git, en `.gitignore`)
-  Archivo de trabajo local que contiene tus datos personalizados. Al iniciar la aplicación por primera vez, se crea automáticamente copiando el contenido del template. Todas las modificaciones (agregar colaboradores, resetear demo) se aplican a este archivo.
+### Desktop App
 
----
+Download the latest release for your platform from [GitHub Releases](https://github.com/henfrydls/skills-dashboard/releases):
 
-## Modelo de datos (`data/database.json`)
+| Platform | Format |
+|----------|--------|
+| Windows | `.exe` installer |
+| macOS | `.dmg` disk image |
+| Linux | `.deb` / `.AppImage` |
 
-```json
-{
-  "allowResetFromDemo": true,
-  "categories": [
-    { "id": 1, "nombre": "Innovación & Diseño", "abrev": "Innovación", "skillCount": 6 }
-  ],
-  "skills": [
-    { "id": 1, "categoria": 1, "nombre": "Design Thinking avanzado" }
-  ],
-  "collaborators": [
-    {
-      "id": 1,
-      "nombre": "Laura Méndez",
-      "rol": "Product Manager",
-      "esDemo": true,
-      "categorias": { "cat1": 4.0 },
-      "skills": {
-        "1": { "nivel": 4, "criticidad": "C", "frecuencia": "D" }
-      }
-    }
-  ]
-}
+Just install and open — no setup, no accounts, no internet required.
+
+### Docker
+
+Run Skima as a local web service with a single command. Requires [Docker](https://docs.docker.com/get-docker/).
+
+```bash
+docker compose up -d
 ```
 
-> Nota: los promedios por categoría ignoran las skills cuya criticidad es `N` (No aplica).
+Open `http://localhost:3000` in your browser. Data persists in a Docker volume.
 
----
+### From Source
 
-## Endpoints locales
-
-El middleware definido en `vite.config.js` expone:
-
-- `GET /api/data` → devuelve categorías, skills, colaboradores y el flag `allowResetFromDemo`.
-- `POST /api/collaborators` → agrega un colaborador; el payload debe incluir `id`, `nombre`, `rol`, `categorias`, `skills` y `esDemo`.
-- `POST /api/reset-demo` → borra los colaboradores demo y marca `allowResetFromDemo` como `false`. Solo responde 200 la primera vez; posteriores llamadas devuelven 409.
-
----
-
-## Instalación y ejecución
-
-### Requisitos
-- Node.js 18 o superior
-- npm
-
-### Pasos
+Requires [Node.js](https://nodejs.org/) 20+.
 
 ```bash
 git clone https://github.com/henfrydls/skills-dashboard.git
@@ -83,165 +104,91 @@ npm install
 npm run dev
 ```
 
-El servidor se levanta en `http://localhost:5173`. Para cambiar host o puerto:
+Open `http://localhost:5173` in your browser. The API runs at `http://localhost:3001`.
+
+To build the desktop app from source, you also need [Rust](https://www.rust-lang.org/tools/install):
 
 ```bash
-npm run dev -- --host --port 4173
+npm run tauri:build
 ```
 
-Detén el servidor con `Ctrl + C`.
-
 ---
 
-## Uso del tablero
+<details>
+<summary><strong>Development and Testing</strong></summary>
 
-1. **Agregar colaborador**  
-   - En la vista “Por colaborador”, pulsa “Agregar colaborador”.
-   - Completa nombre, rol y ajusta cada skill con el slider (nivel), criticidad y frecuencia.
-   - Al guardar se recalculan los promedios por categoría y se persiste el registro en `data/database.json`.
-
-2. **Iniciar desde cero (una sola vez)**
-   - Mientras `allowResetFromDemo` sea `true`, el botón "Iniciar desde cero" estará visible.
-   - Al confirmarlo se eliminan los perfiles demo, el JSON queda con `collaborators: []` y `allowResetFromDemo` pasa a `false`.
-   - Después de ese punto, el botón se oculta completamente y cualquier intento manual de reset devolverá HTTP 409.
-
-3. **Editar información existente**  
-   - Modifica directamente el JSON (respetando el formato) y reinicia `npm run dev`, o implementa la edición en la UI reutilizando los endpoints.
-
-4. **Revisión de datos**
-   - Cada cálculo ignora las skills con criticidad `N`.
-   - El objetivo por categoría se deriva automáticamente ponderando criticidad y frecuencia.
-
----
-
-## Cómo restaurar datos demo
-
-Si deseas volver a los datos demo originales después de haber modificado o reseteado tu base de datos local:
-
-1. **Detén el servidor de desarrollo** (si está corriendo)
-2. **Elimina el archivo local:**
-   ```bash
-   rm data/database.json
-   ```
-   (En Windows: `del data\database.json`)
-
-3. **Reinicia el servidor:**
-   ```bash
-   npm run dev
-   ```
-
-Al iniciar, el sistema detectará que no existe `database.json` y lo recreará automáticamente copiando el contenido de `database.template.json`, restaurando los 9 colaboradores demo y el flag `allowResetFromDemo: true`.
-
-> **Nota:** Si modificaste el template por error, puedes recuperarlo desde Git con `git checkout data/database.template.json`
-
----
-
-## Scripts disponibles
+### Commands
 
 ```bash
-npm run dev      # Desarrollo con hot reload
-npm run build    # Compilar para producción
-npm run preview  # Servir la build de producción localmente
-npm run lint     # Ejecutar ESLint
+npm install              # Install all dependencies (root + client + server)
+npm run dev              # Start client (5173) + server (3001) concurrently
+npm run dev:client       # Frontend only
+npm run dev:server       # Backend only
+npm run build            # Production build (client + server)
+npm run tauri:build      # Build desktop installer (requires Rust)
 ```
 
----
+### Database
 
-## Estructura del proyecto
-
-```
-skills-dashboard/
-|-- data/
-|   |-- database.template.json # Plantilla con datos demo (trackeado en Git)
-|   `-- database.json          # Datos locales del usuario (NO trackeado, generado automáticamente)
-|-- scripts/
-|   `-- exportData.mjs         # Utilidad para regenerar el JSON desde el JSX (opcional)
-|-- src/
-|   |-- SkillsDashboard.jsx    # Componente principal
-|   |-- App.jsx
-|   `-- main.jsx
-|-- public/
-|-- vite.config.js             # Configuración + middleware local de datos
-|-- package.json
-`-- README.md
+```bash
+npm run db:migrate       # Run Prisma migrations
+npm run db:push          # Sync schema without migration
+npm run db:seed          # Load demo data
 ```
 
----
+### Testing
 
-## Capturas de Pantalla
+```bash
+npm test                 # All tests (729 tests, 80%+ coverage)
+npm run test:client      # React component and logic tests (668 tests)
+npm run test:server      # API and middleware tests (61 tests)
+npm run test:coverage    # Full coverage report (client + server)
+```
 
-### Dashboard Principal
-<img width="1844" height="949" alt="image" src="https://github.com/user-attachments/assets/d1f1dd4e-ad8a-48b5-aa3d-890d3cacd373" />
+### Project Structure
 
-### Vista Por Colaborador
-<img width="1843" height="940" alt="image" src="https://github.com/user-attachments/assets/866236c0-c023-42e2-baae-01ab093c1ffd" />
+```
+client/src/
+  components/
+    auth/                # LoginModal, ProtectedRoute
+    common/              # Button, Card, Badge, StatCard, etc.
+    dashboard/           # ExecutiveKPIGrid, DashboardHeader, StrategicInsights
+    evolution/           # EvolutionChart, EvolutionList
+    layout/              # Layout, Sidebar
+    matrix/              # TransposedMatrixTable, CollaboratorList
+    settings/            # CategoriesTab, CollaboratorsTab, SkillsTab
+  contexts/              # AuthContext, ConfigContext
+  hooks/                 # useEvolutionData
+  lib/                   # dashboardLogic, skillsLogic, evolutionLogic
+  pages/                 # DashboardView, TeamMatrixPage, EvolutionPage
+  App.jsx
 
-### Resumen de un Colaborador
-<img width="1843" height="942" alt="image" src="https://github.com/user-attachments/assets/a878b994-7fbe-45cb-bd49-a398d1ad22bc" />
+server/src/
+  routes/                # auth.js, evolution.js, demo.js
+  middleware/            # auth.js (JWT)
+  data/                  # seedData.js
+  db.js                  # Prisma client + dynamic DB path
+  index.js               # Express app + all routes
+```
 
-### Vista Por Categoría
-<img width="1857" height="937" alt="image" src="https://github.com/user-attachments/assets/24876fe6-d930-498e-989f-9e48967e9c7e" />
-
-### Resumen de Categoría
-<img width="1836" height="943" alt="image" src="https://github.com/user-attachments/assets/94526686-0fe4-427f-9efd-30a454fea29a" />
-
-### Resumen por Skill
-<img width="1844" height="940" alt="image" src="https://github.com/user-attachments/assets/72e0ce58-27e9-475a-8359-4d9ad63a96dd" />
-
----
-
-## Roadmap
-
-
-### Fase 1: Gestión Completa desde UI
-
-#### 1.1 Gestión de Categorías
-- [ ] Crear categorías desde la UI
-- [ ] Editar categorías existentes (nombre, abreviatura, skillCount)
-- [ ] Eliminar categorías con validación de dependencias
-
-#### 1.2 Gestión de Skills
-- [ ] Crear skills desde la UI (asignar a categoría)
-- [ ] Editar skills existentes (nombre, reasignar categoría)
-- [ ] Eliminar skills con validación de evaluaciones existentes
-- [ ] Reordenar skills dentro de cada categoría
-- [ ] Búsqueda y filtrado de skills por categoría
-
-#### 1.3 Gestión de Colaboradores
-- [ ] Editar colaboradores existentes (inline o modal)
-- [ ] Eliminar colaboradores con confirmación
-- [ ] Duplicar colaborador como plantilla
-- [ ] Validación de campos requeridos
+</details>
 
 ---
 
-### Fase 2: Importación/Exportación & Reportes
+## Tech Stack
 
-#### 2.1 Exportación de Datos
-- [ ] Exportar datos a CSV/Excel (colaboradores, skills, evaluaciones)
-- [ ] Exportar reportes en PDF (por colaborador, por categoría)
-- [ ] Backup automático de database.json (cada N días)
-- [ ] Plantillas de reportes personalizables
-
-#### 2.2 Visualizaciones Avanzadas
-- [ ] Timeline de evolución de competencias
-- [ ] Dashboard de equipo con métricas agregadas
-
----
-
-### Fase 3: Backend Django + SQLite
-
-- [ ] Migrar a arquitectura full-stack con Django REST Framework
-- [ ] Crear modelos: Category, Skill, Collaborator, SkillEvaluation
-- [ ] Implementar API REST con endpoints CRUD
-- [ ] Script de migración: JSON → SQLite
-- [ ] Configurar autenticación y permisos
-- [ ] Docker Compose para desarrollo
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 19, Vite 7 |
+| Styling | Tailwind CSS 3.4 |
+| Backend | Express 5, Prisma 6 |
+| Database | SQLite |
+| Desktop | Tauri 2 |
+| Testing | Vitest, React Testing Library (729 tests, 80%+ coverage) |
+| CI/CD | GitHub Actions |
 
 ---
 
-## Licencia
+## License
 
-MIT License
-Copyright © 2025 Henfry De Los Santos
-Última actualización: 2025-10-23
+[PolyForm Noncommercial 1.0.0](LICENSE) -- DLSLabs

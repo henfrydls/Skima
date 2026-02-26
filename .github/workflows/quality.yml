@@ -1,0 +1,84 @@
+name: Quality Pipeline
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Root Dependencies
+        run: npm install
+
+      - name: Install Client Dependencies
+        run: cd client && npm install
+
+      - name: Install Server Dependencies
+        run: cd server && rm -f package-lock.json && npm install
+
+      # Linting
+      - name: Lint Client
+        run: npm run lint
+        working-directory: ./client
+
+      # Tests with Coverage
+      - name: Run Client Tests with Coverage
+        run: npx vitest run --coverage
+        working-directory: ./client
+
+      - name: Setup Server Test Database
+        run: npx prisma db push --skip-generate
+        working-directory: ./server
+        env:
+          DATABASE_URL: file:./prisma/test.db
+
+      - name: Run Server Tests with Coverage
+        run: npx vitest run --coverage
+        working-directory: ./server
+        env:
+          DATABASE_URL: file:./prisma/test.db
+
+      # Build Check
+      - name: Build Client
+        run: npm run build
+        working-directory: ./client
+
+      # Upload Coverage Artifacts
+      - name: Upload Client Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-coverage
+          path: client/coverage/
+
+      - name: Upload Server Coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-coverage
+          path: server/coverage/
+
+      # Security Audit
+      - name: Security Audit (Root)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Security Audit (Client)
+        run: npm audit --audit-level=high
+        working-directory: ./client
+        continue-on-error: true
+
+      - name: Security Audit (Server)
+        run: npm audit --audit-level=high
+        working-directory: ./server
+        continue-on-error: true
