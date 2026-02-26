@@ -120,6 +120,14 @@ jobs:
           name: sidecar-node20-macos-arm64
           path: src-tauri/binaries/
 
+      - name: Create macOS Universal Sidecar
+        if: matrix.platform == 'macos-latest'
+        run: |
+          lipo -create \
+            src-tauri/binaries/skima-server-x86_64-apple-darwin \
+            src-tauri/binaries/skima-server-aarch64-apple-darwin \
+            -output src-tauri/binaries/skima-server-universal-apple-darwin
+
       - name: Make Sidecar Executable
         if: matrix.platform != 'windows-latest'
         run: chmod +x src-tauri/binaries/skima-server-*
