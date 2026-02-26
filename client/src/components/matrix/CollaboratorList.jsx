@@ -101,7 +101,7 @@ function Sparkline({ data, trend }) {
   return (
     <div className="w-[60px] h-[24px]">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
+        <LineChart data={chartData} accessibilityLayer={false}>
           <Tooltip 
             content={<SparklineTooltip />}
             cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}

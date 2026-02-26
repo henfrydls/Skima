@@ -251,9 +251,15 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
         </div>
       </div>
 
-      <div className="h-64 w-full">
+      <div className="h-64 w-full" ref={(el) => {
+        // Remove tabIndex from Recharts SVG to prevent focus border
+        if (el) {
+          const svg = el.querySelector('svg');
+          if (svg) svg.removeAttribute('tabindex');
+        }
+      }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} accessibilityLayer={false} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#475569" stopOpacity={0.1}/>

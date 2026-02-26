@@ -59,7 +59,7 @@ function Sparkline({ data, color = '#6366f1' }) {
   return (
     <div className="w-16 h-8">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData}>
+        <LineChart data={chartData} accessibilityLayer={false}>
           <Line
             type="monotone"
             dataKey="value"

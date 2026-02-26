@@ -20,10 +20,6 @@
     @apply font-medium;
   }
 
-  /* Remove focus outline on Recharts SVG elements */
-  .recharts-wrapper svg {
-    outline: none;
-  }
 }
 
 @layer utilities {
@@ -137,6 +133,12 @@
   .hover-lift:hover {
     @apply shadow-md -translate-y-0.5;
   }
+}
+
+/* Remove focus border on Recharts SVG elements (the outline appears on inner <g> groups) */
+svg.recharts-surface,
+svg.recharts-surface *:focus {
+  outline: none !important;
 }
 
 body {

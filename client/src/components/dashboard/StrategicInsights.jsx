@@ -51,8 +51,9 @@ function TalentDistributionChart({ data }) {
   return (
     <div className="flex-1 min-h-[16rem]">
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart 
+        <BarChart
           data={data}
+          accessibilityLayer={false}
           layout="vertical"
           margin={{ top: 10, right: 30, left: 80, bottom: 10 }}
         >

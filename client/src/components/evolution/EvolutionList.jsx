@@ -42,7 +42,7 @@ const Sparkline = ({ data, color = '#6366f1' }) => {
   return (
     <div className="h-8 w-24">
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data}>
+        <LineChart data={data} accessibilityLayer={false}>
           <Tooltip 
             content={<SparklineTooltip />}
             cursor={{ stroke: '#94a3b8', strokeWidth: 1 }}
