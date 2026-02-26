@@ -124,6 +124,9 @@ jobs:
         if: matrix.platform != 'windows-latest'
         run: chmod +x src-tauri/binaries/skima-server-*
 
+      - name: Ensure resources directory exists
+        run: mkdir -p src-tauri/resources && touch src-tauri/resources/.gitkeep
+
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
         env:
