@@ -53,8 +53,25 @@ jobs:
           name: sidecar-${{ matrix.target }}
           path: src-tauri/binaries/${{ matrix.sidecar-name }}
 
-  build-tauri:
+  create-release:
     needs: build-sidecar
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create Release with changelog
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create ${{ github.ref_name }} \
+            --title "Skima ${{ github.ref_name }}" \
+            --generate-notes \
+            --latest
+
+  build-tauri:
+    needs: [build-sidecar, create-release]
     strategy:
       fail-fast: false
       matrix:
@@ -142,7 +159,7 @@ jobs:
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Skima ${{ github.ref_name }}'
-          releaseBody: 'See the assets to download this version and install.'
-          releaseDraft: true
+          releaseBody: ''
+          releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
