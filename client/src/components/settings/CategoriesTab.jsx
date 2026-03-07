@@ -543,11 +543,23 @@ export default function CategoriesTab() {
               method: 'DELETE',
               headers: getHeaders()
             });
-            if (!res.ok) throw new Error('Failed');
+            if (!res.ok) {
+              if (res.status === 403) {
+                const body = await res.json().catch(() => ({}));
+                if (body.error === 'DEMO_MODE') {
+                  toast.error('This action is not available in demo mode.');
+                  setCategories(prevCategories);
+                  setSkills(prevSkills);
+                  return;
+                }
+              }
+              throw new Error('Failed');
+            }
             invalidatePreload();
          } catch {
             toast.error('Error sincronizando archivado');
-            // Revert on error if needed, or force reload
+            setCategories(prevCategories);
+            setSkills(prevSkills);
          }
       }
     }, 4100);

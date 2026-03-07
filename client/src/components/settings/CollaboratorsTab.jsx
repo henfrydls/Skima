@@ -699,7 +699,17 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             const response = await authFetch(`/api/collaborators/${id}`, {
                method: 'DELETE'
             });
-            if (!response.ok) throw new Error('Error deleting');
+            if (!response.ok) {
+              if (response.status === 403) {
+                const body = await response.json().catch(() => ({}));
+                if (body.error === 'DEMO_MODE') {
+                  toast.error('This action is not available in demo mode.');
+                  setCollaborators(prevCollaborators);
+                  return;
+                }
+              }
+              throw new Error('Error deleting');
+            }
             invalidatePreload();
          } catch(err) {
              if (err.message !== 'SESSION_EXPIRED') {
