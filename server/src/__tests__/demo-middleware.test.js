@@ -181,4 +181,26 @@ describe('Demo Mode Middleware', () => {
       expect(res.status).not.toBe(403);
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Group 4: isOnlineDemo field in GET /api/config
+  // ---------------------------------------------------------------------------
+  describe('isOnlineDemo in GET /api/config', () => {
+    it('returns isOnlineDemo: true when DEMO_MODE=true', async () => {
+      const res = await request(app).get('/api/config');
+
+      expect(res.status).toBe(200);
+      expect(res.body.isOnlineDemo).toBe(true);
+    });
+
+    it('returns isOnlineDemo: false when DEMO_MODE is unset', async () => {
+      delete process.env.DEMO_MODE;
+      const freshApp = createApp();
+
+      const res = await request(freshApp).get('/api/config');
+
+      expect(res.status).toBe(200);
+      expect(res.body.isOnlineDemo).toBe(false);
+    });
+  });
 });
