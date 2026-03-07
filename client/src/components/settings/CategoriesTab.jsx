@@ -226,7 +226,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onDrag
       <div className="relative">
         <button
           onClick={() => setShowMenu(!showMenu)}
-          className="p-2 hover:bg-gray-100 rounded transition-colors opacity-0 group-hover:opacity-100"
+          className="p-2 hover:bg-gray-100 rounded transition-colors"
         >
           <MoreVertical size={18} className="text-gray-500" />
         </button>
