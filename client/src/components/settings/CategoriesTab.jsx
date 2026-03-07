@@ -176,7 +176,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onDrag
           : 'border-gray-100 hover:shadow-md'
         }
         ${isDragOver && !isDragging
-          ? 'border-primary border-2 border-dashed bg-primary/5 transform translate-x-2' 
+          ? 'border-primary border-2 border-dashed bg-primary/5 transform translate-x-2 cursor-grabbing'
           : ''
         }
       `}
@@ -772,7 +772,7 @@ export default function CategoriesTab() {
       </div>
 
       {/* Categories List */}
-      <div className="space-y-2">
+      <div className={`space-y-2 ${draggedId !== null ? '[&_*]:!cursor-grabbing !cursor-grabbing' : ''}`} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}>
 
         {filteredCategories.map((category) => (
           <CategoryRow
