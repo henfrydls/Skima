@@ -89,7 +89,7 @@ const LastPointLabel = (props) => {
   return (
     <text
       x={x} y={y} dy={dy} dx={dx}
-      fill={fillColor} fontSize={14} fontWeight="bold" textAnchor="middle"
+      fill={fillColor} fontSize={14} fontWeight="bold" textAnchor="start"
       style={style}
     >
       {value}
@@ -259,7 +259,7 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
         }
       }}>
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData} accessibilityLayer={false} margin={{ top: 20, right: 30, left: -20, bottom: 0 }}>
+          <AreaChart data={chartData} accessibilityLayer={false} margin={{ top: 20, right: 50, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="colorAvg" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%" stopColor="#475569" stopOpacity={0.1}/>

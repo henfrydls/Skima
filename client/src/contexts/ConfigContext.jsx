@@ -63,6 +63,7 @@ export function ConfigProvider({ children }) {
     error,
     isSetup: config?.isSetup ?? false,
     isDemo: config?.isDemo ?? false,
+    isOnlineDemo: config?.isOnlineDemo ?? false,
     companyName: config?.companyName ?? 'Skima',
     adminName: config?.adminName ?? 'Admin',
     onSetupComplete,

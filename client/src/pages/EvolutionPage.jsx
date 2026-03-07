@@ -99,26 +99,29 @@ export default function EvolutionPage() {
           </button>
 
           {isDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-50">
-              {timeOptions.map((option) => (
-                <button
-                  key={option.id}
-                  onClick={() => {
-                    setTimeRange(option.id);
-                    setIsDropdownOpen(false);
-                  }}
-                  className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors
-                    ${timeRange === option.id 
-                      ? 'bg-indigo-50 text-indigo-700 font-medium' 
-                      : 'text-gray-600 hover:bg-gray-50'
-                    }
-                  `}
-                >
-                  <span>{option.label}</span>
-                  {timeRange === option.id && <Check size={14} />}
-                </button>
-              ))}
-            </div>
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setIsDropdownOpen(false)} />
+              <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-xl border border-gray-100 p-2 z-50">
+                {timeOptions.map((option) => (
+                  <button
+                    key={option.id}
+                    onClick={() => {
+                      setTimeRange(option.id);
+                      setIsDropdownOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-colors
+                      ${timeRange === option.id
+                        ? 'bg-primary/10 text-primary font-medium'
+                        : 'text-gray-600 hover:bg-gray-50'
+                      }
+                    `}
+                  >
+                    <span>{option.label}</span>
+                    {timeRange === option.id && <Check size={14} />}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>

@@ -410,7 +410,17 @@ export default function SkillsTab({ isActive = false }) {
           method: 'DELETE',
           headers: getHeaders()
         });
-        if (!res.ok) throw new Error('Failed');
+        if (!res.ok) {
+          if (res.status === 403) {
+            const body = await res.json().catch(() => ({}));
+            if (body.error === 'DEMO_MODE') {
+              toast.error('This action is not available in demo mode.');
+              fetchData();
+              return;
+            }
+          }
+          throw new Error('Failed');
+        }
         invalidatePreload();
       } catch (err) {
         toast.error('Error sincronizando eliminación');

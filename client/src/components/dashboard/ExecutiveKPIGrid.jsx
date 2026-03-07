@@ -26,7 +26,7 @@ export default function ExecutiveKPIGrid({
         previousValue={previousMetrics?.teamAverageRaw}
         subtext="Promedio general del equipo"
         icon={TrendingUp}
-        color="indigo"
+        color="primary"
         sparklineData={sparklineData.maturity}
         helpContent="Promedio general del equipo basado en todas las evaluaciones. Escala: < 2.5 Requiere Atención · 2.5–3.5 Competente · ≥ 3.5 Fortaleza. Meta: 4.0"
       />
@@ -63,7 +63,7 @@ export default function ExecutiveKPIGrid({
         previousValue={previousMetrics?.roleCoverage}
         subtext="% cumpliendo requisitos mínimos"
         icon={Shield}
-        color="indigo"
+        color="primary"
         suffix="%"
         helpContent="Porcentaje de colaboradores que cumplen todos los requisitos críticos de su perfil de rol (nivel ≥ 2.5 en skills marcadas C)."
         helpAlign="left"

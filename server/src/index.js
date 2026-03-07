@@ -9,6 +9,7 @@ import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
 import { authMiddleware } from './middleware/auth.js';
+import { demoModeMiddleware } from './middleware/demo.js';
 
 // Re-export prisma for any routes that still import from index
 export { prisma };
@@ -19,6 +20,9 @@ export function createApp() {
   app.use(cors());
   app.use(express.json());
   app.use(cookieParser());
+
+  // Demo mode: block destructive operations when DEMO_MODE=true
+  app.use(demoModeMiddleware);
 
   // Auth routes (public)
   app.use('/api/auth', authRoutes);
@@ -42,6 +46,7 @@ export function createApp() {
         return res.json({
           isSetup: false,
           isDemo: false,
+          isOnlineDemo: process.env.DEMO_MODE === 'true',
           companyName: null,
           adminName: null,
           hasPassword: false
@@ -54,6 +59,7 @@ export function createApp() {
       res.json({
         isSetup: config.isSetup,
         isDemo: demoCount > 0,
+        isOnlineDemo: process.env.DEMO_MODE === 'true',
         companyName: config.companyName,
         adminName: config.adminName,
         hasPassword: !!config.adminPassword

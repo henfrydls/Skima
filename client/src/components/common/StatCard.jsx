@@ -94,7 +94,7 @@ export default function StatCard({
   // Supporting both semantic names (primary) and direct colors (indigo)
   const colorMap = {
     // Theme colors (Dashboard legacy)
-    primary: 'text-indigo-600 bg-indigo-50 border-indigo-100', // Assumed primary is indigo
+    primary: 'text-primary bg-primary/10 border-primary/20',
     success: 'text-emerald-600 bg-emerald-50 border-emerald-100',
     warning: 'text-amber-500 bg-amber-50 border-amber-100',
     critical: 'text-rose-600 bg-rose-50 border-rose-100',
@@ -115,6 +115,7 @@ export default function StatCard({
     if (col.includes('rose') || col === 'critical') return '#e11d48';
     if (col.includes('emerald') || col === 'success') return '#059669';
     if (col.includes('amber') || col === 'warning') return '#d97706';
+    if (col === 'primary') return '#2d676e';
     return '#4f46e5'; // indigo
   };
 
