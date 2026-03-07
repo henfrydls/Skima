@@ -107,4 +107,78 @@ describe('Demo Mode Middleware', () => {
       expect(res.body.error).toBe('DEMO_MODE');
     });
   });
+
+  // ---------------------------------------------------------------------------
+  // Group 2: Allowed endpoints pass through (not 403)
+  // ---------------------------------------------------------------------------
+  describe('Allowed endpoints pass through when DEMO_MODE=true', () => {
+    it('GET /api/config is not blocked', async () => {
+      const res = await request(app).get('/api/config');
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('POST /api/auth/login is not blocked', async () => {
+      const res = await request(app)
+        .post('/api/auth/login')
+        .send({ password: 'wrong' });
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('GET /api/data is not blocked', async () => {
+      const res = await request(app).get('/api/data');
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('POST /api/collaborators is not blocked', async () => {
+      const res = await request(app)
+        .post('/api/collaborators')
+        .send({ nombre: 'Test', rol: 'Dev', area: 'Eng' });
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('POST /api/config/verify is not blocked', async () => {
+      const res = await request(app)
+        .post('/api/config/verify')
+        .send({ password: 'test' });
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('GET /api/export is not blocked', async () => {
+      const res = await request(app).get('/api/export');
+
+      expect(res.status).not.toBe(403);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group 3: Middleware disabled when DEMO_MODE is not set
+  // ---------------------------------------------------------------------------
+  describe('Middleware is disabled when DEMO_MODE is not set', () => {
+    it('POST /api/setup is NOT blocked when DEMO_MODE is unset', async () => {
+      delete process.env.DEMO_MODE;
+      const freshApp = createApp();
+
+      const res = await request(freshApp)
+        .post('/api/setup')
+        .send({ companyName: 'Test Co', adminName: 'Admin' });
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('POST /api/setup is NOT blocked when DEMO_MODE=false', async () => {
+      process.env.DEMO_MODE = 'false';
+      const freshApp = createApp();
+
+      const res = await request(freshApp)
+        .post('/api/setup')
+        .send({ companyName: 'Test Co', adminName: 'Admin' });
+
+      expect(res.status).not.toBe(403);
+    });
+  });
 });
