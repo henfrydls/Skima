@@ -46,6 +46,7 @@ export function createApp() {
         return res.json({
           isSetup: false,
           isDemo: false,
+          isOnlineDemo: process.env.DEMO_MODE === 'true',
           companyName: null,
           adminName: null,
           hasPassword: false
@@ -58,6 +59,7 @@ export function createApp() {
       res.json({
         isSetup: config.isSetup,
         isDemo: demoCount > 0,
+        isOnlineDemo: process.env.DEMO_MODE === 'true',
         companyName: config.companyName,
         adminName: config.adminName,
         hasPassword: !!config.adminPassword
