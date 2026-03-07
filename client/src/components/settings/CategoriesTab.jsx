@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
-import { 
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, arrayMove, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
   Search,
-  GripVertical, 
-  Plus, 
-  MoreVertical, 
-  Edit3, 
+  GripVertical,
+  Plus,
+  MoreVertical,
+  Edit3,
   Trash2,
   X,
   FolderPlus,
@@ -160,34 +163,49 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   );
 }
 
-// Category Row Component
-function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onDragStart, onDragOver, onDragEnd, onDrop, isDragging, isDragOver }) {
+// Category Row Component (uses @dnd-kit/sortable for smooth cursor)
+function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
   const isArchived = category.isActive === false;
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const baseTransform = CSS.Translate.toString(transform);
+  const style = {
+    transform: isDragging
+      ? `${baseTransform} rotate(-1.5deg)`
+      : baseTransform,
+    transition,
+  };
+
   return (
-    <div 
+    <div
+      ref={setNodeRef}
+      style={style}
       className={`
-        flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border transition-all duration-200 group relative
+        flex items-center gap-3 p-4 bg-surface rounded-lg shadow-sm border group relative
+        ${isDragging ? '' : 'transition-all duration-200'}
         ${isArchived ? 'bg-gray-50' : ''}
-        ${isDragging 
-          ? 'opacity-100 scale-[1.02] -rotate-1 shadow-2xl border-primary border z-50 ring-1 ring-primary cursor-grabbing' 
+        ${isDragging
+          ? 'shadow-2xl border-primary border z-50 ring-1 ring-primary'
           : 'border-gray-100 hover:shadow-md'
         }
-        ${isDragOver && !isDragging
-          ? 'border-primary border-2 border-dashed bg-primary/5 transform translate-x-2 cursor-grabbing'
-          : ''
-        }
       `}
-      draggable
-      onDragStart={(e) => onDragStart(e, category.id)}
-      onDragOver={(e) => onDragOver(e, category.id)}
-      onDragEnd={onDragEnd}
-      onDrop={(e) => onDrop(e, category.id)}
     >
       {/* Drag Handle */}
-      <div className="text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity">
+      <div
+        {...attributes}
+        {...listeners}
+        className="text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
+      >
         <GripVertical size={18} />
       </div>
 
@@ -611,68 +629,33 @@ export default function CategoriesTab() {
     setShowLoginModal(false);
   };
 
-  // ===== DRAG AND DROP REORDER =====
-  const [draggedId, setDraggedId] = useState(null);
-  const [dragOverId, setDragOverId] = useState(null);
+  // ===== DRAG AND DROP REORDER (@dnd-kit/sortable) =====
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
+  );
 
-  const handleDragStart = (e, id) => {
-    setDraggedId(id);
-    e.dataTransfer.effectAllowed = 'move';
-    
-    // Create a transparent 1x1 pixel drag image to hide the browser's default preview
-    // The visual feedback is handled by CSS (opacity, transform) on the dragged row
-    const transparentImg = document.createElement('canvas');
-    transparentImg.width = 1;
-    transparentImg.height = 1;
-    e.dataTransfer.setDragImage(transparentImg, 0, 0);
-  };
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
 
-  const handleDragOver = (e, overId) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    
-    if (overId === draggedId || draggedId === null) return;
-    
-    // Live reorder while dragging
-    if (overId !== dragOverId) {
-      setDragOverId(overId);
-      
-      // Reorder the array in real-time for visual feedback
-      const oldIndex = categories.findIndex(c => c.id === draggedId);
-      const newIndex = categories.findIndex(c => c.id === overId);
-      
-      if (oldIndex !== -1 && newIndex !== -1 && oldIndex !== newIndex) {
-        const newCategories = [...categories];
-        const [moved] = newCategories.splice(oldIndex, 1);
-        newCategories.splice(newIndex, 0, moved);
-        setCategories(newCategories);
-      }
-    }
-  };
+    const oldIndex = categories.findIndex(c => c.id === active.id);
+    const newIndex = categories.findIndex(c => c.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
 
-  const handleDragEnd = () => {
-    // Persist final order to API
-    if (draggedId !== null) {
-      const order = categories.map(c => c.id);
-      fetch(`${API_BASE}/api/categories/reorder`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getHeaders()
-        },
-        body: JSON.stringify({ order })
-      }).then(() => invalidatePreload())
-        .catch(err => console.error('Error saving order:', err));
-    }
-    
-    setDraggedId(null);
-    setDragOverId(null);
-  };
+    const newCategories = arrayMove(categories, oldIndex, newIndex);
+    setCategories(newCategories);
 
-  const handleDrop = (e, dropId) => {
-    e.preventDefault();
-    // The actual reorder already happened in handleDragOver
-    // handleDragEnd will persist to API
+    // Persist to API
+    const order = newCategories.map(c => c.id);
+    fetch(`${API_BASE}/api/categories/reorder`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getHeaders()
+      },
+      body: JSON.stringify({ order })
+    }).then(() => invalidatePreload())
+      .catch(err => console.error('Error saving order:', err));
   };
 
   // Loading state
@@ -772,25 +755,22 @@ export default function CategoriesTab() {
       </div>
 
       {/* Categories List */}
-      <div className={`space-y-2 ${draggedId !== null ? '[&_*]:!cursor-grabbing !cursor-grabbing' : ''}`} onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }}>
-
-        {filteredCategories.map((category) => (
-          <CategoryRow
-            key={category.id}
-            category={category}
-            skillCount={getSkillCount(category.id)}
-            onEdit={handleEdit}
-            onDelete={handleDelete}
-            onRestore={handleRestore}
-            onDragStart={handleDragStart}
-            onDragOver={handleDragOver}
-            onDragEnd={handleDragEnd}
-            onDrop={handleDrop}
-            isDragging={draggedId === category.id}
-            isDragOver={dragOverId === category.id}
-          />
-        ))}
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={filteredCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+          <div className="space-y-2">
+            {filteredCategories.map((category) => (
+              <CategoryRow
+                key={category.id}
+                category={category}
+                skillCount={getSkillCount(category.id)}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onRestore={handleRestore}
+              />
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
 
       {/* Modals */}
       <CategoryModal

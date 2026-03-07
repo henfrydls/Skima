@@ -127,9 +127,9 @@ describe('ExecutiveKPIGrid', () => {
   it('applies correct color to each KPI card', () => {
     const { container } = render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
-    // Índice de Madurez - indigo
-    const indigoIcons = container.querySelectorAll('.text-indigo-600');
-    expect(indigoIcons.length).toBeGreaterThanOrEqual(2); // Maturity and Coverage
+    // Índice de Madurez & Cobertura de Roles - primary (brand teal)
+    const primaryIcons = container.querySelectorAll('.text-primary');
+    expect(primaryIcons.length).toBeGreaterThanOrEqual(2); // Maturity and Coverage
 
     // Riesgo de Talento - rose
     const roseIcons = container.querySelectorAll('.text-rose-600');
