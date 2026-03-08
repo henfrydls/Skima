@@ -19,6 +19,24 @@ for i in $(seq 1 30); do
   sleep 1
 done
 
+# Analytics injection (runtime only, never in source code)
+#
+# When running as an online demo, we inject a self-hosted Umami analytics
+# script into the built HTML at container startup. This keeps the tracking
+# code out of the repository — desktop and local Docker users never see it.
+#
+# Required env vars (set in docker-compose.demo.yml):
+#   UMAMI_WEBSITE_ID  — UUID from Umami dashboard (e.g. "e1a101bc-...")
+#   UMAMI_HOST        — Optional, defaults to https://analytics.henfrydls.com
+#
+# The script is privacy-first: no cookies, no cross-site tracking,
+# respects Do Not Track. Used to measure landing-to-demo conversion.
+if [ "$DEMO_MODE" = "true" ] && [ -n "$UMAMI_WEBSITE_ID" ]; then
+  UMAMI_HOST="${UMAMI_HOST:-https://analytics.henfrydls.com}"
+  sed -i "s|</head>|<script defer src=\"${UMAMI_HOST}/stats.js\" data-website-id=\"${UMAMI_WEBSITE_ID}\"></script></head>|" /app/client/dist/index.html
+  echo "  Analytics script injected."
+fi
+
 # Handle DB state based on DEMO_MODE
 if [ "$DEMO_MODE" = "true" ]; then
   IS_SETUP=$(wget -q -O - http://localhost:3001/api/config 2>/dev/null | grep -o '"isSetup":true')
