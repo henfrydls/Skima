@@ -16,6 +16,8 @@ const EvolutionPage = lazy(() => import('./pages/EvolutionPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const SetupView = lazy(() => import('./pages/SetupView'));
+const LandingPage = lazy(() => import('./pages/LandingPage'));
+const DemoEntry = lazy(() => import('./pages/DemoEntry'));
 
 function PageLoader() {
   return (
@@ -73,16 +75,38 @@ function SetupPageGuard() {
   );
 }
 
+// Landing page guard: show landing when isOnlineDemo && no demo_active cookie
+function LandingGuard({ children }) {
+  const { isOnlineDemo } = useConfig();
+  const hasDemoCookie = document.cookie.includes('demo_active=true');
+
+  if (isOnlineDemo && !hasDemoCookie) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
+  return children;
+}
+
 const router = createBrowserRouter([
   {
     path: "/setup",
     element: <SetupPageGuard />,
   },
   {
+    path: "/demo",
+    element: <Suspense fallback={<PageLoader />}><DemoEntry /></Suspense>,
+  },
+  {
     element: (
-      <SetupGuard>
-        <Layout />
-      </SetupGuard>
+      <LandingGuard>
+        <SetupGuard>
+          <Layout />
+        </SetupGuard>
+      </LandingGuard>
     ),
     children: [
       {
