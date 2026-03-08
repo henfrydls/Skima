@@ -107,15 +107,15 @@ router.post('/', async (req, res) => {
       await tx.systemConfig.upsert({
         where: { id: 1 },
         update: {
-          companyName: 'Empresa Demo',
-          adminName: 'Administrador',
+          companyName: 'Demo Company',
+          adminName: 'Administrator',
           adminPassword: demoPassword,
           isSetup: true,
         },
         create: {
           id: 1,
-          companyName: 'Empresa Demo',
-          adminName: 'Administrador',
+          companyName: 'Demo Company',
+          adminName: 'Administrator',
           adminPassword: demoPassword,
           isSetup: true,
         },
@@ -127,8 +127,8 @@ router.post('/', async (req, res) => {
     res.json({
       success: true,
       isSetup: true,
-      companyName: 'Empresa Demo',
-      adminName: 'Administrador',
+      companyName: 'Demo Company',
+      adminName: 'Administrator',
       stats: {
         categories: CATEGORIES.length,
         skills: SKILLS.length,

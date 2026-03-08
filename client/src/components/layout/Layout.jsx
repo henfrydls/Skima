@@ -226,7 +226,7 @@ export default function Layout() {
       {/* Contenido Principal */}
       <main
         className={`
-          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out
+          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
@@ -244,8 +244,8 @@ export default function Layout() {
         {/* Demo banner - outside padding, sticky at top */}
         <DemoBanner />
 
-        {/* Content area - flex-1 fills remaining height */}
-        <div className="p-6 flex-1 bg-gray-50 flex flex-col">
+        {/* Content area */}
+        <div className="p-6 flex-1 flex flex-col">
           <Outlet />
         </div>
       </main>

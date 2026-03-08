@@ -42,13 +42,6 @@ describe('Demo Mode Middleware', () => {
       expect(res.body.error).toBe('DEMO_MODE');
     });
 
-    it('POST /api/seed-demo returns 403', async () => {
-      const res = await request(app).post('/api/seed-demo');
-
-      expect(res.status).toBe(403);
-      expect(res.body.error).toBe('DEMO_MODE');
-    });
-
     it('POST /api/reset-demo returns 403', async () => {
       const res = await request(app).post('/api/reset-demo');
 
@@ -150,6 +143,12 @@ describe('Demo Mode Middleware', () => {
 
     it('GET /api/export is not blocked', async () => {
       const res = await request(app).get('/api/export');
+
+      expect(res.status).not.toBe(403);
+    });
+
+    it('POST /api/seed-demo is not blocked', async () => {
+      const res = await request(app).post('/api/seed-demo');
 
       expect(res.status).not.toBe(403);
     });

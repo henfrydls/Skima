@@ -49,7 +49,7 @@ function TalentDistributionChart({ data }) {
   }
 
   return (
-    <div className="flex-1 min-h-[16rem]">
+    <div className="min-h-[16rem]" style={{ height: 'clamp(16rem, calc(100vh - 34rem), 28rem)' }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -175,11 +175,11 @@ function OperationalRisksList({ risks = [] }) {
 
   return (
     <div className="space-y-2">
-      {risks.slice(0, 3).map((risk, idx) => (
+      {risks.slice(0, 5).map((risk, idx) => (
         <RiskItem key={risk.id || idx} risk={risk} index={idx} />
       ))}
-      
-      {risks.length > 3 && (
+
+      {risks.length > 5 && (
         <Link 
           to="/team-matrix"
           className="block text-center text-xs text-primary hover:underline py-1"
@@ -221,7 +221,7 @@ export default function StrategicInsights({
   automaticInsight = null
 }) {
   return (
-    <div className="grid lg:grid-cols-3 gap-6 flex-1">
+    <div className="grid lg:grid-cols-3 gap-6">
       {/* Talent Distribution Chart - 2/3 width */}
       <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
         <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4">

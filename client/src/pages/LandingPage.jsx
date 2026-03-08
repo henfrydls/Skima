@@ -160,6 +160,7 @@ export default function LandingPage() {
               icon={<Shield size={24} />}
               title="Role Profiles"
               description="Define expected skills per role. Measure coverage and identify training priorities."
+              image="/screenshots/skima-roles.png"
             />
           </div>
         </div>
