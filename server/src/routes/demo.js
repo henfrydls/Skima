@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
       });
 
       return snapshots.length;
-    });
+    }, { timeout: 30000 });
 
     res.json({
       success: true,
@@ -139,7 +139,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('[API] POST /api/seed-demo failed:', error);
-    res.status(500).json({ error: 'Error al crear datos demo' });
+    res.status(500).json({ error: 'Error creating demo data' });
   }
 });
 

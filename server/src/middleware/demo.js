@@ -1,7 +1,6 @@
 const DEMO_BLOCKED = [
   ['POST',   /^\/api\/reset-database$/],
   ['POST',   /^\/api\/setup$/],
-  ['POST',   /^\/api\/seed-demo$/],
   ['POST',   /^\/api\/reset-demo$/],
   ['POST',   /^\/api\/import$/],
   ['PUT',    /^\/api\/config$/],
