@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   FlaskConical,
-  Download
+  Download,
+  ArrowLeftFromLine
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
@@ -167,6 +168,33 @@ export default function Layout() {
               </span>
             </NavLink>
           ))}
+
+          {/* Back to Site — online demo only */}
+          {isOnlineDemo && (
+            <>
+              <div className="border-t border-gray-100 my-2" />
+              <a
+                href="/"
+                onClick={(e) => {
+                  e.preventDefault();
+                  document.cookie = 'demo_active=; max-age=0; path=/';
+                  window.location.href = '/';
+                }}
+                className="flex items-center px-3 py-2.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors duration-150 overflow-hidden"
+                title={isCollapsed ? 'Back to Site' : undefined}
+              >
+                <ArrowLeftFromLine size={20} className="flex-shrink-0 min-w-[20px]" />
+                <span
+                  className={`
+                    whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3 delay-75'}
+                  `}
+                >
+                  Back to Site
+                </span>
+              </a>
+            </>
+          )}
         </nav>
 
         {/* Version badge */}
