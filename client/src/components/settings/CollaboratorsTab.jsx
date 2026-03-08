@@ -65,7 +65,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-medium text-gray-800">Nuevo Colaborador</h2>
+          <h2 className="text-lg font-medium text-gray-800">New Collaborator</h2>
           <button
             onClick={onClose}
             className="p-1 hover:bg-gray-100 rounded transition-colors"
@@ -78,7 +78,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre completo *
+              Full Name *
             </label>
             <input
               type="text"
@@ -92,7 +92,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rol / Posición *
+              Role / Position *
             </label>
             {hasRoles ? (
               <div className="relative">
@@ -102,7 +102,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-left flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary bg-white text-sm"
                 >
                   <span className={formData.rol ? 'text-gray-800' : 'text-gray-400'}>
-                    {formData.rol || 'Seleccionar rol...'}
+                    {formData.rol || 'Select role...'}
                   </span>
                   <svg className={`w-4 h-4 text-gray-400 transition-transform ${roleDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -137,7 +137,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
               <div className="px-3 py-3 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm">
                 <p className="text-amber-700 flex items-center gap-1.5">
                   <AlertCircle size={14} />
-                  No hay perfiles creados. Ve a la pestaña <strong>Perfiles de Puesto</strong> primero.
+                  No profiles created. Go to the <strong>Role Profiles</strong> tab first.
                 </p>
               </div>
             )}
@@ -149,13 +149,13 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
             onClick={() => setShowOptional(!showOptional)}
             className="text-sm text-primary hover:underline"
           >
-            {showOptional ? 'Ocultar campos opcionales' : 'Mostrar campos opcionales'}
+            {showOptional ? 'Hide optional fields' : 'Show optional fields'}
           </button>
 
           {showOptional && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email (opcional)
+                Email (optional)
               </label>
               <input
                 type="email"
@@ -174,7 +174,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
               onClick={onClose}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
             <button
               type="submit"
@@ -185,7 +185,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
             >
-              Crear
+              Create
             </button>
           </div>
         </form>
@@ -229,7 +229,7 @@ function EditableCell({ value, onSave, isEditing, onStartEdit, onCancelEdit }) {
     <span 
       onClick={onStartEdit}
       className="cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition-colors inline-block"
-      title="Click para editar"
+      title="Click to edit"
     >
       {value}
     </span>
@@ -257,7 +257,7 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
 
   if (disabled) {
     return (
-      <span className="font-medium text-gray-500 cursor-not-allowed" title="No se puede editar rol de usuario desactivado">
+      <span className="font-medium text-gray-500 cursor-not-allowed" title="Cannot edit role of deactivated user">
         {value}
       </span>
     );
@@ -309,7 +309,7 @@ function RoleSelectCell({ value, availableRoles, roleProfiles, onSave, onNavigat
               className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/5 flex items-center gap-2 font-medium"
             >
               <Briefcase size={14} />
-              Nuevo perfil...
+              New profile...
             </button>
           </div>
         </>
@@ -356,7 +356,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
                 onStartEdit={() => !isArchived && setEditingField('nombre')}
                 onCancelEdit={() => setEditingField(null)}
             />
-            {isArchived && <span className="text-[10px] uppercase font-bold text-gray-400">Desactivado</span>}
+            {isArchived && <span className="text-[10px] uppercase font-bold text-gray-400">Deactivated</span>}
           </div>
         </div>
       </td>
@@ -386,10 +386,10 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
               <button
                 onClick={() => onNavigate('perfiles', { rol: collaborator.rol })}
                 className="text-xs text-warning hover:text-warning/80 flex items-center gap-1 transition-colors"
-                title="Click para definir el perfil de este rol"
+                title="Click to define this role's profile"
               >
                 <Briefcase size={12} />
-                Definir
+                Define
               </button>
             );
           }
@@ -398,7 +398,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
           return (
             <span 
               className="bg-gray-100 px-2 py-1 rounded text-xs cursor-help"
-              title={`${evaluatedCount} skills evaluadas de ${definedInProfile} requeridas por el perfil del puesto "${collaborator.rol}"`}
+              title={`${evaluatedCount} skills evaluated out of ${definedInProfile} required by the "${collaborator.rol}" role profile`}
             >
               {evaluatedCount}/{definedInProfile} skills
             </span>
@@ -417,7 +417,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
             })}
           </span>
         ) : (
-          <span className="text-gray-400 italic">Sin evaluar</span>
+          <span className="text-gray-400 italic">Not evaluated</span>
         )}
       </td>
 
@@ -464,7 +464,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
                 className={`w-full px-4 py-2 text-left text-sm flex items-center gap-2 ${isArchived ? 'text-gray-400 cursor-not-allowed' : 'text-gray-700 hover:bg-gray-50'}`}
               >
                 <Edit3 size={14} />
-                Editar completo
+                Full Edit
               </button>
               <button
                 onClick={() => {
@@ -474,7 +474,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
                 className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
               >
                 <Eye size={14} />
-                Ver evaluaciones
+                View evaluations
               </button>
               <hr className="my-1 border-gray-100" />
               
@@ -484,7 +484,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
                     className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-primary/5 flex items-center gap-2 font-medium"
                 >
                     <RotateCcw size={14} />
-                    Restaurar
+                    Restore
                 </button>
               ) : (
                 <button
@@ -492,7 +492,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
                     className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
                 >
                     <Trash2 size={14} />
-                    Desactivar
+                    Deactivate
                 </button>
               )}
             </div>
@@ -620,11 +620,11 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       
       setCollaborators([createdWithUIProps, ...collaborators]);
       invalidatePreload();
-      toast.success('Colaborador creado');
+      toast.success('Collaborator created');
     } catch (err) {
       if (err.message === 'SESSION_EXPIRED') return; // Modal will handle this
       console.error('Error creating:', err);
-      toast.error('Error al crear colaborador');
+      toast.error('Error creating collaborator');
     }
   };
 
@@ -658,7 +658,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       // Rollback optimistic update on any error
       console.error('Error updating:', err);
       setCollaborators(originalCollaborators);
-      toast.error(`Error al actualizar "${originalItem?.nombre || 'colaborador'}". Cambios revertidos.`);
+      toast.error(`Error updating "${originalItem?.nombre || 'collaborator'}". Changes reverted.`);
     }
   };
 
@@ -679,14 +679,14 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
     const handleUndo = () => {
        isUndone = true;
        setCollaborators(prevCollaborators);
-       toast.success('Desactivación deshecha');
+       toast.success('Deactivation undone');
     };
     
     // 3. Show Toast
     toast.custom((t) => (
       <ToastUndo 
         t={t}
-        message={`"${name}" desactivado`}
+        message={`"${name}" deactivated`}
         onUndo={handleUndo}
         duration={4000}
       />
@@ -713,7 +713,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             invalidatePreload();
          } catch(err) {
              if (err.message !== 'SESSION_EXPIRED') {
-                toast.error('Error sincronizando desactivación');
+                toast.error('Error syncing deactivation');
                 setCollaborators(prevCollaborators); // Revert
              }
          }
@@ -735,10 +735,10 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
         });
         if (!response.ok) throw new Error('Failed');
         invalidatePreload();
-        toast.success('Colaborador restaurado');
+        toast.success('Collaborator restored');
      } catch (err) {
         setCollaborators(prevCollaborators);
-        toast.error('Error restaurando colaborador');
+        toast.error('Error restoring collaborator');
      }
   };
 
@@ -772,9 +772,9 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
       <>
         <EmptyState
           icon={UserPlus}
-          title="No hay colaboradores aún"
-          description="Agrega a los miembros del equipo que evaluarás."
-          actionLabel="Crear uno"
+          title="No collaborators yet"
+          description="Add team members you'll evaluate."
+          actionLabel="Create one"
           onAction={() => setShowCreateModal(true)}
         />
         <CreateCollaboratorModal
@@ -796,7 +796,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar colaborador..."
+            placeholder="Search collaborator..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
@@ -806,7 +806,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
         {/* Actions */}
         <div className="flex items-center gap-3">
           <p className="text-sm text-gray-500 hidden sm:block">
-            {filteredCollaborators.length} colaborador{filteredCollaborators.length !== 1 ? 'es' : ''}
+            {filteredCollaborators.length} collaborator{filteredCollaborators.length !== 1 ? 's' : ''}
           </p>
           <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
 
@@ -819,7 +819,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             }`}
           >
             <Archive size={14} />
-            {showArchived ? 'Ocultar inactivos' : 'Ver inactivos'}
+            {showArchived ? 'Hide inactive' : 'View inactive'}
           </button>
           
           <button
@@ -827,7 +827,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Plus size={18} />
-            Nuevo Colaborador
+            New Collaborator
           </button>
         </div>
       </div>
@@ -838,22 +838,22 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
           <thead>
             <tr className="bg-gray-50 border-b border-gray-100">
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Nombre
+                Name
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Rol
+                Role
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
                 Skills
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Última Evaluación
+                Last Evaluation
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Promedio
+                Average
               </th>
               <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wide">
-                Acciones
+                Actions
               </th>
             </tr>
           </thead>
@@ -878,7 +878,7 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
 
         {filteredCollaborators.length === 0 && searchQuery && (
           <div className="p-8 text-center text-gray-500">
-            No se encontraron resultados para "{searchQuery}"
+            No results found for "{searchQuery}"
           </div>
         )}
       </div>
@@ -895,9 +895,9 @@ export default function CollaboratorsTab({ onNavigate, isActive, dataVersion = 0
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
         onConfirm={confirmDelete}
-        title="Desactivar Colaborador"
-        message={`¿Estás seguro que deseas desactivar a ${deleteModal.name}? Esta acción se puede deshacer temporalmente.`}
-        confirmText="Desactivar"
+        title="Deactivate Collaborator"
+        message={`Are you sure you want to deactivate ${deleteModal.name}? This action can be temporarily undone.`}
+        confirmText="Deactivate"
         variant="danger"
       />
       

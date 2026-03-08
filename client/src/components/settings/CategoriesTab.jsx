@@ -102,7 +102,7 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-sm mx-4 animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
           <h2 className="text-lg font-medium text-gray-800">
-            {isEdit ? 'Editar Categoría' : 'Nueva Categoría'}
+            {isEdit ? 'Edit Category' : 'New Category'}
           </h2>
           <button 
             onClick={onClose}
@@ -115,28 +115,28 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre *
+              Name *
             </label>
             <input
               type="text"
               value={formData.nombre}
               onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="Innovación & Diseño"
+              placeholder="Innovation & Design"
               required
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Abreviatura *
+              Abbreviation *
             </label>
             <input
               type="text"
               value={formData.abrev}
               onChange={(e) => setFormData({ ...formData, abrev: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="Innovación"
+              placeholder="Innovation"
               required
             />
           </div>
@@ -147,13 +147,13 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
               variant="secondary"
               onClick={onClose}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="submit"
               isLoading={isLoading}
             >
-              {isEdit ? 'Guardar' : 'Crear'}
+              {isEdit ? 'Save' : 'Create'}
             </Button>
           </div>
         </form>
@@ -230,7 +230,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
         <span className="text-sm text-gray-400 ml-2">({category.abrev})</span>
         {isArchived && (
           <span className="ml-2 text-xs bg-gray-200 text-gray-600 px-2 py-0.5 rounded-full">
-            Archivado
+            Archived
           </span>
         )}
       </div>
@@ -260,7 +260,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
                     onClick={() => { onEdit(category); setShowMenu(false); }}
                   >
                     <Edit3 size={14} />
-                    Editar
+                    Edit
                   </button>
                   <hr className="my-1 border-gray-100" />
                   <button
@@ -268,7 +268,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
                     className="w-full px-4 py-2 text-left text-sm text-critical hover:bg-critical/5 flex items-center gap-2"
                   >
                     <Trash2 size={14} />
-                    Archivar
+                    Archive
                   </button>
                 </>
               ) : (
@@ -277,7 +277,7 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
                   className="w-full px-4 py-2 text-left text-sm text-competentDark hover:bg-competent/10 flex items-center gap-2"
                 >
                   <RotateCcw size={14} />
-                  Restaurar
+                  Restore
                 </button>
               )}
             </div>
@@ -302,8 +302,8 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
             <AlertTriangle size={20} className="text-warning" />
           </div>
           <div>
-            <h2 className="text-lg font-medium text-gray-800">Archivar Categoría</h2>
-            <p className="text-sm text-gray-500">Esta acción afectará múltiples elementos</p>
+            <h2 className="text-lg font-medium text-gray-800">Archive Category</h2>
+            <p className="text-sm text-gray-500">This action will affect multiple items</p>
           </div>
           <button 
             onClick={onClose}
@@ -315,13 +315,13 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
 
         <div className="p-4 space-y-4">
           <p className="text-gray-700">
-            ¿Estás seguro que deseas archivar <strong>"{category.nombre}"</strong>?
+            Are you sure you want to archive <strong>"{category.nombre}"</strong>?
           </p>
           
           {affectedSkills.length > 0 ? (
             <div className="bg-gray-50 rounded-lg p-3 max-h-40 overflow-y-auto">
               <p className="text-sm font-medium text-gray-600 mb-2">
-                {affectedSkills.length} skill{affectedSkills.length !== 1 ? 's' : ''} afectada{affectedSkills.length !== 1 ? 's' : ''}:
+                {affectedSkills.length} skill{affectedSkills.length !== 1 ? 's' : ''} affected:
               </p>
               <ul className="space-y-1">
                 {affectedSkills.map(skill => (
@@ -334,13 +334,13 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
             </div>
           ) : (
             <p className="text-sm text-gray-500">
-              Esta categoría no tiene skills asociadas, pero se ocultará de la lista principal.
+              This category has no associated skills, but it will be hidden from the main list.
             </p>
           )}
 
           <p className="text-sm text-gray-500">
-            Los elementos archivados no aparecerán en Team Matrix, evaluaciones ni perfiles de puesto. 
-            Podrás restaurarlos desde "Ver archivados".
+            Archived items will not appear in Team Matrix, evaluations, or role profiles.
+            You can restore them from "Show archived".
           </p>
         </div>
 
@@ -349,14 +349,14 @@ function ConfirmArchiveModal({ isOpen, onClose, onConfirm, category, skills, isL
             variant="secondary"
             onClick={onClose}
           >
-            Cancelar
+            Cancel
           </Button>
           <Button
             variant="danger"
             onClick={onConfirm}
             isLoading={isLoading}
           >
-            Archivar todo ({affectedSkills.length + 1} items)
+            Archive all ({affectedSkills.length + 1} items)
           </Button>
         </div>
       </div>
@@ -424,7 +424,7 @@ export default function CategoriesTab() {
         setCategories(catData);
         setSkills(skillData);
       } catch (err) {
-        setError('Error cargando categorías');
+        setError('Error loading categories');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -471,7 +471,7 @@ export default function CategoriesTab() {
         invalidatePreload();
         setShowModal(false);
       } catch (_err) {
-        setError('Error creando categoría');
+        setError('Error creating category');
       } finally {
         setIsSaving(false);
       }
@@ -504,7 +504,7 @@ export default function CategoriesTab() {
         setShowModal(false);
         setEditingCategory(null);
       } catch (_err) {
-        setError('Error actualizando categoría');
+        setError('Error updating category');
       } finally {
         setIsSaving(false);
       }
@@ -539,7 +539,7 @@ export default function CategoriesTab() {
       isUndone = true;
       setCategories(prevCategories);
       setSkills(prevSkills);
-      toast.success('Archivado deshecho');
+      toast.success('Archive undone');
     };
 
     // 3. Show Toast
@@ -547,7 +547,7 @@ export default function CategoriesTab() {
       <ToastUndo 
         t={t}
         // message={`"${category.nombre}" archivada`}
-        message="Categoría archivada" 
+        message="Category archived"
         onUndo={handleUndo}
         duration={4000}
       />
@@ -575,7 +575,7 @@ export default function CategoriesTab() {
             }
             invalidatePreload();
          } catch {
-            toast.error('Error sincronizando archivado');
+            toast.error('Error syncing archive');
             setCategories(prevCategories);
             setSkills(prevSkills);
          }
@@ -616,7 +616,7 @@ export default function CategoriesTab() {
         ));
         invalidatePreload();
       } catch (_err) {
-        setError('Error restaurando categoría');
+        setError('Error restoring category');
       }
     });
   };
@@ -677,7 +677,7 @@ export default function CategoriesTab() {
           onClick={() => window.location.reload()} 
           className="mt-4 text-primary hover:underline"
         >
-          Reintentar
+          Retry
         </button>
       </div>
     );
@@ -689,9 +689,9 @@ export default function CategoriesTab() {
       <>
         <EmptyState 
           icon={FolderPlus}
-          title="No hay categorías"
-          description="Las categorías ayudan a organizar las skills por área temática. Crea tu primera categoría para empezar."
-          actionLabel="Crear Categoría"
+          title="No categories yet"
+          description="Categories help organize skills by topic area. Create your first category to get started."
+          actionLabel="Create Category"
           onAction={() => setShowModal(true)} 
         />
         <CategoryModal
@@ -718,7 +718,7 @@ export default function CategoriesTab() {
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar categoría..."
+            placeholder="Search category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
@@ -728,7 +728,7 @@ export default function CategoriesTab() {
         {/* Actions */}
         <div className="flex items-center gap-3">
           <p className="text-sm text-gray-500 hidden sm:block">
-            {filteredCategories.length} categoría{filteredCategories.length !== 1 ? 's' : ''}
+            {filteredCategories.length} {filteredCategories.length !== 1 ? 'categories' : 'category'}
           </p>
           <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
           
@@ -741,7 +741,7 @@ export default function CategoriesTab() {
             }`}
           >
             <Archive size={14} />
-            {showArchived ? 'Ocultar archivados' : 'Ver archivados'}
+            {showArchived ? 'Hide archived' : 'Show archived'}
           </button>
           
           <button
@@ -749,7 +749,7 @@ export default function CategoriesTab() {
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Plus size={18} />
-            Nueva Categoría
+            New Category
           </button>
         </div>
       </div>

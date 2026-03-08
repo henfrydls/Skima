@@ -6,13 +6,13 @@ import EmptyState from '../EmptyState';
 describe('EmptyState', () => {
   it('renders without crashing', () => {
     render(<EmptyState />);
-    expect(screen.getByText('No hay datos disponibles')).toBeInTheDocument();
+    expect(screen.getByText('No data available')).toBeInTheDocument();
   });
 
   it('displays default title and description', () => {
     render(<EmptyState />);
-    expect(screen.getByText('No hay datos disponibles')).toBeInTheDocument();
-    expect(screen.getByText('No se encontraron elementos para mostrar.')).toBeInTheDocument();
+    expect(screen.getByText('No data available')).toBeInTheDocument();
+    expect(screen.getByText('No items were found to display.')).toBeInTheDocument();
   });
 
   it('displays custom title and description', () => {
@@ -46,7 +46,7 @@ describe('EmptyState', () => {
   it('shows action button when onAction is provided', () => {
     const handleAction = vi.fn();
     render(<EmptyState onAction={handleAction} />);
-    expect(screen.getByRole('button', { name: 'Agregar' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Add' })).toBeInTheDocument();
   });
 
   it('displays custom action label', () => {

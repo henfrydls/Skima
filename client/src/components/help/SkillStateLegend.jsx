@@ -19,27 +19,27 @@ export default function SkillStateLegend({ compact = false, className = '' }) {
   const states = [
     {
       id: 'critical',
-      label: 'Brecha Crítica',
+      label: 'Critical Gap',
       dotClasses: 'w-4 h-4 rounded-full bg-gray-300 ring-2 ring-rose-500 ring-offset-1',
-      criteria: 'Skill crítica (C) + uso frecuente (D/S) + nivel < 3'
+      criteria: 'Critical skill (C) + frequent use (D/W) + level < 3'
     },
     {
       id: 'improvement',
-      label: 'Área de Mejora',
+      label: 'Area for Improvement',
       dotClasses: 'w-4 h-4 rounded-full bg-gray-300 ring-2 ring-amber-400 ring-offset-1',
-      criteria: 'Skill crítica con nivel < 3.5 o importante con nivel < 3'
+      criteria: 'Critical skill with level < 3.5 or important with level < 3'
     },
     {
       id: 'competent',
-      label: 'Competente',
+      label: 'Competent',
       dotClasses: 'w-4 h-4 rounded-full bg-competent',
-      criteria: 'Cumple requisitos mínimos del rol (nivel 3-4)'
+      criteria: 'Meets minimum role requirements (level 3-4)'
     },
     {
       id: 'strength',
-      label: 'Fortaleza',
+      label: 'Strength',
       dotClasses: 'w-4 h-4 rounded-full bg-primary',
-      criteria: 'Nivel >= 4, dominio avanzado'
+      criteria: 'Level >= 4, advanced mastery'
     }
   ];
 
@@ -47,14 +47,14 @@ export default function SkillStateLegend({ compact = false, className = '' }) {
     <div className={`bg-gray-50 rounded-lg p-4 ${className}`}>
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
-          Estados de Evaluación
+          Evaluation States
         </h4>
         {!compact && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center gap-1 text-xs text-primary hover:text-primary/80 transition-colors"
           >
-            <span>{isExpanded ? 'Ocultar reglas' : 'Ver reglas'}</span>
+            <span>{isExpanded ? 'Hide rules' : 'View rules'}</span>
             <ChevronDown
               size={14}
               className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}

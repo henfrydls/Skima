@@ -16,31 +16,31 @@ import { getTrendColor } from '../../lib/evolutionLogic';
 const FILTER_OPTIONS = [
   {
     id: 'all',
-    label: 'Todos',
-    description: 'Mostrar todos los colaboradores',
+    label: 'All',
+    description: 'Show all collaborators',
     filter: () => true
   },
   {
     id: 'critical',
-    label: 'Con Brechas',
+    label: 'With Gaps',
     icon: AlertTriangle,
-    description: 'Colaboradores con al menos una skill en nivel inferior al requerido por su rol',
+    description: 'Collaborators with at least one skill below the level required by their role',
     // Only evaluated collaborators with gaps
     filter: (c) => c.hasEvaluations && c.brechas?.length > 0
   },
   {
     id: 'experts',
-    label: 'Expertos',
+    label: 'Experts',
     icon: Star,
-    description: 'Colaboradores con promedio general ≥ 4.0. Candidatos a mentorías',
+    description: 'Collaborators with overall average >= 4.0. Mentorship candidates',
     // Updated: >= 4.0, only evaluated collaborators
     filter: (c) => c.hasEvaluations && c.promedio >= 4.0
   },
   {
     id: 'attention',
-    label: 'Requieren Atención',
+    label: 'Need Attention',
     icon: TrendingUp,
-    description: 'Promedio < 2.5 o skill crítica (C) con nivel bajo. Priorizar desarrollo',
+    description: 'Average < 2.5 or critical skill (C) with low level. Prioritize development',
     // Aligned with Evolution "Requieren Soporte" server logic
     filter: (c) => {
       if (!c.hasEvaluations) return false;
@@ -55,9 +55,9 @@ const FILTER_OPTIONS = [
   },
   {
     id: 'unevaluated',
-    label: 'Sin Evaluar',
+    label: 'Unevaluated',
     icon: AlertTriangle,
-    description: 'Colaboradores que aún no tienen sesiones de evaluación registradas',
+    description: 'Collaborators that do not have any recorded evaluation sessions yet',
     // Collaborators without evaluations
     filter: (c) => !c.hasEvaluations
   },
@@ -67,7 +67,7 @@ const FILTER_OPTIONS = [
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const pointData = payload[0].payload;
-    const label = pointData.label || 'Promedio';
+    const label = pointData.label || 'Average';
     
     return (
       <div 
@@ -93,7 +93,7 @@ function Sparkline({ data, trend }) {
   const chartData = data.map((value, i, arr) => ({ 
     value, 
     index: i,
-    label: i === 0 ? 'Inicio' : i === arr.length - 1 ? 'Actual' : 'Histórico'
+    label: i === 0 ? 'Start' : i === arr.length - 1 ? 'Current' : 'Historical'
   }));
   
   const color = getTrendColor(trend);
@@ -143,14 +143,14 @@ function Badge({ type, children }) {
 function getCollaboratorBadge(collaborator) {
   // Check if collaborator has no evaluations
   if (!collaborator.hasEvaluations) {
-    return { type: 'unevaluated', label: 'Sin Evaluar', icon: AlertTriangle };
+    return { type: 'unevaluated', label: 'Unevaluated', icon: AlertTriangle };
   }
   
   // Check for critical gaps first (highest priority)
   const hasCriticalGap = collaborator.brechas?.some(b => b.estado === 'BRECHA CRÍTICA');
   
   if (hasCriticalGap) {
-    return { type: 'critical', label: 'Brechas Críticas', icon: AlertTriangle };
+    return { type: 'critical', label: 'Critical Gaps', icon: AlertTriangle };
   }
   if (collaborator.promedio >= 4.0) {
     return { type: 'top-performer', label: 'Top Performer', icon: Star };
@@ -203,10 +203,10 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
             {hasRoleChanged && (
               <span 
                 className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-600 border border-blue-100"
-                title={`Cambió de puesto desde la última evaluación (${previousRole} → ${collaborator.rol})`}
+                title={`Role changed since last evaluation (${previousRole} → ${collaborator.rol})`}
               >
                 <GitCompare size={10} />
-                Cambio
+                Changed
               </span>
             )}
           </div>
@@ -286,13 +286,13 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
             {/* +N badge - only on desktop if more than 5 */}
             {remaining > 0 && (
               <span className="hidden lg:inline-flex text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-                +{remaining} más
+                +{remaining} more
               </span>
             )}
             {/* Mobile remaining count (if more than 3) */}
             {sortedEntries.length > mobileLimit && (
               <span className="lg:hidden text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-500">
-                +{sortedEntries.length - mobileLimit} más
+                +{sortedEntries.length - mobileLimit} more
               </span>
             )}
           </div>
@@ -303,9 +303,9 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
 }
 
 const SORT_OPTIONS = [
-  { value: 'name', label: 'Por nombre' },
-  { value: 'score-desc', label: 'Mayor promedio' },
-  { value: 'score', label: 'Menor promedio' },
+  { value: 'name', label: 'By name' },
+  { value: 'score-desc', label: 'Highest average' },
+  { value: 'score', label: 'Lowest average' },
 ];
 
 function SortDropdown({ value, onChange }) {
@@ -397,7 +397,7 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
             <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por nombre o rol..."
+              placeholder="Search by name or role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg
@@ -439,14 +439,14 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
       {/* Results count */}
       <div className="flex items-center justify-between px-1">
         <p className="text-sm text-gray-500">
-          {filteredCollaborators.length} colaborador{filteredCollaborators.length !== 1 ? 'es' : ''}
+          {filteredCollaborators.length} collaborator{filteredCollaborators.length !== 1 ? 's' : ''}
         </p>
         {searchQuery && (
           <button
             onClick={() => setSearchQuery('')}
             className="text-sm text-primary hover:underline"
           >
-            Limpiar búsqueda
+            Clear search
           </button>
         )}
       </div>
@@ -467,7 +467,7 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
       {filteredCollaborators.length === 0 && (
         <div className="text-center py-12 bg-white rounded-lg border border-dashed border-gray-200">
           <Search size={40} className="mx-auto text-gray-300 mb-3" />
-          <p className="text-gray-500">No se encontraron colaboradores</p>
+          <p className="text-gray-500">No collaborators found</p>
           <button
             onClick={() => {
               setSearchQuery('');
@@ -475,7 +475,7 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
             }}
             className="mt-2 text-sm text-primary hover:underline"
           >
-            Limpiar filtros
+            Clear filters
           </button>
         </div>
       )}

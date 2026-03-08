@@ -28,11 +28,11 @@ export default function EvolutionPage() {
   const { data, loading, error, timeRange, setTimeRange } = useEvolutionData('12m');
 
   const timeOptions = [
-    { id: '6m', label: 'Últimos 6 Meses' },
-    { id: '12m', label: 'Últimos 12 Meses' },
-    { id: '24m', label: 'Últimos 24 Meses' },
-    { id: 'ytd', label: 'Año Actual (YTD)' },
-    { id: 'all', label: 'Todo el Historial' },
+    { id: '6m', label: 'Last 6 Months' },
+    { id: '12m', label: 'Last 12 Months' },
+    { id: '24m', label: 'Last 24 Months' },
+    { id: 'ytd', label: 'Year to Date (YTD)' },
+    { id: 'all', label: 'All History' },
   ];
 
   const selectedOption = timeOptions.find(o => o.id === timeRange);
@@ -61,13 +61,13 @@ export default function EvolutionPage() {
           <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-2xl">⚠️</span>
           </div>
-          <h2 className="text-lg font-medium text-slate-800 mb-2">Error al cargar datos</h2>
+          <h2 className="text-lg font-medium text-slate-800 mb-2">Error loading data</h2>
           <p className="text-sm text-slate-500 mb-4">{error}</p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm hover:bg-indigo-700 transition-colors"
           >
-            Reintentar
+            Retry
           </button>
         </div>
       </div>
@@ -80,10 +80,10 @@ export default function EvolutionPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-light text-slate-800">
-            Evolución de Talento
+            Talent Evolution
           </h1>
           <p className="text-sm text-gray-500 mt-1 capitalize">
-            Análisis de tendencias de competencia y retención de talento
+            Competency trends and talent retention analysis
           </p>
         </div>
 
@@ -131,24 +131,24 @@ export default function EvolutionPage() {
         
         {/* 1. MATURITY INDEX (Índice de Madurez) */}
         <StatCard
-          title="ÍNDICE DE MADUREZ"
+          title="MATURITY INDEX"
           value={maturityIndex ? maturityIndex.toFixed(1) : "0.0"}
-          subtext="vs período anterior"
+          subtext="vs previous period"
           icon={Activity}
           color="indigo"
           trend={periodDelta}
-          helpText="Promedio ponderado por rol · Meta: 4.0"
+          helpText="Weighted average by role · Goal: 4.0"
         />
 
         {/* 2. TOP PERFORMER */}
         <StatCard
-          title="MAYOR CRECIMIENTO"
-          value={topImprover ? topImprover.nombre : "Sin datos"}
-          subtext={topImprover ? "Impacto positivo en el equipo" : "Sin colaboradores con crecimiento positivo"}
+          title="TOP GROWTH"
+          value={topImprover ? topImprover.nombre : "No data"}
+          subtext={topImprover ? "Positive impact on the team" : "No collaborators with positive growth"}
           icon={TrendingUp}
           color="emerald"
           trend={topImprover ? topImprover.delta : null}
-          helpText="Colaborador con mayor delta positivo en el período"
+          helpText="Collaborator with highest positive delta in period"
         />
 
         {/* 3. SUPPORT FOCUS (Constructive approach) - Clickable to Team Matrix */}
@@ -157,14 +157,14 @@ export default function EvolutionPage() {
           onClick={() => navigate('/team-matrix?tab=colaboradores&filter=attention')}
         >
           <StatCard
-            title="REQUIEREN SOPORTE"
-            value={attentionCount > 0 ? `${attentionCount} Casos` : "Todo en Orden"}
-            subtext={attentionCount > 0 ? "Colaboradores con brechas críticas detectadas" : "Sin alertas de rendimiento"}
+            title="NEED SUPPORT"
+            value={attentionCount > 0 ? `${attentionCount} Cases` : "All Clear"}
+            subtext={attentionCount > 0 ? "Collaborators with critical gaps detected" : "No performance alerts"}
             icon={LifeBuoy}
             color="amber"
             trend={attentionCount > 0 ? -1 : 0}
             invertDelta={true}
-            helpText="Skills críticas (C) con nivel < 2.5"
+            helpText="Critical skills (C) with level < 2.5"
           />
         </div>
       </div>

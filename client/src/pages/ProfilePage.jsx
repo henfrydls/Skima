@@ -46,7 +46,7 @@ export default function ProfilePage() {
     e.preventDefault();
     
     if (formData.newPassword && formData.newPassword !== formData.confirmPassword) {
-      toast.error('Las contraseñas no coinciden');
+      toast.error('Passwords do not match');
       return;
     }
 
@@ -77,7 +77,7 @@ export default function ProfilePage() {
         throw new Error(data.error || 'Error updating config');
       }
 
-      toast.success('Perfil actualizado correctamente');
+      toast.success('Profile updated successfully');
       
       setFormData(prev => ({
         ...prev,
@@ -93,7 +93,7 @@ export default function ProfilePage() {
       }
     } catch (err) {
       console.error('Update error:', err);
-      toast.error(err.message || 'Error al actualizar el perfil');
+      toast.error(err.message || 'Error updating profile');
     } finally {
       setIsLoading(false);
     }
@@ -101,12 +101,12 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     logout();
-    toast.success('Sesión cerrada');
+    toast.success('Signed out');
     navigate('/');
   };
 
   const handleResetDatabase = async () => {
-    if (resetConfirmText !== 'BORRAR') return;
+    if (resetConfirmText !== 'DELETE') return;
     setIsResetting(true);
     try {
       const response = await authFetch('/api/reset-database', {
@@ -119,7 +119,7 @@ export default function ProfilePage() {
       navigate('/setup');
     } catch (err) {
       console.error('Reset error:', err);
-      toast.error('Error al resetear la base de datos');
+      toast.error('Error resetting the database');
     } finally {
       setIsResetting(false);
       setShowResetConfirm(false);
@@ -131,9 +131,9 @@ export default function ProfilePage() {
     <div className="max-w-2xl mx-auto space-y-6 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-light text-gray-900">Mi Perfil</h1>
+        <h1 className="text-2xl font-light text-gray-900">My Profile</h1>
         <p className="text-gray-500 mt-1">
-          Administra tu información personal y credenciales
+          Manage your personal information and credentials
         </p>
       </div>
 
@@ -142,7 +142,7 @@ export default function ProfilePage() {
         <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-sm">
           <FlaskConical size={16} className="text-amber-600 flex-shrink-0" />
           <span className="text-amber-800">
-            Estos son datos de ejemplo. Los cambios se perderán al configurar tu espacio real.
+            This is sample data. Changes will be lost when you set up your real workspace.
           </span>
         </div>
       )}
@@ -152,14 +152,14 @@ export default function ProfilePage() {
         {/* Organization Section */}
         <div>
           <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4">
-            Organización
+            Organization
           </h3>
           
           <div className="space-y-4">
             {/* Company Name */}
             <div>
               <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Nombre de la Organización
+                Organization Name
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -179,7 +179,7 @@ export default function ProfilePage() {
             {/* Admin Name */}
             <div>
               <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-1.5">
-                Nombre del Administrador
+                Administrator Name
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -210,7 +210,7 @@ export default function ProfilePage() {
               className={`transform transition-transform duration-200 ${showSecurity ? 'rotate-90' : ''}`} 
             />
             <span className="font-medium group-hover:underline">
-              Cambiar Contraseña / Opciones Avanzadas
+              Change Password / Advanced Options
             </span>
           </button>
 
@@ -222,14 +222,14 @@ export default function ProfilePage() {
                 <div className={`bg-gray-50/50 p-4 rounded-lg border border-gray-100 space-y-4 ${isDemo ? 'opacity-50' : ''}`}>
                   {isDemo && (
                     <p className="text-sm text-amber-700 bg-amber-50 px-3 py-2 rounded-lg">
-                      En modo demo la contraseña es <strong>admin123</strong>. Podrás configurar tu propia contraseña al crear tu espacio.
+                      In demo mode the password is <strong>admin123</strong>. You can set your own password when creating your workspace.
                     </p>
                   )}
                   {/* Current Password (only if exists) */}
                   {hasPassword && (
                     <div>
                       <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Contraseña Actual
+                        Current Password
                       </label>
                       <input
                         type="password"
@@ -248,7 +248,7 @@ export default function ProfilePage() {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Nueva Contraseña
+                        New Password
                       </label>
                       <input
                         type="password"
@@ -263,7 +263,7 @@ export default function ProfilePage() {
                     </div>
                     <div>
                       <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1.5">
-                        Confirmar Contraseña
+                        Confirm Password
                       </label>
                       <input
                         type="password"
@@ -293,12 +293,12 @@ export default function ProfilePage() {
             {isLoading ? (
               <>
                 <Loader2 className="animate-spin" size={16} />
-                Guardando...
+                Saving...
               </>
             ) : (
               <>
                 <Save size={16} />
-                Guardar Cambios
+                Save Changes
               </>
             )}
           </button>
@@ -309,7 +309,7 @@ export default function ProfilePage() {
       <div className="bg-white rounded-xl shadow-sm border border-critical/20 p-6">
         <h3 className="text-sm font-bold uppercase tracking-wide text-critical mb-4 flex items-center gap-2">
           <AlertTriangle size={14} />
-          Zona de Peligro
+          Danger Zone
         </h3>
         
         <div className="space-y-3">
@@ -317,8 +317,8 @@ export default function ProfilePage() {
           {(hasPassword || isDemo) && (
             <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
               <div>
-                <p className="text-sm font-medium text-gray-700">Cerrar Sesión</p>
-                <p className="text-xs text-gray-500">Salir de tu cuenta de administrador</p>
+                <p className="text-sm font-medium text-gray-700">Sign Out</p>
+                <p className="text-xs text-gray-500">Log out of your admin account</p>
               </div>
               <button
                 onClick={handleLogout}
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                          hover:bg-gray-100 transition-colors text-sm"
               >
                 <LogOut size={14} />
-                Cerrar Sesión
+                Sign Out
               </button>
             </div>
           )}
@@ -335,8 +335,8 @@ export default function ProfilePage() {
           {isDemo ? (
             <div className="flex items-center justify-between p-4 bg-primary/5 rounded-lg border border-primary/10">
               <div>
-                <p className="text-sm font-medium text-gray-700">Salir del Modo Demo</p>
-                <p className="text-xs text-gray-500">Configura tu espacio real con tus propios datos</p>
+                <p className="text-sm font-medium text-gray-700">Exit Demo Mode</p>
+                <p className="text-xs text-gray-500">Set up your real workspace with your own data</p>
               </div>
               <button
                 onClick={() => navigate('/setup')}
@@ -344,14 +344,14 @@ export default function ProfilePage() {
                          hover:bg-primary/90 transition-colors text-sm"
               >
                 <Settings size={14} />
-                Configurar mi espacio
+                Set up my workspace
               </button>
             </div>
           ) : (
             <div className="flex items-center justify-between p-4 bg-critical/5 rounded-lg border border-critical/10">
               <div>
-                <p className="text-sm font-medium text-gray-700">Resetear Base de Datos</p>
-                <p className="text-xs text-gray-500">Eliminar todos los datos y empezar de cero</p>
+                <p className="text-sm font-medium text-gray-700">Reset Database</p>
+                <p className="text-xs text-gray-500">Delete all data and start over</p>
               </div>
               <button
                 onClick={() => setShowResetConfirm(true)}
@@ -359,7 +359,7 @@ export default function ProfilePage() {
                          hover:bg-critical/10 transition-colors text-sm"
               >
                 <Trash2 size={14} />
-                Resetear
+                Reset
               </button>
             </div>
           )}
@@ -373,7 +373,7 @@ export default function ProfilePage() {
             <div className="flex items-center justify-between p-4 border-b border-gray-100">
               <h2 className="text-lg font-medium text-critical flex items-center gap-2">
                 <AlertTriangle size={18} />
-                Resetear Base de Datos
+                Reset Database
               </h2>
               <button
                 onClick={() => { setShowResetConfirm(false); setResetConfirmText(''); }}
@@ -384,7 +384,7 @@ export default function ProfilePage() {
             </div>
             <div className="p-4 space-y-4">
               <p className="text-sm text-gray-600">
-                Esta acción eliminará <strong>permanentemente</strong> todos los datos: colaboradores, evaluaciones, categorías, skills, perfiles de rol y configuración del sistema.
+                This action will <strong>permanently</strong> delete all data: collaborators, evaluations, categories, skills, role profiles, and system configuration.
               </p>
               <p className="text-sm text-gray-600">
                 Escribe <strong className="text-critical">BORRAR</strong> para confirmar.

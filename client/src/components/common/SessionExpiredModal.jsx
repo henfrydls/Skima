@@ -28,21 +28,21 @@ export default function SessionExpiredModal() {
           <div className="w-14 h-14 rounded-full bg-warning/20 flex items-center justify-center mb-3">
             <AlertTriangle className="w-7 h-7 text-warning" />
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">Sesión Expirada</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Session Expired</h2>
         </div>
-        
+
         {/* Body */}
         <div className="p-6 text-center">
           <p className="text-gray-600 mb-6">
-            Tu sesión ha expirado por inactividad o el token ya no es válido. 
-            Por favor, inicia sesión nuevamente para continuar.
+            Your session has expired due to inactivity or the token is no longer valid.
+            Please sign in again to continue.
           </p>
-          
+
           <button
             onClick={handleLogin}
             className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium shadow-sm"
           >
-            Iniciar Sesión
+            Sign In
           </button>
         </div>
       </div>

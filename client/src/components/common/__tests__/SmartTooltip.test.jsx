@@ -54,24 +54,24 @@ describe('SmartTooltip', () => {
     expect(screen.getByText('3.5')).toBeInTheDocument();
   });
 
-  it('displays frequency in Spanish', () => {
+  it('displays frequency in English', () => {
     render(<SmartTooltip info={mockInfo} />);
 
-    // 'D' should map to 'Diario'
-    expect(screen.getByText('Diario')).toBeInTheDocument();
+    // 'D' should map to 'Daily'
+    expect(screen.getByText('Daily')).toBeInTheDocument();
   });
 
-  it('displays criticality in Spanish', () => {
+  it('displays criticality in English', () => {
     render(<SmartTooltip info={mockInfo} />);
 
-    // 'C' should map to 'Crítico'
-    expect(screen.getByText('Crítico')).toBeInTheDocument();
+    // 'C' should map to 'Critical'
+    expect(screen.getByText('Critical')).toBeInTheDocument();
   });
 
   it('shows critical gap badge when estado is "BRECHA CRÍTICA"', () => {
     render(<SmartTooltip info={mockInfo} />);
 
-    expect(screen.getByText('Acción Requerida')).toBeInTheDocument();
+    expect(screen.getByText('Action Required')).toBeInTheDocument();
   });
 
   it('shows improvement area badge when estado is "ÁREA DE MEJORA"', () => {
@@ -82,7 +82,7 @@ describe('SmartTooltip', () => {
 
     render(<SmartTooltip info={infoWithMejora} />);
 
-    expect(screen.getByText('Plan de Desarrollo')).toBeInTheDocument();
+    expect(screen.getByText('Development Plan')).toBeInTheDocument();
   });
 
   it('does not show status badge for normal estado', () => {
@@ -93,8 +93,8 @@ describe('SmartTooltip', () => {
 
     render(<SmartTooltip info={infoWithNormalState} />);
 
-    expect(screen.queryByText('Acción Requerida')).not.toBeInTheDocument();
-    expect(screen.queryByText('Plan de Desarrollo')).not.toBeInTheDocument();
+    expect(screen.queryByText('Action Required')).not.toBeInTheDocument();
+    expect(screen.queryByText('Development Plan')).not.toBeInTheDocument();
   });
 
   it('handles missing frequency with fallback', () => {
@@ -105,7 +105,7 @@ describe('SmartTooltip', () => {
 
     render(<SmartTooltip info={infoWithoutFreq} />);
 
-    expect(screen.getByText('Sin definir')).toBeInTheDocument();
+    expect(screen.getByText('Not defined')).toBeInTheDocument();
   });
 
   it('handles missing criticality with fallback', () => {
@@ -195,14 +195,14 @@ describe('SmartTooltip', () => {
 
   it('maps all frequency codes correctly', () => {
     const frequencies = [
-      { code: 'D', expected: 'Diario' },
-      { code: 'S', expected: 'Semanal' },
-      { code: 'M', expected: 'Mensual' },
-      { code: 'Q', expected: 'Trimestral' },
-      { code: 'T', expected: 'Trimestral' },
-      { code: 'A', expected: 'Anual' },
-      { code: 'N', expected: 'Nunca' },
-      { code: 'P', expected: 'A Demanda' }
+      { code: 'D', expected: 'Daily' },
+      { code: 'S', expected: 'Weekly' },
+      { code: 'M', expected: 'Monthly' },
+      { code: 'Q', expected: 'Quarterly' },
+      { code: 'T', expected: 'Quarterly' },
+      { code: 'A', expected: 'Yearly' },
+      { code: 'N', expected: 'Never' },
+      { code: 'P', expected: 'On Demand' }
     ];
 
     frequencies.forEach(({ code, expected }) => {
@@ -221,9 +221,9 @@ describe('SmartTooltip', () => {
 
   it('maps all criticality codes correctly', () => {
     const criticalities = [
-      { code: 'C', expected: 'Crítico' },
-      { code: 'I', expected: 'Importante' },
-      { code: 'D', expected: 'Deseable' },
+      { code: 'C', expected: 'Critical' },
+      { code: 'I', expected: 'Important' },
+      { code: 'D', expected: 'Desirable' },
       { code: 'N', expected: 'N/A' }
     ];
 

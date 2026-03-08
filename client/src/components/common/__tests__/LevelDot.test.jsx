@@ -70,13 +70,13 @@ describe('LevelDot', () => {
   it('includes level in title attribute', () => {
     const { container } = render(<LevelDot level={3.5} />);
     const dot = container.querySelector('.rounded-full');
-    expect(dot).toHaveAttribute('title', 'Nivel: 3.5');
+    expect(dot).toHaveAttribute('title', 'Level: 3.5');
   });
 
-  it('includes CRÍTICO in title when isCriticalGap is true', () => {
+  it('includes CRITICAL in title when isCriticalGap is true', () => {
     const { container } = render(<LevelDot level={2} isCriticalGap={true} />);
     const dot = container.querySelector('.rounded-full');
-    expect(dot).toHaveAttribute('title', 'Nivel: 2 - CRÍTICO');
+    expect(dot).toHaveAttribute('title', 'Level: 2 - CRITICAL');
   });
 
   it('applies correct size classes', () => {

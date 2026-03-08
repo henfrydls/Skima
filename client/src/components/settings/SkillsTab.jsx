@@ -65,7 +65,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-surface">
           <h2 className="text-lg font-medium text-gray-800">
-            {skill ? 'Editar Skill' : 'Nueva Skill'}
+            {skill ? 'Edit Skill' : 'New Skill'}
           </h2>
           <button 
             onClick={onClose}
@@ -78,7 +78,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre de la skill *
+              Skill name *
             </label>
             <input
               type="text"
@@ -92,7 +92,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoría *
+              Category *
             </label>
             <div className="relative">
               <button
@@ -101,7 +101,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
                 className="w-full flex items-center justify-between px-3 py-2 border border-gray-200 rounded-lg bg-white hover:border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm"
               >
                 <span className="text-gray-700 font-medium">
-                  {categories.find(c => c.id === formData.categoriaId)?.nombre || 'Seleccionar categoría'}
+                  {categories.find(c => c.id === formData.categoriaId)?.nombre || 'Select category'}
                 </span>
                 <ChevronDown size={16} className={`text-gray-400 transition-transform ${catDropdownOpen ? 'rotate-180' : ''}`} />
               </button>
@@ -133,13 +133,13 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
               variant="secondary"
               onClick={onClose}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button
               type="submit"
               isLoading={isLoading}
             >
-              {skill ? 'Guardar' : 'Crear'}
+              {skill ? 'Save' : 'Create'}
             </Button>
           </div>
         </form>
@@ -219,7 +219,7 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
             className="w-full px-4 py-3 pl-12 text-left text-sm text-primary hover:bg-primary/5 transition-colors flex items-center gap-2"
           >
             <Plus size={14} />
-            Agregar skill a esta categoría
+            Add skill to this category
           </button>
         </div>
       )}
@@ -296,7 +296,7 @@ export default function SkillsTab({ isActive = false }) {
       setCategories(catData);
       setSkills(skillData);
     } catch (err) {
-      setError('Error cargando datos');
+      setError('Error loading data');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -361,9 +361,9 @@ export default function SkillsTab({ isActive = false }) {
         setSkills([...skills, newSkill]);
         invalidatePreload();
         setIsModalOpen(false);
-        toast.success('Skill creada exitosamente');
+        toast.success('Skill created successfully');
       } catch (err) {
-        toast.error('Error creando skill');
+        toast.error('Error creating skill');
       } finally {
         setIsSaving(false);
       }
@@ -395,9 +395,9 @@ export default function SkillsTab({ isActive = false }) {
         invalidatePreload();
         setIsModalOpen(false);
         setEditingSkill(null);
-        toast.success('Skill actualizada correctamente');
+        toast.success('Skill updated successfully');
       } catch (err) {
-        toast.error('Error actualizando skill');
+        toast.error('Error updating skill');
       } finally {
         setIsSaving(false);
       }
@@ -423,7 +423,7 @@ export default function SkillsTab({ isActive = false }) {
         }
         invalidatePreload();
       } catch (err) {
-        toast.error('Error sincronizando eliminación');
+        toast.error('Error syncing deletion');
         // force fetch to reset
         fetchData();
       }
@@ -441,13 +441,13 @@ export default function SkillsTab({ isActive = false }) {
     const handleUndo = () => {
       isUndone = true;
       setSkills(previousSkills);
-      toast.success('Acción deshecha');
+      toast.success('Action undone');
     };
     
     toast.custom((t) => (
       <ToastUndo 
         t={t}
-        message={`"${skill.nombre}" eliminado`}
+        message={`"${skill.nombre}" deleted`}
         onUndo={handleUndo}
         duration={4000}
       />
@@ -507,7 +507,7 @@ export default function SkillsTab({ isActive = false }) {
           onClick={() => window.location.reload()} 
           className="mt-4 text-primary hover:underline"
         >
-          Reintentar
+          Retry
         </button>
       </div>
     );
@@ -518,9 +518,9 @@ export default function SkillsTab({ isActive = false }) {
     return (
       <EmptyState
         icon={Layers}
-        title="Primero crea categorías"
-        description="Las skills se organizan dentro de categorías. Necesitas crear al menos una categoría antes de agregar skills."
-        actionLabel="Ir a Categorías"
+        title="Create categories first"
+        description="Skills are organized within categories. You need to create at least one category before adding skills."
+        actionLabel="Go to Categories"
         onAction={() => setSearchParams({ tab: 'categorias' })}
       />
     );
@@ -536,7 +536,7 @@ export default function SkillsTab({ isActive = false }) {
           <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Buscar skill o categoría..."
+            placeholder="Search skill or category..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
@@ -546,14 +546,14 @@ export default function SkillsTab({ isActive = false }) {
         {/* Actions */}
         <div className="flex items-center gap-3">
           <div className="text-sm text-gray-500 hidden sm:block">
-            {categories.length} categorías • {skills.length} skills
+            {categories.length} categories • {skills.length} skills
           </div>
           <button
             onClick={() => { setEditingSkill(null); setNewSkillCategory(null); setIsModalOpen(true); }}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
           >
             <Plus size={18} />
-            Nuevo Skill
+            New Skill
           </button>
         </div>
       </div>

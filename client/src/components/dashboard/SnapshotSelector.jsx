@@ -16,10 +16,10 @@ import toast from 'react-hot-toast';
 
 // Mock data para snapshots
 const MOCK_SNAPSHOTS = [
-  { id: 1, label: 'Diciembre 2024', value: '2024-12', date: new Date('2024-12-29'), isCurrent: true },
-  { id: 2, label: 'Septiembre 2024', value: '2024-09', date: new Date('2024-09-30'), isCurrent: false },
-  { id: 3, label: 'Junio 2024', value: '2024-06', date: new Date('2024-06-30'), isCurrent: false },
-  { id: 4, label: 'Marzo 2024', value: '2024-03', date: new Date('2024-03-31'), isCurrent: false },
+  { id: 1, label: 'December 2024', value: '2024-12', date: new Date('2024-12-29'), isCurrent: true },
+  { id: 2, label: 'September 2024', value: '2024-09', date: new Date('2024-09-30'), isCurrent: false },
+  { id: 3, label: 'June 2024', value: '2024-06', date: new Date('2024-06-30'), isCurrent: false },
+  { id: 4, label: 'March 2024', value: '2024-03', date: new Date('2024-03-31'), isCurrent: false },
 ];
 
 function getRelativeTime(date) {
@@ -27,10 +27,10 @@ function getRelativeTime(date) {
   const diffMs = now - date;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
   
-  if (diffDays < 7) return 'hace pocos días';
-  if (diffDays < 30) return `hace ${Math.floor(diffDays / 7)} semanas`;
-  if (diffDays < 365) return `hace ${Math.floor(diffDays / 30)} meses`;
-  return `hace más de 1 año`;
+  if (diffDays < 7) return 'a few days ago';
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+  return `over 1 year ago`;
 }
 
 export default function SnapshotSelector({ onSnapshotChange, onCompareChange, onModeChange }) {
@@ -71,9 +71,9 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
             <div className="flex items-center gap-3">
               <Clock size={18} className="text-warning flex-shrink-0" />
               <div>
-                <span className="text-sm font-medium text-warning">Modo Histórico</span>
+                <span className="text-sm font-medium text-warning">Historical Mode</span>
                 <span className="text-sm text-gray-600 ml-2">
-                  Viendo: <span className="font-medium">{currentSnapshot.label}</span>
+                  Viewing: <span className="font-medium">{currentSnapshot.label}</span>
                   <span className="text-gray-400 ml-1">({relativeTime})</span>
                 </span>
               </div>
@@ -83,7 +83,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-competent bg-competent/10 rounded-md hover:bg-competent hover:text-white transition-all"
             >
               <ArrowLeft size={14} />
-              Volver a hoy
+              Back to today
             </button>
           </div>
         </div>
@@ -106,7 +106,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
           {!isHistoricalMode && (
             <span className="flex items-center gap-1.5 text-competent">
               <span className="w-1.5 h-1.5 bg-competent rounded-full animate-pulse" />
-              <span className="font-medium">En vivo</span>
+              <span className="font-medium">Live</span>
             </span>
           )}
           
@@ -125,7 +125,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
           className="flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
           onClick={(e) => { e.stopPropagation(); setIsExpanded(!isExpanded); }}
         >
-          <span>{isExpanded ? 'Cerrar' : 'Cambiar'}</span>
+          <span>{isExpanded ? 'Close' : 'Change'}</span>
           {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </button>
       </div>
@@ -137,7 +137,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
             {/* Ver datos de */}
             <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-                Ver datos de
+                View data from
               </label>
               <select
                 value={currentSnapshot.value}
@@ -153,7 +153,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
               >
                 {MOCK_SNAPSHOTS.map(s => (
                   <option key={s.id} value={s.value}>
-                    {s.label} {s.isCurrent ? '✓ Actual' : ''}
+                    {s.label} {s.isCurrent ? '✓ Current' : ''}
                   </option>
                 ))}
               </select>
@@ -164,7 +164,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
             {/* Comparar con */}
             <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
-                Comparar con
+                Compare with
               </label>
               <select
                 value={compareSnapshot.value}
@@ -179,16 +179,16 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
 
             {/* Crear Snapshot */}
             <button
-              onClick={(e) => { e.stopPropagation(); toast('Crear snapshots estará disponible próximamente', { icon: '📸' }); }}
+              onClick={(e) => { e.stopPropagation(); toast('Snapshots will be available soon', { icon: '📸' }); }}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2"
             >
               <Camera size={16} />
-              <span className="hidden sm:inline">Crear</span>
+              <span className="hidden sm:inline">Create</span>
             </button>
           </div>
 
           <p className="text-xs text-gray-400 mt-3 pt-3 border-t border-gray-100">
-            Los deltas mostrados comparan {currentSnapshot.label} vs {compareSnapshot.label}
+            Deltas shown compare {currentSnapshot.label} vs {compareSnapshot.label}
           </p>
         </div>
       )}

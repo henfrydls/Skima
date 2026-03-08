@@ -58,16 +58,16 @@ export default function ProtectedRoute({ children }) {
     <div className="min-h-screen bg-background flex items-center justify-center">
       <div className="text-center">
         <h2 className="text-xl font-medium text-gray-800 mb-4">
-          Acceso Restringido
+          Access Denied
         </h2>
         <p className="text-gray-500 mb-6">
-          Esta sección requiere autenticación.
+          This section requires authentication.
         </p>
         <button
           onClick={() => setShowLoginModal(true)}
           className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
         >
-          Iniciar Sesión
+          Sign In
         </button>
       </div>
       

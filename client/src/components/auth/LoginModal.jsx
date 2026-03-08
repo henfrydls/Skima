@@ -39,7 +39,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.message || 'Error de autenticación');
+        setError(data.message || 'Authentication error');
         setIsLoading(false);
         return;
       }
@@ -48,7 +48,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
       onSuccess(data.token);
       setPassword('');
     } catch {
-      setError('Error de conexión con el servidor');
+      setError('Server connection error');
     } finally {
       setIsLoading(false);
     }
@@ -65,8 +65,8 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
               <Lock size={20} className="text-primary" />
             </div>
             <div>
-              <h2 className="font-semibold text-gray-800">Acceso Admin</h2>
-              <p className="text-xs text-gray-500">Ingresa la contraseña para continuar</p>
+              <h2 className="font-semibold text-gray-800">Admin Access</h2>
+              <p className="text-xs text-gray-500">Enter password to continue</p>
             </div>
           </div>
           <button 
@@ -88,7 +88,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña
+              Password
             </label>
             <input
               id="password"
@@ -108,7 +108,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
             disabled={!password}
             className="w-full py-3 hover-lift"
           >
-            Iniciar Sesión
+            Sign In
           </Button>
         </form>
 
@@ -116,7 +116,7 @@ export default function LoginModal({ isOpen, onClose, onSuccess }) {
         {showDevHint && (
           <div className="px-6 pb-4">
             <p className="text-xs text-gray-400 text-center">
-              Contraseña por defecto: <code className="bg-gray-100 px-1 rounded">admin123</code>
+              Default password: <code className="bg-gray-100 px-1 rounded">admin123</code>
             </p>
           </div>
         )}

@@ -91,7 +91,7 @@ function DistributionBar({ beginners, competent, experts, pctBeginners, pctCompe
   
   if (total === 0) {
     return (
-      <div className="h-3 rounded-full bg-gray-100 overflow-hidden" title="Sin datos">
+      <div className="h-3 rounded-full bg-gray-100 overflow-hidden" title="No data">
         <div className="h-full w-full bg-gray-200" />
       </div>
     );
@@ -123,11 +123,11 @@ function DistributionBar({ beginners, competent, experts, pctBeginners, pctCompe
       {/* Tooltip on hover */}
       <div className="absolute -top-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
         <div className="bg-gray-800 text-white text-xs px-3 py-1.5 rounded-lg whitespace-nowrap shadow-lg">
-          <span className="text-warning">{beginners} Principiantes</span>
+          <span className="text-warning">{beginners} Beginners</span>
           <span className="mx-1">•</span>
-          <span className="text-competent">{competent} Competentes</span>
+          <span className="text-competent">{competent} Competent</span>
           <span className="mx-1">•</span>
-          <span className="text-primary">{experts} Expertos</span>
+          <span className="text-primary">{experts} Experts</span>
         </div>
       </div>
     </div>
@@ -137,7 +137,7 @@ function DistributionBar({ beginners, competent, experts, pctBeginners, pctCompe
 // Weakest Skills List
 function WeakestSkillsList({ skills }) {
   if (skills.length === 0) {
-    return <p className="text-sm text-gray-400">No hay datos suficientes</p>;
+    return <p className="text-sm text-gray-400">Not enough data</p>;
   }
 
   return (
@@ -179,7 +179,7 @@ export default function CategoryHealthCard({
   const healthScore = distribution.total > 0 
     ? (distribution.experts * 3 + distribution.competent * 2 + distribution.beginners * 1) / distribution.total
     : 0;
-  const healthLabel = healthScore >= 2.5 ? 'Saludable' : healthScore >= 2 ? 'Moderado' : 'Requiere atención';
+  const healthLabel = healthScore >= 2.5 ? 'Healthy' : healthScore >= 2 ? 'Moderate' : 'Needs Attention';
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
@@ -215,15 +215,15 @@ export default function CategoryHealthCard({
         <div className="flex items-center gap-4 text-xs text-gray-500">
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-warning" />
-            <span>Principiantes ({distribution.pctBeginners}%)</span>
+            <span>Beginners ({distribution.pctBeginners}%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-competent" />
-            <span>Competentes ({distribution.pctCompetent}%)</span>
+            <span>Competent ({distribution.pctCompetent}%)</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full bg-primary" />
-            <span>Expertos ({distribution.pctExperts}%)</span>
+            <span>Experts ({distribution.pctExperts}%)</span>
           </div>
         </div>
       </button>
@@ -233,14 +233,14 @@ export default function CategoryHealthCard({
         <div className="border-t border-gray-100 p-6 bg-gray-50/30 animate-fade-in">
           <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
             <AlertTriangle size={14} className="text-warning" />
-            Top 3 Skills Más Débiles
+            Top 3 Weakest Skills
           </h4>
           <WeakestSkillsList skills={weakestSkills} />
           
           {/* Health Summary */}
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-500">
-              Estado general: <span className={`font-medium ${
+              Overall status: <span className={`font-medium ${
                 healthScore >= 2.5 ? 'text-primary' : 
                 healthScore >= 2 ? 'text-warning' : 'text-critical'
               }`}>{healthLabel}</span>

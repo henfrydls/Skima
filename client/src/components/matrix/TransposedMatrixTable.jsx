@@ -86,7 +86,7 @@ export default function TransposedMatrixTable({
   if (!collaborators.length) {
     return (
       <div className="text-center py-16 text-gray-500">
-        No hay datos de colaboradores
+        No collaborator data available
       </div>
     );
   }
@@ -219,7 +219,7 @@ export default function TransposedMatrixTable({
                             `}
                             tabIndex={onCellClick ? 0 : undefined}
                             role={onCellClick ? 'button' : undefined}
-                            aria-label={`${collab.nombre}: ${skill.nombre} - Nivel ${nivel}`}
+                            aria-label={`${collab.nombre}: ${skill.nombre} - Level ${nivel}`}
                             onKeyDown={(e) => {
                               if (onCellClick && (e.key === 'Enter' || e.key === ' ')) {
                                 e.preventDefault();
@@ -270,7 +270,7 @@ export default function TransposedMatrixTable({
       {/* Leyenda */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
-          <span className="font-medium">Niveles:</span>
+          <span className="font-medium">Levels:</span>
           <div className="flex items-center gap-1">
             <div className="w-4 h-4 rounded-full bg-gray-300" />
             <span className="text-xs">0-1</span>
@@ -289,11 +289,11 @@ export default function TransposedMatrixTable({
           </div>
           <div className="flex items-center gap-2 ml-4 pl-4 border-l border-gray-300">
             <div className="w-4 h-4 rounded-full bg-gray-300 ring-2 ring-rose-500 ring-offset-1" />
-            <span className="text-xs">Brecha Crítica</span>
+            <span className="text-xs">Critical Gap</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-4 h-4 rounded-full bg-gray-300 ring-2 ring-amber-400 ring-offset-1" />
-            <span className="text-xs">Área de Mejora</span>
+            <span className="text-xs">Needs Improvement</span>
           </div>
         </div>
       </div>

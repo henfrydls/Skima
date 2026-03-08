@@ -46,36 +46,36 @@ import toast from 'react-hot-toast';
 
 // Nivel options with descriptive labels - More vibrant colors for visibility
 const NIVELES = [
-  { value: 0, short: '0', label: 'Sin conocimiento', color: 'bg-gray-200 text-gray-600' },
-  { value: 1, short: '1', label: 'Conoce teoría', color: 'bg-gray-400 text-white' },
-  { value: 2, short: '2', label: 'Con supervisión', color: 'bg-warning text-white' },
-  { value: 3, short: '3', label: 'Autónomo', color: 'bg-competent text-white' },
-  { value: 4, short: '4', label: 'Puede guiar', color: 'bg-primary/80 text-white' },
-  { value: 5, short: '5', label: 'Experto/Referente', color: 'bg-primary text-white' },
+  { value: 0, short: '0', label: 'No Knowledge', color: 'bg-gray-200 text-gray-600' },
+  { value: 1, short: '1', label: 'Knows Theory', color: 'bg-gray-400 text-white' },
+  { value: 2, short: '2', label: 'Supervised', color: 'bg-warning text-white' },
+  { value: 3, short: '3', label: 'Autonomous', color: 'bg-competent text-white' },
+  { value: 4, short: '4', label: 'Can Guide', color: 'bg-primary/80 text-white' },
+  { value: 5, short: '5', label: 'Expert/Reference', color: 'bg-primary text-white' },
 ];
 
 // Frecuencia options with clear labels
 const FRECUENCIAS = [
-  { value: 'D', label: 'Diaria', desc: 'Usa esta skill todos los días' },
-  { value: 'S', label: 'Semanal', desc: 'Varias veces por semana' },
-  { value: 'M', label: 'Mensual', desc: 'Algunas veces al mes' },
-  { value: 'T', label: 'Trimestral', desc: 'Pocas veces al año' },
-  { value: 'N', label: 'No usa', desc: 'No aplica esta skill actualmente' },
+  { value: 'D', label: 'Daily', desc: 'Uses this skill every day' },
+  { value: 'S', label: 'Weekly', desc: 'Several times a week' },
+  { value: 'M', label: 'Monthly', desc: 'A few times a month' },
+  { value: 'T', label: 'Quarterly', desc: 'Every few months' },
+  { value: 'N', label: 'Not Used', desc: 'Does not actively use it' },
 ];
 
 // Evaluation states with descriptions
 const EVALUATION_STATES = {
-  'SIN EVALUAR': { color: 'bg-gray-100 text-gray-500', icon: '○', action: 'Completar evaluación' },
-  'SIN EXPERIENCIA': { color: 'bg-gray-200 text-gray-600', icon: '—', action: 'Evaluar necesidad de capacitación' },
-  'BRECHA CRÍTICA': { color: 'bg-critical text-white', icon: '!', action: 'Capacitación urgente' },
-  'ÁREA DE MEJORA': { color: 'bg-warning text-white', icon: '↗', action: 'Plan de desarrollo' },
-  'TALENTO SUBUTILIZADO': { color: 'bg-competentDark text-white', icon: '◇', action: 'Reasignar proyectos' },
-  'EN DESARROLLO': { color: 'bg-gray-400 text-white', icon: '→', action: 'Continuar práctica' },
-  'COMPETENTE': { color: 'bg-gray-500 text-white', icon: '✓', action: 'Mantener nivel' },
-  'FORTALEZA': { color: 'bg-primary/80 text-white', icon: '★', action: 'Potenciar como referente' },
-  'FORTALEZA CLAVE': { color: 'bg-primary text-white', icon: '★★', action: 'Compartir conocimiento' },
-  'BÁSICO': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Opcional según intereses' },
-  'NO APLICA': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill no relevante para este rol' },
+  'NOT EVALUATED': { color: 'bg-gray-100 text-gray-500', icon: '○', action: 'Complete evaluation' },
+  'NO EXPERIENCE': { color: 'bg-gray-200 text-gray-600', icon: '—', action: 'Assess training needs' },
+  'CRITICAL GAP': { color: 'bg-critical text-white', icon: '!', action: 'Urgent training needed' },
+  'AREA FOR IMPROVEMENT': { color: 'bg-warning text-white', icon: '↗', action: 'Development plan' },
+  'UNDERUTILIZED TALENT': { color: 'bg-competentDark text-white', icon: '◇', action: 'Reassign to projects' },
+  'IN DEVELOPMENT': { color: 'bg-gray-400 text-white', icon: '→', action: 'Continue practice' },
+  'COMPETENT': { color: 'bg-gray-500 text-white', icon: '✓', action: 'Maintain level' },
+  'STRENGTH': { color: 'bg-primary/80 text-white', icon: '★', action: 'Leverage as reference' },
+  'KEY STRENGTH': { color: 'bg-primary text-white', icon: '★★', action: 'Share knowledge' },
+  'BASIC': { color: 'bg-gray-300 text-gray-700', icon: '·', action: 'Optional based on interests' },
+  'NOT APPLICABLE': { color: 'bg-gray-100 text-gray-400', icon: '—', action: 'Skill not relevant for this role' },
 };
 
 // Unsaved Changes Dialog
@@ -88,29 +88,29 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
         <div className="p-6">
           <div className="flex items-center gap-3 text-warning mb-2">
             <AlertTriangle size={24} />
-            <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+            <h3 className="text-lg font-medium text-gray-900">Unsaved Changes</h3>
           </div>
           <p className="text-gray-600 mb-6">
-            Tienes modificaciones pendientes en esta evaluación. Si sales ahora, perderás los cambios.
+            You have pending modifications in this evaluation. If you leave now, you will lose your changes.
           </p>
           <div className="flex justify-end gap-3">
-            <button 
+            <button
               onClick={onCancel}
               className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
-            <button 
+            <button
               onClick={onDiscard}
               className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
             >
-              Descartar
+              Discard
             </button>
-            <button 
+            <button
               onClick={onSave}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors"
             >
-              Guardar
+              Save
             </button>
           </div>
         </div>
@@ -125,7 +125,7 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
  */
 function getFreshness(lastEvaluatedDate) {
   if (!lastEvaluatedDate) {
-    return { status: 'never', label: 'Sin evaluar', color: 'bg-gray-100 text-gray-500', days: null };
+    return { status: 'never', label: 'Not Evaluated', color: 'bg-gray-100 text-gray-500', days: null };
   }
   
   const now = new Date();
@@ -133,18 +133,18 @@ function getFreshness(lastEvaluatedDate) {
   const diffDays = Math.floor((now - lastDate) / (1000 * 60 * 60 * 24));
   
   if (diffDays < 30) {
-    return { status: 'fresh', label: 'Reciente', color: 'bg-competent/20 text-competent', days: diffDays };
+    return { status: 'fresh', label: 'Recent', color: 'bg-competent/20 text-competent', days: diffDays };
   } else if (diffDays < 90) {
-    return { status: 'aging', label: `Hace ${diffDays} días`, color: 'bg-warning/20 text-warning', days: diffDays };
+    return { status: 'aging', label: `${diffDays} days ago`, color: 'bg-warning/20 text-warning', days: diffDays };
   } else {
-    return { status: 'stale', label: '⚠ Desactualizada', color: 'bg-critical/20 text-critical', days: diffDays };
+    return { status: 'stale', label: 'Outdated', color: 'bg-critical/20 text-critical', days: diffDays };
   }
 }
 
 function formatDate(dateString) {
-  if (!dateString) return 'Nunca';
+  if (!dateString) return 'Never';
   const date = new Date(dateString);
-  return date.toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+  return date.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
 /**
@@ -153,66 +153,66 @@ function formatDate(dateString) {
 function evaluarSkill(nivel, frecuencia, criticidad) {
   // Handle nivel 0 + no usa based on criticality
   if (nivel === 0 && frecuencia === 'N') {
-    if (criticidad === 'C') return { estado: 'BRECHA CRÍTICA' }; // Critical skill not developed
-    if (criticidad === 'N') return { estado: 'NO APLICA' }; // Not relevant
-    return { estado: 'SIN EXPERIENCIA' }; // Important/Desirable but no experience
+    if (criticidad === 'C') return { estado: 'CRITICAL GAP' }; // Critical skill not developed
+    if (criticidad === 'N') return { estado: 'NOT APPLICABLE' }; // Not relevant
+    return { estado: 'NO EXPERIENCE' }; // Important/Desirable but no experience
   }
   
   if (nivel === 0) {
     // Nivel 0 with any frequency = problem if skill is critical/important
-    if (criticidad === 'C') return { estado: 'BRECHA CRÍTICA' };
-    if (criticidad === 'I') return { estado: 'ÁREA DE MEJORA' };
-    return { estado: 'BÁSICO' };
+    if (criticidad === 'C') return { estado: 'CRITICAL GAP' };
+    if (criticidad === 'I') return { estado: 'AREA FOR IMPROVEMENT' };
+    return { estado: 'BASIC' };
   }
 
   if (frecuencia === 'N') {
     // Has skill but never uses it
-    if (nivel >= 4) return { estado: 'TALENTO SUBUTILIZADO' };
-    return { estado: criticidad === 'N' ? 'NO APLICA' : 'BÁSICO' };
+    if (nivel >= 4) return { estado: 'UNDERUTILIZED TALENT' };
+    return { estado: criticidad === 'N' ? 'NOT APPLICABLE' : 'BASIC' };
   }
 
-  // BRECHA CRÍTICA: Critical + frequent use + low level
+  // CRITICAL GAP: Critical + frequent use + low level
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
-    return { estado: 'BRECHA CRÍTICA' };
+    return { estado: 'CRITICAL GAP' };
   }
-  
-  // ÁREA DE MEJORA: Critical + less frequent + low level
+
+  // AREA FOR IMPROVEMENT: Critical + less frequent + low level
   if (criticidad === 'C' && ['M', 'T'].includes(frecuencia) && nivel < 3) {
-    return { estado: 'ÁREA DE MEJORA' };
+    return { estado: 'AREA FOR IMPROVEMENT' };
   }
-  
-  // FORTALEZA CLAVE: Critical + frequent + high level
+
+  // KEY STRENGTH: Critical + frequent + high level
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel >= 4) {
-    return { estado: 'FORTALEZA CLAVE' };
+    return { estado: 'KEY STRENGTH' };
   }
-  
-  // ÁREA DE MEJORA: Important + frequent use + low level (needs attention!)
+
+  // AREA FOR IMPROVEMENT: Important + frequent use + low level (needs attention!)
   if (criticidad === 'I' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
-    return { estado: 'ÁREA DE MEJORA' };
+    return { estado: 'AREA FOR IMPROVEMENT' };
   }
-  
-  // EN DESARROLLO: Important/Desirable + mid level (not urgent, progressing)
+
+  // IN DEVELOPMENT: Important/Desirable + mid level (not urgent, progressing)
   if (['I', 'D'].includes(criticidad) && nivel >= 2 && nivel < 3) {
-    return { estado: 'EN DESARROLLO' };
+    return { estado: 'IN DEVELOPMENT' };
   }
-  
-  // COMPETENTE: Adequate level for the role
+
+  // COMPETENT: Adequate level for the role
   if (['C', 'I'].includes(criticidad) && nivel >= 3 && nivel < 4) {
-    return { estado: 'COMPETENTE' };
+    return { estado: 'COMPETENT' };
   }
-  
-  // FORTALEZA: High level in important skills
+
+  // STRENGTH: High level in important skills
   if (['C', 'I'].includes(criticidad) && nivel >= 4) {
-    return { estado: 'FORTALEZA' };
+    return { estado: 'STRENGTH' };
   }
-  
-  // BÁSICO: Low level in non-critical skills
+
+  // BASIC: Low level in non-critical skills
   if (nivel < 3 && ['D', 'N'].includes(criticidad)) {
-    return { estado: 'BÁSICO' };
+    return { estado: 'BASIC' };
   }
-  
+
   // Default
-  return { estado: nivel >= 3 ? 'COMPETENTE' : 'EN DESARROLLO' };
+  return { estado: nivel >= 3 ? 'COMPETENT' : 'IN DEVELOPMENT' };
 }
 
 // Custom Collaborator Dropdown
@@ -280,7 +280,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
       >
         <User size={16} className="text-gray-400 flex-shrink-0" />
         <span className={`flex-1 truncate ${selected ? 'text-gray-800' : 'text-gray-400'}`}>
-          {selected ? `${selected.nombre} — ${selected.rol}` : 'Seleccionar colaborador...'}
+          {selected ? `${selected.nombre} — ${selected.rol}` : 'Select collaborator...'}
         </span>
         <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
@@ -296,7 +296,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar..."
+                placeholder="Search..."
                 autoFocus
                 className="w-full pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary/30 focus:border-primary"
               />
@@ -306,7 +306,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
           {/* Options list */}
           <div className="max-h-[280px] overflow-y-auto">
             {filtered.length === 0 ? (
-              <div className="px-3 py-4 text-sm text-gray-400 text-center">Sin resultados</div>
+              <div className="px-3 py-4 text-sm text-gray-400 text-center">No results</div>
             ) : (
               <>
                 {/* Placeholder option */}
@@ -318,7 +318,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
                     ${!value ? 'bg-primary/5 text-primary' : 'text-gray-400 hover:bg-gray-50'}
                   `}
                 >
-                  Seleccionar colaborador...
+                  Select collaborator...
                 </button>
 
                 {/* Active group */}
@@ -326,7 +326,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
                   <>
                     {inactive.length > 0 && (
                       <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wider">
-                        Activos
+                        Active
                       </div>
                     )}
                     {active.map(c => (
@@ -353,7 +353,7 @@ function CollaboratorSelect({ collaborators, value, onChange }) {
                 {inactive.length > 0 && (
                   <>
                     <div className="px-3 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 uppercase tracking-wider border-t border-gray-100">
-                      Desactivados
+                      Deactivated
                     </div>
                     {inactive.map(c => (
                       <button
@@ -484,13 +484,13 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
   const effectiveCriticidad = criticidad || 'I';
   
   const result = evaluarSkill(nivel, frecuencia, effectiveCriticidad);
-  const stateConfig = EVALUATION_STATES[result.estado] || EVALUATION_STATES['COMPETENTE'];
+  const stateConfig = EVALUATION_STATES[result.estado] || EVALUATION_STATES['COMPETENT'];
   const isNA = effectiveCriticidad === 'N';
 
   const critLabel = {
-    'C': { text: 'Crítica', class: 'bg-critical/10 text-critical' },
-    'I': { text: 'Importante', class: 'bg-warning/10 text-warning' },
-    'D': { text: 'Deseable', class: 'bg-gray-100 text-gray-500' },
+    'C': { text: 'Critical', class: 'bg-critical/10 text-critical' },
+    'I': { text: 'Important', class: 'bg-warning/10 text-warning' },
+    'D': { text: 'Desirable', class: 'bg-gray-100 text-gray-500' },
     'N': { text: 'N/A', class: 'bg-gray-50 text-gray-400' },
   }[effectiveCriticidad] || { text: 'N/A', class: 'bg-gray-50 text-gray-400' };
 
@@ -500,7 +500,7 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
 
   // Helper text if 'No usa' was auto-cleared
   const freqHelperText = hiddenFrequencies.includes('N') && frecuencia === 'N'
-    ? 'Skill crítica/importante requiere uso'
+    ? 'Critical/important skill requires usage'
     : null;
 
   // REACTIVE onChange: Auto-adjust values based on business rules
@@ -616,7 +616,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
         {/* Category Average Badge */}
         {showCategoryAverage && categoryAverage && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-500">Promedio:</span>
+            <span className="text-xs text-gray-500">Average:</span>
             <span className={`
               text-sm font-medium px-2 py-0.5 rounded
               ${parseFloat(categoryAverage) >= 3.5 ? 'bg-competent/10 text-competent' : 
@@ -634,9 +634,9 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
           {/* Header Row */}
           <div className="grid grid-cols-12 gap-4 px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             <div className="col-span-3">Skill</div>
-            <div className="col-span-4">Nivel de Competencia</div>
-            <div className="col-span-2">Frecuencia</div>
-            <div className="col-span-3 text-right">Estado</div>
+            <div className="col-span-4">Competency Level</div>
+            <div className="col-span-2">Frequency</div>
+            <div className="col-span-3 text-right">Status</div>
           </div>
           {activeSkills.map(skill => (
             <SkillRow
@@ -650,7 +650,7 @@ function CategoryAccordion({ category, skills, evaluations, roleProfile, onEvalu
           ))}
           {naSkills.length > 0 && (
             <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
-              {naSkills.length} skill(s) marcadas como N/A para este rol
+              {naSkills.length} skill(s) marked as N/A for this role
             </div>
           )}
         </div>
@@ -670,18 +670,18 @@ function EvaluationLegend() {
         className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors"
       >
         <HelpCircle size={16} />
-        Guía de Evaluación
+        Evaluation Guide
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-[420px] bg-surface rounded-lg shadow-xl border border-gray-100 p-4 z-20">
-            <h4 className="font-medium text-gray-800 mb-3">Sistema de Evaluación</h4>
+            <h4 className="font-medium text-gray-800 mb-3">Evaluation System</h4>
             
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <h5 className="font-medium text-gray-700 mb-2">Niveles:</h5>
+                <h5 className="font-medium text-gray-700 mb-2">Levels:</h5>
                 <div className="space-y-1">
                   {NIVELES.map(n => (
                     <div key={n.value} className="flex items-center gap-2">
@@ -693,7 +693,7 @@ function EvaluationLegend() {
               </div>
               
               <div>
-                <h5 className="font-medium text-gray-700 mb-2">Frecuencias:</h5>
+                <h5 className="font-medium text-gray-700 mb-2">Frequencies:</h5>
                 <div className="space-y-1">
                   {FRECUENCIAS.map(f => (
                     <div key={f.value} className="flex items-center gap-2">
@@ -705,7 +705,7 @@ function EvaluationLegend() {
               </div>
             </div>
 
-            <h5 className="font-medium text-gray-700 mt-4 mb-2">Estados resultantes:</h5>
+            <h5 className="font-medium text-gray-700 mt-4 mb-2">Resulting states:</h5>
             <div className="grid grid-cols-2 gap-1">
               {Object.entries(EVALUATION_STATES).slice(1, 9).map(([estado, config]) => (
                 <div key={estado} className="flex items-center gap-1.5">
@@ -749,7 +749,7 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
   }
 
   if (!session) {
-    return <div className="p-8 text-center text-critical">Error cargando la evaluación.</div>;
+    return <div className="p-8 text-center text-critical">Error loading the evaluation.</div>;
   }
 
   // Transform skills object (from API) to evaluationsMap and storedRoleProfile
@@ -784,37 +784,37 @@ function SessionDetailView({ uuid, onBack, categories, skills }) {
             {/* Collaborator snapshot info */}
             <div className="flex items-center gap-2 mb-1">
               <h3 className="text-lg font-medium text-gray-800">
-                {session.collaboratorNombre || session.collaborator.nombre || 'Colaborador'}
+                {session.collaboratorNombre || session.collaborator.nombre || 'Collaborator'}
               </h3>
               {session.collaboratorRol ? (
                 <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full">
                   {session.collaboratorRol}
                 </span>
               ) : (
-                <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full italic" title="Evaluación antigua sin registro de rol histórico">
-                  Rol no registrado
+                <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full italic" title="Legacy evaluation without historical role record">
+                  Role not recorded
                 </span>
               )}
               {session.notes?.includes('Cambio de rol') && (
-                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title="Primera evaluación en este nuevo rol">
-                  Rol cambió
+                <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full" title="First evaluation in this new role">
+                  Role changed
                 </span>
               )}
             </div>
             <p className="text-sm text-gray-500 flex items-center gap-2">
               <Calendar size={12} />
-              {formatDate(session.evaluatedAt)} • Por {session.evaluatedBy || 'Admin'}
+              {formatDate(session.evaluatedAt)} • By {session.evaluatedBy || 'Admin'}
             </p>
           </div>
         </div>
         
         {/* PDF Download Button */}
         <button
-          onClick={() => toast('Exportar PDF estará disponible próximamente', { icon: '📄' })}
+          onClick={() => toast('PDF export will be available soon', { icon: '📄' })}
           className="px-4 py-2 border border-gray-200 text-gray-700 hover:bg-gray-50 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
         >
           <Download size={16} />
-          Descargar PDF
+          Download PDF
         </button>
       </div>
 
@@ -910,7 +910,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       setSkills(data.skills || []);
       setRoleProfiles(data.roleProfiles || {});
     } catch (err) {
-      setError('Error cargando datos');
+      setError('Error loading data');
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -1037,7 +1037,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       setInitialEvaluations(evaluations); // Update baseline
       
       invalidatePreload();
-      toast.success('Evaluación guardada correctamente');
+      toast.success('Evaluation saved successfully');
 
       // Refresh history
       const historyResponse = await fetch(`${API_BASE}/api/collaborators/${selectedCollaborator}/evaluations`);
@@ -1069,7 +1069,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
 
     } catch (err) {
       console.error('Error saving evaluation:', err);
-      toast.error('Error guardando evaluación');
+      toast.error('Error saving evaluation');
     } finally {
       setIsSaving(false);
     }
@@ -1119,10 +1119,10 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       const crit = currentRoleProfile[skill.id] || skill.criticidad || 'I';
       if (crit === 'N') return; // Skip N/A skills
       const result = evaluarSkill(eval_.nivel || 0, eval_.frecuencia || 'N', crit);
-      if (result.estado === 'BRECHA CRÍTICA') critical++;
-      if (result.estado.includes('FORTALEZA')) strengths++;
-      if (result.estado === 'TALENTO SUBUTILIZADO') underutilized++;
-      if (result.estado === 'SIN EVALUAR') pending++;
+      if (result.estado === 'CRITICAL GAP') critical++;
+      if (result.estado.includes('STRENGTH')) strengths++;
+      if (result.estado === 'UNDERUTILIZED TALENT') underutilized++;
+      if (result.estado === 'NOT EVALUATED') pending++;
     });
     
     return { critical, strengths, underutilized, pending, total: entries.length };
@@ -1152,9 +1152,9 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
     return (
       <EmptyState
         icon={User}
-        title="No hay colaboradores"
-        description="Primero crea colaboradores en la pestaña correspondiente para poder evaluarlos."
-        actionLabel="Ir a Colaboradores"
+        title="No collaborators"
+        description="First create collaborators in the corresponding tab to be able to evaluate them."
+        actionLabel="Go to Collaborators"
         onAction={() => {
           navigate('/settings?tab=colaboradores');
         }}
@@ -1192,7 +1192,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
 
                 {collab?.isActive === false && (
                     <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 border border-gray-200 uppercase font-bold tracking-wider">
-                      Desactivado
+                      Deactivated
                     </span>
                 )}
                 
@@ -1207,12 +1207,12 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                   {viewMode === 'edit' ? (
                     <>
                       <History size={16} />
-                      Ver Historial
+                      View History
                     </>
                   ) : (
                     <>
                       <Edit3 size={16} />
-                      Volver a Edición
+                      Back to Edit
                     </>
                   )}
                 </button>
@@ -1229,8 +1229,8 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       {!selectedCollaborator && (
          <EmptyState
             icon={Search}
-            title="Selecciona un colaborador"
-            description="Elige a quién deseas evaluar del menú superior para ver su matriz de competencias."
+            title="Select a collaborator"
+            description="Choose who you want to evaluate from the menu above to see their competency matrix."
             // No action needed here, it's a prompt
          />
       )}
@@ -1242,11 +1242,11 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
             <div className="text-center py-16 bg-amber-50 rounded-lg border border-amber-200">
               <Briefcase size={48} className="mx-auto text-amber-400 mb-4" />
               <h3 className="text-lg font-medium text-amber-800 mb-2">
-                Perfil de puesto sin configurar
+                Role profile not configured
               </h3>
               <p className="text-amber-600 max-w-md mx-auto mb-4">
-                El rol "{collaborators.find(c => c.id === selectedCollaborator)?.rol}" no tiene skills definidas.
-                Configura primero las skills requeridas en la pestaña "Perfiles de Puesto".
+                The role "{collaborators.find(c => c.id === selectedCollaborator)?.rol}" has no skills defined.
+                First configure the required skills in the "Role Profiles" tab.
               </p>
               <button
                 onClick={() => {
@@ -1255,7 +1255,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                 }}
                 className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors"
               >
-                Ir a Perfiles de Puesto
+                Go to Role Profiles
               </button>
             </div>
           )}
@@ -1271,19 +1271,19 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
             </div>
             <div className="bg-gray-100 p-4 rounded-lg text-center">
               <p className="text-2xl font-light text-gray-500">{stats.pending}</p>
-              <p className="text-xs text-gray-500">Sin Evaluar</p>
+              <p className="text-xs text-gray-500">Not Evaluated</p>
             </div>
             <div className="bg-critical/10 p-4 rounded-lg text-center">
               <p className="text-2xl font-light text-critical">{stats.critical}</p>
-              <p className="text-xs text-gray-500">Brechas Críticas</p>
+              <p className="text-xs text-gray-500">Critical Gaps</p>
             </div>
             <div className="bg-competent/10 p-4 rounded-lg text-center">
               <p className="text-2xl font-light text-competent">{stats.strengths}</p>
-              <p className="text-xs text-gray-500">Fortalezas</p>
+              <p className="text-xs text-gray-500">Strengths</p>
             </div>
             <div className="bg-purple-100 p-4 rounded-lg text-center">
               <p className="text-2xl font-light text-purple-600">{stats.underutilized}</p>
-              <p className="text-xs text-gray-500">Subutilizados</p>
+              <p className="text-xs text-gray-500">Underutilized</p>
             </div>
           </div>
 
@@ -1314,7 +1314,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
           >
             <span className="flex items-center text-sm text-gray-500 mr-auto">
               <AlertCircle size={16} className="mr-2 text-warning" />
-              Tienes cambios sin guardar
+              You have unsaved changes
             </span>
 
             <Button
@@ -1322,7 +1322,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                onClick={() => setEvaluations(initialEvaluations)}
                className="text-gray-600 hover:bg-gray-100"
             >
-              Descartar
+              Discard
             </Button>
             <Button
               onClick={() => handleSave(false)}
@@ -1330,7 +1330,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
               className="px-6 shadow-sm"
             >
               <Save size={18} className="mr-2" />
-              Guardar Evaluación
+              Save Evaluation
             </Button>
           </div>
           </div>
@@ -1346,20 +1346,20 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <h3 className="text-lg font-medium text-gray-800">Historial de Evaluaciones</h3>
+                <h3 className="text-lg font-medium text-gray-800">Evaluation History</h3>
               </div>
 
               {evaluationHistory.length === 0 ? (
                 <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-100">
                   <History size={48} className="mx-auto text-gray-300 mb-4" />
-                  <p className="text-gray-500">No hay evaluaciones previas para este colaborador.</p>
+                  <p className="text-gray-500">No previous evaluations for this collaborator.</p>
                 </div>
               ) : (
                 <div className="grid gap-3">
                   {evaluationHistory.map(session => {
                     // Get current collaborator for comparison
                     const currentCollab = collaborators.find(c => c.id === selectedCollaborator);
-                    const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre || 'Colaborador';
+                    const snapshotNombre = session.collaboratorNombre || currentCollab?.nombre || 'Collaborator';
                     
                     // CRITICAL FIX: Do NOT fallback to current role. Use snapshot role or show "Sin definir" if legacy data.
                     const snapshotRol = session.collaboratorRol;
@@ -1386,14 +1386,14 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                                     {snapshotRol}
                                   </span>
                                 ) : (
-                                  <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full shrink-0 italic" title="Evaluación antigua sin registro de rol histórico">
-                                    Rol no registrado
+                                  <span className="text-xs px-2 py-0.5 bg-gray-50 text-gray-400 border border-gray-100 rounded-full shrink-0 italic" title="Legacy evaluation without historical role record">
+                                    Role not recorded
                                   </span>
                                 )}
                                 
                                 {session.notes?.includes('Cambio de rol') && (
-                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title="Primera evaluación en este nuevo rol">
-                                    Rol cambió
+                                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full shrink-0" title="First evaluation in this new role">
+                                    Role changed
                                   </span>
                                 )}
                               </div>
@@ -1404,7 +1404,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                                   {formatDate(session.evaluatedAt)}
                                 </span>
                                 <span>•</span>
-                                <span>Por: {session.evaluatedBy || 'Admin'}</span>
+                                <span>By: {session.evaluatedBy || 'Admin'}</span>
                                 <span>•</span>
                                 <span>{session.assessmentCount} skills</span>
                               </div>
@@ -1420,7 +1420,7 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                               }}
                               className="px-3 py-1.5 text-primary hover:bg-primary/5 rounded-lg text-sm font-medium transition-colors"
                             >
-                              Ver detalles
+                              View details
                             </button>
                             
                             {/* 3-dot menu */}
@@ -1428,10 +1428,10 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toast('Exportar PDF estará disponible próximamente', { icon: '📄' });
+                                  toast('PDF export will be available soon', { icon: '📄' });
                                 }}
                                 className="p-2 hover:bg-gray-100 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                                title="Descargar PDF"
+                                title="Download PDF"
                               >
                                 <Download size={16} className="text-gray-500" />
                               </button>

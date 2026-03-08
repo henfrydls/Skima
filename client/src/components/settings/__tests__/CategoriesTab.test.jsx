@@ -74,14 +74,14 @@ describe('CategoriesTab', () => {
     });
 
     // Find and click the toggle button
-    const toggleBtn = screen.getByText(/Ver archivados/i);
+    const toggleBtn = screen.getByText(/Show archived/i);
     fireEvent.click(toggleBtn);
 
     // Now 'Archived Cat' should be visible
     expect(screen.getByText(/Archived Cat/i)).toBeInTheDocument();
-    
+
     // Button text should change
-    expect(screen.getByText(/Ocultar archivados/i)).toBeInTheDocument();
+    expect(screen.getByText(/Hide archived/i)).toBeInTheDocument();
   });
 
   it('filters by search query', async () => {
@@ -91,7 +91,7 @@ describe('CategoriesTab', () => {
       expect(screen.getByText(/Active Cat/i)).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText(/Buscar categoría/i);
+    const searchInput = screen.getByPlaceholderText(/Search category/i);
     fireEvent.change(searchInput, { target: { value: 'Active' } });
 
     expect(screen.getByText(/Active Cat/i)).toBeInTheDocument();
@@ -109,7 +109,7 @@ describe('CategoriesTab', () => {
     });
 
     // Click the "Nueva Categoría" button
-    const addButton = screen.getByText(/Nueva Categoría/i);
+    const addButton = screen.getByText(/New Category/i);
     fireEvent.click(addButton);
 
     // Modal should appear with create form
@@ -166,7 +166,7 @@ describe('CategoriesTab', () => {
     });
 
     // Open create modal
-    const addButton = screen.getByText(/Nueva Categoría/i);
+    const addButton = screen.getByText(/New Category/i);
     fireEvent.click(addButton);
 
     await waitFor(() => {
@@ -175,7 +175,7 @@ describe('CategoriesTab', () => {
 
     // Fill in form fields
     const inputs = document.querySelectorAll('input');
-    const nombreInput = Array.from(inputs).find(i => i.placeholder?.includes('categoría') || i.id?.includes('nombre'));
+    const nombreInput = Array.from(inputs).find(i => i.placeholder?.includes('category') || i.id?.includes('nombre'));
     const abrevInput = Array.from(inputs).find(i => i.placeholder?.includes('abrev') || i.id?.includes('abrev'));
 
     if (nombreInput && abrevInput) {
@@ -218,7 +218,7 @@ describe('CategoriesTab', () => {
     });
 
     // Click add button
-    fireEvent.click(screen.getByText(/Nueva Categoría/i));
+    fireEvent.click(screen.getByText(/New Category/i));
 
     await waitFor(() => {
       // Modal should show form fields
@@ -270,7 +270,7 @@ describe('CategoriesTab', () => {
       fireEvent.click(menuButton);
       // Wait for dropdown
       await waitFor(() => {
-        const editOption = screen.queryByText(/Editar/i);
+        const editOption = screen.queryByText(/Edit/i);
         if (editOption) {
           fireEvent.click(editOption);
         }
@@ -294,7 +294,7 @@ describe('CategoriesTab', () => {
     if (menuButton) {
       fireEvent.click(menuButton);
       await waitFor(() => {
-        const archiveOption = screen.queryByText(/Archivar/i);
+        const archiveOption = screen.queryByText(/Archive/i);
         if (archiveOption) {
           fireEvent.click(archiveOption);
         }
@@ -310,7 +310,7 @@ describe('CategoriesTab', () => {
     });
 
     // Open modal
-    fireEvent.click(screen.getByText(/Nueva Categoría/i));
+    fireEvent.click(screen.getByText(/New Category/i));
 
     await waitFor(() => {
       expect(document.querySelector('form')).toBeInTheDocument();

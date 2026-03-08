@@ -9,9 +9,9 @@ import Button from './Button';
  */
 export function EmptyState({ 
   icon: Icon = Users,
-  title = 'No hay datos disponibles',
-  description = 'No se encontraron elementos para mostrar.',
-  actionLabel = 'Agregar',
+  title = 'No data available',
+  description = 'No items were found to display.',
+  actionLabel = 'Add',
   onAction = null,
   secondaryAction = null
 }) {

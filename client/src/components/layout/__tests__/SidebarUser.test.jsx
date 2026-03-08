@@ -50,9 +50,9 @@ describe('SidebarUser', () => {
     expect(screen.getByText('John Doe')).toBeInTheDocument();
   });
 
-  it('displays "Administrador" role when not collapsed', () => {
+  it('displays "Administrator" role when not collapsed', () => {
     renderWithContext(false);
-    expect(screen.getByText('Administrador')).toBeInTheDocument();
+    expect(screen.getByText('Administrator')).toBeInTheDocument();
   });
 
   it('hides name and role when collapsed (via opacity and width)', () => {
@@ -72,7 +72,7 @@ describe('SidebarUser', () => {
   it('hides chevron icon when collapsed (via opacity and width)', () => {
     renderWithContext(true);
     // Chevron is inside the same transition wrapper, visually hidden
-    const adminEl = screen.getByText('Administrador');
+    const adminEl = screen.getByText('Administrator');
     const wrapper = adminEl.parentElement.parentElement;
     expect(wrapper).toHaveClass('max-w-0', 'opacity-0');
   });

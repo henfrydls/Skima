@@ -71,12 +71,12 @@ describe('Badge', () => {
 
   it('hides label by default', () => {
     render(<Badge level={3} />);
-    expect(screen.queryByText('Competente')).not.toBeInTheDocument();
+    expect(screen.queryByText('Competent')).not.toBeInTheDocument();
   });
 
   it('shows label when showLabel is true', () => {
     render(<Badge level={3} showLabel={true} />);
-    expect(screen.getByText('· Competente')).toBeInTheDocument();
+    expect(screen.getByText('· Competent')).toBeInTheDocument();
   });
 
   it('displays correct label for each level', () => {
@@ -84,16 +84,16 @@ describe('Badge', () => {
     expect(screen.getByText('· N/A')).toBeInTheDocument();
 
     rerender(<Badge level={1} showLabel={true} />);
-    expect(screen.getByText('· Básico')).toBeInTheDocument();
+    expect(screen.getByText('· Basic')).toBeInTheDocument();
 
     rerender(<Badge level={2} showLabel={true} />);
-    expect(screen.getByText('· En desarrollo')).toBeInTheDocument();
+    expect(screen.getByText('· Developing')).toBeInTheDocument();
 
     rerender(<Badge level={4} showLabel={true} />);
-    expect(screen.getByText('· Avanzado')).toBeInTheDocument();
+    expect(screen.getByText('· Advanced')).toBeInTheDocument();
 
     rerender(<Badge level={5} showLabel={true} />);
-    expect(screen.getByText('· Experto')).toBeInTheDocument();
+    expect(screen.getByText('· Expert')).toBeInTheDocument();
   });
 
   it('accepts and applies custom className', () => {

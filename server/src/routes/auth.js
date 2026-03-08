@@ -63,13 +63,13 @@ router.post('/login', async (req, res) => {
       return res.json({
         success: true,
         token,
-        message: 'Acceso concedido (sin contraseña configurada)'
+        message: 'Access granted (no password configured)'
       });
     }
 
     if (!password) {
       return res.status(400).json({
-        message: 'Contraseña requerida',
+        message: 'Password required',
         code: 'PASSWORD_REQUIRED'
       });
     }
@@ -92,7 +92,7 @@ router.post('/login', async (req, res) => {
 
     if (!isValid) {
       return res.status(401).json({
-        message: 'Contraseña incorrecta',
+        message: 'Incorrect password',
         code: 'INVALID_PASSWORD'
       });
     }
@@ -106,11 +106,11 @@ router.post('/login', async (req, res) => {
     res.json({
       success: true,
       token,
-      message: 'Inicio de sesión exitoso'
+      message: 'Login successful'
     });
   } catch (error) {
     console.error('[API] POST /api/auth/login failed:', error);
-    res.status(500).json({ message: 'Error en el servidor' });
+    res.status(500).json({ message: 'Server error' });
   }
 });
 

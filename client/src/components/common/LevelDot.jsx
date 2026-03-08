@@ -39,7 +39,7 @@ export default function LevelDot({ level, isCriticalGap = false, showLabel = tru
           hover:scale-110 active:scale-95
           cursor-pointer
         `}
-        title={`Nivel: ${displayLevel}${isCriticalGap ? ' - CRÍTICO' : ''}`}
+        title={`Level: ${displayLevel}${isCriticalGap ? ' - CRITICAL' : ''}`}
       >
         {showLabel && displayLevel}
       </div>

@@ -60,7 +60,7 @@ export default function SidebarUser({ isCollapsed }) {
             <p className="text-sm font-medium truncate" title={adminName}>
               {adminName}
             </p>
-            <p className="text-xs text-gray-400 truncate">Administrador</p>
+            <p className="text-xs text-gray-400 truncate">Administrator</p>
           </div>
 
           {/* Chevron indicator */}

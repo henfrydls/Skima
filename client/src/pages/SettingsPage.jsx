@@ -24,11 +24,11 @@ import RoleProfilesTab from '../components/settings/RoleProfilesTab';
  */
 
 const TABS = [
-  { id: 'categorias', label: 'Categorías', icon: FolderTree },
+  { id: 'categorias', label: 'Categories', icon: FolderTree },
   { id: 'skills', label: 'Skills', icon: Layers },
-  { id: 'perfiles', label: 'Perfiles de Puesto', icon: Briefcase },
-  { id: 'colaboradores', label: 'Colaboradores', icon: Users },
-  { id: 'evaluaciones', label: 'Evaluaciones', icon: ClipboardCheck },
+  { id: 'perfiles', label: 'Role Profiles', icon: Briefcase },
+  { id: 'colaboradores', label: 'Collaborators', icon: Users },
+  { id: 'evaluaciones', label: 'Evaluations', icon: ClipboardCheck },
 ];
 
 export default function SettingsPage() {
@@ -81,9 +81,9 @@ export default function SettingsPage() {
     <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in flex-1 flex flex-col">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-light text-slate-800">Configuración</h1>
+        <h1 className="text-2xl font-light text-slate-800">Settings</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Gestiona colaboradores, skills, categorías y evaluaciones
+          Manage collaborators, skills, categories, and evaluations
         </p>
       </div>
 
@@ -159,19 +159,19 @@ export default function SettingsPage() {
             <div className="p-6">
               <div className="flex items-center gap-3 text-warning mb-2">
                 <AlertTriangle size={24} />
-                <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+                <h3 className="text-lg font-medium text-gray-900">Unsaved Changes</h3>
               </div>
               <p className="text-gray-600 mb-6">
-                Tienes modificaciones pendientes en el perfil de puesto. Si sales ahora, perderás los cambios.
+                You have pending modifications in the role profile. If you leave now, changes will be lost.
               </p>
               <div className="flex justify-end gap-3">
-                <button 
+                <button
                   onClick={() => setPendingTab(null)}
                   className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                 >
-                  Cancelar
+                  Cancel
                 </button>
-                <button 
+                <button
                   onClick={() => {
                     setRoleProfilesDirty(false);
                     setSearchParams({ tab: pendingTab });
@@ -179,7 +179,7 @@ export default function SettingsPage() {
                   }}
                   className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
                 >
-                  Descartar cambios
+                  Discard Changes
                 </button>
               </div>
             </div>
