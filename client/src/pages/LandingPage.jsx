@@ -1,4 +1,4 @@
-import { ArrowRight, Download, Github, LayoutGrid, TrendingUp, BarChart3, Shield, Clock, Eye, Search, Users, LineChart, Target, Database, Cpu, Monitor } from 'lucide-react';
+import { ArrowRight, Download, ShieldCheck, CheckCircle, LayoutGrid, TrendingUp, BarChart3, Shield, Clock, Eye, Search, Users, LineChart, Target, Database, Cpu } from 'lucide-react';
 
 const GITHUB_URL = 'https://github.com/henfrydls/Skima';
 const GITHUB_RELEASES = 'https://github.com/henfrydls/Skima/releases';
@@ -17,7 +17,7 @@ export default function LandingPage() {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden md:block text-sm font-medium hover:text-primary transition-colors"
+              className="hidden md:flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors"
             >
               View on GitHub
             </a>
@@ -32,7 +32,7 @@ export default function LandingPage() {
       </nav>
 
       {/* ===== HERO ===== */}
-      <header className="relative overflow-hidden bg-white px-6 lg:px-20 py-16 lg:py-28">
+      <header className="relative bg-white px-6 lg:px-20 py-16 lg:py-28">
         <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-12 items-center">
           {/* Left: Text */}
           <div className="flex flex-col gap-8">
@@ -41,7 +41,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-lg text-slate-600 max-w-lg leading-relaxed">
               Map skills. Spot gaps. Track growth.<br />
-              Free and open source. Your data never leaves your machine.
+              Free and source-available. Your data never leaves your machine.
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <a
@@ -55,10 +55,10 @@ export default function LandingPage() {
                 href={GITHUB_RELEASES}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 transition-colors"
+                className="inline-flex items-center gap-2 border-2 border-slate-300 hover:border-primary text-slate-700 hover:text-primary px-6 py-3.5 rounded-xl font-bold text-base transition-all"
               >
-                <Download size={16} />
-                Download for Windows, Linux & macOS
+                <Download size={18} />
+                Download Free
               </a>
             </div>
             <p className="text-xs text-slate-400">
@@ -84,7 +84,7 @@ export default function LandingPage() {
               </div>
               <div>
                 <p className="text-xs text-slate-500 font-medium">Privacy Status</p>
-                <p className="text-sm font-bold text-slate-900">Fully Local (GDPR Compliant)</p>
+                <p className="text-sm font-bold text-slate-900">100% Local Data</p>
               </div>
             </div>
           </div>
@@ -160,7 +160,6 @@ export default function LandingPage() {
               icon={<Shield size={24} />}
               title="Role Profiles"
               description="Define expected skills per role. Measure coverage and identify training priorities."
-              image="/screenshots/skima-matrix.png"
             />
           </div>
         </div>
@@ -247,7 +246,7 @@ export default function LandingPage() {
           <div className="lg:w-1/2 bg-primary/5 rounded-3xl p-10 border border-primary/10 relative">
             {/* Floating badge */}
             <div className="absolute -top-6 left-10 bg-primary text-white p-4 rounded-2xl shadow-lg flex items-center gap-3">
-              <span className="material-symbols-outlined">security</span>
+              <ShieldCheck size={20} />
               <span className="font-bold">Zero-Cloud Architecture</span>
             </div>
 
@@ -256,7 +255,7 @@ export default function LandingPage() {
               <PrivacyCheckItem text="Data stored in local SQLite database" />
               <PrivacyCheckItem text="Offline-first desktop application" />
               <PrivacyCheckItem text="Direct CSV/JSON export/import" />
-              <PrivacyCheckItem text="Open source transparency" />
+              <PrivacyCheckItem text="Source-available transparency" />
             </div>
           </div>
         </div>
@@ -280,7 +279,7 @@ export default function LandingPage() {
               Ready to see what your <br />team can do?
             </h2>
             <p className="text-white/90 font-medium text-lg max-w-md mx-auto">
-              Free and open source. Set up in under 5 minutes.
+              Free and source-available. Set up in under 5 minutes.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-10">
               <a
@@ -364,7 +363,7 @@ function FeatureCard({ icon, title, description, image }) {
 function RoleCard({ icon, role, description }) {
   return (
     <div className="bg-slate-800/50 p-8 rounded-2xl border border-slate-700 hover:border-primary transition-all">
-      <div className="text-primary text-3xl mb-4">{icon}</div>
+      <div className="size-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-4">{icon}</div>
       <h3 className="text-xl font-bold text-white mb-2">{role}</h3>
       <p className="text-sm text-slate-400 leading-relaxed">{description}</p>
     </div>
@@ -375,7 +374,7 @@ function PrivacyCheckItem({ text }) {
   return (
     <div className="flex gap-4">
       <div className="text-primary">
-        <span className="material-symbols-outlined">check_circle</span>
+        <CheckCircle size={20} />
       </div>
       <p className="text-slate-700 font-medium">{text}</p>
     </div>
