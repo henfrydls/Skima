@@ -57,6 +57,13 @@
 <br/>
 
 <p align="center">
+  <img src="docs/skima-roles.png" alt="Role Profiles" width="100%" />
+</p>
+<p align="center"><sub>Role Profiles — Define expected competencies per role and track alignment</sub></p>
+
+<br/>
+
+<p align="center">
   <img src="docs/skima-setup.png" alt="Setup Wizard" width="100%" />
 </p>
 <p align="center"><sub>Setup — Get started with demo data or configure your own space</sub></p>
@@ -139,9 +146,9 @@ npm run db:seed          # Load demo data
 ### Testing
 
 ```bash
-npm test                 # All tests (729 tests, 80%+ coverage)
-npm run test:client      # React component and logic tests (668 tests)
-npm run test:server      # API and middleware tests (61 tests)
+npm test                 # All tests (778 tests, 80%+ coverage)
+npm run test:client      # React component and logic tests (696 tests)
+npm run test:server      # API and middleware tests (82 tests)
 npm run test:coverage    # Full coverage report (client + server)
 ```
 
@@ -184,7 +191,7 @@ server/src/
 | Backend | Express 5, Prisma 6 |
 | Database | SQLite |
 | Desktop | Tauri 2 |
-| Testing | Vitest, React Testing Library (729 tests, 80%+ coverage) |
+| Testing | Vitest, React Testing Library (778 tests, 80%+ coverage) |
 | CI/CD | GitHub Actions |
 
 ---
