@@ -100,6 +100,12 @@ docker compose up -d
 
 Open `http://localhost:3000` in your browser. Data persists in a Docker volume.
 
+To run with demo data pre-loaded:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
+```
+
 ### From Source
 
 Requires [Node.js](https://nodejs.org/) 20+.

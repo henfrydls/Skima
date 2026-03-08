@@ -1,11 +1,9 @@
 services:
   skima:
     build: .
-    container_name: skima-demo
+    container_name: skima
     ports:
       - "3000:3001"
-    environment:
-      - DEMO_MODE=true
     volumes:
       - skima-data:/app/data
     restart: unless-stopped

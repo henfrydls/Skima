@@ -1,0 +1,5 @@
+services:
+  skima:
+    container_name: skima-demo
+    environment:
+      - DEMO_MODE=true
