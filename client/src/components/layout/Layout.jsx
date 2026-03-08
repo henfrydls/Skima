@@ -11,10 +11,13 @@ import {
   LogIn,
   LogOut,
   User,
-  FlaskConical
+  FlaskConical,
+  Download
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
+
+const GITHUB_RELEASES = 'https://github.com/henfrydls/Skima/releases';
 import { useAppVersion } from '../../hooks/useAppVersion';
 import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
@@ -78,7 +81,7 @@ export default function Layout() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const { isAuthenticated, login } = useAuth();
-  const { adminName, isDemo } = useConfig();
+  const { adminName, isDemo, isOnlineDemo } = useConfig();
   const version = useAppVersion();
   
   const navItems = getNavItems(isAuthenticated);
@@ -103,15 +106,31 @@ export default function Layout() {
       >
         {/* Header del Sidebar - Skima Logo */}
         <div className="flex items-center justify-between h-16 px-3 border-b border-gray-100 relative">
-          {/* Logo with fade transition - stays in place */}
-          <img
-            src={logoFull}
-            alt="Skima"
-            className={`
-              h-8 transition-[max-width,opacity] duration-200 ease-out overflow-hidden
-              ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px] delay-75'}
-            `}
-          />
+          {/* Logo with fade transition - clickable to landing in online demo */}
+          {isOnlineDemo ? (
+            <button
+              onClick={() => {
+                document.cookie = 'demo_active=; max-age=0; path=/';
+                navigate('/');
+              }}
+              className={`
+                h-8 transition-[max-width,opacity] duration-200 ease-out overflow-hidden cursor-pointer
+                ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px] delay-75'}
+              `}
+              title="Back to Landing"
+            >
+              <img src={logoFull} alt="Skima" className="h-8" />
+            </button>
+          ) : (
+            <img
+              src={logoFull}
+              alt="Skima"
+              className={`
+                h-8 transition-[max-width,opacity] duration-200 ease-out overflow-hidden
+                ${isCollapsed ? 'opacity-0 pointer-events-none max-w-0' : 'opacity-100 max-w-[150px] delay-75'}
+              `}
+            />
+          )}
           {/* Collapse/Expand button */}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -175,25 +194,49 @@ export default function Layout() {
                 Demo Mode
               </span>
             </button>
-            <button
-              onClick={() => navigate('/setup')}
-              className={`
-                w-full flex items-center py-2 mt-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20
-                transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
-                ${isCollapsed ? 'px-[14px]' : 'px-3'}
-              `}
-              title={isCollapsed ? 'Set Up My Space' : undefined}
-            >
-              <Settings size={16} className="flex-shrink-0" />
-              <span
+            {isOnlineDemo ? (
+              <a
+                href={GITHUB_RELEASES}
+                target="_blank"
+                rel="noopener noreferrer"
                 className={`
-                  whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
-                  ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
+                  w-full flex items-center py-2 mt-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20
+                  transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
+                  ${isCollapsed ? 'px-[14px]' : 'px-3'}
                 `}
+                title={isCollapsed ? 'Download App' : undefined}
               >
-                Set Up My Space
-              </span>
-            </button>
+                <Download size={16} className="flex-shrink-0" />
+                <span
+                  className={`
+                    whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
+                  `}
+                >
+                  Download App
+                </span>
+              </a>
+            ) : (
+              <button
+                onClick={() => navigate('/setup')}
+                className={`
+                  w-full flex items-center py-2 mt-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20
+                  transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
+                  ${isCollapsed ? 'px-[14px]' : 'px-3'}
+                `}
+                title={isCollapsed ? 'Set Up My Space' : undefined}
+              >
+                <Settings size={16} className="flex-shrink-0" />
+                <span
+                  className={`
+                    whitespace-nowrap overflow-hidden transition-[max-width,opacity,margin] duration-200 ease-out
+                    ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
+                  `}
+                >
+                  Set Up My Space
+                </span>
+              </button>
+            )}
           </div>
         )}
 
