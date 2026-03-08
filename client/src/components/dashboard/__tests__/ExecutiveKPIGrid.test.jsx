@@ -20,38 +20,38 @@ describe('ExecutiveKPIGrid', () => {
   it('renders all four KPI cards', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
-    expect(screen.getByText('Índice de Madurez')).toBeInTheDocument();
-    expect(screen.getByText('Riesgo de Talento')).toBeInTheDocument();
-    expect(screen.getByText('Densidad de Expertos')).toBeInTheDocument();
-    expect(screen.getByText('Cobertura de Roles')).toBeInTheDocument();
+    expect(screen.getByText('Maturity Index')).toBeInTheDocument();
+    expect(screen.getByText('Talent Risk')).toBeInTheDocument();
+    expect(screen.getByText('Expert Density')).toBeInTheDocument();
+    expect(screen.getByText('Role Coverage')).toBeInTheDocument();
   });
 
   it('displays team average with correct value', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     expect(screen.getByText('3.5')).toBeInTheDocument();
-    expect(screen.getByText('Promedio general del equipo')).toBeInTheDocument();
+    expect(screen.getByText('Team overall average')).toBeInTheDocument();
   });
 
   it('displays critical gaps with correct value', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     expect(screen.getByText('12.0')).toBeInTheDocument();
-    expect(screen.getByText('Brechas críticas activas')).toBeInTheDocument();
+    expect(screen.getByText('Active critical gaps')).toBeInTheDocument();
   });
 
   it('displays expert density with percentage suffix', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     expect(screen.getByText('25.5%')).toBeInTheDocument();
-    expect(screen.getByText('% skills en nivel 4-5')).toBeInTheDocument();
+    expect(screen.getByText('% skills at level 4-5')).toBeInTheDocument();
   });
 
   it('displays role coverage with percentage suffix', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     expect(screen.getByText('78.3%')).toBeInTheDocument();
-    expect(screen.getByText('% cumpliendo requisitos mínimos')).toBeInTheDocument();
+    expect(screen.getByText('% meeting minimum requirements')).toBeInTheDocument();
   });
 
   it('renders in grid layout with responsive columns', () => {
@@ -211,14 +211,14 @@ describe('ExecutiveKPIGrid', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     // Should render successfully without sparkline
-    expect(screen.getByText('Índice de Madurez')).toBeInTheDocument();
+    expect(screen.getByText('Maturity Index')).toBeInTheDocument();
   });
 
   it('renders without previous metrics (optional prop)', () => {
     render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
     // Should render successfully without showing trends
-    expect(screen.getByText('Índice de Madurez')).toBeInTheDocument();
+    expect(screen.getByText('Maturity Index')).toBeInTheDocument();
     // No delta badges should appear (match delta format like +1.2 or -0.5)
     expect(screen.queryByText(/^[+]\d/)).not.toBeInTheDocument();
   });

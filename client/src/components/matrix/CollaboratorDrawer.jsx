@@ -19,8 +19,8 @@ import { calculateDelta } from '../../lib/skillsLogic';
 // Suggested actions (static for now)
 const suggestedActions = {
   'AREA_MEJORA': [
-    { action: 'Curso online', icon: 'BookOpen', priority: 'medium' },
-    { action: 'Asignar como par en proyecto', icon: 'Briefcase', priority: 'medium' },
+    { action: 'Online course', icon: 'BookOpen', priority: 'medium' },
+    { action: 'Assign as peer on project', icon: 'Briefcase', priority: 'medium' },
   ],
 };
 
@@ -71,7 +71,7 @@ function LollipopChart({ categorias, previousCategorias = null }) {
                   <div 
                     className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-gray-300 border-2 border-white shadow-sm transition-all"
                     style={{ left: `calc(${prevPercentage}% - 6px)` }}
-                    title={`Anterior: ${prevValor.toFixed(1)}`}
+                    title={`Previous: ${prevValor.toFixed(1)}`}
                   />
                 </>
               )}
@@ -236,10 +236,10 @@ export default function CollaboratorDrawer({
                       {hasRoleChanged && (
                         <span 
                           className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-600 border border-blue-100"
-                          title={`Rol cambió de "${previousSnapshot.rol}" a "${collaborator.rol}". La comparación numérica puede no ser lineal.`}
+                          title={`Role changed from "${previousSnapshot.rol}" to "${collaborator.rol}". Numerical comparison may not be linear.`}
                         >
                           <GitCompare size={10} />
-                          Cambio de Puesto
+                          Role Change
                         </span>
                       )}
                     </div>
@@ -257,12 +257,12 @@ export default function CollaboratorDrawer({
               {previousSnapshot && (
                 <div className="mt-4 flex items-center gap-2 text-sm text-gray-500">
                   <Calendar size={14} />
-                  <span>Comparando con: </span>
+                  <span>Comparing with: </span>
                   <span className="font-medium text-gray-700">
-                    {new Date(previousSnapshot.evaluatedAt).toLocaleDateString('es', { 
-                      day: 'numeric', 
-                      month: 'short', 
-                      year: 'numeric' 
+                    {new Date(previousSnapshot.evaluatedAt).toLocaleDateString('en-US', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
                     })}
                   </span>
                 </div>
@@ -292,15 +292,15 @@ export default function CollaboratorDrawer({
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">Promedio</p>
+                  <p className="text-xs text-gray-500 mt-1">Average</p>
                 </div>
                 <div className="text-center p-4 bg-warning/5 rounded-lg border border-warning/10">
                   <p className="text-2xl font-light text-warning tabular-nums">{gaps.length}</p>
-                  <p className="text-xs text-gray-500 mt-1">Brechas</p>
+                  <p className="text-xs text-gray-500 mt-1">Gaps</p>
                 </div>
                 <div className="text-center p-4 bg-primary/5 rounded-lg border border-primary/10">
                   <p className="text-2xl font-light text-primary tabular-nums">{strengths.length}</p>
-                  <p className="text-xs text-gray-500 mt-1">Fortalezas</p>
+                  <p className="text-xs text-gray-500 mt-1">Strengths</p>
                 </div>
               </div>
             </div>
@@ -308,7 +308,7 @@ export default function CollaboratorDrawer({
             {/* Lollipop Chart */}
             <div className="p-6 border-b border-gray-100">
               <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                Nivel por Categoría
+                Level by Category
               </h3>
               <LollipopChart 
                 categorias={collaborator.categorias} 
@@ -319,7 +319,7 @@ export default function CollaboratorDrawer({
                Object.keys(collaborator.categorias || {}).some(key => previousSnapshot.categorias[key] !== undefined) && (
                 <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
                   <div className="w-3 h-3 rounded-full bg-gray-300" />
-                  <span>Valor anterior</span>
+                  <span>Previous value</span>
                 </div>
               )}
             </div>
@@ -329,7 +329,7 @@ export default function CollaboratorDrawer({
               <div className="p-6 border-b border-gray-100">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <AlertTriangle size={14} className="text-warning" />
-                  Áreas de Mejora y Brechas
+                  Improvement Areas & Gaps
                 </h3>
                 <div className="space-y-3 mb-4">
                   {gaps.map((gap, i) => (
@@ -343,14 +343,14 @@ export default function CollaboratorDrawer({
                             ? 'bg-critical/10 text-critical border-critical/20' 
                             : 'bg-warning/10 text-warning border-warning/20'
                         }`}>
-                        {gap.estado === 'BRECHA CRÍTICA' ? 'CRÍTICO' : 'MEJORA'}
+                        {gap.estado === 'BRECHA CRÍTICA' ? 'CRITICAL' : 'IMPROVE'}
                       </span>
                     </div>
                   ))}
                 </div>
                 
                 <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 hidden">
-                  Acciones Sugeridas
+                  Suggested Actions
                 </h4>
                 {/* Actions removed/hidden for now as they are integrated into cards */}
               </div>
@@ -361,14 +361,14 @@ export default function CollaboratorDrawer({
               <div className="p-6">
                 <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3 flex items-center gap-2">
                   <Star size={14} className="text-primary" />
-                  Fortalezas
+                  Strengths
                 </h3>
                 <div className="flex flex-wrap gap-2">
                   {strengths.map((strength, i) => (
-                    <span 
+                    <span
                       key={i}
                       className="px-3 py-1 text-sm bg-primary/10 text-primary rounded-full hover:bg-primary/20 transition-colors cursor-default"
-                      title="Nivel experto"
+                      title="Expert level"
                     >
                       {strength.name}
                     </span>

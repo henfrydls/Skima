@@ -19,7 +19,7 @@ describe('ConfirmModal', () => {
       />
     );
 
-    expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /confirm/i })).not.toBeInTheDocument();
   });
 
   it('renders when isOpen is true', () => {
@@ -31,8 +31,8 @@ describe('ConfirmModal', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /confirmar/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /cancelar/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeInTheDocument();
   });
 
   it('displays default title and message', () => {
@@ -44,8 +44,8 @@ describe('ConfirmModal', () => {
       />
     );
 
-    expect(screen.getByText('¿Estás seguro?')).toBeInTheDocument();
-    expect(screen.getByText('Esta acción no se puede deshacer.')).toBeInTheDocument();
+    expect(screen.getByText('Are you sure?')).toBeInTheDocument();
+    expect(screen.getByText('This action cannot be undone.')).toBeInTheDocument();
   });
 
   it('displays custom title and message', () => {
@@ -87,7 +87,7 @@ describe('ConfirmModal', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /cancel/i }));
     expect(mockOnClose).toHaveBeenCalledTimes(1);
   });
 
@@ -100,7 +100,7 @@ describe('ConfirmModal', () => {
       />
     );
 
-    fireEvent.click(screen.getByRole('button', { name: /confirmar/i }));
+    fireEvent.click(screen.getByRole('button', { name: /confirm/i }));
     expect(mockOnConfirm).toHaveBeenCalledTimes(1);
   });
 
@@ -129,7 +129,7 @@ describe('ConfirmModal', () => {
     );
 
     // Check for loader icon in confirm button
-    const confirmButton = screen.getByRole('button', { name: /confirmar/i });
+    const confirmButton = screen.getByRole('button', { name: /confirm/i });
     expect(confirmButton).toBeDisabled();
   });
 
@@ -143,8 +143,8 @@ describe('ConfirmModal', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /confirmar/i })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /cancelar/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /confirm/i })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /cancel/i })).toBeDisabled();
   });
 
   it('applies danger variant styles by default', () => {

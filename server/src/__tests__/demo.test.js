@@ -25,8 +25,8 @@ describe('Demo Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.isSetup).toBe(true);
-      expect(res.body.companyName).toBe('Empresa Demo');
-      expect(res.body.adminName).toBe('Administrador');
+      expect(res.body.companyName).toBe('Demo Company');
+      expect(res.body.adminName).toBe('Administrator');
 
       // Verify stats match the rich seed data
       expect(res.body.stats.categories).toBe(7);
@@ -75,8 +75,8 @@ describe('Demo Routes', () => {
 
       const config = await prisma.systemConfig.findFirst();
       expect(config.isSetup).toBe(true);
-      expect(config.companyName).toBe('Empresa Demo');
-      expect(config.adminName).toBe('Administrador');
+      expect(config.companyName).toBe('Demo Company');
+      expect(config.adminName).toBe('Administrator');
       expect(config.adminPassword).toMatch(/^\$2[ab]\$/); // bcrypt hash of 'admin123'
     }, 30000);
 

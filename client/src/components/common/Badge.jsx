@@ -10,11 +10,11 @@
 
 const levelStyles = {
   0: { bg: 'bg-gray-100', text: 'text-gray-500', label: 'N/A' },
-  1: { bg: 'bg-gray-200', text: 'text-gray-600', label: 'Básico' },
-  2: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'En desarrollo' },
-  3: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Competente' },
-  4: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Avanzado' },
-  5: { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'Experto' },
+  1: { bg: 'bg-gray-200', text: 'text-gray-600', label: 'Basic' },
+  2: { bg: 'bg-amber-100', text: 'text-amber-800', label: 'Developing' },
+  3: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Competent' },
+  4: { bg: 'bg-blue-100', text: 'text-blue-800', label: 'Advanced' },
+  5: { bg: 'bg-indigo-100', text: 'text-indigo-800', label: 'Expert' },
 };
 
 export default function Badge({ 

@@ -107,28 +107,28 @@ router.post('/', async (req, res) => {
       await tx.systemConfig.upsert({
         where: { id: 1 },
         update: {
-          companyName: 'Empresa Demo',
-          adminName: 'Administrador',
+          companyName: 'Demo Company',
+          adminName: 'Administrator',
           adminPassword: demoPassword,
           isSetup: true,
         },
         create: {
           id: 1,
-          companyName: 'Empresa Demo',
-          adminName: 'Administrador',
+          companyName: 'Demo Company',
+          adminName: 'Administrator',
           adminPassword: demoPassword,
           isSetup: true,
         },
       });
 
       return snapshots.length;
-    });
+    }, { timeout: 30000 });
 
     res.json({
       success: true,
       isSetup: true,
-      companyName: 'Empresa Demo',
-      adminName: 'Administrador',
+      companyName: 'Demo Company',
+      adminName: 'Administrator',
       stats: {
         categories: CATEGORIES.length,
         skills: SKILLS.length,
@@ -139,7 +139,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('[API] POST /api/seed-demo failed:', error);
-    res.status(500).json({ error: 'Error al crear datos demo' });
+    res.status(500).json({ error: 'Error creating demo data' });
   }
 });
 

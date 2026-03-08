@@ -43,13 +43,13 @@ function TalentDistributionChart({ data }) {
   if (!data || data.length === 0) {
     return (
       <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
-        No hay datos de distribución
+        No distribution data available
       </div>
     );
   }
 
   return (
-    <div className="flex-1 min-h-[16rem]">
+    <div className="min-h-[16rem]" style={{ height: 'clamp(16rem, calc(100vh - 34rem), 28rem)' }}>
       <ResponsiveContainer width="100%" height="100%">
         <BarChart
           data={data}
@@ -81,7 +81,7 @@ function TalentDistributionChart({ data }) {
           />
           <Bar 
             dataKey="brechas" 
-            name="Brechas" 
+            name="Gaps" 
             stackId="a" 
             fill={TIER_COLORS.brechas}
           >
@@ -98,7 +98,7 @@ function TalentDistributionChart({ data }) {
           </Bar>
           <Bar 
             dataKey="competent" 
-            name="Competentes" 
+            name="Competent" 
             stackId="a" 
             fill={TIER_COLORS.competent}
           >
@@ -115,7 +115,7 @@ function TalentDistributionChart({ data }) {
           </Bar>
           <Bar 
             dataKey="experts" 
-            name="Fortalezas" 
+            name="Strengths" 
             stackId="a" 
             fill={TIER_COLORS.experts}
             radius={[0, 4, 4, 0]}
@@ -146,7 +146,7 @@ function RiskItem({ risk, index }) {
         <h4 className="font-medium text-gray-800 truncate">{risk.skillName || risk.categoria}</h4>
         <p className="text-xs text-gray-500 flex items-center gap-1">
           <Users size={10} />
-          {risk.afectados} colaborador{risk.afectados !== 1 ? 'es' : ''} afectado{risk.afectados !== 1 ? 's' : ''}
+          {risk.afectados} collaborator{risk.afectados !== 1 ? 's' : ''} affected
         </p>
       </div>
       
@@ -154,7 +154,7 @@ function RiskItem({ risk, index }) {
         to="/team-matrix"
         className="text-xs text-primary hover:underline flex items-center gap-1 flex-shrink-0"
       >
-        Ver <ExternalLink size={10} />
+        View <ExternalLink size={10} />
       </Link>
     </div>
   );
@@ -168,23 +168,23 @@ function OperationalRisksList({ risks = [] }) {
         <div className="inline-flex items-center justify-center w-10 h-10 bg-success/10 rounded-full mb-2">
           <AlertTriangle className="text-success" size={16} />
         </div>
-        <p className="text-xs text-gray-500">¡Excelente! No hay riesgos críticos.</p>
+        <p className="text-xs text-gray-500">Excellent! No critical risks.</p>
       </div>
     );
   }
 
   return (
     <div className="space-y-2">
-      {risks.slice(0, 3).map((risk, idx) => (
+      {risks.slice(0, 5).map((risk, idx) => (
         <RiskItem key={risk.id || idx} risk={risk} index={idx} />
       ))}
-      
-      {risks.length > 3 && (
+
+      {risks.length > 5 && (
         <Link 
           to="/team-matrix"
           className="block text-center text-xs text-primary hover:underline py-1"
         >
-          Ver todos ({risks.length})
+          View all ({risks.length})
         </Link>
       )}
     </div>
@@ -206,8 +206,8 @@ function AutomaticInsightCard({ insight }) {
             💡 Insight
           </h4>
           <p className="text-xs text-gray-600 leading-relaxed">
-            <strong className="text-gray-800">{insight.colaborador}</strong> tiene nivel {insight.nivel.toFixed(1)} en{' '}
-            <strong className="text-gray-800">{insight.skill}</strong> pero con baja criticidad.
+            <strong className="text-gray-800">{insight.colaborador}</strong> has level {insight.nivel.toFixed(1)} in{' '}
+            <strong className="text-gray-800">{insight.skill}</strong> but with low criticality.
           </p>
         </div>
       </div>
@@ -221,15 +221,15 @@ export default function StrategicInsights({
   automaticInsight = null
 }) {
   return (
-    <div className="grid lg:grid-cols-3 gap-6 flex-1">
+    <div className="grid lg:grid-cols-3 gap-6">
       {/* Talent Distribution Chart - 2/3 width */}
       <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col">
         <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 mb-4">
-          Distribución de Talento por Área
+          Talent Distribution by Area
         </h3>
         <TalentDistributionChart data={distributionByCategory} />
         <p className="text-xs text-gray-400 mt-4 text-center">
-          Vista de fortalezas y debilidades por categoría
+          Strengths and weaknesses overview by category
         </p>
       </div>
 
@@ -238,7 +238,7 @@ export default function StrategicInsights({
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-sm font-bold uppercase tracking-wide text-gray-400 flex items-center gap-2">
             <AlertTriangle size={14} />
-            Top Riesgos
+            Top Risks
           </h3>
         </div>
         <OperationalRisksList risks={operationalRisks} />

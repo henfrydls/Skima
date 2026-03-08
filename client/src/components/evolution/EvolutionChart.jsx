@@ -49,12 +49,12 @@ const CustomTooltip = ({ active, payload, label }) => {
         style={{ transform: `translateY(${offsetY})` }}
       >
         <p className="font-bold mb-2 border-b border-slate-600 pb-1">{label}</p>
-        <p className="mb-1">Promedio: <span className="font-mono text-indigo-300 text-sm">{payload[0].value}</span></p>
+        <p className="mb-1">Average: <span className="font-mono text-indigo-300 text-sm">{payload[0].value}</span></p>
 
         {hasNewHires && (
           <div className="mt-2 pt-2 border-t border-slate-600">
             <p className="text-emerald-400 font-bold mb-1 flex items-center gap-1">
-              <span>🎉 Nuevos Ingresos:</span>
+              <span>🎉 New Hires:</span>
             </p>
             <ul className="list-disc list-inside text-slate-300 space-y-0.5">
               {dataPoint.newHires.map((name, idx) => (
@@ -113,7 +113,7 @@ const CustomDot = (props) => {
     return (
       <g key={`newhire-dot-${index}`} style={style}>
         <line x1={cx} y1={cy} x2={cx} y2={20} stroke="#10b981" strokeWidth={2} strokeDasharray="4 2" />
-        <text x={cx} y={14} fill="#10b981" fontSize={9} fontWeight="bold" textAnchor="middle">NUEVO</text>
+        <text x={cx} y={14} fill="#10b981" fontSize={9} fontWeight="bold" textAnchor="middle">NEW</text>
         <circle
           cx={cx} cy={cy} r={dotRadius}
           fill="#10b981" stroke="white" strokeWidth={2}
@@ -165,14 +165,14 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
           </svg>
         </div>
-        <p className="text-slate-700 font-medium mb-1">Sin datos históricos suficientes</p>
-        <p className="text-slate-400 text-sm mb-4 max-w-xs text-center">Necesitas al menos 2 evaluaciones para visualizar la evolución del equipo.</p>
+        <p className="text-slate-700 font-medium mb-1">Not enough historical data</p>
+        <p className="text-slate-400 text-sm mb-4 max-w-xs text-center">You need at least 2 evaluations to visualize the team's evolution.</p>
         {onNavigateToEvaluations && (
           <button
             onClick={onNavigateToEvaluations}
             className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
           >
-            Ir a Evaluaciones
+            Go to Evaluations
           </button>
         )}
       </div>
@@ -190,10 +190,10 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
       icon: '→',
       iconBg: 'bg-slate-100',
       iconColor: 'text-slate-600',
-      titlePrefix: 'El rendimiento se mantiene ',
-      titleHighlight: 'estable',
+      titlePrefix: 'Performance remains ',
+      titleHighlight: 'stable',
       highlightColor: 'text-slate-700 font-semibold',
-      subtitle: 'Variaciones menores en los últimos 12 meses.',
+      subtitle: 'Minor variations over the last 12 months.',
       variant: 'neutral'
     };
 
@@ -202,10 +202,10 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
         icon: '↑',
         iconBg: 'bg-emerald-50',
         iconColor: 'text-emerald-600',
-        titlePrefix: 'Mejora constante: ',
-        titleHighlight: `+${delta.toFixed(1)} puntos`,
+        titlePrefix: 'Steady improvement: ',
+        titleHighlight: `+${delta.toFixed(1)} points`,
         highlightColor: 'text-emerald-600 font-semibold',
-        subtitle: 'El equipo ha ganado tracción en los últimos meses.',
+        subtitle: 'The team has gained traction over the past months.',
         variant: 'success'
       };
     } else if (delta < -0.1) {
@@ -214,10 +214,10 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
         icon: '↓',
         iconBg: 'bg-rose-50',
         iconColor: 'text-rose-600',
-        titlePrefix: 'El promedio ha descendido ',
-        titleHighlight: `${drop} puntos`,
+        titlePrefix: 'Average has dropped by ',
+        titleHighlight: `${drop} points`,
         highlightColor: 'text-rose-600 font-semibold',
-        subtitle: 'Se recomienda revisar las áreas de brechas críticas.',
+        subtitle: 'It is recommended to review critical gap areas.',
         variant: 'warning'
       };
     }
@@ -293,7 +293,7 @@ export default function EvolutionChart({ data, onNavigateToEvaluations }) {
             {/* Principle 2: Reference Line (Fixed overlap) */}
             <ReferenceLine y={4.0} stroke="#a5b4fc" strokeDasharray="3 3">
               <Label
-                value="Meta: Fortaleza (4.0)"
+                value="Goal: Strength (4.0)"
                 position="insideTopLeft"
                 fill="#64748b"
                 fontSize={11}

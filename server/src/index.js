@@ -359,7 +359,7 @@ export function createApp() {
       const { nombre, rol, skills, esDemo = false } = req.body;
 
       if (!nombre || !rol) {
-        return res.status(400).json({ message: 'Nombre y rol son requeridos' });
+        return res.status(400).json({ message: 'Name and role are required' });
       }
 
       const collaborator = await prisma.collaborator.create({
@@ -408,7 +408,7 @@ export function createApp() {
       });
 
       if (demoCollaborators.length === 0) {
-        return res.status(409).json({ message: 'No hay datos demo para eliminar.' });
+        return res.status(409).json({ message: 'No demo data to delete.' });
       }
 
       const demoIds = demoCollaborators.map(c => c.id);
@@ -518,7 +518,7 @@ export function createApp() {
     try {
       const { nombre, abrev } = req.body;
       if (!nombre || !abrev) {
-        return res.status(400).json({ message: 'Nombre y abreviatura son requeridos' });
+        return res.status(400).json({ message: 'Name and abbreviation are required' });
       }
       
       // Get max order to append to end
@@ -598,10 +598,10 @@ export function createApp() {
         })
       ]);
       
-      res.json({ success: true, message: 'Categoría archivada exitosamente' });
+      res.json({ success: true, message: 'Category archived successfully' });
     } catch (error) {
       console.error('[API] DELETE /api/categories failed:', error);
-      res.status(500).json({ message: 'Error archivando categoría' });
+      res.status(500).json({ message: 'Error archiving category' });
     }
   });
 
@@ -623,10 +623,10 @@ export function createApp() {
         })
       ]);
       
-      res.json({ success: true, message: 'Categoría restaurada exitosamente' });
+      res.json({ success: true, message: 'Category restored successfully' });
     } catch (error) {
       console.error('[API] PUT /api/categories/:id/restore failed:', error);
-      res.status(500).json({ message: 'Error restaurando categoría' });
+      res.status(500).json({ message: 'Error restoring category' });
     }
   });
 
@@ -670,7 +670,7 @@ export function createApp() {
     try {
       const { nombre, categoriaId } = req.body;
       if (!nombre || !categoriaId) {
-        return res.status(400).json({ message: 'Nombre y categoría son requeridos' });
+        return res.status(400).json({ message: 'Name and category are required' });
       }
       const skill = await prisma.skill.create({
         data: { nombre, categoriaId: parseInt(categoriaId) }
@@ -767,7 +767,7 @@ export function createApp() {
       const { data } = req.body;
 
       if (!data || !data.categories || !data.skills) {
-        return res.status(400).json({ message: 'Formato de datos inválido' });
+        return res.status(400).json({ message: 'Invalid data format' });
       }
 
       // Wipe existing data (order matters due to foreign keys)
@@ -794,7 +794,7 @@ export function createApp() {
         await prisma.assessment.createMany({ data: data.assessments });
       }
 
-      res.json({ success: true, message: 'Datos importados correctamente' });
+      res.json({ success: true, message: 'Data imported successfully' });
     } catch (error) {
       console.error('[API] POST /api/import failed:', error);
       res.status(500).json({ message: 'Error importing data' });
@@ -827,7 +827,7 @@ export function createApp() {
       const { rol } = req.params;
       const profile = await prisma.roleProfile.findUnique({ where: { rol } });
       if (!profile) {
-        return res.status(404).json({ message: 'Perfil no encontrado' });
+        return res.status(404).json({ message: 'Profile not found' });
       }
       res.json(typeof profile.skills === 'string' ? JSON.parse(profile.skills) : profile.skills);
     } catch (error) {
@@ -846,7 +846,7 @@ export function createApp() {
       const validCriticidades = ['C', 'I', 'D', 'N'];
       for (const [, value] of Object.entries(skills)) {
         if (!validCriticidades.includes(value)) {
-          return res.status(400).json({ message: `Criticidad inválida: ${value}. Debe ser C, I, D, o N` });
+          return res.status(400).json({ message: `Invalid criticality: ${value}. Must be C, I, D, or N` });
         }
       }
 
@@ -874,7 +874,7 @@ export function createApp() {
       const { newName } = req.body; // New role name
 
       if (!newName || !newName.trim()) {
-        return res.status(400).json({ message: 'El nuevo nombre es requerido' });
+        return res.status(400).json({ message: 'New name is required' });
       }
 
       const trimmedNewName = newName.trim();
@@ -882,14 +882,14 @@ export function createApp() {
       // Check if old profile exists
       const existingProfile = await prisma.roleProfile.findUnique({ where: { rol } });
       if (!existingProfile) {
-        return res.status(404).json({ message: 'Perfil no encontrado' });
+        return res.status(404).json({ message: 'Profile not found' });
       }
 
       // Check if new name already exists (unless it's the same)
       if (trimmedNewName !== rol) {
         const conflictProfile = await prisma.roleProfile.findUnique({ where: { rol: trimmedNewName } });
         if (conflictProfile) {
-          return res.status(400).json({ message: 'Ya existe un perfil con ese nombre' });
+          return res.status(400).json({ message: 'A profile with that name already exists' });
         }
       }
 
@@ -925,13 +925,13 @@ export function createApp() {
       const { rol, skills } = req.body;
 
       if (!rol) {
-        return res.status(400).json({ message: 'Rol es requerido' });
+        return res.status(400).json({ message: 'Role is required' });
       }
 
       // Check if profile already exists
       const existing = await prisma.roleProfile.findUnique({ where: { rol } });
       if (existing) {
-        return res.status(400).json({ message: 'Ya existe un perfil para este rol' });
+        return res.status(400).json({ message: 'A profile for this role already exists' });
       }
 
       const profile = await prisma.roleProfile.create({
@@ -996,7 +996,7 @@ export function createApp() {
       // Get collaborator and their role profile
       const collab = await prisma.collaborator.findUnique({ where: { id: collaboratorId } });
       if (!collab) {
-        return res.status(404).json({ message: 'Colaborador no encontrado' });
+        return res.status(404).json({ message: 'Collaborator not found' });
       }
 
       const roleProfile = await prisma.roleProfile.findUnique({ where: { rol: collab.rol } });
@@ -1009,11 +1009,11 @@ export function createApp() {
       for (const [skillId, data] of Object.entries(skills)) {
         // Validate nivel (0-5)
         if (data.nivel < 0 || data.nivel > 5) {
-          return res.status(400).json({ message: `Nivel inválido para skill ${skillId}: ${data.nivel}. Debe ser 0-5` });
+          return res.status(400).json({ message: `Invalid level for skill ${skillId}: ${data.nivel}. Must be 0-5` });
         }
         // Validate frecuencia
         if (!validFrecuencias.includes(data.frecuencia)) {
-          return res.status(400).json({ message: `Frecuencia inválida: ${data.frecuencia}. Debe ser D, S, M, T, o N` });
+          return res.status(400).json({ message: `Invalid frequency: ${data.frecuencia}. Must be D, S, M, T, or N` });
         }
 
         const criticidad = profileSkills[skillId] || 'N';
@@ -1056,7 +1056,7 @@ export function createApp() {
         data: { lastEvaluated: new Date() }
       });
 
-      res.json({ success: true, message: 'Evaluaciones guardadas' });
+      res.json({ success: true, message: 'Evaluations saved' });
     } catch (error) {
       console.error('[API] PUT /api/collaborators/:id/skills failed:', error);
       res.status(500).json({ message: 'Error saving evaluations' });
@@ -1142,7 +1142,7 @@ export function createApp() {
       });
 
       if (!session) {
-        return res.status(404).json({ message: 'Evaluación no encontrada' });
+        return res.status(404).json({ message: 'Evaluation not found' });
       }
 
       // Transform assessments to a map by skill ID
@@ -1187,13 +1187,13 @@ export function createApp() {
       const { collaboratorId, evaluatedBy, notes, skills } = req.body;
 
       if (!collaboratorId) {
-        return res.status(400).json({ message: 'collaboratorId es requerido' });
+        return res.status(400).json({ message: 'collaboratorId is required' });
       }
 
       // Check collaborator exists
       const collab = await prisma.collaborator.findUnique({ where: { id: collaboratorId } });
       if (!collab) {
-        return res.status(404).json({ message: 'Colaborador no encontrado' });
+        return res.status(404).json({ message: 'Collaborator not found' });
       }
 
       // Get role profile for criticidad
@@ -1210,7 +1210,7 @@ export function createApp() {
       });
       const roleChanged = lastSession && lastSession.collaboratorRol && lastSession.collaboratorRol !== collab.rol;
       const autoNotes = roleChanged
-        ? `Cambio de rol: ${lastSession.collaboratorRol} → ${collab.rol}${notes ? `. ${notes}` : ''}`
+        ? `Role change: ${lastSession.collaboratorRol} → ${collab.rol}${notes ? `. ${notes}` : ''}`
         : (notes || null);
 
       // Wrap all DB operations in a transaction for data integrity
@@ -1298,7 +1298,7 @@ export function createApp() {
       res.json({
         success: true,
         uuid: session.uuid,
-        message: 'Evaluación creada correctamente'
+        message: 'Evaluation created successfully'
       });
     } catch (error) {
       console.error('[API] POST /api/evaluations failed:', error);
@@ -1314,7 +1314,7 @@ export function createApp() {
       // Delete assessments linked to this session
       const session = await prisma.evaluationSession.findUnique({ where: { uuid } });
       if (!session) {
-        return res.status(404).json({ message: 'Evaluación no encontrada' });
+        return res.status(404).json({ message: 'Evaluation not found' });
       }
 
       await prisma.assessment.deleteMany({

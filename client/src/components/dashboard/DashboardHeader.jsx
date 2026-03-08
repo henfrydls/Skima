@@ -19,9 +19,9 @@ export default function DashboardHeader({
   
   // Helper to get button text
   const getPeriodLabel = () => {
-    if (!selectedPeriod) return "Vista Actual (Live)";
+    if (!selectedPeriod) return "Current View (Live)";
     const p = periods.find(p => p.id === selectedPeriod);
-    return p ? p.label : "Histórico";
+    return p ? p.label : "Historical";
   };
 
   const isLive = !selectedPeriod;
@@ -29,11 +29,11 @@ export default function DashboardHeader({
   // Granularity logic: Ensure we have a valid default.
   // If parent doesn't provide onGranularityChange, we hide toggles to avoid errors.
   const showGranularity = typeof onGranularityChange === 'function';
-  const currentDate = new Date().toLocaleDateString('es', { 
+  const currentDate = new Date().toLocaleDateString('en-US', {
     weekday: 'long',
-    day: 'numeric', 
-    month: 'long', 
-    year: 'numeric' 
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
   });
 
   return (
@@ -41,16 +41,16 @@ export default function DashboardHeader({
       <div>
         <div className="flex items-baseline gap-3">
           <h1 className="text-2xl font-light text-gray-900">
-            Resumen Ejecutivo
+            Executive Summary
           </h1>
           {teamSize != null && (
             <span className="relative -top-px px-2.5 py-0.5 text-xs font-medium text-gray-500 bg-gray-100 rounded-full border border-gray-200">
-              {teamSize} {teamSize === 1 ? 'colaborador' : 'colaboradores'}
+              {teamSize} {teamSize === 1 ? 'collaborator' : 'collaborators'}
             </span>
           )}
         </div>
         <p className="text-sm text-gray-500 mt-1 capitalize">
-          {isLive ? currentDate : `Viendo snapshot: ${getPeriodLabel()}`}
+          {isLive ? currentDate : `Viewing snapshot: ${getPeriodLabel()}`}
         </p>
       </div>
 
@@ -70,7 +70,7 @@ export default function DashboardHeader({
                   }
                 `}
               >
-                {g === 'year' ? 'Año' : g === 'quarter' ? 'Trim.' : 'Mes'}
+                {g === 'year' ? 'Year' : g === 'quarter' ? 'Quarter' : 'Month'}
               </button>
             ))}
           </div>
@@ -110,7 +110,7 @@ export default function DashboardHeader({
                   `}
                 >
                   <span className="flex items-center gap-2">
-                    <RotateCcw size={14} /> Vista Actual (Live)
+                    <RotateCcw size={14} /> Current View (Live)
                   </span>
                   {isLive && <Check size={14} />}
                 </button>
@@ -145,8 +145,8 @@ export default function DashboardHeader({
                 
                 {periods.filter(p => p.type === granularity).length === 0 && (
                    <div className="text-center py-6 text-gray-400">
-                      <p className="text-xs">No hay evaluaciones históricas</p>
-                      <p className="text-[10px] mt-1">en este rango de tiempo</p>
+                      <p className="text-xs">No historical evaluations</p>
+                      <p className="text-[10px] mt-1">in this time range</p>
                    </div>
                 )}
               </div>

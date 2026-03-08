@@ -12,28 +12,28 @@ vi.mock('framer-motion', () => ({
 describe('SkillStateLegend', () => {
   it('renders all 4 evaluation states', () => {
     render(<SkillStateLegend />);
-    expect(screen.getByText('Brecha Crítica')).toBeInTheDocument();
-    expect(screen.getByText('Área de Mejora')).toBeInTheDocument();
-    expect(screen.getByText('Competente')).toBeInTheDocument();
-    expect(screen.getByText('Fortaleza')).toBeInTheDocument();
+    expect(screen.getByText('Critical Gap')).toBeInTheDocument();
+    expect(screen.getByText('Area for Improvement')).toBeInTheDocument();
+    expect(screen.getByText('Competent')).toBeInTheDocument();
+    expect(screen.getByText('Strength')).toBeInTheDocument();
   });
 
   it('renders title', () => {
     render(<SkillStateLegend />);
-    expect(screen.getByText('Estados de Evaluación')).toBeInTheDocument();
+    expect(screen.getByText('Evaluation States')).toBeInTheDocument();
   });
 
   it('toggles expanded state to show criteria', () => {
     render(<SkillStateLegend />);
-    const toggleBtn = screen.getByText('Ver reglas');
+    const toggleBtn = screen.getByText('View rules');
     fireEvent.click(toggleBtn);
-    expect(screen.getByText('Ocultar reglas')).toBeInTheDocument();
-    expect(screen.getByText(/Skill crítica \(C\)/)).toBeInTheDocument();
+    expect(screen.getByText('Hide rules')).toBeInTheDocument();
+    expect(screen.getByText(/Critical skill \(C\)/)).toBeInTheDocument();
   });
 
   it('hides toggle button in compact mode', () => {
     render(<SkillStateLegend compact />);
-    expect(screen.queryByText('Ver reglas')).not.toBeInTheDocument();
+    expect(screen.queryByText('View rules')).not.toBeInTheDocument();
   });
 
   it('applies custom className', () => {

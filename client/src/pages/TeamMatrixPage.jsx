@@ -75,7 +75,7 @@ function CollaboratorListView({ collaborators = [], onSelect }) {
                 {col.promedio.toFixed(1)}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {col.promedio >= 3.5 ? 'Fortaleza' : col.promedio >= 2.5 ? 'Competente' : 'Requiere atención'}
+                {col.promedio >= 3.5 ? 'Strength' : col.promedio >= 2.5 ? 'Competent' : 'Needs Attention'}
               </p>
             </div>
           </div>
@@ -108,7 +108,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
         <nav className="mb-4 flex items-center gap-2 text-sm">
           <span className="text-gray-400">Team Matrix</span>
           <span className="text-gray-300">/</span>
-          <span className="text-gray-400">Por Colaborador</span>
+          <span className="text-gray-400">By Collaborator</span>
           <span className="text-gray-300">/</span>
           <span className="font-medium text-primary">{colaborador.nombre}</span>
         </nav>
@@ -116,7 +116,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
           onClick={onBack}
           className="mb-4 text-sm font-medium text-primary hover:text-primary/80 transition-colors flex items-center gap-1"
         >
-          ← Volver a lista
+          ← Back to list
         </button>
         
         <div className="flex justify-between items-start">
@@ -125,7 +125,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
             <p className="text-lg text-gray-500">{colaborador.rol}</p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-500 mb-1">Promedio General</p>
+            <p className="text-sm text-gray-500 mb-1">Overall Average</p>
             <p className={`text-5xl font-light ${getStatusColor(colaborador.promedio)}`}>
               {colaborador.promedio.toFixed(1)}
             </p>
@@ -140,25 +140,25 @@ function CollaboratorDetailView({ colaborador, onBack }) {
             colaborador.brechas.length > 2 ? 'text-critical' : 
             colaborador.brechas.length > 0 ? 'text-warning' : 'text-competent'
           }`}>
-            {colaborador.brechas.length > 2 ? 'CRÍTICO' : 
-             colaborador.brechas.length > 0 ? 'MODERADO' : 'BAJO'}
+            {colaborador.brechas.length > 2 ? 'CRITICAL' :
+             colaborador.brechas.length > 0 ? 'MODERATE' : 'LOW'}
           </div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Nivel de Riesgo</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Risk Level</p>
         </div>
         <div className="text-center p-4 bg-gray-50 rounded-lg">
           <div className="text-2xl font-light text-warning mb-2">{colaborador.brechas.length}</div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Brechas</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Gaps</p>
         </div>
         <div className="text-center p-4 bg-gray-50 rounded-lg">
           <div className="text-2xl font-light text-primary mb-2">{colaborador.fortalezas.length}</div>
-          <p className="text-xs text-gray-500 uppercase tracking-wide">Fortalezas</p>
+          <p className="text-xs text-gray-500 uppercase tracking-wide">Strengths</p>
         </div>
       </div>
 
       {/* Barras Lollipop */}
       <div className="bg-surface p-6 rounded-lg shadow-sm">
         <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-          Nivel por Categoría
+          Level by Category
         </h4>
         <div className="space-y-4">
           {Object.entries(colaborador.categorias).map(([key, valor]) => (
@@ -190,7 +190,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
         <div className="flex flex-wrap gap-4 mt-6">
           {colaborador.brechas.length > 0 && (
             <div className="flex-1">
-              <h5 className="text-xs text-gray-500 uppercase mb-2">Brechas</h5>
+              <h5 className="text-xs text-gray-500 uppercase mb-2">Gaps</h5>
               <div className="flex flex-wrap gap-2">
                 {colaborador.brechas.map((b, i) => (
                   <span key={i} className="px-2 py-1 bg-warning/10 text-warning text-xs rounded-full">{b}</span>
@@ -200,7 +200,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
           )}
           {colaborador.fortalezas.length > 0 && (
             <div className="flex-1">
-              <h5 className="text-xs text-gray-500 uppercase mb-2">Fortalezas</h5>
+              <h5 className="text-xs text-gray-500 uppercase mb-2">Strengths</h5>
               <div className="flex flex-wrap gap-2">
                 {colaborador.fortalezas.map((f, i) => (
                   <span key={i} className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full">{f}</span>
@@ -247,8 +247,8 @@ function CategoryGridView({ categories = [] }) {
           </div>
           
           <p className="text-xs text-gray-400 mt-3">
-            {cat.promedio >= 3.5 ? 'Fortaleza del equipo' : 
-             cat.promedio >= 2.5 ? 'Nivel competente' : 'Requiere desarrollo'}
+            {cat.promedio >= 3.5 ? 'Team strength' :
+             cat.promedio >= 2.5 ? 'Competent level' : 'Needs development'}
           </p>
         </div>
       ))}
@@ -286,7 +286,7 @@ export default function TeamMatrixPage() {
           setData(await response.json());
         }
       } catch (err) {
-        setError('Error cargando datos');
+        setError('Error loading data');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -354,9 +354,9 @@ export default function TeamMatrixPage() {
   }, [categories, skills, evaluatedCollaborators, roleProfiles]);
 
   const tabs = [
-    { id: 'matriz', label: 'Matriz de Equipo', Icon: Grid3x3 },
-    { id: 'colaboradores', label: 'Por Persona', Icon: User },
-    { id: 'categorias', label: 'Por Área', Icon: Layers },
+    { id: 'matriz', label: 'Team Matrix', Icon: Grid3x3 },
+    { id: 'colaboradores', label: 'By Person', Icon: User },
+    { id: 'categorias', label: 'By Area', Icon: Layers },
   ];
 
   if (error) {
@@ -368,7 +368,7 @@ export default function TeamMatrixPage() {
           onClick={() => window.location.reload()} 
           className="mt-4 text-primary hover:underline"
         >
-          Reintentar
+          Retry
         </button>
       </div>
     );
@@ -384,7 +384,7 @@ export default function TeamMatrixPage() {
       <div className={currentView === 'matriz' ? 'flex-shrink-0' : ''}>
         <h1 className="text-2xl font-light text-slate-800">Team Matrix</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Visualización de competencias del equipo
+          Team competency visualization
         </p>
       </div>
 
@@ -425,13 +425,13 @@ export default function TeamMatrixPage() {
               <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
                 <Grid3x3 size={40} className="text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Matriz vacía</h3>
-              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">No hay datos suficientes para generar la matriz. Crea colaboradores y evaluaciones primero.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Empty Matrix</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">Not enough data to generate the matrix. Create collaborators and evaluations first.</p>
               <button
                 onClick={() => navigate('/settings?tab=evaluaciones')}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
               >
-                Ir a Evaluaciones
+                Go to Evaluations
               </button>
             </div>
           ) : (
@@ -466,13 +466,13 @@ export default function TeamMatrixPage() {
               <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
                 <UserPlus size={40} className="text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay colaboradores</h3>
-              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">Aún no se han registrado colaboradores en el sistema.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No collaborators</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">No collaborators have been registered in the system yet.</p>
               <button
                 onClick={() => navigate('/settings?tab=colaboradores')}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
               >
-                Agregar Colaborador
+                Add Collaborator
               </button>
             </div>
           ) : (
@@ -507,13 +507,13 @@ export default function TeamMatrixPage() {
               <div className="w-20 h-20 mx-auto bg-gray-50 rounded-full flex items-center justify-center mb-6 ring-8 ring-gray-50/50">
                 <FolderTree size={40} className="text-gray-400" />
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No hay categorías</h3>
-              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">Aún no se han definido áreas o categorías de competencias.</p>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No categories</h3>
+              <p className="text-gray-500 mb-6 max-w-sm mx-auto text-sm">No competency areas or categories have been defined yet.</p>
               <button
                 onClick={() => navigate('/settings?tab=categorias')}
                 className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium shadow-sm"
               >
-                Crear Categoría
+                Create Category
               </button>
             </div>
           ) : (

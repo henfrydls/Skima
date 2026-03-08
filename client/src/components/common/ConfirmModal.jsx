@@ -19,10 +19,10 @@ export default function ConfirmModal({
   isOpen,
   onClose,
   onConfirm,
-  title = '¿Estás seguro?',
-  message = 'Esta acción no se puede deshacer.',
-  confirmText = 'Confirmar',
-  cancelText = 'Cancelar',
+  title = 'Are you sure?',
+  message = 'This action cannot be undone.',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
   variant = 'danger',
   isLoading = false
 }) {

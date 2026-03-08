@@ -33,7 +33,7 @@ describe('Auth Routes', () => {
       expect(res.body.success).toBe(true);
       expect(res.body.token).toBeDefined();
       expect(typeof res.body.token).toBe('string');
-      expect(res.body.message).toBe('Inicio de sesión exitoso');
+      expect(res.body.message).toBe('Login successful');
 
       // Verify the token is a valid JWT with expected payload
       const decoded = jwt.verify(res.body.token, JWT_SECRET);
@@ -47,7 +47,7 @@ describe('Auth Routes', () => {
         .send({ password: 'wrongpassword' });
 
       expect(res.status).toBe(401);
-      expect(res.body.message).toBe('Contraseña incorrecta');
+      expect(res.body.message).toBe('Incorrect password');
       expect(res.body.code).toBe('INVALID_PASSWORD');
       expect(res.body.token).toBeUndefined();
     });
@@ -58,7 +58,7 @@ describe('Auth Routes', () => {
         .send({});
 
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Contraseña requerida');
+      expect(res.body.message).toBe('Password required');
       expect(res.body.code).toBe('PASSWORD_REQUIRED');
     });
 
@@ -69,7 +69,7 @@ describe('Auth Routes', () => {
         .post('/api/auth/login');
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error en el servidor');
+      expect(res.body.message).toBe('Server error');
     });
 
     it('should return 400 when password field is null', async () => {
@@ -95,7 +95,7 @@ describe('Auth Routes', () => {
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);
       expect(res.body.token).toBeDefined();
-      expect(res.body.message).toBe('Acceso concedido (sin contraseña configurada)');
+      expect(res.body.message).toBe('Access granted (no password configured)');
     });
   });
 

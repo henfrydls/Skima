@@ -21,51 +21,51 @@ export default function ExecutiveKPIGrid({
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* 1. Índice de Madurez - General Average */}
       <StatCard
-        title="Índice de Madurez"
+        title="Maturity Index"
         value={metrics.teamAverageRaw}
         previousValue={previousMetrics?.teamAverageRaw}
-        subtext="Promedio general del equipo"
+        subtext="Team overall average"
         icon={TrendingUp}
         color="primary"
         sparklineData={sparklineData.maturity}
-        helpContent="Promedio general del equipo basado en todas las evaluaciones. Escala: < 2.5 Requiere Atención · 2.5–3.5 Competente · ≥ 3.5 Fortaleza. Meta: 4.0"
+        helpContent="Team overall average based on all evaluations. Scale: < 2.5 Needs Attention · 2.5–3.5 Competent · >= 3.5 Strength. Goal: 4.0"
       />
 
       {/* 2. Riesgo de Talento - Critical Gaps */}
       <StatCard
-        title="Riesgo de Talento"
+        title="Talent Risk"
         value={metrics.criticalGaps}
         previousValue={previousMetrics?.criticalGaps}
-        subtext="Brechas críticas activas"
+        subtext="Active critical gaps"
         icon={AlertTriangle}
         color="rose"
         invertDelta={true} // Lower is better
         suffix=""
-        helpContent="Skills marcadas como Críticas (C) donde el nivel está por debajo del umbral competente (< 2.5). Requieren acción inmediata."
+        helpContent="Skills marked as Critical (C) where the level is below the competent threshold (< 2.5). Require immediate action."
       />
 
       {/* 3. Densidad de Expertos */}
       <StatCard
-        title="Densidad de Expertos"
+        title="Expert Density"
         value={metrics.expertDensity || 0}
         previousValue={previousMetrics?.expertDensity}
-        subtext="% skills en nivel 4-5"
+        subtext="% skills at level 4-5"
         icon={Star}
         color="emerald"
         suffix="%"
-        helpContent="Porcentaje de skills evaluadas en nivel 4+. Indica la proporción de competencias donde el equipo tiene dominio avanzado."
+        helpContent="Percentage of skills evaluated at level 4+. Indicates the proportion of competencies where the team has advanced mastery."
       />
 
       {/* 4. Cobertura de Roles */}
       <StatCard
-        title="Cobertura de Roles"
+        title="Role Coverage"
         value={metrics.roleCoverage || 0}
         previousValue={previousMetrics?.roleCoverage}
-        subtext="% cumpliendo requisitos mínimos"
+        subtext="% meeting minimum requirements"
         icon={Shield}
         color="primary"
         suffix="%"
-        helpContent="Porcentaje de colaboradores que cumplen todos los requisitos críticos de su perfil de rol (nivel ≥ 2.5 en skills marcadas C)."
+        helpContent="Percentage of collaborators meeting all critical requirements of their role profile (level >= 2.5 in skills marked C)."
         helpAlign="left"
       />
     </div>

@@ -107,7 +107,7 @@ describe('API Routes', () => {
         .send({ rol: 'Designer' });
       
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Nombre y rol son requeridos');
+      expect(res.body.message).toBe('Name and role are required');
     });
 
     it('should return 400 if rol is missing', async () => {
@@ -146,7 +146,7 @@ describe('API Routes', () => {
       const res = await request(app).post('/api/reset-demo');
       
       expect(res.status).toBe(409);
-      expect(res.body.message).toBe('No hay datos demo para eliminar.');
+      expect(res.body.message).toBe('No demo data to delete.');
     });
 
     it('should delete demo collaborators and their assessments', async () => {

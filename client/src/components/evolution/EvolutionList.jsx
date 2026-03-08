@@ -9,7 +9,7 @@ import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
 const SparklineTooltip = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const pointData = payload[0].payload;
-    const label = pointData.date || 'Promedio';
+    const label = pointData.date || 'Average';
     
     return (
       <div 
@@ -74,19 +74,19 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" />
           </svg>
         </div>
-        <p className="text-slate-700 font-medium mb-1">Sin datos de colaboradores</p>
-        <p className="text-slate-400 text-sm max-w-xs mx-auto">No se encontraron registros de evolución para el período seleccionado.</p>
+        <p className="text-slate-700 font-medium mb-1">No collaborator data</p>
+        <p className="text-slate-400 text-sm max-w-xs mx-auto">No evolution records were found for the selected period.</p>
       </div>
     );
   }
 
   // Map timeRange to readable labels
   const timeLabels = {
-    '6m': 'Últimos 6 meses',
-    '12m': 'Últimos 12 meses',
-    '24m': 'Últimos 24 meses',
-    'ytd': 'Año actual',
-    'all': 'Todo el historial'
+    '6m': 'Last 6 months',
+    '12m': 'Last 12 months',
+    '24m': 'Last 24 months',
+    'ytd': 'Year to date',
+    'all': 'All history'
   };
   const periodLabel = timeLabels[timeRange] || timeLabels['12m'];
 
@@ -94,7 +94,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="p-6 border-b border-slate-100">
         <h3 className="text-base font-medium text-slate-800 tracking-tight">
-          Evolución Individual
+          Individual Evolution
           <span className="text-slate-400 font-normal"> — {periodLabel}</span>
         </h3>
       </div>
@@ -103,11 +103,11 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
         <table className="w-full text-sm text-left">
           <thead className="bg-slate-50 text-xs text-slate-500 uppercase font-medium">
             <tr>
-              <th className="px-6 py-3 tracking-wider">Colaborador</th>
-              <th className="px-4 py-3 text-center tracking-wider">Estado</th>
-              <th className="px-4 py-3 text-center tracking-wider">Tendencia</th>
-              <th className="px-4 py-3 text-center tracking-wider">Nivel</th>
-              <th className="px-4 py-3 text-right tracking-wider">Ingreso</th>
+              <th className="px-6 py-3 tracking-wider">Collaborator</th>
+              <th className="px-4 py-3 text-center tracking-wider">Status</th>
+              <th className="px-4 py-3 text-center tracking-wider">Trend</th>
+              <th className="px-4 py-3 text-center tracking-wider">Level</th>
+              <th className="px-4 py-3 text-right tracking-wider">Joined</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50">
@@ -139,7 +139,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
                         ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
                         : 'bg-slate-100 text-slate-500 border border-slate-200'
                     }`}>
-                      {collab.active ? 'Activo' : 'Inactivo'}
+                      {collab.active ? 'Active' : 'Inactive'}
                     </span>
                   </td>
 
@@ -165,7 +165,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
                   <td className="px-4 py-4 text-right">
                     {collab.joinedAt ? (
                       <span className="text-xs text-slate-500 tabular-nums">
-                        {new Date(collab.joinedAt).toLocaleDateString('es-ES', { month: 'short', year: 'numeric' })}
+                        {new Date(collab.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-400 italic">--</span>

@@ -46,19 +46,19 @@ export default function SetupView({ onSetupComplete }) {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error al crear datos demo');
+        throw new Error(data.error || 'Error creating demo data');
       }
 
       // Clear any dismissed banner so it shows in demo mode
       try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
 
-      toast.success('¡Datos demo cargados! Explora la app libremente.');
+      toast.success('Demo data loaded! Explore the app freely.');
       invalidatePreload();
       await refetchConfig();
       navigate('/');
     } catch (err) {
       console.error('Demo setup error:', err);
-      setDemoError(err.message || 'Error al cargar datos demo.');
+      setDemoError(err.message || 'Error loading demo data.');
     } finally {
       setIsLoadingDemo(false);
     }
@@ -88,14 +88,14 @@ export default function SetupView({ onSetupComplete }) {
       // Clear demo banner dismissed state
       try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
 
-      toast.success('¡Configuración guardada!');
+      toast.success('Configuration saved!');
       invalidatePreload();
       await refetchConfig();
       navigate('/');
     } catch (err) {
       console.error('Setup error:', err);
-      setError(err.message || 'Error al guardar la configuración.');
-      toast.error('Error al guardar la configuración.');
+      setError(err.message || 'Error saving configuration.');
+      toast.error('Error saving configuration.');
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +106,7 @@ export default function SetupView({ onSetupComplete }) {
     setError(null);
 
     if (!formData.companyName.trim() || !formData.adminName.trim()) {
-      setError('Por favor completa todos los campos.');
+      setError('Please complete all required fields.');
       return;
     }
 
@@ -130,19 +130,19 @@ export default function SetupView({ onSetupComplete }) {
           {isDemo ? (
             <>
               <h1 className="text-3xl font-light text-gray-900 mb-2">
-                Configura tu <span className="font-medium text-primary">Skima</span>
+                Set up your <span className="font-medium text-primary">Skima</span>
               </h1>
               <p className="text-gray-500">
-                Los datos demo serán reemplazados por tu configuración
+                Demo data will be replaced by your configuration
               </p>
             </>
           ) : (
             <>
               <h1 className="text-3xl font-light text-gray-900 mb-2">
-                Bienvenido a <span className="font-medium text-primary">Skima</span>
+                Welcome to <span className="font-medium text-primary">Skima</span>
               </h1>
               <p className="text-gray-500">
-                Configuremos tu espacio de trabajo local
+                Let's set up your local workspace
               </p>
             </>
           )}
@@ -153,7 +153,7 @@ export default function SetupView({ onSetupComplete }) {
           {/* Company Name Input */}
           <div className="mb-6">
             <label htmlFor="companyName" className="block text-sm font-medium text-gray-700 mb-2">
-              Nombre de la Organización
+              Organization Name
             </label>
             <div className="relative">
               <Building2 className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -162,7 +162,7 @@ export default function SetupView({ onSetupComplete }) {
                 id="companyName"
                 value={formData.companyName}
                 onChange={(e) => setFormData(prev => ({ ...prev, companyName: e.target.value }))}
-                placeholder="Ej: Acme Corp"
+                placeholder="e.g. Acme Corp"
                 className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl 
                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                          text-gray-900 placeholder:text-gray-400 transition-all"
@@ -174,7 +174,7 @@ export default function SetupView({ onSetupComplete }) {
           {/* Admin Name Input */}
           <div className="mb-6">
             <label htmlFor="adminName" className="block text-sm font-medium text-gray-700 mb-2">
-              Tu Nombre (Administrador)
+              Your Name (Administrator)
             </label>
             <div className="relative">
               <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -183,7 +183,7 @@ export default function SetupView({ onSetupComplete }) {
                 id="adminName"
                 value={formData.adminName}
                 onChange={(e) => setFormData(prev => ({ ...prev, adminName: e.target.value }))}
-                placeholder="Ej: Ana Rodríguez"
+                placeholder="e.g. Jane Doe"
                 className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl 
                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                          text-gray-900 placeholder:text-gray-400 transition-all"
@@ -195,7 +195,7 @@ export default function SetupView({ onSetupComplete }) {
           {/* Password Input (Optional) */}
           <div className="mb-6">
             <label htmlFor="adminPassword" className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña <span className="text-gray-400 font-normal">(Opcional)</span>
+              Password <span className="text-gray-400 font-normal">(Optional)</span>
             </label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
@@ -204,14 +204,14 @@ export default function SetupView({ onSetupComplete }) {
                 id="adminPassword"
                 value={formData.adminPassword}
                 onChange={(e) => setFormData(prev => ({ ...prev, adminPassword: e.target.value }))}
-                placeholder="Dejar vacío para acceso abierto"
+                placeholder="Leave empty for open access"
                 className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl 
                          focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary
                          text-gray-900 placeholder:text-gray-400 transition-all"
                 disabled={isSubmitting}
               />
             </div>
-            <p className="text-xs text-gray-400 mt-1">Para uso local, puedes dejarlo vacío.</p>
+            <p className="text-xs text-gray-400 mt-1">For local use, you can leave it empty.</p>
           </div>
 
           {/* Error Message */}
@@ -234,11 +234,11 @@ export default function SetupView({ onSetupComplete }) {
             {isSubmitting ? (
               <>
                 <Loader2 className="animate-spin" size={18} />
-                Configurando...
+                Setting up...
               </>
             ) : (
               <>
-                Comenzar
+                Get Started
                 <ArrowRight size={18} />
               </>
             )}
@@ -250,7 +250,7 @@ export default function SetupView({ onSetupComplete }) {
           <>
             <div className="flex items-center gap-3 mt-6">
               <div className="flex-1 border-t border-gray-200" />
-              <span className="text-xs text-gray-400 uppercase tracking-wider">o</span>
+              <span className="text-xs text-gray-400 uppercase tracking-wider">or</span>
               <div className="flex-1 border-t border-gray-200" />
             </div>
 
@@ -268,12 +268,12 @@ export default function SetupView({ onSetupComplete }) {
               {isLoadingDemo ? (
                 <>
                   <Loader2 className="animate-spin" size={18} />
-                  Cargando demo...
+                  Loading demo...
                 </>
               ) : (
                 <>
                   <Play size={18} />
-                  Explorar con datos demo
+                  Explore with demo data
                 </>
               )}
             </button>
@@ -291,13 +291,13 @@ export default function SetupView({ onSetupComplete }) {
                            hover:bg-critical/10 rounded-lg transition-colors"
                 >
                   <RefreshCw size={12} />
-                  Reintentar
+                  Retry
                 </button>
               </div>
             )}
 
             <p className="text-center text-xs text-gray-400 mt-2">
-              Navega la app con datos de ejemplo. Puedes configurar tu espacio después.
+              Browse the app with sample data. You can set up your workspace later.
             </p>
           </>
         )}
@@ -309,13 +309,13 @@ export default function SetupView({ onSetupComplete }) {
             onClick={() => navigate('/')}
             className="mt-6 w-full text-center text-sm text-gray-400 hover:text-gray-600 transition-colors"
           >
-            ← Volver al modo demo
+            ← Back to demo mode
           </button>
         )}
 
         {/* Footer */}
         <p className="text-center text-xs text-gray-400 mt-6">
-          Toda la información se almacena localmente y puede ser modificada después.
+          All information is stored locally and can be modified later.
         </p>
       </div>
 
@@ -326,10 +326,10 @@ export default function SetupView({ onSetupComplete }) {
         onConfirm={async () => {
           await doSetup();
         }}
-        title="Reemplazar datos demo"
-        message="Los datos demo serán reemplazados por tu configuración real. Esta acción no se puede deshacer."
-        confirmText="Continuar"
-        cancelText="Cancelar"
+        title="Replace demo data"
+        message="Demo data will be replaced by your real configuration. This action cannot be undone."
+        confirmText="Continue"
+        cancelText="Cancel"
         variant="warning"
         isLoading={isSubmitting}
       />

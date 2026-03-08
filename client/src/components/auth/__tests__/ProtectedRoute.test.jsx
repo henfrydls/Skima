@@ -85,8 +85,8 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
-    expect(screen.getByText('Acceso Restringido')).toBeInTheDocument();
-    expect(screen.getByText(/esta sección requiere autenticación/i)).toBeInTheDocument();
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+    expect(screen.getByText(/this section requires authentication/i)).toBeInTheDocument();
   });
 
   it('shows login button when not authenticated', () => {
@@ -101,7 +101,7 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('opens login modal when login button is clicked', () => {
@@ -116,7 +116,7 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const loginButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(loginButton);
 
     expect(screen.getByTestId('login-modal')).toBeInTheDocument();
@@ -135,7 +135,7 @@ describe('ProtectedRoute', () => {
     );
 
     // Open modal
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const loginButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(loginButton);
 
     expect(screen.getByTestId('login-modal')).toBeInTheDocument();
@@ -160,7 +160,7 @@ describe('ProtectedRoute', () => {
     );
 
     // Open modal
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const loginButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(loginButton);
 
     // Trigger successful login
@@ -183,7 +183,7 @@ describe('ProtectedRoute', () => {
     );
 
     // Open modal
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const loginButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(loginButton);
 
     expect(screen.getByTestId('login-modal')).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('ProtectedRoute', () => {
     expect(screen.queryByTestId('login-modal')).not.toBeInTheDocument();
 
     // Open modal
-    const loginButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const loginButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(loginButton);
 
     // Modal should be visible
@@ -250,11 +250,11 @@ describe('ProtectedRoute', () => {
     );
 
     // First login attempt
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     fireEvent.click(screen.getByRole('button', { name: 'Close Modal' }));
 
     // Second login attempt
-    fireEvent.click(screen.getByRole('button', { name: /iniciar sesión/i }));
+    fireEvent.click(screen.getByRole('button', { name: /sign in/i }));
     expect(screen.getByTestId('login-modal')).toBeInTheDocument();
   });
 
@@ -272,7 +272,7 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
-    expect(screen.getByText('Acceso Restringido')).toBeInTheDocument();
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
 
     // Change to authenticated
     mockUseAuth.mockReturnValue({
@@ -287,7 +287,7 @@ describe('ProtectedRoute', () => {
     );
 
     expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    expect(screen.queryByText('Acceso Restringido')).not.toBeInTheDocument();
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
   });
 
   it('renders complex children when authenticated', () => {
@@ -386,6 +386,6 @@ describe('ProtectedRoute', () => {
     });
 
     // Should not crash - still shows restricted view
-    expect(screen.getByText('Acceso Restringido')).toBeInTheDocument();
+    expect(screen.getByText('Access Denied')).toBeInTheDocument();
   });
 });

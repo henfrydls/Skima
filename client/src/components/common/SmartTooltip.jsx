@@ -2,21 +2,21 @@ import { useMemo } from 'react';
 
 // Frequency mapping with safe fallback
 const FREQUENCY_MAP = {
-  'D': 'Diario',
-  'S': 'Semanal',
-  'M': 'Mensual',
-  'Q': 'Trimestral',
-  'T': 'Trimestral',
-  'A': 'Anual',
-  'N': 'Nunca',
-  'P': 'A Demanda',
+  'D': 'Daily',
+  'S': 'Weekly',
+  'M': 'Monthly',
+  'Q': 'Quarterly',
+  'T': 'Quarterly',
+  'A': 'Yearly',
+  'N': 'Never',
+  'P': 'On Demand',
 };
 
 // Criticality mapping
 const CRITICALITY_MAP = {
-  'C': 'Crítico',
-  'I': 'Importante',
-  'D': 'Deseable',
+  'C': 'Critical',
+  'I': 'Important',
+  'D': 'Desirable',
   'N': 'N/A',
 };
 
@@ -79,7 +79,7 @@ export default function SmartTooltip({ info }) {
   const { collaboratorName, skillName, nivel, frecuencia, criticidad, estado } = data || {};
   
   // Safe frequency/criticality display
-  const freqDisplay = FREQUENCY_MAP[frecuencia] || frecuencia || 'Sin definir';
+  const freqDisplay = FREQUENCY_MAP[frecuencia] || frecuencia || 'Not defined';
   const critDisplay = CRITICALITY_MAP[criticidad] || criticidad || 'N/A';
   
   const isCriticalGap = estado === "BRECHA CRÍTICA";
@@ -100,15 +100,15 @@ export default function SmartTooltip({ info }) {
         
         {/* Data Grid */}
         <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 border-t border-slate-600 pt-2">
-          <span className="text-slate-400">Nivel:</span> 
+          <span className="text-slate-400">Level:</span> 
           <span className="font-mono font-bold text-right text-white">{nivel?.toFixed(1) ?? '—'}</span>
           
-          <span className="text-slate-400">Requerido:</span> 
+          <span className="text-slate-400">Required:</span> 
           <span className={`font-mono text-right ${criticidad === 'C' ? 'text-rose-400' : criticidad === 'I' ? 'text-amber-400' : 'text-slate-300'}`}>
             {critDisplay}
           </span>
           
-          <span className="text-slate-400">Frecuencia:</span> 
+          <span className="text-slate-400">Frequency:</span> 
           <span className="font-mono text-blue-300 text-right">{freqDisplay}</span>
         </div>
         
@@ -117,7 +117,7 @@ export default function SmartTooltip({ info }) {
           <div className="mt-2 pt-2 border-t border-rose-500/30">
             <p className="text-rose-400 font-bold uppercase text-[10px] flex items-center gap-1">
               <span className="w-2 h-2 bg-rose-500 rounded-full animate-pulse" />
-              Acción Requerida
+              Action Required
             </p>
           </div>
         )}
@@ -125,7 +125,7 @@ export default function SmartTooltip({ info }) {
           <div className="mt-2 pt-2 border-t border-amber-500/30">
             <p className="text-amber-400 font-medium uppercase text-[10px] flex items-center gap-1">
               <span className="w-2 h-2 bg-amber-500 rounded-full" />
-              Plan de Desarrollo
+              Development Plan
             </p>
           </div>
         )}

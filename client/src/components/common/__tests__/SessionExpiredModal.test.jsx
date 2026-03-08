@@ -46,28 +46,28 @@ describe('SessionExpiredModal', () => {
 
   it('does not render when sessionExpired is false', () => {
     renderWithAuthContext(false);
-    expect(screen.queryByText('Sesión Expirada')).not.toBeInTheDocument();
+    expect(screen.queryByText('Session Expired')).not.toBeInTheDocument();
   });
 
   it('renders modal when sessionExpired is true', () => {
     renderWithAuthContext(true);
-    expect(screen.getByText('Sesión Expirada')).toBeInTheDocument();
+    expect(screen.getByText('Session Expired')).toBeInTheDocument();
   });
 
   it('displays session expired title', () => {
     renderWithAuthContext(true);
-    expect(screen.getByText('Sesión Expirada')).toBeInTheDocument();
+    expect(screen.getByText('Session Expired')).toBeInTheDocument();
   });
 
   it('displays explanation message', () => {
     renderWithAuthContext(true);
-    expect(screen.getByText(/Tu sesión ha expirado por inactividad/i)).toBeInTheDocument();
-    expect(screen.getByText(/Por favor, inicia sesión nuevamente/i)).toBeInTheDocument();
+    expect(screen.getByText(/Your session has expired due to inactivity/i)).toBeInTheDocument();
+    expect(screen.getByText(/Please sign in again to continue/i)).toBeInTheDocument();
   });
 
   it('displays login button', () => {
     renderWithAuthContext(true);
-    expect(screen.getByRole('button', { name: 'Iniciar Sesión' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign In' })).toBeInTheDocument();
   });
 
   it('displays warning icon', () => {
@@ -79,7 +79,7 @@ describe('SessionExpiredModal', () => {
   it('calls logout when login button is clicked', () => {
     renderWithAuthContext(true);
 
-    const loginButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const loginButton = screen.getByRole('button', { name: 'Sign In' });
     fireEvent.click(loginButton);
 
     expect(mockLogout).toHaveBeenCalledTimes(1);
@@ -88,7 +88,7 @@ describe('SessionExpiredModal', () => {
   it('redirects to root when login button is clicked', () => {
     renderWithAuthContext(true);
 
-    const loginButton = screen.getByRole('button', { name: 'Iniciar Sesión' });
+    const loginButton = screen.getByRole('button', { name: 'Sign In' });
     fireEvent.click(loginButton);
 
     expect(window.location.href).toBe('/');

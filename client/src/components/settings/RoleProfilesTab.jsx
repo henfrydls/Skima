@@ -44,10 +44,10 @@ import { EmptyState } from '../common/EmptyState';
 
 // Criticality options with colors and descriptions
 const CRITICIDAD_OPTIONS = [
-  { value: 'C', label: 'Crítica', short: 'C', color: 'bg-critical text-white', desc: 'Indispensable para el puesto' },
-  { value: 'I', label: 'Importante', short: 'I', color: 'bg-warning text-white', desc: 'Necesaria pero no bloqueante' },
-  { value: 'D', label: 'Deseable', short: 'D', color: 'bg-gray-400 text-white', desc: 'Nice-to-have, suma puntos' },
-  { value: 'N', label: 'N/A', short: '—', color: 'bg-gray-200 text-gray-500', desc: 'No aplica para este rol' },
+  { value: 'C', label: 'Critical', short: 'C', color: 'bg-critical text-white', desc: 'Indispensable for the role' },
+  { value: 'I', label: 'Important', short: 'I', color: 'bg-warning text-white', desc: 'Necessary but not blocking' },
+  { value: 'D', label: 'Desirable', short: 'D', color: 'bg-gray-400 text-white', desc: 'Nice-to-have, adds value' },
+  { value: 'N', label: 'N/A', short: '—', color: 'bg-gray-200 text-gray-500', desc: 'Not applicable for this role' },
 ];
 
 // Unsaved Changes Dialog
@@ -60,29 +60,29 @@ function UnsavedChangesDialog({ isOpen, onDiscard, onCancel, onSave }) {
         <div className="p-6">
           <div className="flex items-center gap-3 text-warning mb-2">
             <AlertTriangle size={24} />
-            <h3 className="text-lg font-medium text-gray-900">Cambios sin guardar</h3>
+            <h3 className="text-lg font-medium text-gray-900">Unsaved Changes</h3>
           </div>
           <p className="text-gray-600 mb-6">
-            Tienes modificaciones pendientes en este perfil. Si sales ahora, perderás los cambios.
+            You have pending modifications in this profile. If you leave now, you will lose your changes.
           </p>
           <div className="flex justify-end gap-3">
             <button 
               onClick={onCancel}
               className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
             >
-              Cancelar
+              Cancel
             </button>
-            <button 
+            <button
               onClick={onDiscard}
               className="px-4 py-2 text-critical hover:bg-critical/10 rounded-lg transition-colors"
             >
-              Descartar
+              Discard
             </button>
-            <button 
+            <button
               onClick={onSave}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 shadow-sm transition-colors"
             >
-              Guardar
+              Save
             </button>
           </div>
         </div>
@@ -102,11 +102,11 @@ function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!roleName.trim()) {
-      setError('El nombre del rol es requerido');
+      setError('Role name is required');
       return;
     }
     if (existingRoles.includes(roleName.trim())) {
-      setError('Ya existe un perfil para este rol');
+      setError('A profile for this role already exists');
       return;
     }
     onCreateRole(roleName.trim());
@@ -119,7 +119,7 @@ function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
     <div className="modal-overlay z-50">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-medium text-gray-800">Nuevo Perfil de Puesto</h2>
+          <h2 className="text-lg font-medium text-gray-800">New Role Profile</h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
@@ -127,27 +127,27 @@ function NewRoleModal({ isOpen, onClose, onCreateRole, existingRoles }) {
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del Rol *
+              Role Name *
             </label>
             <input
               type="text"
               value={roleName}
               onChange={(e) => { setRoleName(e.target.value); setError(''); }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="Ej: Senior Developer, UX Lead..."
+              placeholder="Ex: Senior Developer, UX Lead..."
               autoFocus
             />
             {error && <p className="text-xs text-critical mt-1">{error}</p>}
           </div>
           <p className="text-xs text-gray-500">
-            Después de crear el perfil, podrás definir las skills críticas, importantes y deseables.
+            After creating the profile, you can define the critical, important, and desirable skills.
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <button type="button" onClick={onClose} className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-              Cancelar
+              Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">
-              Crear Perfil
+              Create Profile
             </button>
           </div>
         </form>
@@ -175,11 +175,11 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newName.trim()) {
-      setError('El nombre del rol es requerido');
+      setError('Role name is required');
       return;
     }
     if (newName.trim() !== currentName && existingRoles.includes(newName.trim())) {
-      setError('Ya existe un perfil con ese nombre');
+      setError('A profile with that name already exists');
       return;
     }
     
@@ -196,7 +196,7 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
       
       if (!response.ok) {
         const data = await response.json();
-        throw new Error(data.message || 'Error al renombrar');
+        throw new Error(data.message || 'Error renaming');
       }
       
       invalidatePreload();
@@ -213,7 +213,7 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
     <div className="modal-overlay z-50">
       <div className="bg-surface rounded-lg shadow-xl w-full max-w-md mx-4 animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100">
-          <h2 className="text-lg font-medium text-gray-800">Renombrar Perfil</h2>
+          <h2 className="text-lg font-medium text-gray-800">Rename Profile</h2>
           <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded transition-colors">
             <X size={20} className="text-gray-500" />
           </button>
@@ -221,27 +221,27 @@ function EditRoleModal({ isOpen, onClose, onRename, currentName, existingRoles, 
         <form onSubmit={handleSubmit} className="p-4 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombre del Rol
+              Role Name
             </label>
             <input
               type="text"
               value={newName}
               onChange={(e) => { setNewName(e.target.value); setError(''); }}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-              placeholder="Ej: Senior Developer, UX Lead..."
+              placeholder="Ex: Senior Developer, UX Lead..."
               autoFocus
             />
             {error && <p className="text-xs text-critical mt-1">{error}</p>}
           </div>
           <p className="text-xs text-gray-500">
-            Los colaboradores con este rol serán actualizados automáticamente.
+            Collaborators with this role will be updated automatically.
           </p>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={onClose}>
-              Cancelar
+              Cancel
             </Button>
             <Button type="submit" isLoading={isLoading}>
-              Guardar
+              Save
             </Button>
           </div>
         </form>
@@ -325,7 +325,7 @@ function CategorySection({ category, skills, requirements, onRequirementChange }
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-2 bg-gray-50 text-xs font-medium text-gray-500 uppercase tracking-wide">
             <span>Skill</span>
-            <span>Importancia para el Rol</span>
+            <span>Importance for the Role</span>
           </div>
           {categorySkills.map(skill => (
             <SkillRequirementRow
@@ -352,14 +352,14 @@ function CriticidadLegend() {
         className="flex items-center gap-2 text-sm text-gray-500 hover:text-primary transition-colors"
       >
         <HelpCircle size={16} />
-        ¿Qué significa cada nivel?
+        What does each level mean?
       </button>
 
       {isOpen && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setIsOpen(false)} />
           <div className="absolute right-0 top-full mt-2 w-80 bg-surface rounded-lg shadow-xl border border-gray-100 p-4 z-20">
-            <h4 className="font-medium text-gray-800 mb-3">Niveles de Criticidad</h4>
+            <h4 className="font-medium text-gray-800 mb-3">Criticality Levels</h4>
             <div className="space-y-2">
               {CRITICIDAD_OPTIONS.map(opt => (
                 <div key={opt.value} className="flex items-start gap-3">
@@ -427,12 +427,12 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
 
   const getRoleStatus = useCallback((roleName) => {
     const profile = allProfiles?.[roleName]; 
-    if (!profile) return { count: 0, color: 'bg-gray-200', text: 'Sin definir' };
+    if (!profile) return { count: 0, color: 'bg-gray-200', text: 'Not defined' };
     const count = Object.values(profile).filter(v => v !== 'N').length;
-    return { 
-      count, 
+    return {
+      count,
       color: count > 0 ? (count >= 10 ? 'bg-competent' : 'bg-warning') : 'bg-gray-200',
-      text: count > 0 ? `${count} skills` : 'Sin definir'
+      text: count > 0 ? `${count} skills` : 'Not defined'
     };
   }, [allProfiles]);
 
@@ -526,7 +526,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       invalidatePreload();
     } catch (err) {
       console.error('Error persisting new role:', err);
-      toast.error('Error al crear el rol');
+      toast.error('Error creating role');
       return;
     }
 
@@ -576,7 +576,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
         // Save collaborators for counting per role
         setCollaborators(data.collaborators || []);
       } catch (err) {
-        setError('Error cargando datos');
+        setError('Error loading data');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -670,7 +670,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       setInitialRequirements(requirements); // Reset dirty state
 
       invalidatePreload();
-      toast.success('Perfil guardado correctamente');
+      toast.success('Profile saved successfully');
 
       // Handle pending navigation if save was triggered from dialog
       if (shouldNavigateAfter) {
@@ -685,7 +685,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
 
     } catch (err) {
       console.error('Error saving profile:', err);
-      toast.error('Error guardando perfil');
+      toast.error('Error saving profile');
     } finally {
       setIsSaving(false);
     }
@@ -749,9 +749,9 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
       <>
         <EmptyState
           icon={Briefcase}
-          title="No hay roles definidos"
-          description="Crea tu primer rol para luego asignar colaboradores y evaluar competencias."
-          actionLabel="Crear Primer Rol"
+          title="No roles defined"
+          description="Create your first role to then assign collaborators and evaluate competencies."
+          actionLabel="Create First Role"
           onAction={() => setShowNewRoleModal(true)}
         />
         <NewRoleModal
@@ -774,7 +774,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
              <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
              <input 
                type="text" 
-               placeholder="Buscar rol..." 
+               placeholder="Search role..." 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
@@ -787,14 +787,14 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                  <button 
                   onClick={() => setViewMode('grid')} 
                   className={`p-1.5 rounded-md transition-all ${viewMode === 'grid' ? 'bg-white shadow-sm text-primary' : 'text-gray-400 hover:text-gray-600'}`}
-                  title="Vista de Cuadrícula"
+                  title="Grid View"
                  >
                     <LayoutGrid size={18} />
                  </button>
                  <button 
                   onClick={() => setViewMode('list')} 
                   className={`p-1.5 rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-primary' : 'text-gray-400 hover:text-gray-600'}`}
-                  title="Vista de Lista"
+                  title="List View"
                  >
                     <List size={18} />
                  </button>
@@ -807,7 +807,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                  className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2 text-sm font-medium"
               >
                  <Plus size={18} />
-                 Nuevo Perfil
+                 New Profile
               </button>
            </div>
         </div>
@@ -822,8 +822,8 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
               {filteredRoles.length === 0 ? (
                  <div className="py-20 text-center bg-gray-50/50 rounded-lg border border-dashed border-gray-100">
                     <Search size={48} className="mx-auto text-gray-300 mb-4" />
-                    <h3 className="text-lg font-medium text-gray-700 mb-1">No se encontraron roles</h3>
-                    <p className="text-gray-500">Prueba con otro término de búsqueda o crea un nuevo perfil.</p>
+                    <h3 className="text-lg font-medium text-gray-700 mb-1">No roles found</h3>
+                    <p className="text-gray-500">Try another search term or create a new profile.</p>
                  </div>
               ) : viewMode === 'grid' ? (
                  /* GRID VIEW - Redesigned with action menu */
@@ -867,7 +867,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                             >
                                                <Edit3 size={14} />
-                                               Editar skills
+                                               Edit skills
                                             </button>
                                             <button
                                                onClick={(e) => {
@@ -878,7 +878,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                                className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                             >
                                                <Briefcase size={14} />
-                                               Renombrar
+                                               Rename
                                             </button>
                                          </div>
                                       </>
@@ -902,7 +902,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                       className="flex items-center gap-2 text-xs text-amber-600 hover:text-amber-700 font-medium transition-colors"
                                    >
                                       <div className="w-2 h-2 rounded-full bg-amber-400" />
-                                      Definir skills →
+                                      Define skills →
                                    </button>
                                 ) : (
                                    <div className="flex items-center gap-2">
@@ -925,10 +925,10 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                     <table className="w-full">
                        <thead className="bg-gray-50 text-xs text-gray-500 uppercase font-medium">
                           <tr>
-                             <th className="px-6 py-3 text-left">Rol</th>
+                             <th className="px-6 py-3 text-left">Role</th>
                              <th className="px-6 py-3 text-left">Skills</th>
-                             <th className="px-6 py-3 text-left">Colaboradores</th>
-                             <th className="px-6 py-3 text-right w-16">Acciones</th>
+                             <th className="px-6 py-3 text-left">Collaborators</th>
+                             <th className="px-6 py-3 text-right w-16">Actions</th>
                           </tr>
                        </thead>
                        <tbody className="divide-y divide-gray-100">
@@ -955,7 +955,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                             className="flex items-center gap-2 text-sm text-amber-600 hover:text-amber-700 font-medium transition-colors"
                                          >
                                             <div className="w-2 h-2 rounded-full bg-amber-400" />
-                                            Definir skills →
+                                            Define skills →
                                          </button>
                                       ) : (
                                          <div className="flex items-center gap-2">
@@ -967,7 +967,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                    <td className="px-6 py-4">
                                       <div className="flex items-center gap-1.5 text-sm text-gray-500">
                                          <Users size={14} />
-                                         <span>{collabCount} {collabCount === 1 ? 'persona' : 'personas'}</span>
+                                         <span>{collabCount} {collabCount === 1 ? 'person' : 'people'}</span>
                                       </div>
                                    </td>
                                    <td className="px-6 py-4 text-right">
@@ -995,7 +995,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                                   >
                                                      <Edit3 size={14} />
-                                                     Editar skills
+                                                     Edit skills
                                                   </button>
                                                   <button
                                                      onClick={(e) => {
@@ -1006,7 +1006,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                                      className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
                                                   >
                                                      <Briefcase size={14} />
-                                                     Renombrar
+                                                     Rename
                                                   </button>
                                                </div>
                                             </>
@@ -1032,7 +1032,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                 <button 
                   onClick={() => handleRoleSwitch(null)}
                   className="p-2 -ml-2 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Volver a la lista"
+                  title="Back to list"
                 >
                    <ArrowLeft size={20} />
                 </button>
@@ -1041,7 +1041,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                      <h2 className="text-xl font-bold text-gray-800">{selectedRole}</h2>
                      <span className={`w-2.5 h-2.5 rounded-full ${getRoleStatus(selectedRole).color}`} />
                    </div>
-                   <p className="text-xs text-gray-500">Editando perfil de competencias</p>
+                   <p className="text-xs text-gray-500">Editing competency profile</p>
                 </div>
               </div>
 
@@ -1049,20 +1049,20 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                 {/* Save Status Indicator */}
                 {saveSuccess && (
                   <span className="text-sm text-competent flex items-center gap-1 bg-competent/10 px-3 py-1 rounded-full animate-fade-in">
-                    <CheckCircle size={14} /> Guardado
+                    <CheckCircle size={14} /> Saved
                   </span>
                 )}
                 
                 {/* Actions */}
                 <div className="flex items-center gap-2">
                   <div className="relative group">
-                    <button className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100" title="Copiar de otro rol">
+                    <button className="p-2 text-gray-400 hover:text-primary hover:bg-gray-50 rounded-lg transition-colors border border-transparent hover:border-gray-100" title="Copy from another role">
                        <Copy size={18} />
                     </button>
                     {/* Copy Dropdown */}
                     <div className="absolute right-0 top-full mt-2 w-64 bg-white shadow-xl rounded-lg border border-gray-100 py-1 hidden group-hover:block z-50 animate-in fade-in zoom-in-95">
                        <div className="px-3 py-2 text-xs font-semibold text-gray-500 bg-gray-50 border-b border-gray-100">
-                          Copiar configuración de...
+                          Copy configuration from...
                        </div>
                        <div className="max-h-60 overflow-y-auto custom-scrollbar">
                         {roles.filter(r => r !== selectedRole && allProfiles[r]).map(r => (
@@ -1084,7 +1084,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                     isLoading={isSaving}
                   >
                     <Save size={18} />
-                    {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+                    {isSaving ? 'Saving...' : 'Save Changes'}
                   </Button>
                 </div>
               </div>
@@ -1096,15 +1096,15 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
               <div className="grid grid-cols-4 gap-4 mb-8">
                  <div className="bg-critical/5 border border-critical/10 p-4 rounded-xl text-center">
                     <div className="text-2xl font-light text-critical">{stats.critical}</div>
-                    <div className="text-[10px] font-bold text-critical tracking-wider uppercase opacity-70">Críticas</div>
+                    <div className="text-[10px] font-bold text-critical tracking-wider uppercase opacity-70">Critical</div>
                  </div>
                  <div className="bg-warning/5 border border-warning/10 p-4 rounded-xl text-center">
                     <div className="text-2xl font-light text-warning">{stats.important}</div>
-                    <div className="text-[10px] font-bold text-warning tracking-wider uppercase opacity-70">Importantes</div>
+                    <div className="text-[10px] font-bold text-warning tracking-wider uppercase opacity-70">Important</div>
                  </div>
                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-center">
                     <div className="text-2xl font-light text-gray-600">{stats.desirable}</div>
-                    <div className="text-[10px] font-bold text-gray-500 tracking-wider uppercase opacity-70">Deseables</div>
+                    <div className="text-[10px] font-bold text-gray-500 tracking-wider uppercase opacity-70">Desirable</div>
                  </div>
                  <div className="bg-white border border-gray-200 p-4 rounded-xl text-center shadow-sm">
                     <div className="text-2xl font-light text-gray-400">{stats.na}</div>
@@ -1164,21 +1164,21 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
         >
           <span className="flex items-center text-sm text-gray-500 mr-auto">
             <AlertCircle size={16} className="mr-2 text-warning" />
-            Tienes cambios sin guardar
+            You have unsaved changes
           </span>
 
           <Button
             variant="ghost"
             onClick={() => setRequirements(initialRequirements)}
           >
-             Descartar
+             Discard
           </Button>
           <Button
             onClick={() => handleSave(false)}
             isLoading={isSaving}
           >
             <Save size={18} />
-            {isSaving ? 'Guardando...' : 'Guardar Cambios'}
+            {isSaving ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
       )}
@@ -1197,10 +1197,10 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
             setPendingNewRole(null);
           }
         }}
-        title="Cambios sin guardar"
-        message="Tienes cambios sin guardar. ¿Deseas descartarlos y crear un nuevo rol?"
-        confirmText="Descartar"
-        cancelText="Cancelar"
+        title="Unsaved Changes"
+        message="You have unsaved changes. Do you want to discard them and create a new role?"
+        confirmText="Discard"
+        cancelText="Cancel"
         variant="warning"
       />
     </div>

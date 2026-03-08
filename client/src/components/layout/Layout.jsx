@@ -62,7 +62,7 @@ const getNavItems = (isAuthenticated) => {
   const items = [
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/team-matrix', icon: Grid3X3, label: 'Team Matrix' },
-    { to: '/evolution', icon: TrendingUp, label: 'Evolución' },
+    { to: '/evolution', icon: TrendingUp, label: 'Evolution' },
   ];
   
   // Only show Settings if authenticated
@@ -116,7 +116,7 @@ export default function Layout() {
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
             className="p-2 rounded-lg text-primary hover:bg-primary/10 transition-colors duration-150 ease-out flex-shrink-0"
-            aria-label={isCollapsed ? "Expandir sidebar" : "Colapsar sidebar"}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
           </button>
@@ -163,7 +163,7 @@ export default function Layout() {
                 transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
                 ${isCollapsed ? 'px-[14px]' : 'px-3'}
               `}
-              title={isCollapsed ? 'Modo Demo' : undefined}
+              title={isCollapsed ? 'Demo Mode' : undefined}
             >
               <FlaskConical size={16} className="flex-shrink-0" />
               <span
@@ -172,7 +172,7 @@ export default function Layout() {
                   ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
                 `}
               >
-                Modo Demo
+                Demo Mode
               </span>
             </button>
             <button
@@ -182,7 +182,7 @@ export default function Layout() {
                 transition-[padding] duration-[250ms] ease-out text-xs font-medium overflow-hidden
                 ${isCollapsed ? 'px-[14px]' : 'px-3'}
               `}
-              title={isCollapsed ? 'Configurar mi espacio' : undefined}
+              title={isCollapsed ? 'Set Up My Space' : undefined}
             >
               <Settings size={16} className="flex-shrink-0" />
               <span
@@ -191,7 +191,7 @@ export default function Layout() {
                   ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-2 delay-75'}
                 `}
               >
-                Configurar mi espacio
+                Set Up My Space
               </span>
             </button>
           </div>
@@ -206,7 +206,7 @@ export default function Layout() {
               <button
                 onClick={() => setShowLoginModal(true)}
                 className="w-full flex items-center px-3 py-2.5 rounded-lg text-gray-600 hover:bg-primary/10 hover:text-primary transition-colors duration-150 overflow-hidden"
-                title="Iniciar Sesión"
+                title="Sign In"
               >
                 <LogIn size={20} className="flex-shrink-0 min-w-[20px]" />
                 <span
@@ -215,7 +215,7 @@ export default function Layout() {
                     ${isCollapsed ? 'max-w-0 opacity-0 ml-0' : 'max-w-[180px] opacity-100 ml-3 delay-75'}
                   `}
                 >
-                  Iniciar Sesión
+                  Sign In
                 </span>
               </button>
             </div>
@@ -226,7 +226,7 @@ export default function Layout() {
       {/* Contenido Principal */}
       <main
         className={`
-          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out
+          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
@@ -244,8 +244,8 @@ export default function Layout() {
         {/* Demo banner - outside padding, sticky at top */}
         <DemoBanner />
 
-        {/* Área de contenido - flex-1 fills remaining height */}
-        <div className="p-6 flex-1 bg-gray-50 flex flex-col">
+        {/* Content area */}
+        <div className="p-6 flex-1 flex flex-col">
           <Outlet />
         </div>
       </main>

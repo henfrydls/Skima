@@ -36,7 +36,7 @@ describe('LoginModal', () => {
       />
     );
 
-    expect(screen.queryByText('Acceso Admin')).not.toBeInTheDocument();
+    expect(screen.queryByText('Admin Access')).not.toBeInTheDocument();
   });
 
   it('renders when isOpen is true', () => {
@@ -48,8 +48,8 @@ describe('LoginModal', () => {
       />
     );
 
-    expect(screen.getByText('Acceso Admin')).toBeInTheDocument();
-    expect(screen.getByText('Ingresa la contraseña para continuar')).toBeInTheDocument();
+    expect(screen.getByText('Admin Access')).toBeInTheDocument();
+    expect(screen.getByText('Enter password to continue')).toBeInTheDocument();
   });
 
   it('renders password input field', () => {
@@ -61,7 +61,7 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     expect(passwordInput).toBeInTheDocument();
     expect(passwordInput).toHaveAttribute('type', 'password');
   });
@@ -75,7 +75,7 @@ describe('LoginModal', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: /iniciar sesión/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /sign in/i })).toBeInTheDocument();
   });
 
   it('renders close button', () => {
@@ -118,7 +118,7 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
     expect(passwordInput).toHaveValue('admin123');
@@ -133,7 +133,7 @@ describe('LoginModal', () => {
       />
     );
 
-    const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     expect(submitButton).toBeDisabled();
   });
 
@@ -148,10 +148,10 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     expect(submitButton).not.toBeDisabled();
   });
 
@@ -171,10 +171,10 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
@@ -202,10 +202,10 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
@@ -216,7 +216,7 @@ describe('LoginModal', () => {
   it('displays error message on failed login', async () => {
     global.fetch.mockResolvedValueOnce({
       ok: false,
-      json: async () => ({ message: 'Contraseña incorrecta' })
+      json: async () => ({ message: 'Incorrect password' })
     });
 
     const user = userEvent.setup();
@@ -229,14 +229,14 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'wrongpassword');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(screen.getByText('Contraseña incorrecta')).toBeInTheDocument();
+      expect(screen.getByText('Incorrect password')).toBeInTheDocument();
     });
 
     expect(mockOnSuccess).not.toHaveBeenCalled();
@@ -258,14 +258,14 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'wrongpassword');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(screen.getByText('Error de autenticación')).toBeInTheDocument();
+      expect(screen.getByText('Authentication error')).toBeInTheDocument();
     });
   });
 
@@ -282,14 +282,14 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
-      expect(screen.getByText('Error de conexión con el servidor')).toBeInTheDocument();
+      expect(screen.getByText('Server connection error')).toBeInTheDocument();
     });
   });
 
@@ -311,10 +311,10 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     fireEvent.click(submitButton);
 
     // Button should be disabled during loading
@@ -341,10 +341,10 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     await user.type(passwordInput, 'admin123');
 
-    const form = screen.getByRole('button', { name: /iniciar sesión/i }).closest('form');
+    const form = screen.getByRole('button', { name: /sign in/i }).closest('form');
     fireEvent.submit(form);
 
     await waitFor(() => {
@@ -363,7 +363,7 @@ describe('LoginModal', () => {
       />
     );
 
-    expect(screen.getByText(/contraseña por defecto/i)).toBeInTheDocument();
+    expect(screen.getByText(/default password/i)).toBeInTheDocument();
     expect(screen.getByText('admin123')).toBeInTheDocument();
   });
 
@@ -390,7 +390,7 @@ describe('LoginModal', () => {
       />
     );
 
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     // React autoFocus prop is applied - verify the input is the active element or has the attribute
     expect(document.activeElement === passwordInput || passwordInput.hasAttribute('autofocus')).toBe(true);
   });
@@ -420,10 +420,10 @@ describe('LoginModal', () => {
     );
 
     // The submit button is disabled when password is empty
-    const submitButton = screen.getByRole('button', { name: /iniciar sesión/i });
+    const submitButton = screen.getByRole('button', { name: /sign in/i });
     expect(submitButton).toBeDisabled();
     // Input has required attribute
-    const passwordInput = screen.getByLabelText(/contraseña/i);
+    const passwordInput = screen.getByLabelText(/password/i);
     expect(passwordInput).toBeRequired();
   });
 });

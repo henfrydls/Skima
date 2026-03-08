@@ -94,7 +94,7 @@ export default function DashboardView() {
           setData(await response.json());
         }
       } catch (err) {
-        setError('Error cargando datos del dashboard');
+        setError('Error loading dashboard data');
         console.error(err);
       } finally {
         setIsLoading(false);
@@ -192,7 +192,7 @@ export default function DashboardView() {
   }
 
   return (
-    <div className="flex-1 flex flex-col bg-gray-50 -m-6 p-6 space-y-6">
+    <div className="-m-6 p-6 space-y-6">
       {/* Header with Time Travel */}
       <DashboardHeader
         periods={availableSnapshots}
@@ -226,15 +226,15 @@ export default function DashboardView() {
             <FlaskConical size={20} className="text-amber-600" />
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800">Estás explorando con datos de ejemplo</p>
-            <p className="text-xs text-gray-500">Cuando estés listo, configura tu espacio con tus datos reales.</p>
+            <p className="text-sm font-medium text-gray-800">You're exploring with sample data</p>
+            <p className="text-xs text-gray-500">When you're ready, set up your space with your own data.</p>
           </div>
           <button
             onClick={() => navigate('/setup')}
             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-primary bg-primary/5 border border-primary/20 rounded-lg hover:bg-primary/10 transition-colors flex-shrink-0"
           >
             <Settings size={14} />
-            Configurar mi espacio
+            Set Up My Space
           </button>
         </div>
       )}
@@ -245,7 +245,7 @@ export default function DashboardView() {
           to="/team-matrix"
           className="inline-flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-primary hover:shadow-md transition-all text-gray-600 hover:text-primary"
         >
-          Explorar Team Matrix
+          Explore Team Matrix
           <ArrowRight size={16} />
         </Link>
       </div>
