@@ -354,12 +354,12 @@ export function calculateDistributionByCategory(collaborators, skills, categorie
           const evaluation = evaluarSkill(skillData.nivel, freq, skillData.criticidad);
 
           // 3. Status Mapping to Visual Buckets
-          if (evaluation.estado === "BRECHA CRÍTICA" || evaluation.estado === "ÁREA DE MEJORA") {
+          if (evaluation.estado === "CRITICAL GAP" || evaluation.estado === "NEEDS IMPROVEMENT") {
             brechas++;
-          } else if (evaluation.estado === "FORTALEZA") {
+          } else if (evaluation.estado === "STRENGTH") {
             experts++;
           } else {
-            // "COMPETENTE" (Includes low level but low criticality items)
+            // "COMPETENT" (Includes low level but low criticality items)
             competent++; 
           }
         }

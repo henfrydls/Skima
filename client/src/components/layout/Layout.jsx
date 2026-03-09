@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Grid3X3,
@@ -81,6 +81,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const location = useLocation();
   const { isAuthenticated, login } = useAuth();
   const { adminName, isDemo, isOnlineDemo } = useConfig();
   const version = useAppVersion();
@@ -317,7 +318,9 @@ export default function Layout() {
 
         {/* Content area */}
         <div className="p-6 flex-1 flex flex-col">
-          <Outlet />
+          <div key={location.pathname} className="animate-fade-in flex-1 flex flex-col">
+            <Outlet />
+          </div>
         </div>
       </main>
 

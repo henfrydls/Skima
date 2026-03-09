@@ -199,8 +199,8 @@ export default function TransposedMatrixTable({
                       
                       // Use evaluarSkill for business logic
                       const evaluacion = evaluarSkill(nivel, frecuencia, criticidad);
-                      const isCriticalGap = evaluacion.estado === "BRECHA CRÍTICA";
-                      const isAreaMejora = evaluacion.estado === "ÁREA DE MEJORA";
+                      const isCriticalGap = evaluacion.estado === "CRITICAL GAP";
+                      const isAreaMejora = evaluacion.estado === "NEEDS IMPROVEMENT";
                       
                       return (
                         <td 

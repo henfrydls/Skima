@@ -591,9 +591,9 @@ export default function SkillsTab({ isActive = false }) {
         isOpen={deleteModal.isOpen}
         onClose={() => setDeleteModal({ ...deleteModal, isOpen: false })}
         onConfirm={handleConfirmDelete}
-        title="Eliminar Skill"
-        message={`¿Estás seguro que deseas eliminar "${deleteModal.skill?.nombre}"? Esta acción se puede deshacer temporalmente.`}
-        confirmText="Eliminar"
+        title="Delete Skill"
+        message={`Are you sure you want to delete "${deleteModal.skill?.nombre}"? This action can be temporarily undone.`}
+        confirmText="Delete"
         variant="danger"
       />
     </div>

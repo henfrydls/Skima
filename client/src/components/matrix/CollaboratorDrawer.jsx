@@ -339,11 +339,11 @@ export default function CollaboratorDrawer({
                          <p className="text-xs text-gray-500">{gap.accion}</p>
                       </div>
                       <span className={`px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded-md border ${
-                          gap.estado === 'BRECHA CRÍTICA' 
+                          gap.estado === 'CRITICAL GAP' 
                             ? 'bg-critical/10 text-critical border-critical/20' 
                             : 'bg-warning/10 text-warning border-warning/20'
                         }`}>
-                        {gap.estado === 'BRECHA CRÍTICA' ? 'CRITICAL' : 'IMPROVE'}
+                        {gap.estado === 'CRITICAL GAP' ? 'CRITICAL' : 'IMPROVE'}
                       </span>
                     </div>
                   ))}

@@ -147,7 +147,7 @@ function getCollaboratorBadge(collaborator) {
   }
   
   // Check for critical gaps first (highest priority)
-  const hasCriticalGap = collaborator.brechas?.some(b => b.estado === 'BRECHA CRÍTICA');
+  const hasCriticalGap = collaborator.brechas?.some(b => b.estado === 'CRITICAL GAP');
   
   if (hasCriticalGap) {
     return { type: 'critical', label: 'Critical Gaps', icon: AlertTriangle };

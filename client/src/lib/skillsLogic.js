@@ -40,7 +40,7 @@ export const SKILL_THRESHOLDS = {
 export const getSkillLevelStatus = (score) => {
   if (score >= SKILL_THRESHOLDS.STRENGTH) {
     return { 
-      label: 'Fortaleza', 
+      label: 'Strength',
       color: '#6366f1', // Indigo
       value: 'strength',
       tailwindColor: 'text-primary'
@@ -48,14 +48,14 @@ export const getSkillLevelStatus = (score) => {
   }
   if (score >= SKILL_THRESHOLDS.COMPETENT) {
     return { 
-      label: 'Competente', 
+      label: 'Competent',
       color: '#a6ae3d', // Lime/Competent
       value: 'competent',
       tailwindColor: 'text-competent'
     };
   }
   return { 
-    label: 'Requiere Atención', 
+    label: 'Needs Attention',
     color: '#f59e0b', // Amber/Warning
     value: 'attention',
     tailwindColor: 'text-warning'
@@ -88,10 +88,10 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   // This is the "Red Zone" - Urgent
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
     return {
-      estado: "BRECHA CRÍTICA",
+      estado: "CRITICAL GAP",
       color: STATUS_COLORS.CRITICAL,
       score: score + 10, // Boost score to ensure it's top priority
-      accion: "Capacitación urgente"
+      accion: "Urgent training"
     };
   }
 
@@ -105,10 +105,10 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
     (criticidad === 'I' && nivel < 3)      // Important and weak
   ) {
     return {
-      estado: "ÁREA DE MEJORA",
+      estado: "NEEDS IMPROVEMENT",
       color: STATUS_COLORS.WARNING,
       score: score, // Use calculated score
-      accion: "Plan de desarrollo"
+      accion: "Development plan"
     };
   }
 
@@ -116,20 +116,20 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   // Logic: High Level (>= 4) in relevant skills (Not N)
   if (nivel >= 4 && criticidad !== 'N') {
     return {
-      estado: "FORTALEZA",
+      estado: "STRENGTH",
       color: STATUS_COLORS.STRENGTH,
       score: score,
-      accion: "Mentorear a otros"
+      accion: "Mentor others"
     };
   }
 
   // 4. COMPETENTE (Competent / Neutral)
   // Default state: doing okay, or skill is not critical
   return {
-    estado: "COMPETENTE",
+    estado: "COMPETENT",
     color: STATUS_COLORS.NEUTRAL,
     score: 0, // Low priority
-    accion: "Mantener"
+    accion: "Maintain"
   };
 };
 
@@ -251,7 +251,7 @@ export const identifyGaps = (skills = {}, skillsList = []) => {
 
     const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
 
-    if (result.estado === "BRECHA CRÍTICA" || result.estado === "ÁREA DE MEJORA") {
+    if (result.estado === "CRITICAL GAP" || result.estado === "NEEDS IMPROVEMENT") {
       // Find skill name from list
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
@@ -280,7 +280,7 @@ export const identifyStrengths = (skills = {}, skillsList = []) => {
     const frecuencia = data.frecuencia || 'M';
     const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
 
-    if (result.estado === "FORTALEZA") {
+    if (result.estado === "STRENGTH") {
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
         strengths.push({

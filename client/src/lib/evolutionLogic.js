@@ -132,9 +132,9 @@ export const transformEmployeesForList = (employees) => {
       // Sparkline data (array of scores) with descriptive labels
       trend: emp.sparkline?.map((score, i, arr) => {
         let label = '';
-        if (i === 0) label = 'Inicio';
-        else if (i === arr.length - 1) label = 'Actual';
-        else label = `Hito ${i}`;
+        if (i === 0) label = 'Start';
+        else if (i === arr.length - 1) label = 'Current';
+        else label = `Milestone ${i}`;
         
         return { 
           date: label, // Used as label in tooltip
@@ -170,10 +170,10 @@ export const getNarrativeFromMeta = (meta) => {
       icon: '↑',
       iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
-      titlePrefix: 'Mejora constante: ',
-      titleHighlight: `+${periodDelta.toFixed(1)} puntos`,
+      titlePrefix: 'Steady improvement: ',
+      titleHighlight: `+${periodDelta.toFixed(1)} points`,
       highlightColor: 'text-emerald-600 font-semibold',
-      subtitle: 'El equipo ha ganado tracción en el período analizado.',
+      subtitle: 'The team has gained traction in the analyzed period.',
       variant: 'success'
     };
   }
@@ -183,10 +183,10 @@ export const getNarrativeFromMeta = (meta) => {
       icon: '↓',
       iconBg: 'bg-rose-50',
       iconColor: 'text-rose-600',
-      titlePrefix: 'El promedio ha descendido ',
-      titleHighlight: `${Math.abs(periodDelta).toFixed(1)} puntos`,
+      titlePrefix: 'Average has decreased ',
+      titleHighlight: `${Math.abs(periodDelta).toFixed(1)} points`,
       highlightColor: 'text-rose-600 font-semibold',
-      subtitle: 'Se recomienda revisar las áreas de brechas críticas.',
+      subtitle: 'Review critical gap areas is recommended.',
       variant: 'warning'
     };
   }
@@ -195,10 +195,10 @@ export const getNarrativeFromMeta = (meta) => {
     icon: '→',
     iconBg: 'bg-slate-100',
     iconColor: 'text-slate-600',
-    titlePrefix: 'El rendimiento se mantiene ',
-    titleHighlight: 'estable',
+    titlePrefix: 'Performance remains ',
+    titleHighlight: 'stable',
     highlightColor: 'text-slate-700 font-semibold',
-    subtitle: `Índice de madurez actual: ${currentMaturityIndex?.toFixed(1) || '--'}`,
+    subtitle: `Current maturity index: ${currentMaturityIndex?.toFixed(1) || '--'}`,
     variant: 'neutral'
   };
 };

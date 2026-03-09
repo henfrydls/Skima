@@ -274,9 +274,9 @@ describe('transformEmployeesForList', () => {
     const trend = result[0].trend;
 
     expect(trend).toHaveLength(3);
-    expect(trend[0]).toEqual({ date: 'Inicio', promedio: 2.0 });
-    expect(trend[1]).toEqual({ date: 'Hito 1', promedio: 3.0 });
-    expect(trend[2]).toEqual({ date: 'Actual', promedio: 4.0 });
+    expect(trend[0]).toEqual({ date: 'Start', promedio: 2.0 });
+    expect(trend[1]).toEqual({ date: 'Milestone 1', promedio: 3.0 });
+    expect(trend[2]).toEqual({ date: 'Current', promedio: 4.0 });
   });
 
   it('should handle single-point sparkline', () => {
@@ -287,7 +287,7 @@ describe('transformEmployeesForList', () => {
     expect(trend).toHaveLength(1);
     // Single element is index 0 (first) AND index arr.length-1 (last)
     // The first condition (i === 0) wins in the if/else chain
-    expect(trend[0]).toEqual({ date: 'Inicio', promedio: 3.5 });
+    expect(trend[0]).toEqual({ date: 'Start', promedio: 3.5 });
   });
 
   it('should handle empty sparkline', () => {
@@ -312,17 +312,17 @@ describe('transformEmployeesForList', () => {
     // Score >= 3.5 -> Fortaleza
     const strength = transformEmployeesForList([makeEmployee({ currentScore: 4.0 })]);
     expect(strength[0].status).toBe('strength');
-    expect(strength[0].statusLabel).toBe('Fortaleza');
+    expect(strength[0].statusLabel).toBe('Strength');
 
     // Score >= 2.5 and < 3.5 -> Competente
     const competent = transformEmployeesForList([makeEmployee({ currentScore: 3.0 })]);
     expect(competent[0].status).toBe('competent');
-    expect(competent[0].statusLabel).toBe('Competente');
+    expect(competent[0].statusLabel).toBe('Competent');
 
     // Score < 2.5 -> Requiere Atencion
     const attention = transformEmployeesForList([makeEmployee({ currentScore: 1.5 })]);
     expect(attention[0].status).toBe('attention');
-    expect(attention[0].statusLabel).toBe('Requiere Atención');
+    expect(attention[0].statusLabel).toBe('Needs Attention');
   });
 
   it('should compute sparklineColor based on growth value', () => {
@@ -392,8 +392,8 @@ describe('getNarrativeFromMeta', () => {
     expect(result.icon).toBe('↑');
     expect(result.iconBg).toBe('bg-emerald-50');
     expect(result.iconColor).toBe('text-emerald-600');
-    expect(result.titlePrefix).toBe('Mejora constante: ');
-    expect(result.titleHighlight).toBe('+0.5 puntos');
+    expect(result.titlePrefix).toBe('Steady improvement: ');
+    expect(result.titleHighlight).toBe('+0.5 points');
     expect(result.highlightColor).toBe('text-emerald-600 font-semibold');
     expect(result.variant).toBe('success');
   });
@@ -405,8 +405,8 @@ describe('getNarrativeFromMeta', () => {
     expect(result.icon).toBe('↓');
     expect(result.iconBg).toBe('bg-rose-50');
     expect(result.iconColor).toBe('text-rose-600');
-    expect(result.titlePrefix).toBe('El promedio ha descendido ');
-    expect(result.titleHighlight).toBe('0.8 puntos');
+    expect(result.titlePrefix).toBe('Average has decreased ');
+    expect(result.titleHighlight).toBe('0.8 points');
     expect(result.highlightColor).toBe('text-rose-600 font-semibold');
     expect(result.variant).toBe('warning');
   });
@@ -418,7 +418,7 @@ describe('getNarrativeFromMeta', () => {
     expect(result.icon).toBe('→');
     expect(result.iconBg).toBe('bg-slate-100');
     expect(result.iconColor).toBe('text-slate-600');
-    expect(result.titleHighlight).toBe('estable');
+    expect(result.titleHighlight).toBe('stable');
     expect(result.variant).toBe('neutral');
     expect(result.subtitle).toContain('3.2');
   });
@@ -464,13 +464,13 @@ describe('getNarrativeFromMeta', () => {
   it('should format positive delta with + sign and 1 decimal', () => {
     const meta = { periodDelta: 1.23, currentMaturityIndex: 4.0 };
     const result = getNarrativeFromMeta(meta);
-    expect(result.titleHighlight).toBe('+1.2 puntos');
+    expect(result.titleHighlight).toBe('+1.2 points');
   });
 
   it('should format negative delta absolute value with 1 decimal', () => {
     const meta = { periodDelta: -2.67, currentMaturityIndex: 1.5 };
     const result = getNarrativeFromMeta(meta);
-    expect(result.titleHighlight).toBe('2.7 puntos');
+    expect(result.titleHighlight).toBe('2.7 points');
   });
 });
 

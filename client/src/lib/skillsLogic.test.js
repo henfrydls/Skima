@@ -56,7 +56,7 @@ describe('SKILL_THRESHOLDS', () => {
 describe('getSkillLevelStatus', () => {
   it('should return Fortaleza for score >= 3.5 (STRENGTH threshold)', () => {
     const result = getSkillLevelStatus(3.5);
-    expect(result.label).toBe('Fortaleza');
+    expect(result.label).toBe('Strength');
     expect(result.value).toBe('strength');
     expect(result.color).toBe('#6366f1');
     expect(result.tailwindColor).toBe('text-primary');
@@ -64,18 +64,18 @@ describe('getSkillLevelStatus', () => {
 
   it('should return Fortaleza for score of 5 (max)', () => {
     const result = getSkillLevelStatus(5);
-    expect(result.label).toBe('Fortaleza');
+    expect(result.label).toBe('Strength');
     expect(result.value).toBe('strength');
   });
 
   it('should return Fortaleza for score of 4.0', () => {
     const result = getSkillLevelStatus(4.0);
-    expect(result.label).toBe('Fortaleza');
+    expect(result.label).toBe('Strength');
   });
 
   it('should return Competente for score exactly at 2.5 (COMPETENT threshold)', () => {
     const result = getSkillLevelStatus(2.5);
-    expect(result.label).toBe('Competente');
+    expect(result.label).toBe('Competent');
     expect(result.value).toBe('competent');
     expect(result.color).toBe('#a6ae3d');
     expect(result.tailwindColor).toBe('text-competent');
@@ -83,18 +83,18 @@ describe('getSkillLevelStatus', () => {
 
   it('should return Competente for score of 3.4 (just below STRENGTH)', () => {
     const result = getSkillLevelStatus(3.4);
-    expect(result.label).toBe('Competente');
+    expect(result.label).toBe('Competent');
     expect(result.value).toBe('competent');
   });
 
   it('should return Competente for score of 3.0', () => {
     const result = getSkillLevelStatus(3.0);
-    expect(result.label).toBe('Competente');
+    expect(result.label).toBe('Competent');
   });
 
   it('should return Requiere Atencion for score below 2.5', () => {
     const result = getSkillLevelStatus(2.4);
-    expect(result.label).toBe('Requiere Atención');
+    expect(result.label).toBe('Needs Attention');
     expect(result.value).toBe('attention');
     expect(result.color).toBe('#f59e0b');
     expect(result.tailwindColor).toBe('text-warning');
@@ -102,18 +102,18 @@ describe('getSkillLevelStatus', () => {
 
   it('should return Requiere Atencion for score of 0', () => {
     const result = getSkillLevelStatus(0);
-    expect(result.label).toBe('Requiere Atención');
+    expect(result.label).toBe('Needs Attention');
     expect(result.value).toBe('attention');
   });
 
   it('should return Requiere Atencion for score of 1', () => {
     const result = getSkillLevelStatus(1);
-    expect(result.label).toBe('Requiere Atención');
+    expect(result.label).toBe('Needs Attention');
   });
 
   it('should return Requiere Atencion for negative score', () => {
     const result = getSkillLevelStatus(-1);
-    expect(result.label).toBe('Requiere Atención');
+    expect(result.label).toBe('Needs Attention');
   });
 });
 
@@ -125,43 +125,43 @@ describe('evaluarSkill', () => {
   describe('BRECHA CRITICA (Critical Gap)', () => {
     it('should return BRECHA CRITICA for Critical + Daily + low level', () => {
       const result = evaluarSkill(1, 'D', 'C');
-      expect(result.estado).toBe('BRECHA CRÍTICA');
+      expect(result.estado).toBe('CRITICAL GAP');
       expect(result.color).toBe(STATUS_COLORS.CRITICAL);
-      expect(result.accion).toBe('Capacitación urgente');
+      expect(result.accion).toBe('Urgent training');
       // score = (3 * 3) + 10 = 19
       expect(result.score).toBe(19);
     });
 
     it('should return BRECHA CRITICA for Critical + Weekly + level 0', () => {
       const result = evaluarSkill(0, 'S', 'C');
-      expect(result.estado).toBe('BRECHA CRÍTICA');
-      expect(result.accion).toBe('Capacitación urgente');
+      expect(result.estado).toBe('CRITICAL GAP');
+      expect(result.accion).toBe('Urgent training');
       // score = (3 * 2) + 10 = 16
       expect(result.score).toBe(16);
     });
 
     it('should return BRECHA CRITICA for Critical + Daily + level 2 (below 3)', () => {
       const result = evaluarSkill(2, 'D', 'C');
-      expect(result.estado).toBe('BRECHA CRÍTICA');
+      expect(result.estado).toBe('CRITICAL GAP');
     });
 
     it('should return BRECHA CRITICA for Critical + Weekly + level 2.9', () => {
       const result = evaluarSkill(2.9, 'S', 'C');
-      expect(result.estado).toBe('BRECHA CRÍTICA');
+      expect(result.estado).toBe('CRITICAL GAP');
     });
 
     it('should NOT return BRECHA CRITICA for Critical + Daily + level 3 (boundary)', () => {
       const result = evaluarSkill(3, 'D', 'C');
-      expect(result.estado).not.toBe('BRECHA CRÍTICA');
+      expect(result.estado).not.toBe('CRITICAL GAP');
       // Should fall to AREA DE MEJORA since C and nivel < 3.5
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
     });
 
     it('should NOT return BRECHA CRITICA for Critical + Monthly + low level', () => {
       // Frequency M is not in ['D','S']
       const result = evaluarSkill(1, 'M', 'C');
-      expect(result.estado).not.toBe('BRECHA CRÍTICA');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).not.toBe('CRITICAL GAP');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
     });
   });
 
@@ -169,9 +169,9 @@ describe('evaluarSkill', () => {
     it('should return AREA DE MEJORA for Critical + level < 3.5 (not BRECHA CRITICA)', () => {
       // C + Monthly + level 2 -> not BRECHA CRITICA (freq not D/S), hits AREA DE MEJORA
       const result = evaluarSkill(2, 'M', 'C');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
       expect(result.color).toBe(STATUS_COLORS.WARNING);
-      expect(result.accion).toBe('Plan de desarrollo');
+      expect(result.accion).toBe('Development plan');
       // score = 3 * 1.5 = 4.5
       expect(result.score).toBe(4.5);
     });
@@ -179,19 +179,19 @@ describe('evaluarSkill', () => {
     it('should return AREA DE MEJORA for Critical + Daily + level 3 (between 3 and 3.5)', () => {
       // nivel >= 3 so not BRECHA CRITICA, but < 3.5 so AREA DE MEJORA
       const result = evaluarSkill(3, 'D', 'C');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
       // score = 3 * 3 = 9
       expect(result.score).toBe(9);
     });
 
     it('should return AREA DE MEJORA for Critical + level 3.4 (just below 3.5)', () => {
       const result = evaluarSkill(3.4, 'T', 'C');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
     });
 
     it('should return AREA DE MEJORA for Important + level < 3', () => {
       const result = evaluarSkill(2, 'D', 'I');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
       expect(result.color).toBe(STATUS_COLORS.WARNING);
       // score = 2 * 3 = 6
       expect(result.score).toBe(6);
@@ -199,85 +199,85 @@ describe('evaluarSkill', () => {
 
     it('should return AREA DE MEJORA for Important + level 0', () => {
       const result = evaluarSkill(0, 'S', 'I');
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
     });
 
     it('should NOT return AREA DE MEJORA for Important + level 3 (boundary)', () => {
       // I + nivel 3 -> not AREA DE MEJORA (condition is nivel < 3)
       // nivel < 4 so not FORTALEZA, falls to COMPETENTE
       const result = evaluarSkill(3, 'D', 'I');
-      expect(result.estado).not.toBe('ÁREA DE MEJORA');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).not.toBe('NEEDS IMPROVEMENT');
+      expect(result.estado).toBe('COMPETENT');
     });
   });
 
   describe('FORTALEZA (Strength)', () => {
     it('should return FORTALEZA for level >= 4 and criticidad != N', () => {
       const result = evaluarSkill(4, 'D', 'C');
-      expect(result.estado).toBe('FORTALEZA');
+      expect(result.estado).toBe('STRENGTH');
       expect(result.color).toBe(STATUS_COLORS.STRENGTH);
-      expect(result.accion).toBe('Mentorear a otros');
+      expect(result.accion).toBe('Mentor others');
       // score = 3 * 3 = 9
       expect(result.score).toBe(9);
     });
 
     it('should return FORTALEZA for level 5 (max) + Important', () => {
       const result = evaluarSkill(5, 'S', 'I');
-      expect(result.estado).toBe('FORTALEZA');
+      expect(result.estado).toBe('STRENGTH');
       // score = 2 * 2 = 4
       expect(result.score).toBe(4);
     });
 
     it('should return FORTALEZA for level 4 + Desirable', () => {
       const result = evaluarSkill(4, 'M', 'D');
-      expect(result.estado).toBe('FORTALEZA');
+      expect(result.estado).toBe('STRENGTH');
       // score = 1 * 1.5 = 1.5
       expect(result.score).toBe(1.5);
     });
 
     it('should NOT return FORTALEZA for level >= 4 but criticidad N', () => {
       const result = evaluarSkill(5, 'D', 'N');
-      expect(result.estado).not.toBe('FORTALEZA');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).not.toBe('STRENGTH');
+      expect(result.estado).toBe('COMPETENT');
     });
 
     it('should NOT return FORTALEZA for level 3.9 (just below 4)', () => {
       const result = evaluarSkill(3.9, 'D', 'I');
-      expect(result.estado).not.toBe('FORTALEZA');
+      expect(result.estado).not.toBe('STRENGTH');
       // I + nivel 3.9 -> not AREA DE MEJORA (nivel >= 3), not FORTALEZA (nivel < 4), so COMPETENTE
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
     });
   });
 
   describe('COMPETENTE (default state)', () => {
     it('should return COMPETENTE for Important + level 3 (no gap, no strength)', () => {
       const result = evaluarSkill(3, 'D', 'I');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
       expect(result.color).toBe(STATUS_COLORS.NEUTRAL);
       expect(result.score).toBe(0);
-      expect(result.accion).toBe('Mantener');
+      expect(result.accion).toBe('Maintain');
     });
 
     it('should return COMPETENTE for Desirable + low level', () => {
       const result = evaluarSkill(1, 'D', 'D');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
       expect(result.score).toBe(0);
     });
 
     it('should return COMPETENTE for Not relevant + any level', () => {
       const result = evaluarSkill(0, 'D', 'N');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
       expect(result.score).toBe(0);
     });
 
     it('should return COMPETENTE for Not relevant + high level', () => {
       const result = evaluarSkill(5, 'D', 'N');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
     });
 
     it('should return COMPETENTE for Desirable + level 3', () => {
       const result = evaluarSkill(3, 'S', 'D');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
     });
   });
 
@@ -291,13 +291,13 @@ describe('evaluarSkill', () => {
     it('should calculate score for I + S: 2 * 2 = 4', () => {
       // Important + Weekly + high level
       const result = evaluarSkill(4, 'S', 'I');
-      expect(result.estado).toBe('FORTALEZA');
+      expect(result.estado).toBe('STRENGTH');
       expect(result.score).toBe(4);
     });
 
     it('should calculate score for D + T: 1 * 1 = 1', () => {
       const result = evaluarSkill(4, 'T', 'D');
-      expect(result.estado).toBe('FORTALEZA');
+      expect(result.estado).toBe('STRENGTH');
       expect(result.score).toBe(1);
     });
 
@@ -316,14 +316,14 @@ describe('evaluarSkill', () => {
   describe('unknown/missing weight values', () => {
     it('should default to 0 weight for unknown criticidad', () => {
       const result = evaluarSkill(3, 'D', 'X');
-      expect(result.estado).toBe('COMPETENTE');
+      expect(result.estado).toBe('COMPETENT');
       expect(result.score).toBe(0);
     });
 
     it('should default to 0 weight for unknown frecuencia', () => {
       const result = evaluarSkill(3, 'X', 'C');
       // C + nivel 3 < 3.5 -> AREA DE MEJORA
-      expect(result.estado).toBe('ÁREA DE MEJORA');
+      expect(result.estado).toBe('NEEDS IMPROVEMENT');
       expect(result.score).toBe(0);
     });
   });
@@ -643,7 +643,7 @@ describe('identifyGaps', () => {
     const gaps = identifyGaps(skills, skillsList);
     expect(gaps).toHaveLength(1);
     expect(gaps[0].name).toBe('JavaScript');
-    expect(gaps[0].estado).toBe('BRECHA CRÍTICA');
+    expect(gaps[0].estado).toBe('CRITICAL GAP');
   });
 
   it('should identify AREA DE MEJORA gaps', () => {
@@ -653,7 +653,7 @@ describe('identifyGaps', () => {
     const gaps = identifyGaps(skills, skillsList);
     expect(gaps).toHaveLength(1);
     expect(gaps[0].name).toBe('React');
-    expect(gaps[0].estado).toBe('ÁREA DE MEJORA');
+    expect(gaps[0].estado).toBe('NEEDS IMPROVEMENT');
   });
 
   it('should sort gaps by score descending (BRECHA CRITICA first)', () => {
@@ -683,7 +683,7 @@ describe('identifyGaps', () => {
     };
     const gaps = identifyGaps(skills, skillsList);
     expect(gaps).toHaveLength(1);
-    expect(gaps[0].estado).toBe('ÁREA DE MEJORA');
+    expect(gaps[0].estado).toBe('NEEDS IMPROVEMENT');
     // score = 3 * 1.5 = 4.5
     expect(gaps[0].score).toBe(4.5);
   });
@@ -742,7 +742,7 @@ describe('identifyStrengths', () => {
     };
     const strengths = identifyStrengths(skills, skillsList);
     expect(strengths).toHaveLength(2);
-    expect(strengths.every(s => s.estado === 'FORTALEZA')).toBe(true);
+    expect(strengths.every(s => s.estado === 'STRENGTH')).toBe(true);
   });
 
   it('should sort strengths by score descending', () => {
