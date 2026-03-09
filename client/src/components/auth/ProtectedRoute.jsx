@@ -3,6 +3,7 @@ import { useConfig } from '../../contexts/ConfigContext';
 import { API_BASE } from '../../lib/apiBase';
 import LoginModal from '../auth/LoginModal';
 import { useState, useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
 /**
  * ProtectedRoute - Wrapper for routes that require authentication
@@ -51,6 +52,15 @@ export default function ProtectedRoute({ children }) {
   // If authenticated, show protected content immediately
   if (isAuthenticated) {
     return children;
+  }
+
+  // Show loader while auto-login is in progress (no password configured)
+  if (autoLogging || (config && !config.hasPassword)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
   }
 
   // Not authenticated - show access restricted with login option

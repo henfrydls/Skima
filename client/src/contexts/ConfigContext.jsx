@@ -53,7 +53,8 @@ export function ConfigProvider({ children }) {
     setConfig({
       isSetup: true,
       companyName: newConfig.companyName,
-      adminName: newConfig.adminName
+      adminName: newConfig.adminName,
+      hasPassword: !!newConfig.hasPassword
     });
   }, []);
 
