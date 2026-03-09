@@ -387,13 +387,13 @@ export default function ProfilePage() {
                 This action will <strong>permanently</strong> delete all data: collaborators, evaluations, categories, skills, role profiles, and system configuration.
               </p>
               <p className="text-sm text-gray-600">
-                Escribe <strong className="text-critical">BORRAR</strong> para confirmar.
+                Type <strong className="text-critical">DELETE</strong> to confirm.
               </p>
               <input
                 type="text"
                 value={resetConfirmText}
                 onChange={(e) => setResetConfirmText(e.target.value)}
-                placeholder="Escribe BORRAR"
+                placeholder="Type DELETE"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-critical/20 focus:border-critical text-sm"
                 autoFocus
               />
@@ -402,11 +402,11 @@ export default function ProfilePage() {
                   onClick={() => { setShowResetConfirm(false); setResetConfirmText(''); }}
                   className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                 >
-                  Cancelar
+                  Cancel
                 </button>
                 <button
                   onClick={handleResetDatabase}
-                  disabled={resetConfirmText !== 'BORRAR' || isResetting}
+                  disabled={resetConfirmText !== 'DELETE' || isResetting}
                   className="flex items-center gap-2 px-4 py-2 bg-critical text-white rounded-lg
                            hover:bg-critical/90 transition-colors text-sm
                            disabled:opacity-50 disabled:cursor-not-allowed"
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                   ) : (
                     <Trash2 size={14} />
                   )}
-                  Resetear
+                  Reset
                 </button>
               </div>
             </div>

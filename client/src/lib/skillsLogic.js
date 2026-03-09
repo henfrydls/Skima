@@ -8,16 +8,16 @@
 // --- CONSTANTS & WEIGHTS ---
 
 const WEIGHTS = {
-  CRITICIDAD: { 'C': 3, 'I': 2, 'D': 1, 'N': 0 }, // C=Crítico es lo más alto
-  FRECUENCIA: { 'D': 3, 'S': 2, 'M': 1.5, 'T': 1, 'N': 0 } // D=Diario es lo más alto
+  CRITICIDAD: { 'C': 3, 'I': 2, 'D': 1, 'N': 0 }, // C=Critical is the highest
+  FRECUENCIA: { 'D': 3, 'S': 2, 'M': 1.5, 'T': 1, 'N': 0 } // D=Daily is the highest
 };
 
 // Centralized color palette for skill status (Modern Cool)
 export const STATUS_COLORS = {
-  CRITICAL: 'text-rose-600',   // Para Brecha Crítica (Urgente)
-  WARNING: 'text-amber-600',   // Para Área de Mejora (Atención)
-  STRENGTH: 'text-indigo-600', // Para Fortaleza (Expertos)
-  NEUTRAL: 'text-blue-600',    // Para Competente (Base)
+  CRITICAL: 'text-rose-600',   // For Critical Gap (Urgent)
+  WARNING: 'text-amber-600',   // For Area of Improvement (Attention)
+  STRENGTH: 'text-indigo-600', // For Strength (Experts)
+  NEUTRAL: 'text-blue-600',    // For Competent (Baseline)
   MUTE: 'text-slate-400'       // Default / N/A
 };
 
@@ -25,9 +25,9 @@ export const STATUS_COLORS = {
 // CENTRALIZED SKILL THRESHOLDS (Single Source of Truth)
 // ============================================
 export const SKILL_THRESHOLDS = {
-  COMPETENT: 2.5,   // >= 2.5 = Competente
-  STRENGTH: 3.5,    // >= 3.5 = Fortaleza / Experto
-  GOAL: 4.0,        // Meta visual para gráficos
+  COMPETENT: 2.5,   // >= 2.5 = Competent
+  STRENGTH: 3.5,    // >= 3.5 = Strength / Expert
+  GOAL: 4.0,        // Visual goal for charts
 };
 
 /**
@@ -40,7 +40,7 @@ export const SKILL_THRESHOLDS = {
 export const getSkillLevelStatus = (score) => {
   if (score >= SKILL_THRESHOLDS.STRENGTH) {
     return { 
-      label: 'Fortaleza', 
+      label: 'Strength',
       color: '#6366f1', // Indigo
       value: 'strength',
       tailwindColor: 'text-primary'
@@ -48,14 +48,14 @@ export const getSkillLevelStatus = (score) => {
   }
   if (score >= SKILL_THRESHOLDS.COMPETENT) {
     return { 
-      label: 'Competente', 
+      label: 'Competent',
       color: '#a6ae3d', // Lime/Competent
       value: 'competent',
       tailwindColor: 'text-competent'
     };
   }
   return { 
-    label: 'Requiere Atención', 
+    label: 'Needs Attention',
     color: '#f59e0b', // Amber/Warning
     value: 'attention',
     tailwindColor: 'text-warning'
@@ -65,12 +65,12 @@ export const getSkillLevelStatus = (score) => {
 // --- CORE EVALUATION LOGIC ---
 
 /**
- * Evalúa una skill basándose en su nivel, frecuencia y criticidad.
- * Retorna un objeto con el estado, color, score y acción sugerida.
- * 
- * @param {number} nivel - Nivel actual (0-5)
- * @param {string} frecuencia - Frecuencia de uso (D, S, M, T, N)
- * @param {string} criticidad - Criticidad del rol (C, I, D, N)
+ * Evaluates a skill based on its level, frequency, and criticality.
+ * Returns an object with state, color, score, and suggested action.
+ *
+ * @param {number} nivel - Current level (0-5)
+ * @param {string} frecuencia - Usage frequency (D, S, M, T, N)
+ * @param {string} criticidad - Role criticality (C, I, D, N)
  * @returns {Object} { estado, color, score, accion }
  */
 export const evaluarSkill = (nivel, frecuencia, criticidad) => {
@@ -81,21 +81,21 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
   // Range: 0 (N*N) to 9 (C*D)
   const score = wInv * wFreq;
 
-  // Estado Determinations
-  
-  // 1. BRECHA CRÍTICA (Critical Gap)
+  // State Determinations
+
+  // 1. CRITICAL GAP
   // Logic: Critical Skill (C) AND High Frequency (D/S) AND Low Level (< 3)
   // This is the "Red Zone" - Urgent
   if (criticidad === 'C' && ['D', 'S'].includes(frecuencia) && nivel < 3) {
     return {
-      estado: "BRECHA CRÍTICA",
+      estado: "CRITICAL GAP",
       color: STATUS_COLORS.CRITICAL,
       score: score + 10, // Boost score to ensure it's top priority
-      accion: "Capacitación urgente"
+      accion: "Urgent training"
     };
   }
 
-  // 2. ÁREA DE MEJORA (Area for Improvement)
+  // 2. AREA FOR IMPROVEMENT
   // Logic: 
   //   - Critical (C) but low frequency/better level (e.g. C + M, level < 3) 
   //   - OR Important (I) with low level
@@ -105,31 +105,31 @@ export const evaluarSkill = (nivel, frecuencia, criticidad) => {
     (criticidad === 'I' && nivel < 3)      // Important and weak
   ) {
     return {
-      estado: "ÁREA DE MEJORA",
+      estado: "NEEDS IMPROVEMENT",
       color: STATUS_COLORS.WARNING,
       score: score, // Use calculated score
-      accion: "Plan de desarrollo"
+      accion: "Development plan"
     };
   }
 
-  // 3. FORTALEZA (Strength)
+  // 3. STRENGTH
   // Logic: High Level (>= 4) in relevant skills (Not N)
   if (nivel >= 4 && criticidad !== 'N') {
     return {
-      estado: "FORTALEZA",
+      estado: "STRENGTH",
       color: STATUS_COLORS.STRENGTH,
       score: score,
-      accion: "Mentorear a otros"
+      accion: "Mentor others"
     };
   }
 
-  // 4. COMPETENTE (Competent / Neutral)
+  // 4. COMPETENT (Neutral)
   // Default state: doing okay, or skill is not critical
   return {
-    estado: "COMPETENTE",
+    estado: "COMPETENT",
     color: STATUS_COLORS.NEUTRAL,
     score: 0, // Low priority
-    accion: "Mantener"
+    accion: "Maintain"
   };
 };
 
@@ -251,7 +251,7 @@ export const identifyGaps = (skills = {}, skillsList = []) => {
 
     const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
 
-    if (result.estado === "BRECHA CRÍTICA" || result.estado === "ÁREA DE MEJORA") {
+    if (result.estado === "CRITICAL GAP" || result.estado === "NEEDS IMPROVEMENT") {
       // Find skill name from list
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
@@ -280,7 +280,7 @@ export const identifyStrengths = (skills = {}, skillsList = []) => {
     const frecuencia = data.frecuencia || 'M';
     const result = evaluarSkill(data.nivel, frecuencia, data.criticidad);
 
-    if (result.estado === "FORTALEZA") {
+    if (result.estado === "STRENGTH") {
       const skill = skillsList.find(s => s.id === parseInt(skillId));
       if (skill) {
         strengths.push({

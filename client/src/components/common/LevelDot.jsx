@@ -1,15 +1,15 @@
 /**
  * LevelDot Component
- * 
- * Indicador visual de nivel como punto coloreado.
- * Colores basados en el nivel de competencia.
- * Incluye badge de alerta para brechas críticas (accesibilidad no-cromática).
+ *
+ * Visual level indicator as a colored dot.
+ * Colors based on competency level.
+ * Includes alert badge for critical gaps (non-chromatic accessibility).
  */
 export default function LevelDot({ level, isCriticalGap = false, showLabel = true }) {
-  // Redondear nivel para display
+  // Round level for display
   const displayLevel = Math.round(level * 10) / 10;
   
-  // Colores según nivel
+  // Colors by level
   const getLevelColor = (lvl) => {
     if (lvl >= 4) return 'bg-primary text-white';
     if (lvl >= 3) return 'bg-competent text-white';
@@ -17,7 +17,7 @@ export default function LevelDot({ level, isCriticalGap = false, showLabel = tru
     return 'bg-gray-300 text-gray-600';
   };
 
-  // Glow color según nivel (para hover)
+  // Glow color by level (for hover)
   const getGlowColor = (lvl) => {
     if (lvl >= 4) return 'hover:shadow-[0_0_10px_rgba(45,103,110,0.4)]';
     if (lvl >= 3) return 'hover:shadow-[0_0_10px_rgba(166,174,61,0.4)]';

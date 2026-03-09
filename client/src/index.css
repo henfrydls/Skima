@@ -15,7 +15,7 @@
     @apply text-xl font-medium text-primary;
   }
   
-  /* Texto de datos - más peso visual */
+  /* Data text - more visual weight */
   .data-text {
     @apply font-medium;
   }
@@ -23,7 +23,7 @@
 }
 
 @layer utilities {
-  /* Animación fade-in para transiciones de vista */
+  /* Fade-in animation for view transitions */
   @keyframes fade-in {
     from {
       opacity: 0;
@@ -50,7 +50,7 @@
     animation: overlay-fade 0.2s ease-out;
   }
 
-  /* Scale-in para modales */
+  /* Scale-in for modals */
   @keyframes scale-in {
     from {
       opacity: 0;
@@ -82,12 +82,12 @@
     animation: value-pop 0.3s ease-out;
   }
 
-  /* Variante más lenta para cards */
+  /* Slower variant for cards */
   .animate-fade-in-slow {
     animation: fade-in 0.5s ease-out;
   }
 
-  /* Animación para progress bars */
+  /* Animation for progress bars */
   @keyframes progress-grow {
     from {
       width: 0;

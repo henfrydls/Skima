@@ -9,7 +9,7 @@ describe('SmartTooltip', () => {
     nivel: 3.5,
     frecuencia: 'D',
     criticidad: 'C',
-    estado: 'BRECHA CRÍTICA'
+    estado: 'CRITICAL GAP'
   };
 
   const mockInfo = {
@@ -77,7 +77,7 @@ describe('SmartTooltip', () => {
   it('shows improvement area badge when estado is "ÁREA DE MEJORA"', () => {
     const infoWithMejora = {
       ...mockInfo,
-      data: { ...mockData, estado: 'ÁREA DE MEJORA' }
+      data: { ...mockData, estado: 'NEEDS IMPROVEMENT' }
     };
 
     render(<SmartTooltip info={infoWithMejora} />);

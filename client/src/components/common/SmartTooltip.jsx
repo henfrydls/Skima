@@ -82,8 +82,8 @@ export default function SmartTooltip({ info }) {
   const freqDisplay = FREQUENCY_MAP[frecuencia] || frecuencia || 'Not defined';
   const critDisplay = CRITICALITY_MAP[criticidad] || criticidad || 'N/A';
   
-  const isCriticalGap = estado === "BRECHA CRÍTICA";
-  const isAreaMejora = estado === "ÁREA DE MEJORA";
+  const isCriticalGap = estado === "CRITICAL GAP";
+  const isAreaMejora = estado === "NEEDS IMPROVEMENT";
 
   return (
     <div 

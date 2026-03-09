@@ -9,12 +9,14 @@ import { Toaster } from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
 import './lib/dataPreload'; // Prefetch /api/data in parallel with config
 
-// Code-split page components
-const DashboardView = lazy(() => import('./pages/DashboardView'));
-const TeamMatrixPage = lazy(() => import('./pages/TeamMatrixPage'));
-const EvolutionPage = lazy(() => import('./pages/EvolutionPage'));
-const SettingsPage = lazy(() => import('./pages/SettingsPage'));
-const ProfilePage = lazy(() => import('./pages/ProfilePage'));
+// Main pages — loaded eagerly for instant navigation (small bundle)
+import DashboardView from './pages/DashboardView';
+import TeamMatrixPage from './pages/TeamMatrixPage';
+import EvolutionPage from './pages/EvolutionPage';
+import SettingsPage from './pages/SettingsPage';
+import ProfilePage from './pages/ProfilePage';
+
+// Separate flows — lazy loaded (user may never visit these)
 const SetupView = lazy(() => import('./pages/SetupView'));
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const DemoEntry = lazy(() => import('./pages/DemoEntry'));
@@ -111,21 +113,21 @@ const router = createBrowserRouter([
     children: [
       {
         path: "/",
-        element: <Suspense fallback={<PageLoader />}><DashboardView /></Suspense>,
+        element: <DashboardView />,
       },
       {
         path: "/team-matrix",
-        element: <Suspense fallback={<PageLoader />}><TeamMatrixPage /></Suspense>,
+        element: <TeamMatrixPage />,
       },
       {
         path: "/evolution",
-        element: <Suspense fallback={<PageLoader />}><EvolutionPage /></Suspense>,
+        element: <EvolutionPage />,
       },
       {
         path: "/settings",
         element: (
           <ProtectedRoute>
-            <Suspense fallback={<PageLoader />}><SettingsPage /></Suspense>
+            <SettingsPage />
           </ProtectedRoute>
         ),
       },
@@ -133,7 +135,7 @@ const router = createBrowserRouter([
         path: "/profile",
         element: (
           <ProtectedRoute>
-            <Suspense fallback={<PageLoader />}><ProfilePage /></Suspense>
+            <ProfilePage />
           </ProtectedRoute>
         ),
       },
@@ -141,14 +143,19 @@ const router = createBrowserRouter([
   },
 ]);
 
+function AuthWithConfig({ children }) {
+  const { config } = useConfig();
+  return <AuthProvider config={config}>{children}</AuthProvider>;
+}
+
 function App() {
   return (
     <ConfigProvider>
-      <AuthProvider>
+      <AuthWithConfig>
         <RouterProvider router={router} />
         <SessionExpiredModal />
         <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
-      </AuthProvider>
+      </AuthWithConfig>
     </ConfigProvider>
   );
 }

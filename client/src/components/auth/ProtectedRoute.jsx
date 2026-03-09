@@ -1,14 +1,14 @@
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
-import { API_BASE } from '../../lib/apiBase';
 import LoginModal from '../auth/LoginModal';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 
 /**
  * ProtectedRoute - Wrapper for routes that require authentication
  *
  * If no password is configured:
- * - Auto-authenticates (no login needed)
+ * - Shows loader while auto-login completes (handled by AuthContext)
  *
  * If user is not authenticated:
  * - Shows login modal
@@ -21,36 +21,25 @@ export default function ProtectedRoute({ children }) {
   const { isAuthenticated, login } = useAuth();
   const { config } = useConfig();
   const [showLoginModal, setShowLoginModal] = useState(false);
-  const [autoLogging, setAutoLogging] = useState(false);
-
-  // Auto-authenticate when no password is configured
-  useEffect(() => {
-    if (!isAuthenticated && config && !config.hasPassword && !autoLogging) {
-      setAutoLogging(true);
-      fetch(`${API_BASE}/api/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({})
-      })
-        .then(r => r.json())
-        .then(data => {
-          if (data.token) login(data.token);
-        })
-        .catch(() => {})
-        .finally(() => setAutoLogging(false));
-    }
-  }, [isAuthenticated, config, login, autoLogging]);
 
   // Handle successful login from modal
   const handleLoginSuccess = (token) => {
     login(token);
     setShowLoginModal(false);
-    // isAuthenticated will update on next render via useAuth
   };
 
   // If authenticated, show protected content immediately
   if (isAuthenticated) {
     return children;
+  }
+
+  // Show loader while auto-login is in progress (no password configured)
+  if (config && !config.hasPassword) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="animate-spin text-primary" size={32} />
+      </div>
+    );
   }
 
   // Not authenticated - show access restricted with login option
@@ -70,13 +59,12 @@ export default function ProtectedRoute({ children }) {
           Sign In
         </button>
       </div>
-      
-      <LoginModal 
-        isOpen={showLoginModal} 
+
+      <LoginModal
+        isOpen={showLoginModal}
         onClose={() => setShowLoginModal(false)}
         onSuccess={handleLoginSuccess}
       />
     </div>
   );
 }
-

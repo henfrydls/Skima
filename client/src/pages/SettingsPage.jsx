@@ -9,14 +9,14 @@ import EvaluationsTab from '../components/settings/EvaluationsTab';
 import RoleProfilesTab from '../components/settings/RoleProfilesTab';
 
 /**
- * SettingsPage — Gestión de Maestros del Sistema
- * 
+ * SettingsPage — System Master Data Management
+ *
  * Tabs:
- * - Colaboradores: CRUD de personas del equipo
- * - Skills: CRUD de habilidades con rúbricas
- * - Categorías: Drag & drop para organizar
- * - Evaluaciones: Evaluar skills por colaborador
- * 
+ * - Collaborators: CRUD for team members
+ * - Skills: CRUD for skills with rubrics
+ * - Categories: Drag & drop to organize
+ * - Evaluations: Evaluate skills per collaborator
+ *
  * UX Principles Applied:
  * - URL-driven state for deep linking
  * - Keep Alive pattern for performance

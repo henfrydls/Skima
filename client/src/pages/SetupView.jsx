@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Building2, User, Lock, ArrowRight, Loader2, Sparkles, Play, AlertTriangle, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useConfig } from '../contexts/ConfigContext';
+import { useAuth } from '../contexts/AuthContext';
 import { API_BASE } from '../lib/apiBase';
 import { invalidatePreload } from '../lib/dataPreload';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -21,6 +22,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 export default function SetupView({ onSetupComplete }) {
   const navigate = useNavigate();
   const { isDemo, refetchConfig } = useConfig();
+  const { logout } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
     adminName: '',
@@ -85,7 +87,8 @@ export default function SetupView({ onSetupComplete }) {
         throw new Error(data.error || 'Failed to setup');
       }
 
-      // Clear demo banner dismissed state
+      // Clear previous auth state and demo banner
+      logout();
       try { sessionStorage.removeItem('demoBannerDismissed'); } catch { /* ignore */ }
 
       toast.success('Configuration saved!');

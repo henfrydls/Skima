@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
   Grid3X3,
@@ -55,10 +55,10 @@ function VersionBadge({ version, isCollapsed }) {
 /**
  * Layout Component - App Shell
  *
- * Estructura principal de la aplicación:
- * - Sidebar lateral colapsable con navegación
- * - Settings solo visible si está autenticado
- * - Botón de login/logout en la parte inferior
+ * Main application structure:
+ * - Collapsible sidebar with navigation
+ * - Settings only visible when authenticated
+ * - Login/logout button at the bottom
  */
 
 // Navigation items - Settings only shows when authenticated
@@ -81,6 +81,7 @@ export default function Layout() {
   const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
+  const location = useLocation();
   const { isAuthenticated, login } = useAuth();
   const { adminName, isDemo, isOnlineDemo } = useConfig();
   const version = useAppVersion();
@@ -105,7 +106,7 @@ export default function Layout() {
           ${isCollapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Header del Sidebar - Skima Logo */}
+        {/* Sidebar Header - Skima Logo */}
         <div className="flex items-center justify-between h-16 px-3 border-b border-gray-100 relative">
           {/* Logo with fade transition - clickable to landing in online demo */}
           {isOnlineDemo ? (
@@ -142,7 +143,7 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Navegación */}
+        {/* Navigation */}
         <nav className="p-2 space-y-1 flex-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -294,14 +295,14 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Contenido Principal */}
+      {/* Main Content */}
       <main
         className={`
           flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
-        {/* Header móvil (opcional para responsive) */}
+        {/* Mobile header (optional for responsive) */}
         <header className="lg:hidden flex items-center h-16 px-4 bg-surface shadow-sm">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
@@ -317,7 +318,9 @@ export default function Layout() {
 
         {/* Content area */}
         <div className="p-6 flex-1 flex flex-col">
-          <Outlet />
+          <div key={location.pathname} className="animate-fade-in flex-1 flex flex-col">
+            <Outlet />
+          </div>
         </div>
       </main>
 

@@ -108,7 +108,7 @@ describe('CategoriesTab', () => {
       expect(screen.getByText(/Active Cat/i)).toBeInTheDocument();
     });
 
-    // Click the "Nueva Categoría" button
+    // Click the "New Category" button
     const addButton = screen.getByText(/New Category/i);
     fireEvent.click(addButton);
 

@@ -129,7 +129,7 @@ export default function EvolutionPage() {
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
-        {/* 1. MATURITY INDEX (Índice de Madurez) */}
+        {/* 1. MATURITY INDEX */}
         <StatCard
           title="MATURITY INDEX"
           value={maturityIndex ? maturityIndex.toFixed(1) : "0.0"}

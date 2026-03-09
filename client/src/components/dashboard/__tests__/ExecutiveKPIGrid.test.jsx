@@ -127,15 +127,15 @@ describe('ExecutiveKPIGrid', () => {
   it('applies correct color to each KPI card', () => {
     const { container } = render(<ExecutiveKPIGrid metrics={mockMetrics} />);
 
-    // Índice de Madurez & Cobertura de Roles - primary (brand teal)
+    // Maturity Index & Role Coverage - primary (brand teal)
     const primaryIcons = container.querySelectorAll('.text-primary');
     expect(primaryIcons.length).toBeGreaterThanOrEqual(2); // Maturity and Coverage
 
-    // Riesgo de Talento - rose
+    // Talent Risk - rose
     const roseIcons = container.querySelectorAll('.text-rose-600');
     expect(roseIcons.length).toBeGreaterThanOrEqual(1);
 
-    // Densidad de Expertos - emerald
+    // Expert Density - emerald
     const emeraldIcons = container.querySelectorAll('.text-emerald-600');
     expect(emeraldIcons.length).toBeGreaterThanOrEqual(1);
   });

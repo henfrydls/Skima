@@ -1,8 +1,8 @@
 /**
  * Dashboard Logic Utilities
- * 
- * Funciones de lógica de negocio para el Dashboard Ejecutivo.
- * Incluye: cálculos de métricas, priorización de gaps, detección de insights.
+ *
+ * Business logic functions for the Executive Dashboard.
+ * Includes: metric calculations, gap prioritization, insight detection.
  */
 import { evaluarSkill, SKILL_THRESHOLDS } from './skillsLogic';
 
@@ -15,9 +15,9 @@ const CRITICALITY_WEIGHTS = { C: 3, I: 2, D: 1, N: 0 };
 // NOTE: Use SKILL_THRESHOLDS from skillsLogic.js instead of local definition
 // Keeping this alias for backward compatibility if any code still references it
 const LEVEL_THRESHOLDS = {
-  beginner: SKILL_THRESHOLDS.COMPETENT,    // < 2.5 = Principiante
-  competent: SKILL_THRESHOLDS.STRENGTH,    // 2.5-3.5 = Competente
-  expert: SKILL_THRESHOLDS.STRENGTH        // >= 3.5 = Experto
+  beginner: SKILL_THRESHOLDS.COMPETENT,    // < 2.5 = Beginner
+  competent: SKILL_THRESHOLDS.STRENGTH,    // 2.5-3.5 = Competent
+  expert: SKILL_THRESHOLDS.STRENGTH        // >= 3.5 = Expert
 };
 
 // ============================================
@@ -25,9 +25,9 @@ const LEVEL_THRESHOLDS = {
 // ============================================
 
 /**
- * Calcula el delta entre dos snapshots
- * @param {number} current - Promedio actual
- * @param {number} previous - Promedio anterior
+ * Calculates the delta between two snapshots
+ * @param {number} current - Current average
+ * @param {number} previous - Previous average
  * @returns {{ delta: string, percentage: string, trend: 'up'|'down'|'stable' }}
  */
 export function calculateDelta(current, previous) {
@@ -46,9 +46,9 @@ export function calculateDelta(current, previous) {
 }
 
 /**
- * Obtiene los top cambios (mejoras y retrocesos) entre snapshots
- * @param {Array} categories - Lista de categorías con promedios actuales y anteriores
- * @param {number} limit - Cantidad de items a retornar
+ * Gets top changes (improvements and regressions) between snapshots
+ * @param {Array} categories - List of categories with current and previous averages
+ * @param {number} limit - Number of items to return
  */
 export function getTopChanges(categories, limit = 3) {
   const changes = categories.map(cat => ({
@@ -77,11 +77,11 @@ export function getTopChanges(categories, limit = 3) {
 // ============================================
 
 /**
- * Prioriza los gaps por impacto de negocio
- * @param {Array} collaborators - Lista de colaboradores con skills
- * @param {Array} skills - Lista de skills
- * @param {Array} categories - Lista de categorías
- * @param {Function} isCriticalGap - Función para detectar gaps críticos
+ * Prioritizes gaps by business impact
+ * @param {Array} collaborators - List of collaborators with skills
+ * @param {Array} skills - List of skills
+ * @param {Array} categories - List of categories
+ * @param {Function} isCriticalGap - Function to detect critical gaps
  */
 export function prioritizeGaps(collaborators, skills, categories, isCriticalGap) {
   const gapsByCategory = {};
@@ -132,8 +132,8 @@ export function prioritizeGaps(collaborators, skills, categories, isCriticalGap)
 // ============================================
 
 /**
- * Calcula la distribución del equipo por nivel
- * @param {Array} collaborators - Lista de colaboradores con promedio
+ * Calculates team distribution by level
+ * @param {Array} collaborators - List of collaborators with average
  */
 export function calculateDistribution(collaborators) {
   const distribution = {
@@ -165,8 +165,8 @@ export function calculateDistribution(collaborators) {
 // ============================================
 
 /**
- * Detecta talento subutilizado
- * Alta skill en área de baja criticidad
+ * Detects underutilized talent
+ * High skill in low criticality area
  */
 export function detectUnderutilizedTalent(collaborators, skills) {
   const insights = [];
@@ -193,8 +193,8 @@ export function detectUnderutilizedTalent(collaborators, skills) {
 }
 
 /**
- * Detecta riesgo de Bus Factor
- * Skills críticas donde solo 1 persona tiene alto nivel
+ * Detects Bus Factor risk
+ * Critical skills where only 1 person has a high level
  */
 export function detectBusFactorRisk(collaborators, skills) {
   const risks = [];
@@ -220,7 +220,7 @@ export function detectBusFactorRisk(collaborators, skills) {
 }
 
 /**
- * Calcula todas las métricas ejecutivas para el dashboard
+ * Calculates all executive metrics for the dashboard
  */
 export function calculateExecutiveMetrics(collaborators, skills, categories, isCriticalGap, roleProfiles = {}) {
   // Helper to calculate average from skills object
@@ -233,14 +233,14 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
   // Filter to collaborators that have skill data (active in this period)
   const activeCollaborators = collaborators.filter(c => Object.keys(c.skills).length > 0);
 
-  // Promedio general - calculate dynamically from skills
+  // Overall average - calculate dynamically from skills
   let totalSum = 0;
   activeCollaborators.forEach(c => {
     totalSum += calcAvg(c.skills);
   });
   const totalAvg = activeCollaborators.length > 0 ? totalSum / activeCollaborators.length : 0;
   
-  // Contar fortalezas (categorías con promedio > 3.5)
+  // Count strengths (categories with average > 3.5)
   // Calculate category averages from collaborator skills
   const categoryAverages = categories.map(cat => {
     const catSkillIds = skills.filter(s => s.categoria === cat.id).map(s => s.id);
@@ -259,7 +259,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
   
   const strengths = categoryAverages.filter(cat => cat.promedio >= 3.5).length;
   
-  // Contar gaps críticos
+  // Count critical gaps
   let criticalGapsCount = 0;
   let totalSkillAssessments = 0;
   let expertSkillsCount = 0;
@@ -281,12 +281,12 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
     });
   });
 
-  // Densidad de Expertos: % de skills en nivel 4-5
+  // Expert Density: % of skills at level 4-5
   const expertDensity = totalSkillAssessments > 0 
     ? Math.round((expertSkillsCount / totalSkillAssessments) * 100) 
     : 0;
 
-  // Cobertura de Roles: % de colaboradores cumpliendo requisitos mínimos
+  // Role Coverage: % of collaborators meeting minimum requirements
   let meetingRequirements = 0;
   activeCollaborators.forEach(collab => {
     const profile = roleProfiles[collab.rol];
@@ -328,7 +328,7 @@ export function calculateExecutiveMetrics(collaborators, skills, categories, isC
 }
 
 /**
- * Calcula la distribución de talento por categoría para gráfico apilado
+ * Calculates talent distribution by category for stacked chart
  */
 export function calculateDistributionByCategory(collaborators, skills, categories) {
   return categories.map(cat => {
@@ -354,12 +354,12 @@ export function calculateDistributionByCategory(collaborators, skills, categorie
           const evaluation = evaluarSkill(skillData.nivel, freq, skillData.criticidad);
 
           // 3. Status Mapping to Visual Buckets
-          if (evaluation.estado === "BRECHA CRÍTICA" || evaluation.estado === "ÁREA DE MEJORA") {
+          if (evaluation.estado === "CRITICAL GAP" || evaluation.estado === "NEEDS IMPROVEMENT") {
             brechas++;
-          } else if (evaluation.estado === "FORTALEZA") {
+          } else if (evaluation.estado === "STRENGTH") {
             experts++;
           } else {
-            // "COMPETENTE" (Includes low level but low criticality items)
+            // "COMPETENT" (Includes low level but low criticality items)
             competent++; 
           }
         }
@@ -378,7 +378,7 @@ export function calculateDistributionByCategory(collaborators, skills, categorie
 }
 
 /**
- * Calcula deltas entre métricas actuales y snapshot histórico
+ * Calculates deltas between current metrics and historical snapshot
  */
 export function calculateComparisonDeltas(currentMetrics, historicalMetrics) {
   if (!historicalMetrics) {

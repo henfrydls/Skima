@@ -3,18 +3,18 @@ import { Camera, Calendar, ChevronDown, ChevronUp, Clock, ArrowLeft } from 'luci
 import toast from 'react-hot-toast';
 
 /**
- * SnapshotSelector Component - Versión Compacta
- * 
- * PRINCIPIO: El gerente viene a ver KPIs, no a seleccionar fechas.
- * El selector debe ser discreto pero accesible.
- * 
- * DISEÑO:
- * - Por defecto: Una línea compacta con el contexto actual
- * - Expandido: Panel completo con dropdowns
- * - El banner de Modo Histórico SÍ debe ser prominente (es una advertencia)
+ * SnapshotSelector Component - Compact Version
+ *
+ * PRINCIPLE: The manager comes to see KPIs, not to select dates.
+ * The selector should be discreet but accessible.
+ *
+ * DESIGN:
+ * - Default: A compact line with current context
+ * - Expanded: Full panel with dropdowns
+ * - The Historical Mode banner SHOULD be prominent (it's a warning)
  */
 
-// Mock data para snapshots
+// Mock data for snapshots
 const MOCK_SNAPSHOTS = [
   { id: 1, label: 'December 2024', value: '2024-12', date: new Date('2024-12-29'), isCurrent: true },
   { id: 2, label: 'September 2024', value: '2024-09', date: new Date('2024-09-30'), isCurrent: false },
@@ -64,7 +64,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
 
   return (
     <div className="space-y-2">
-      {/* Historical Mode Banner - Solo cuando NO estamos en vivo */}
+      {/* Historical Mode Banner - Only when NOT live */}
       {isHistoricalMode && (
         <div className="bg-warning/10 border-l-4 border-warning rounded-r-lg px-4 py-3 animate-fade-in">
           <div className="flex items-center justify-between gap-4">
@@ -134,7 +134,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
       {isExpanded && (
         <div className="bg-surface p-4 rounded-lg shadow-sm border border-gray-100 animate-fade-in">
           <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-            {/* Ver datos de */}
+            {/* View data from */}
             <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
                 View data from
@@ -161,7 +161,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
 
             <span className="hidden sm:block text-gray-300 pb-2">vs</span>
 
-            {/* Comparar con */}
+            {/* Compare with */}
             <div className="flex-1">
               <label className="block text-xs text-gray-500 uppercase tracking-wide mb-1">
                 Compare with
@@ -177,7 +177,7 @@ export default function SnapshotSelector({ onSnapshotChange, onCompareChange, on
               </select>
             </div>
 
-            {/* Crear Snapshot */}
+            {/* Create Snapshot */}
             <button
               onClick={(e) => { e.stopPropagation(); toast('Snapshots will be available soon', { icon: '📸' }); }}
               className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium flex items-center gap-2"

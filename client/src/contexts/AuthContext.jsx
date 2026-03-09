@@ -15,7 +15,7 @@ const AuthContext = createContext(null);
  * - getHeaders: () => headers object with Authorization
  * - authFetch: Wrapper around fetch that intercepts 401s
  */
-export function AuthProvider({ children }) {
+export function AuthProvider({ children, config }) {
   const [token, setToken] = useState(() => {
     return localStorage.getItem('auth_token') || null;
   });
@@ -32,6 +32,22 @@ export function AuthProvider({ children }) {
     setSessionExpired(false);
     localStorage.removeItem('auth_token');
   }, []);
+
+  // Auto-authenticate when no password is configured
+  useEffect(() => {
+    if (!token && config && config.hasPassword === false) {
+      fetch(`${API_BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({})
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.token) login(data.token);
+        })
+        .catch(() => {});
+    }
+  }, [config, token]);
 
   const getHeaders = useCallback(() => {
     return token 
