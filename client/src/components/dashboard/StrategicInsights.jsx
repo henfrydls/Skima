@@ -12,9 +12,9 @@ import { AlertTriangle, ExternalLink, Users, Lightbulb } from 'lucide-react';
 
 // Color palette for distribution tiers
 const TIER_COLORS = {
-  brechas: '#f59e0b',   // Amber-500 (Atención/Oportunidad)
-  competent: '#22c55e', // Green-500 (Competente/Estabilidad)
-  experts: '#6366f1',   // Indigo-500 (Fortaleza/Premium)
+  brechas: '#f59e0b',   // Amber-500 (Attention/Opportunity)
+  competent: '#22c55e', // Green-500 (Competent/Stability)
+  experts: '#6366f1',   // Indigo-500 (Strength/Premium)
 };
 
 // Custom Tooltip

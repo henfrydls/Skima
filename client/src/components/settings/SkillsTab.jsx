@@ -24,7 +24,7 @@ import ToastUndo from '../common/ToastUndo';
 import Button from '../common/Button';
 
 /**
- * SkillsTab — Gestión de Skills por Categoría (Connected to API)
+ * SkillsTab — Skills Management by Category (Connected to API)
  */
 
 import { API_BASE } from '../../lib/apiBase';

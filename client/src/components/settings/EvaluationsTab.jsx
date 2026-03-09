@@ -35,7 +35,7 @@ import EmptyState from '../common/EmptyState';
 import toast from 'react-hot-toast';
 
 /**
- * EvaluationsTab — Evaluar Skills por Colaborador (v2)
+ * EvaluationsTab — Evaluate Skills per Collaborator (v2)
  *
  * UX Improvements:
  * - Segmented controls with descriptive labels
@@ -521,7 +521,7 @@ function SkillRow({ skill, evaluation, criticidad, onChange, readOnly = false })
 
   return (
     <div className={`grid grid-cols-12 gap-4 items-center py-3 px-4 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 ${isNA ? 'opacity-50' : ''}`}>
-      {/* Skill Name + Criticidad */}
+      {/* Skill Name + Criticality */}
       <div className="col-span-3">
         <span className={`text-sm font-medium ${isNA ? 'text-gray-400' : 'text-gray-800'}`}>{skill.nombre}</span>
         <div className="mt-0.5">

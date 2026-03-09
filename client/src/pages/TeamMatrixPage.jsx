@@ -133,7 +133,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
         </div>
       </div>
 
-      {/* Métricas */}
+      {/* Metrics */}
       <div className="grid md:grid-cols-3 gap-4">
         <div className="text-center p-4 bg-gray-50 rounded-lg">
           <div className={`text-2xl font-light mb-2 ${
@@ -155,7 +155,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
         </div>
       </div>
 
-      {/* Barras Lollipop */}
+      {/* Lollipop Bars */}
       <div className="bg-surface p-6 rounded-lg shadow-sm">
         <h4 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
           Level by Category
@@ -186,7 +186,7 @@ function CollaboratorDetailView({ colaborador, onBack }) {
           ))}
         </div>
 
-        {/* Brechas y Fortalezas */}
+        {/* Gaps and Strengths */}
         <div className="flex flex-wrap gap-4 mt-6">
           {colaborador.brechas.length > 0 && (
             <div className="flex-1">
@@ -257,7 +257,7 @@ function CategoryGridView({ categories = [] }) {
 }
 
 // ============================================
-// TEAM MATRIX PAGE - Con pestañas
+// TEAM MATRIX PAGE - With tabs
 // ============================================
 export default function TeamMatrixPage() {
   const navigate = useNavigate();
@@ -388,7 +388,7 @@ export default function TeamMatrixPage() {
         </p>
       </div>
 
-      {/* Pestañas de navegación */}
+      {/* Navigation tabs */}
       <div className={`border-b border-gray-200 ${currentView === 'matriz' ? 'flex-shrink-0' : ''}`}>
         <nav className="flex gap-6" aria-label="Tabs">
           {tabs.map(tab => (
@@ -413,7 +413,7 @@ export default function TeamMatrixPage() {
         </nav>
       </div>
 
-      {/* Vista activa */}
+      {/* Active view */}
       {currentView === 'matriz' && (
         isLoading ? (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">

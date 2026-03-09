@@ -6,11 +6,11 @@ import SmartTooltip from '../common/SmartTooltip';
 /**
  * TransposedMatrixTable Component
  * 
- * Matriz de habilidades TRANSPUESTA:
- * - Filas: Skills (permite nombres largos sin cortar)
- * - Columnas: Empleados (avatares con iniciales + nombre)
- * - Agrupación visual por categoría (colapsable)
- * - Smart Tooltip con detección de colisiones
+ * TRANSPOSED skills matrix:
+ * - Rows: Skills (allows long names without truncation)
+ * - Columns: Collaborators (avatars with initials + name)
+ * - Visual grouping by category (collapsible)
+ * - Smart Tooltip with collision detection
  * 
  * Props:
  * - categories: array of { id, nombre, abrev }
@@ -26,19 +26,19 @@ export default function TransposedMatrixTable({
   isLoading = false,
   onCellClick = null
 }) {
-  // Estado para categorías colapsadas
+  // State for collapsed categories
   const [expandedCategories, setExpandedCategories] = useState(() =>
     categories.reduce((acc, cat) => ({ ...acc, [cat.id]: true }), {})
   );
   
-  // Estado para el tooltip flotante
+  // State for the floating tooltip
   const [hoverInfo, setHoverInfo] = useState(null);
 
   const toggleCategory = (catId) => {
     setExpandedCategories(prev => ({ ...prev, [catId]: !prev[catId] }));
   };
 
-  // Agrupar skills por categoría
+  // Group skills by category
   const skillsByCategory = useMemo(() => {
     return categories.map(cat => ({
       ...cat,
@@ -46,7 +46,7 @@ export default function TransposedMatrixTable({
     }));
   }, [categories, skills]);
 
-  // Estilos para celda sticky izquierda
+  // Styles for sticky left cell
   const stickyLeftStyles = `
     sticky left-0 z-20 
     bg-surface
@@ -54,7 +54,7 @@ export default function TransposedMatrixTable({
     shadow-[4px_0_6px_-2px_rgba(0,0,0,0.08)]
   `;
 
-  // Handler para mostrar tooltip
+  // Handler to show tooltip
   const handleCellHover = (e, collab, skill, skillData) => {
     const nivel = skillData?.nivel ?? 0;
     const frecuencia = skillData?.frecuencia || 'N';
@@ -93,13 +93,13 @@ export default function TransposedMatrixTable({
 
   return (
     <div className="bg-surface rounded-lg shadow-sm overflow-hidden animate-fade-in flex flex-col">
-      {/* Contenedor con scroll - max-h caps height for large datasets, shrinks naturally for small ones */}
+      {/* Scroll container - max-h caps height for large datasets, shrinks naturally for small ones */}
       <div className="overflow-auto border border-gray-100 rounded-lg max-h-[calc(100vh-280px)]">
         <table className="w-full border-collapse">
-          {/* Header: Empleados como columnas */}
+          {/* Header: Collaborators as columns */}
           <thead>
             <tr className="bg-gray-50 border-b border-gray-200">
-              {/* Celda esquina: Skill */}
+              {/* Corner cell: Skill */}
               <th 
                 className={`
                   sticky left-0 top-0 z-30 
@@ -113,7 +113,7 @@ export default function TransposedMatrixTable({
                 <span className="text-sm">Skill</span>
               </th>
               
-              {/* Headers de empleados */}
+              {/* Collaborator headers */}
               {collaborators.map(collab => (
                 <th
                   key={collab.id}
@@ -135,11 +135,11 @@ export default function TransposedMatrixTable({
             </tr>
           </thead>
 
-          {/* Body: Skills como filas, agrupadas por categoría */}
+          {/* Body: Skills as rows, grouped by category */}
           <tbody>
             {skillsByCategory.map(category => (
               <React.Fragment key={`cat-group-${category.id}`}>
-                {/* Header de categoría - Colapsable */}
+                {/* Category header - Collapsible */}
                 <tr key={`cat-${category.id}`}>
                   <td 
                     colSpan={collaborators.length + 1}
@@ -159,7 +159,7 @@ export default function TransposedMatrixTable({
                   </td>
                 </tr>
                 
-                {/* Skills de esta categoría */}
+                {/* Skills in this category */}
                 {expandedCategories[category.id] && category.skills.map((skill, skillIdx) => (
                   <tr 
                     key={skill.id}
@@ -168,7 +168,7 @@ export default function TransposedMatrixTable({
                       hover:bg-primary/5 transition-colors
                     `}
                   >
-                    {/* Nombre del skill (sticky izquierda) */}
+                    {/* Skill name (sticky left) */}
                     <td 
                       className={`
                         ${stickyLeftStyles}
@@ -190,7 +190,7 @@ export default function TransposedMatrixTable({
                       </div>
                     </td>
                     
-                    {/* Celdas de nivel por empleado */}
+                    {/* Level cells per collaborator */}
                     {collaborators.map(collab => {
                       const skillData = collab.skills[skill.id];
                       const nivel = skillData?.nivel ?? 0;
@@ -267,7 +267,7 @@ export default function TransposedMatrixTable({
         </table>
       </div>
 
-      {/* Leyenda */}
+      {/* Legend */}
       <div className="p-4 border-t border-gray-200 bg-gray-50 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
           <span className="font-medium">Levels:</span>

@@ -19,7 +19,7 @@ export default function ExecutiveKPIGrid({
 }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-      {/* 1. Índice de Madurez - General Average */}
+      {/* 1. Maturity Index - General Average */}
       <StatCard
         title="Maturity Index"
         value={metrics.teamAverageRaw}

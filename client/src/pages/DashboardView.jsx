@@ -18,7 +18,7 @@ import ExecutiveKPIGrid from '../components/dashboard/ExecutiveKPIGrid';
 import StrategicInsights from '../components/dashboard/StrategicInsights';
 import { DashboardSkeleton } from '../components/common/LoadingSkeleton';
 
-// Helper: isCriticalGap - Brecha crítica = skill con criticidad 'C' y nivel < 3
+// Helper: isCriticalGap - Critical gap = skill with criticality 'C' and level < 3
 const isCriticalGap = (skillData) => {
   if (!skillData) return false;
   return skillData.criticidad === 'C' && skillData.nivel < 3;
@@ -125,7 +125,7 @@ export default function DashboardView() {
 
   const isComparing = selectedSnapshotId !== null;
 
-  // Calcular métricas ejecutivas
+  // Calculate executive metrics
   const metrics = useMemo(() => {
     if (!currentData.length) {
       return { 
@@ -170,19 +170,19 @@ export default function DashboardView() {
     return null;
   }, [isComparing, selectedSnapshotId, availableSnapshots, collaborators, skills, categories, roleProfiles, granularity]);
 
-  // Distribución por categoría para gráfico apilado
+  // Distribution by category for stacked chart
   const distributionByCategory = useMemo(() => {
     if (!currentData.length) return [];
     return calculateDistributionByCategory(currentData, skills, categories);
   }, [currentData, skills, categories]);
 
-  // Gaps priorizados (para lista de riesgos)
+  // Prioritized gaps (for risk list)
   const prioritizedGaps = useMemo(() => {
     if (!currentData.length) return [];
     return prioritizeGaps(currentData, skills, categories, isCriticalGap);
   }, [currentData, skills, categories]);
 
-  // Insights automáticos
+  // Automatic insights
   const insights = useMemo(() => {
     if (!currentData.length) return [];
     return detectUnderutilizedTalent(currentData, skills);

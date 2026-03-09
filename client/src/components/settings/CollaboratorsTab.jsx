@@ -25,13 +25,13 @@ import toast from 'react-hot-toast';
 
 
 /**
- * CollaboratorsTab — CRUD de Colaboradores
- * 
+ * CollaboratorsTab — Collaborator CRUD
+ *
  * Features:
- * - Tabla con inline editing
- * - Búsqueda y filtrado
- * - Modal para crear nuevo
- * - Action menu para editar/eliminar
+ * - Table with inline editing
+ * - Search and filtering
+ * - Modal for creating new
+ * - Action menu for edit/delete
  */
 
 // Empty State component removed (using shared)
@@ -373,7 +373,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
         />
       </td>
 
-      {/* Stats - Skills evaluadas vs definidas en perfil */}
+      {/* Stats - Skills evaluated vs defined in profile */}
       <td className={`px-4 py-3 text-sm text-gray-500 ${isArchived ? 'opacity-50' : ''}`}>
         {(() => {
           const evaluatedCount = Object.keys(collaborator.skills || {}).length;
@@ -406,7 +406,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
         })()}
       </td>
 
-      {/* Última Evaluación */}
+      {/* Last Evaluation */}
       <td className={`px-4 py-3 text-sm text-gray-500 ${isArchived ? 'opacity-50' : ''}`}>
         {collaborator.lastEvaluated ? (
           <span className="text-gray-600">
@@ -421,7 +421,7 @@ function CollaboratorRow({ collaborator, onUpdate, onDelete, onRestore, roleProf
         )}
       </td>
 
-      {/* Promedio */}
+      {/* Average */}
       <td className={`px-4 py-3 ${isArchived ? 'opacity-50' : ''}`}>
         {collaborator.promedio > 0 ? (
           <span className={`

@@ -55,10 +55,10 @@ function VersionBadge({ version, isCollapsed }) {
 /**
  * Layout Component - App Shell
  *
- * Estructura principal de la aplicación:
- * - Sidebar lateral colapsable con navegación
- * - Settings solo visible si está autenticado
- * - Botón de login/logout en la parte inferior
+ * Main application structure:
+ * - Collapsible sidebar with navigation
+ * - Settings only visible when authenticated
+ * - Login/logout button at the bottom
  */
 
 // Navigation items - Settings only shows when authenticated
@@ -106,7 +106,7 @@ export default function Layout() {
           ${isCollapsed ? 'w-16' : 'w-64'}
         `}
       >
-        {/* Header del Sidebar - Skima Logo */}
+        {/* Sidebar Header - Skima Logo */}
         <div className="flex items-center justify-between h-16 px-3 border-b border-gray-100 relative">
           {/* Logo with fade transition - clickable to landing in online demo */}
           {isOnlineDemo ? (
@@ -143,7 +143,7 @@ export default function Layout() {
           </button>
         </div>
 
-        {/* Navegación */}
+        {/* Navigation */}
         <nav className="p-2 space-y-1 flex-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
@@ -295,14 +295,14 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Contenido Principal */}
+      {/* Main Content */}
       <main
         className={`
           flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
-        {/* Header móvil (opcional para responsive) */}
+        {/* Mobile header (optional for responsive) */}
         <header className="lg:hidden flex items-center h-16 px-4 bg-surface shadow-sm">
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
