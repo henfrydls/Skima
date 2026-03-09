@@ -326,7 +326,7 @@ describe('ProtectedRoute', () => {
     expect(mockLogin).not.toHaveBeenCalled();
   });
 
-  it('auto-authenticates when no password is configured', async () => {
+  it('shows loader when no password is configured and not yet authenticated', () => {
     mockUseConfig.mockReturnValue({
       config: { hasPassword: false },
       isLoading: false,
@@ -338,30 +338,19 @@ describe('ProtectedRoute', () => {
       login: mockLogin
     });
 
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({ token: 'auto-token' }),
-    });
-
-    render(
+    const { container } = render(
       <ProtectedRoute>
         <div>Protected Content</div>
       </ProtectedRoute>
     );
 
-    await vi.waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('/api/auth/login'),
-        expect.objectContaining({ method: 'POST' })
-      );
-    });
-
-    await vi.waitFor(() => {
-      expect(mockLogin).toHaveBeenCalledWith('auto-token');
-    });
+    // Should show loader (auto-login is handled by AuthContext, not ProtectedRoute)
+    expect(screen.queryByText('Protected Content')).not.toBeInTheDocument();
+    expect(screen.queryByText('Access Denied')).not.toBeInTheDocument();
+    expect(container.querySelector('.animate-spin')).toBeInTheDocument();
   });
 
-  it('handles auto-auth failure gracefully', async () => {
+  it('shows content after auto-auth completes (hasPassword false + authenticated)', () => {
     mockUseConfig.mockReturnValue({
       config: { hasPassword: false },
       isLoading: false,
@@ -369,11 +358,9 @@ describe('ProtectedRoute', () => {
       isDemo: false,
     });
     mockUseAuth.mockReturnValue({
-      isAuthenticated: false,
+      isAuthenticated: true,
       login: mockLogin
     });
-
-    global.fetch = vi.fn().mockRejectedValue(new Error('Network error'));
 
     render(
       <ProtectedRoute>
@@ -381,11 +368,6 @@ describe('ProtectedRoute', () => {
       </ProtectedRoute>
     );
 
-    await vi.waitFor(() => {
-      expect(global.fetch).toHaveBeenCalled();
-    });
-
-    // Should not crash - still shows restricted view
-    expect(screen.getByText('Access Denied')).toBeInTheDocument();
+    expect(screen.getByText('Protected Content')).toBeInTheDocument();
   });
 });
