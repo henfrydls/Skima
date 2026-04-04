@@ -15,6 +15,8 @@ import TeamMatrixPage from './pages/TeamMatrixPage';
 import EvolutionPage from './pages/EvolutionPage';
 import SettingsPage from './pages/SettingsPage';
 import ProfilePage from './pages/ProfilePage';
+import DevelopmentPage from './pages/DevelopmentPage';
+import DevelopmentPlanDetail from './pages/DevelopmentPlanDetail';
 
 // Separate flows — lazy loaded (user may never visit these)
 const SetupView = lazy(() => import('./pages/SetupView'));
@@ -122,6 +124,14 @@ const router = createBrowserRouter([
       {
         path: "/evolution",
         element: <EvolutionPage />,
+      },
+      {
+        path: "/development",
+        element: <DevelopmentPage />,
+      },
+      {
+        path: "/development/:id",
+        element: <DevelopmentPlanDetail />,
       },
       {
         path: "/settings",

@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Grid3X3,
   TrendingUp,
+  Target,
   Settings,
   ChevronLeft,
   ChevronRight,
@@ -67,6 +68,7 @@ const getNavItems = (isAuthenticated) => {
     { to: '/', icon: LayoutDashboard, label: 'Dashboard' },
     { to: '/team-matrix', icon: Grid3X3, label: 'Team Matrix' },
     { to: '/evolution', icon: TrendingUp, label: 'Evolution' },
+    { to: '/development', icon: Target, label: 'Development' },
   ];
   
   // Only show Settings if authenticated
