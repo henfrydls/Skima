@@ -93,7 +93,7 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
             >
               <option value="">Select collaborator...</option>
               {collaborators.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre} — {c.rol}</option>
+                <option key={c.id} value={c.id}>{c.nombre} ({c.rol})</option>
               ))}
             </select>
           </div>

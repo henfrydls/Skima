@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Plus, Trash2, Edit2, Target } from 'lucide-react';
+import { ChevronDown, ChevronRight, Plus, Trash2, Edit2, Target, CheckCircle2 } from 'lucide-react';
 import ActionRow from './ActionRow';
 
 const PRIORITY_COLORS = {
@@ -19,6 +19,11 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const actions = goal.actions || [];
   const completedActions = actions.filter(a => a.status === 'completed').length;
   const progress = actions.length > 0 ? (completedActions / actions.length) * 100 : 0;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -63,6 +68,14 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
             style={{ width: `${progress}%` }}
           />
         </div>
+
+        {/* Completion date */}
+        {goal.completedAt && (
+          <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+            <CheckCircle2 size={12} className="text-emerald-500" />
+            {formatDate(goal.completedAt)}
+          </span>
+        )}
       </div>
 
       {/* Expanded content */}

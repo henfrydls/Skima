@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Target, Calendar } from 'lucide-react';
+import { Target, Calendar, CheckCircle2 } from 'lucide-react';
 
 const STATUS_BADGES = {
   draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
@@ -48,13 +48,18 @@ export default function PlanCard({ plan }) {
           <p className="text-sm text-gray-500">{collaboratorName}</p>
         )}
 
-        {/* Date range */}
-        {(plan.startDate || plan.endDate) && (
+        {/* Date range / Completion date */}
+        {plan.status === 'completed' && plan.completedAt ? (
+          <p className="flex items-center gap-1.5 text-xs text-gray-400">
+            <CheckCircle2 size={12} className="text-emerald-500" />
+            {formatDate(plan.startDate)}{plan.startDate ? ' - ' : ''}{formatDate(plan.completedAt)}
+          </p>
+        ) : (plan.startDate || plan.endDate) ? (
           <p className="flex items-center gap-1.5 text-xs text-gray-400">
             <Calendar size={12} />
             {formatDate(plan.startDate)}{plan.endDate ? ` - ${formatDate(plan.endDate)}` : ''}
           </p>
-        )}
+        ) : null}
 
         {/* Goal count */}
         <div className="flex items-center gap-1.5 text-sm text-gray-600">

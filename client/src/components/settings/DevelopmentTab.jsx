@@ -75,6 +75,9 @@ export default function DevelopmentTab({ isActive }) {
       const res = await fetch(`${API_BASE}/api/development-plans`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
+      // Sort: active first, then draft, cancelled, completed last
+      const statusOrder = { active: 0, draft: 1, cancelled: 2, completed: 3 };
+      data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
       setPlans(data);
     } catch {
       toast.error('Failed to load development plans');
@@ -418,21 +421,30 @@ export default function DevelopmentTab({ isActive }) {
                     <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-4">
                       {plan.collaborator && (
                         <span className="text-sm text-gray-600 w-full mb-1 font-medium">
-                          Collaborator: {plan.collaborator.nombre}{plan.collaborator.rol ? ` — ${plan.collaborator.rol}` : ''}
+                          Collaborator: {plan.collaborator.nombre}{plan.collaborator.rol ? ` (${plan.collaborator.rol})` : ''}
                         </span>
                       )}
                       {plan.description && (
                         <p className="text-sm text-gray-500 w-full mb-1">{plan.description}</p>
                       )}
-                      {plan.startDate && (
+                      {plan.status === 'completed' && plan.completedAt ? (
                         <span className="flex items-center gap-1">
-                          <Calendar size={12} /> Start: {formatDate(plan.startDate)}
+                          <CheckCircle2 size={12} className="text-emerald-500" />
+                          {formatDate(plan.startDate)} - {formatDate(plan.completedAt)}
                         </span>
-                      )}
-                      {plan.endDate && (
-                        <span className="flex items-center gap-1">
-                          <Calendar size={12} /> End: {formatDate(plan.endDate)}
-                        </span>
+                      ) : (
+                        <>
+                          {plan.startDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} /> Start: {formatDate(plan.startDate)}
+                            </span>
+                          )}
+                          {plan.endDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar size={12} /> End: {formatDate(plan.endDate)}
+                            </span>
+                          )}
+                        </>
                       )}
                     </div>
 
@@ -503,6 +515,14 @@ export default function DevelopmentTab({ isActive }) {
                                   />
                                 </div>
 
+                                {/* Completion date */}
+                                {goal.completedAt && (
+                                  <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                                    <CheckCircle2 size={12} className="text-emerald-500" />
+                                    {formatDate(goal.completedAt)}
+                                  </span>
+                                )}
+
                                 {/* Edit / Delete */}
                                 <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button
@@ -569,13 +589,18 @@ export default function DevelopmentTab({ isActive }) {
                                               {action.title}
                                             </span>
 
-                                            {/* Due date */}
-                                            {action.dueDate && (
+                                            {/* Date: show completedAt for completed, dueDate otherwise */}
+                                            {isCompleted && action.completedAt ? (
+                                              <span className="flex items-center gap-1 text-xs text-gray-400">
+                                                <CheckCircle2 size={12} className="text-emerald-500" />
+                                                {formatDate(action.completedAt)}
+                                              </span>
+                                            ) : action.dueDate ? (
                                               <span className="flex items-center gap-1 text-xs text-gray-400">
                                                 <Calendar size={12} />
                                                 {formatDate(action.dueDate)}
                                               </span>
-                                            )}
+                                            ) : null}
 
                                             {/* Delete */}
                                             <button

@@ -32,6 +32,9 @@ export default function DevelopmentPage() {
       const res = await fetch(url);
       if (!res.ok) throw new Error('Failed to fetch plans');
       const data = await res.json();
+      // Sort: active first, then draft, cancelled, completed last
+      const statusOrder = { active: 0, draft: 1, cancelled: 2, completed: 3 };
+      data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
       setPlans(data);
     } catch (err) {
       toast.error('Failed to load development plans');

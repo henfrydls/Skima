@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2 } from 'lucide-react';
+import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -87,13 +87,18 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
         {action.title}
       </span>
 
-      {/* Due date */}
-      {action.dueDate && (
+      {/* Date: show completedAt for completed, dueDate otherwise */}
+      {isCompleted && action.completedAt ? (
+        <span className="flex items-center gap-1 text-xs text-gray-400">
+          <CheckCircle2 size={12} className="text-emerald-500" />
+          {formatDate(action.completedAt)}
+        </span>
+      ) : action.dueDate ? (
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <Calendar size={12} />
           {formatDate(action.dueDate)}
         </span>
-      )}
+      ) : null}
 
       {/* Delete - hidden in read-only mode */}
       {!readOnly && (

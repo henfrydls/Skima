@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ChevronLeft, Target, CheckCircle2, Clock } from 'lucide-react';
+import { ChevronLeft, Target, CheckCircle2, Clock, Calendar } from 'lucide-react';
 import { CardSkeleton } from '../components/common';
 import { GoalAccordion } from '../components/development';
 import { API_BASE } from '../lib/apiBase';
@@ -48,6 +48,11 @@ export default function DevelopmentPlanDetail() {
     (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
   );
   const overallProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return null;
+    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
 
   const daysRemaining = plan?.endDate
     ? Math.max(0, Math.ceil((new Date(plan.endDate) - new Date()) / (1000 * 60 * 60 * 24)))
@@ -104,6 +109,18 @@ export default function DevelopmentPlanDetail() {
         {plan.description && (
           <p className="text-sm text-gray-400 mt-1">{plan.description}</p>
         )}
+        {/* Date info */}
+        {plan.status === 'completed' && plan.completedAt ? (
+          <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
+            <CheckCircle2 size={14} className="text-emerald-500" />
+            {formatDate(plan.startDate)}{plan.startDate ? ' - ' : ''}{formatDate(plan.completedAt)}
+          </p>
+        ) : (plan.startDate || plan.endDate) ? (
+          <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
+            <Calendar size={14} />
+            {formatDate(plan.startDate)}{plan.endDate ? ` - ${formatDate(plan.endDate)}` : ''}
+          </p>
+        ) : null}
       </div>
 
       {/* Progress section */}
