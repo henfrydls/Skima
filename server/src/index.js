@@ -117,6 +117,21 @@ export function createApp() {
       // If transitioning from demo, wipe ALL data (everything is demo data)
       if (isInDemoMode) {
         await prisma.$transaction([
+          // New people development tables (must delete before collaborators/skills)
+          prisma.developmentAction.deleteMany(),
+          prisma.developmentGoal.deleteMany(),
+          prisma.developmentPlan.deleteMany(),
+          prisma.checkIn.deleteMany(),
+          prisma.keyResult.deleteMany(),
+          prisma.objective.deleteMany(),
+          prisma.timePeriod.deleteMany(),
+          prisma.reviewSkillRating.deleteMany(),
+          prisma.review.deleteMany(),
+          prisma.reviewCycle.deleteMany(),
+          prisma.kPIEntry.deleteMany(),
+          prisma.kPI.deleteMany(),
+          prisma.checkInNote.deleteMany(),
+          // Original tables
           prisma.assessment.deleteMany(),
           prisma.evaluationSession.deleteMany(),
           prisma.collaborator.deleteMany(),
@@ -524,6 +539,21 @@ export function createApp() {
   // POST /api/reset-database - Wipe all data and return to setup
   app.post('/api/reset-database', authMiddleware, async (req, res) => {
     try {
+      // Delete new people development tables first (FK dependencies)
+      await prisma.developmentAction.deleteMany();
+      await prisma.developmentGoal.deleteMany();
+      await prisma.developmentPlan.deleteMany();
+      await prisma.checkIn.deleteMany();
+      await prisma.keyResult.deleteMany();
+      await prisma.objective.deleteMany();
+      await prisma.timePeriod.deleteMany();
+      await prisma.reviewSkillRating.deleteMany();
+      await prisma.review.deleteMany();
+      await prisma.reviewCycle.deleteMany();
+      await prisma.kPIEntry.deleteMany();
+      await prisma.kPI.deleteMany();
+      await prisma.checkInNote.deleteMany();
+      // Original tables
       await prisma.assessment.deleteMany();
       await prisma.evaluationSession.deleteMany();
       await prisma.collaborator.deleteMany();
@@ -798,6 +828,19 @@ export function createApp() {
       }
 
       // Wipe existing data (order matters due to foreign keys)
+      await prisma.developmentAction.deleteMany();
+      await prisma.developmentGoal.deleteMany();
+      await prisma.developmentPlan.deleteMany();
+      await prisma.checkIn.deleteMany();
+      await prisma.keyResult.deleteMany();
+      await prisma.objective.deleteMany();
+      await prisma.timePeriod.deleteMany();
+      await prisma.reviewSkillRating.deleteMany();
+      await prisma.review.deleteMany();
+      await prisma.reviewCycle.deleteMany();
+      await prisma.kPIEntry.deleteMany();
+      await prisma.kPI.deleteMany();
+      await prisma.checkInNote.deleteMany();
       await prisma.assessment.deleteMany();
       await prisma.snapshot.deleteMany();
       await prisma.collaborator.deleteMany();
