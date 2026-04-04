@@ -57,7 +57,7 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
         </span>
 
         {/* Mini progress bar */}
-        <div className="w-16 h-1.5 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+        <div className="w-16 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
           <div
             className="h-full bg-primary rounded-full transition-all duration-300"
             style={{ width: `${progress}%` }}

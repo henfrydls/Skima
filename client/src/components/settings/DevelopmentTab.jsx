@@ -12,9 +12,9 @@ import GoalFormModal from './DevelopmentGoalFormModal';
 import ActionFormModal from './DevelopmentActionFormModal';
 
 const STATUS_BADGES = {
-  draft: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Draft' },
-  active: { bg: 'bg-primary/10', text: 'text-primary', label: 'Active' },
-  completed: { bg: 'bg-competent/10', text: 'text-competent', label: 'Completed' },
+  draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
+  active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active', bar: 'bg-primary' },
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed', bar: 'bg-emerald-500' },
 };
 
 const PRIORITY_COLORS = {
@@ -381,9 +381,9 @@ export default function DevelopmentTab({ isActive }) {
                   </span>
 
                   {/* Progress bar */}
-                  <div className="w-20 h-1.5 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+                  <div className="w-20 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
                     <div
-                      className="h-full bg-primary rounded-full transition-all duration-300"
+                      className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
                       style={{ width: `${progress}%` }}
                     />
                   </div>
@@ -488,7 +488,7 @@ export default function DevelopmentTab({ isActive }) {
                                   {completedActions}/{actions.length}
                                 </span>
 
-                                <div className="w-12 h-1.5 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+                                <div className="w-12 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
                                   <div
                                     className="h-full bg-primary rounded-full transition-all duration-300"
                                     style={{ width: `${goalProgress}%` }}
@@ -557,7 +557,7 @@ export default function DevelopmentTab({ isActive }) {
                                             </span>
 
                                             {/* Title */}
-                                            <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                            <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
                                               {action.title}
                                             </span>
 

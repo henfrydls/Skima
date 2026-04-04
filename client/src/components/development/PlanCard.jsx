@@ -2,9 +2,9 @@ import { useNavigate } from 'react-router-dom';
 import { Target, Calendar } from 'lucide-react';
 
 const STATUS_BADGES = {
-  draft: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Draft', bar: 'bg-gray-400' },
-  active: { bg: 'bg-[#2d676e]/10', text: 'text-[#2d676e]', label: 'Active', bar: 'bg-[#2d676e]' },
-  completed: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'Completed', bar: 'bg-emerald-500' },
+  draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
+  active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active', bar: 'bg-primary' },
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed', bar: 'bg-emerald-500' },
 };
 
 /**
@@ -64,7 +64,7 @@ export default function PlanCard({ plan }) {
 
         {/* Progress bar */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+          <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
               className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
               style={{ width: `${progress}%` }}

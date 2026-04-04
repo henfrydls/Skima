@@ -83,7 +83,7 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
       </span>
 
       {/* Title */}
-      <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+      <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
         {action.title}
       </span>
 

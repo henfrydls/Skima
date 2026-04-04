@@ -58,14 +58,14 @@ describe('PlanCard', () => {
     renderCard({ status: 'active' });
     const badge = screen.getByText('Active');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-[#2d676e]/10', 'text-[#2d676e]');
+    expect(badge).toHaveClass('bg-primary/10', 'text-primary');
   });
 
   it('renders Completed status badge with correct styling', () => {
     renderCard({ status: 'completed' });
     const badge = screen.getByText('Completed');
     expect(badge).toBeInTheDocument();
-    expect(badge).toHaveClass('bg-emerald-50', 'text-emerald-600');
+    expect(badge).toHaveClass('bg-emerald-50', 'text-emerald-700');
   });
 
   it('renders Draft status badge with correct styling', () => {
