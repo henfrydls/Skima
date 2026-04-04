@@ -26,7 +26,47 @@ export async function enterDemo(page) {
 
   // Wait for main content
   await page.waitForSelector('main', { timeout: 10000 }).catch(() => {
-    // Fallback: wait for any substantive content
     return page.waitForSelector('[class*="dashboard"], [class*="content"], h1', { timeout: 5000 });
   });
+}
+
+/**
+ * Login to Settings by reading the password hint from the login modal.
+ * The demo seed shows "Default password: admin123" — we extract and use it.
+ * This is what a real user would do.
+ */
+export async function loginToSettings(page) {
+  await page.goto('/settings');
+  await page.waitForLoadState('networkidle');
+
+  // Check if we hit "Access Denied"
+  const accessDenied = await page.locator('text=Access Denied').isVisible({ timeout: 3000 }).catch(() => false);
+  if (!accessDenied) return; // Already authenticated
+
+  // Click "Sign In" button on the access denied page
+  const signInBtn = page.locator('button').filter({ hasText: /sign in/i }).first();
+  await signInBtn.click();
+  await page.waitForTimeout(500);
+
+  // The login modal should appear — look for the password hint
+  const hintEl = page.locator('text=/default password/i').first();
+  const hasHint = await hintEl.isVisible({ timeout: 3000 }).catch(() => false);
+
+  if (hasHint) {
+    // Extract password from hint text like "Default password: admin123"
+    const hintText = await hintEl.textContent();
+    const password = hintText.match(/:\s*(\S+)/)?.[1] || 'admin123';
+    await page.fill('input[type="password"]', password);
+  } else {
+    // No hint — try submitting without password (no-password mode)
+    // do nothing, just submit
+  }
+
+  // Click the Sign In button inside the modal
+  const modalSignIn = page.locator('.modal-overlay button, [class*="modal"] button').filter({ hasText: /sign in/i }).first();
+  await modalSignIn.click();
+  await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+  // Should now be on settings page
+  await page.waitForSelector('main', { timeout: 10000 }).catch(() => {});
 }
