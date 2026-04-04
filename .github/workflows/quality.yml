@@ -7,7 +7,12 @@ on:
 
 jobs:
   quality:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
@@ -24,11 +29,12 @@ jobs:
         run: cd client && npm install
 
       - name: Install Server Dependencies
-        run: cd server && rm -f package-lock.json && npm install
+        run: cd server && npm install
+        shell: bash
 
       # Linting
       - name: Lint Client
-        run: npm run lint
+        run: npx eslint src/
         working-directory: ./client
 
       # Tests with Coverage
@@ -53,32 +59,35 @@ jobs:
         run: npm run build
         working-directory: ./client
 
-      # Upload Coverage Artifacts
+      # Upload Coverage Artifacts (only from Ubuntu to avoid duplicates)
       - name: Upload Client Coverage
-        if: always()
+        if: always() && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: client-coverage
           path: client/coverage/
 
       - name: Upload Server Coverage
-        if: always()
+        if: always() && matrix.os == 'ubuntu-latest'
         uses: actions/upload-artifact@v4
         with:
           name: server-coverage
           path: server/coverage/
 
-      # Security Audit
+      # Security Audit (only from Ubuntu to avoid duplicates)
       - name: Security Audit (Root)
+        if: matrix.os == 'ubuntu-latest'
         run: npm audit --audit-level=high
         continue-on-error: true
 
       - name: Security Audit (Client)
+        if: matrix.os == 'ubuntu-latest'
         run: npm audit --audit-level=high
         working-directory: ./client
         continue-on-error: true
 
       - name: Security Audit (Server)
+        if: matrix.os == 'ubuntu-latest'
         run: npm audit --audit-level=high
         working-directory: ./server
         continue-on-error: true
