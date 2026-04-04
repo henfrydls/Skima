@@ -14,8 +14,9 @@ const ACTION_TYPES = {
 /**
  * ActionRow - Single action item with checkbox toggle
  * Displays action type badge, title, due date, and delete button
+ * When readOnly=true, hides checkbox toggle and delete button
  */
-export default function ActionRow({ action, onUpdate, onDelete }) {
+export default function ActionRow({ action, onUpdate, onDelete, readOnly = false }) {
   const { authFetch } = useAuth();
   const [toggling, setToggling] = useState(false);
 
@@ -52,18 +53,28 @@ export default function ActionRow({ action, onUpdate, onDelete }) {
 
   return (
     <div className={`flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors ${isCompleted ? 'opacity-60' : ''}`}>
-      {/* Checkbox */}
-      <button
-        onClick={handleToggle}
-        disabled={toggling}
-        className="flex-shrink-0 text-gray-400 hover:text-primary transition-colors disabled:opacity-50"
-      >
-        {isCompleted ? (
-          <Check size={18} className="text-competent" />
-        ) : (
-          <Square size={18} />
-        )}
-      </button>
+      {/* Checkbox - interactive in edit mode, static indicator in read-only */}
+      {readOnly ? (
+        <span className="flex-shrink-0">
+          {isCompleted ? (
+            <Check size={18} className="text-competent" />
+          ) : (
+            <Square size={18} className="text-gray-300" />
+          )}
+        </span>
+      ) : (
+        <button
+          onClick={handleToggle}
+          disabled={toggling}
+          className="flex-shrink-0 text-gray-400 hover:text-primary transition-colors disabled:opacity-50"
+        >
+          {isCompleted ? (
+            <Check size={18} className="text-competent" />
+          ) : (
+            <Square size={18} />
+          )}
+        </button>
+      )}
 
       {/* Type badge */}
       <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${typeConfig.bg} ${typeConfig.text}`}>
@@ -84,14 +95,16 @@ export default function ActionRow({ action, onUpdate, onDelete }) {
         </span>
       )}
 
-      {/* Delete */}
-      <button
-        onClick={() => onDelete(action)}
-        className="flex-shrink-0 text-gray-300 hover:text-critical transition-colors opacity-0 group-hover:opacity-100"
-        title="Delete action"
-      >
-        <Trash2 size={14} />
-      </button>
+      {/* Delete - hidden in read-only mode */}
+      {!readOnly && (
+        <button
+          onClick={() => onDelete(action)}
+          className="flex-shrink-0 text-gray-300 hover:text-critical transition-colors opacity-0 group-hover:opacity-100"
+          title="Delete action"
+        >
+          <Trash2 size={14} />
+        </button>
+      )}
     </div>
   );
 }

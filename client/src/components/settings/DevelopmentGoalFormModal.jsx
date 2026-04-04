@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import Button from '../components/common/Button';
-import GapSuggestions from '../components/development/GapSuggestions';
+import Button from '../common/Button';
+import GapSuggestions from '../development/GapSuggestions';
 
 /**
  * GoalFormModal - Create or edit a development goal

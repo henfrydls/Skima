@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { X, Briefcase, Users, GraduationCap, BookOpen } from 'lucide-react';
-import Button from '../components/common/Button';
+import Button from '../common/Button';
 
 const ACTION_TYPES = [
   { id: 'experience', label: 'Experience (70%)', icon: Briefcase, desc: 'On-the-job learning' },

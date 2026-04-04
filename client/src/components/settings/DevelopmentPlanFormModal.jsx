@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
-import Button from '../components/common/Button';
-import { API_BASE } from '../lib/apiBase';
+import Button from '../common/Button';
+import { API_BASE } from '../../lib/apiBase';
 
 /**
  * PlanFormModal - Create or edit a development plan

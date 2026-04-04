@@ -11,8 +11,9 @@ const PRIORITY_COLORS = {
 /**
  * GoalAccordion - Expandable goal card with nested actions
  * Shows title, skill badge, priority, progress, and expandable action list
+ * When readOnly=true, hides all edit/delete/add controls
  */
-export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onUpdateAction, onDeleteAction }) {
+export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onUpdateAction, onDeleteAction, readOnly = false }) {
   const [expanded, setExpanded] = useState(false);
 
   const actions = goal.actions || [];
@@ -72,21 +73,23 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
             <p className="text-sm text-gray-500 mb-3">{goal.description}</p>
           )}
 
-          {/* Goal actions (edit/delete) */}
-          <div className="flex items-center gap-2 mb-3">
-            <button
-              onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
-              className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
-            >
-              <Edit2 size={12} /> Edit Goal
-            </button>
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(goal); }}
-              className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-critical transition-colors"
-            >
-              <Trash2 size={12} /> Delete
-            </button>
-          </div>
+          {/* Goal actions (edit/delete) - hidden in read-only mode */}
+          {!readOnly && (
+            <div className="flex items-center gap-2 mb-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); onEdit(goal); }}
+                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-primary transition-colors"
+              >
+                <Edit2 size={12} /> Edit Goal
+              </button>
+              <button
+                onClick={(e) => { e.stopPropagation(); onDelete(goal); }}
+                className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-critical transition-colors"
+              >
+                <Trash2 size={12} /> Delete
+              </button>
+            </div>
+          )}
 
           {/* Actions list */}
           {actions.length > 0 ? (
@@ -97,6 +100,7 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
                   action={action}
                   onUpdate={onUpdateAction}
                   onDelete={onDeleteAction}
+                  readOnly={readOnly}
                 />
               ))}
             </div>
@@ -104,13 +108,15 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
             <p className="text-xs text-gray-400 italic py-2">No actions yet</p>
           )}
 
-          {/* Add action button */}
-          <button
-            onClick={(e) => { e.stopPropagation(); onAddAction(goal); }}
-            className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
-          >
-            <Plus size={14} /> Add Action
-          </button>
+          {/* Add action button - hidden in read-only mode */}
+          {!readOnly && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onAddAction(goal); }}
+              className="mt-2 inline-flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
+            >
+              <Plus size={14} /> Add Action
+            </button>
+          )}
         </div>
       )}
     </div>

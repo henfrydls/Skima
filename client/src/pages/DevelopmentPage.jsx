@@ -1,12 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Target } from 'lucide-react';
+import { Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Button, EmptyState, CardSkeleton } from '../components/common';
+import { EmptyState, CardSkeleton } from '../components/common';
 import { PlanCard } from '../components/development';
-import { useAuth } from '../contexts/AuthContext';
 import { API_BASE } from '../lib/apiBase';
-import PlanFormModal from './DevelopmentPlanFormModal';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
@@ -16,16 +14,15 @@ const FILTERS = [
 ];
 
 /**
- * DevelopmentPage - Main IDP listing page
- * Shows all development plans with filter chips and a card grid
+ * DevelopmentPage - Read-only IDP listing page
+ * Shows all development plans with filter chips and a card grid.
+ * All CRUD operations are handled in Settings > Development tab.
  */
 export default function DevelopmentPage() {
   const navigate = useNavigate();
-  const { authFetch } = useAuth();
   const [plans, setPlans] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -48,38 +45,14 @@ export default function DevelopmentPage() {
     fetchPlans();
   }, [fetchPlans]);
 
-  const handleCreate = async (formData) => {
-    try {
-      const res = await authFetch(`${API_BASE}/api/development-plans`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      if (!res.ok) throw new Error('Failed to create plan');
-      const created = await res.json();
-      toast.success('Plan created');
-      setShowCreateModal(false);
-      navigate(`/development/${created.id}`);
-    } catch (err) {
-      if (err.message !== 'SESSION_EXPIRED') {
-        toast.error('Failed to create plan');
-      }
-    }
-  };
-
   return (
     <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-light text-slate-800">Development Plans</h1>
-          <p className="text-sm text-gray-500 mt-1">
-            Individual development plans to grow your team
-          </p>
-        </div>
-        <Button onClick={() => setShowCreateModal(true)}>
-          <Plus size={18} className="mr-1.5" /> New Plan
-        </Button>
+      <div>
+        <h1 className="text-2xl font-light text-slate-800">Development Plans</h1>
+        <p className="text-sm text-gray-500 mt-1">
+          Individual development plans to grow your team
+        </p>
       </div>
 
       {/* Filter chips */}
@@ -110,11 +83,9 @@ export default function DevelopmentPage() {
           title="No development plans yet"
           description={
             filter === 'all'
-              ? 'Create your first plan to start growing your team.'
+              ? 'Create plans in Settings \u2192 Development.'
               : `No ${filter} plans found.`
           }
-          actionLabel="Create Plan"
-          onAction={() => setShowCreateModal(true)}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -122,14 +93,6 @@ export default function DevelopmentPage() {
             <PlanCard key={plan.id} plan={plan} />
           ))}
         </div>
-      )}
-
-      {/* Create Plan Modal */}
-      {showCreateModal && (
-        <PlanFormModal
-          onClose={() => setShowCreateModal(false)}
-          onSubmit={handleCreate}
-        />
       )}
     </div>
   );
