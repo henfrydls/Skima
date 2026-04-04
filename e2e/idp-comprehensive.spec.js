@@ -13,8 +13,18 @@ const API_BASE = 'http://localhost:3001';
  * Assumes user is already authenticated and on the Settings page.
  */
 async function goToDevelopmentTab(page) {
+  await page.goto('/settings');
+  await waitForPageReady(page);
+
+  // Handle re-authentication if needed (e.g. after navigating away)
+  const accessDenied = await page.locator('text=Access Denied').isVisible({ timeout: 2000 }).catch(() => false);
+  if (accessDenied) {
+    await loginToSettings(page);
+    await waitForPageReady(page);
+  }
+
   const devTab = page.locator('button').filter({ hasText: /development/i }).first();
-  await devTab.click();
+  await devTab.click({ timeout: 5000 });
   await waitForPageReady(page);
   await page.waitForTimeout(400);
 }
@@ -233,17 +243,17 @@ test.describe('IDP — Validation & Error Handling', () => {
     await planRow.click();
     await page.waitForTimeout(400);
 
-    // Click "Add Goal"
+    // Click "+ Add Goal" button inside the expanded plan
     const addGoalBtn = page.locator('button').filter({ hasText: /add goal/i }).first();
     await expect(addGoalBtn).toBeVisible({ timeout: 3000 });
     await addGoalBtn.click();
     await page.waitForTimeout(400);
 
-    // Modal should appear
-    await expect(page.locator('text=Add Goal')).toBeVisible({ timeout: 3000 });
+    // Modal should appear — use the heading to confirm
+    await expect(page.locator('h2').filter({ hasText: /add goal/i })).toBeVisible({ timeout: 3000 });
 
-    // Leave title empty, the submit button should be disabled
-    const submitBtn = page.locator('button').filter({ hasText: /add goal/i }).last();
+    // Leave title empty, the submit button in the modal should be disabled
+    const submitBtn = page.locator('form button[type="submit"]').filter({ hasText: /add goal/i }).first();
     await expect(submitBtn).toBeDisabled();
   });
 
@@ -292,8 +302,8 @@ test.describe('IDP — Full CRUD Flow', () => {
     // Verify plan appears in the list
     await expect(page.locator('text=E2E Test Plan')).toBeVisible({ timeout: 5000 });
 
-    // Step 4: Expand the plan
-    const planRow = page.locator('text=E2E Test Plan').first().locator('..');
+    // Step 4: Expand the plan by clicking its row
+    const planRow = page.locator('.cursor-pointer').filter({ hasText: 'E2E Test Plan' }).first();
     await planRow.click();
     await page.waitForTimeout(500);
 
@@ -324,7 +334,7 @@ test.describe('IDP — Full CRUD Flow', () => {
     await expect(page.locator('text=Learn TypeScript')).toBeVisible({ timeout: 5000 });
 
     // Step 6: Expand the goal to add actions
-    const goalRow = page.locator('text=Learn TypeScript').first().locator('..');
+    const goalRow = page.locator('.cursor-pointer').filter({ hasText: 'Learn TypeScript' }).first();
     await goalRow.click();
     await page.waitForTimeout(500);
 
@@ -355,7 +365,7 @@ test.describe('IDP — Full CRUD Flow', () => {
 
     // Step 7: Add a second action
     // Re-expand goal if collapsed
-    const goalRowAgain = page.locator('text=Learn TypeScript').first().locator('..');
+    const goalRowAgain = page.locator('.cursor-pointer').filter({ hasText: 'Learn TypeScript' }).first();
     const actionsVisible = await page.locator('text=Add Action').first().isVisible().catch(() => false);
     if (!actionsVisible) {
       await goalRowAgain.click();
