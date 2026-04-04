@@ -8,6 +8,7 @@ import { prisma, ensureDatabase } from './db.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
+import developmentRoutes from './routes/development.js';
 import { authMiddleware } from './middleware/auth.js';
 import { demoModeMiddleware } from './middleware/demo.js';
 
@@ -42,6 +43,9 @@ export function createApp() {
 
   // Demo seed routes (public - needed before login)
   app.use('/api/seed-demo', demoRoutes);
+
+  // Development (IDP) routes
+  app.use('/api', developmentRoutes);
 
   // ============================================================
   // SYSTEM CONFIG ROUTES (Public - needed before login)

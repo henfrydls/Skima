@@ -9,6 +9,10 @@ beforeAll(async () => {
 // Clean database before each test
 beforeEach(async () => {
   // Delete in order due to foreign key constraints
+  // Development tables (actions -> goals -> plans)
+  await prisma.developmentAction.deleteMany();
+  await prisma.developmentGoal.deleteMany();
+  await prisma.developmentPlan.deleteMany();
   // Assessment references: Collaborator, Skill, Snapshot, EvaluationSession
   await prisma.assessment.deleteMany();
   // EvaluationSession references: Collaborator
