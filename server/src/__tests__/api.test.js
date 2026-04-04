@@ -107,7 +107,7 @@ describe('API Routes', () => {
         .send({ rol: 'Designer' });
       
       expect(res.status).toBe(400);
-      expect(res.body.message).toBe('Name and role are required');
+      expect(res.body.message).toBe('Collaborator name is required');
     });
 
     it('should return 400 if rol is missing', async () => {

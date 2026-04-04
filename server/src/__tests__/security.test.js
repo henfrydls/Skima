@@ -32,3 +32,39 @@ describe('Security Headers', () => {
     expect(res.status).toBe(413);
   });
 });
+
+describe('Input Validation', () => {
+  let app;
+
+  beforeEach(() => {
+    app = createApp();
+  });
+
+  it('rejects setup with missing companyName', async () => {
+    const res = await request(app)
+      .post('/api/setup')
+      .send({ adminName: 'Admin', adminPassword: 'pass123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects setup with empty companyName', async () => {
+    const res = await request(app)
+      .post('/api/setup')
+      .send({ companyName: '', adminName: 'Admin', adminPassword: 'pass123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects setup with companyName exceeding 200 chars', async () => {
+    const res = await request(app)
+      .post('/api/setup')
+      .send({ companyName: 'x'.repeat(201), adminName: 'Admin', adminPassword: 'pass123' });
+    expect(res.status).toBe(400);
+  });
+
+  it('rejects collaborator creation with missing nombre', async () => {
+    const res = await request(app)
+      .post('/api/collaborators')
+      .send({ rol: 'Developer', area: 'Engineering' });
+    expect(res.status).toBe(400);
+  });
+});
