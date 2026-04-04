@@ -4,7 +4,9 @@
  * @param {string} label — the visible text in the sidebar link
  */
 export async function navigateTo(page, label) {
-  await page.getByRole('link', { name: label }).click();
+  // Target sidebar nav links specifically to avoid matching dashboard buttons
+  const sidebar = page.locator('nav');
+  await sidebar.getByRole('link', { name: label, exact: true }).click();
   await page.waitForLoadState('networkidle');
 }
 

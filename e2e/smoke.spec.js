@@ -10,7 +10,7 @@ test.describe('Smoke Test — All Pages Load', () => {
   test('landing page shows when no cookie', async ({ page, context }) => {
     await context.clearCookies();
     await page.goto('/');
-    await expect(page.locator('text=Try Demo').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('text=Try Live Demo').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('dashboard loads after demo entry', async ({ page }) => {
@@ -32,7 +32,8 @@ test.describe('Smoke Test — All Pages Load', () => {
   });
 
   test('settings page loads', async ({ page }) => {
-    await navigateTo(page, 'Settings');
+    // Settings is only visible when authenticated — demo mode auto-authenticates
+    await page.goto('/settings');
     await waitForPageReady(page);
     await expect(page.locator('main')).toBeVisible();
   });

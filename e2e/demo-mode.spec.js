@@ -19,7 +19,7 @@ test.describe('Demo Mode — Restrictions', () => {
   });
 
   test('settings page accessible in demo', async ({ page }) => {
-    await navigateTo(page, 'Settings');
+    await page.goto('/settings');
     await waitForPageReady(page);
     await expect(page.locator('main')).toBeVisible();
   });
