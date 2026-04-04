@@ -75,8 +75,8 @@ export default function DevelopmentTab({ isActive }) {
       const res = await fetch(`${API_BASE}/api/development-plans`);
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
-      // Sort: active first, then draft, cancelled, completed last
-      const statusOrder = { active: 0, draft: 1, cancelled: 2, completed: 3 };
+      // Sort: active first, then cancelled, completed, draft last
+      const statusOrder = { active: 0, cancelled: 1, completed: 2, draft: 3 };
       data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
       setPlans(data);
     } catch {
