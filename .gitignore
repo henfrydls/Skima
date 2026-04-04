@@ -81,3 +81,8 @@ src-tauri/resources/
 # pkg output
 *.exe
 !src-tauri/icons/**
+
+# Playwright
+/test-results/
+/playwright-report/
+/e2e/.auth/
