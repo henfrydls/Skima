@@ -19,6 +19,8 @@ describe('Development Plans API', () => {
     await prisma.collaborator.deleteMany();
     await prisma.skill.deleteMany();
     await prisma.category.deleteMany();
+    // Ensure no adminPassword is set so authMiddleware allows access without token
+    await prisma.systemConfig.deleteMany();
 
     // Create test fixtures
     category = await prisma.category.create({
