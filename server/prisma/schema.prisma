@@ -23,6 +23,8 @@ model Skill {
   categoriaId Int
   isActive    Boolean      @default(true)  // Soft delete flag
   assessments Assessment[]
+  developmentGoals DevelopmentGoal[]
+  reviewSkillRatings ReviewSkillRating[]
 }
 
 model Collaborator {
@@ -36,6 +38,11 @@ model Collaborator {
   lastEvaluated      DateTime?            // Timestamp of last evaluation
   assessments        Assessment[]
   evaluationSessions EvaluationSession[]
+  developmentPlans   DevelopmentPlan[]
+  objectives         Objective[]
+  reviews            Review[]
+  checkInNotes       CheckInNote[]
+  kpis               KPI[]
 }
 
 model Assessment {
@@ -101,3 +108,277 @@ model SystemConfig {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// ============================================================
+// INDIVIDUAL DEVELOPMENT PLANS (IDPs)
+// People development cycle: Skills → Gaps → IDPs → OKRs → Reviews
+// Note: Use "Growth Plan" language in UI, not "Improvement Plan" (PIP connotation)
+// ============================================================
+
+model DevelopmentPlan {
+  id             Int          @id @default(autoincrement())
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id])
+  collaboratorId Int
+  title          String       // e.g., "Q2 2026 Growth Plan"
+  description    String?
+  targetRole     String?      // Optional: references RoleProfile.rol for career-path plans
+  status         String       @default("draft") // draft | active | completed | cancelled
+  startDate      DateTime?
+  endDate        DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  goals          DevelopmentGoal[]
+  reviews        Review[]     // Reviews can reference the IDP they informed
+
+  @@index([collaboratorId])
+  @@index([status])
+}
+
+model DevelopmentGoal {
+  id           Int             @id @default(autoincrement())
+  plan         DevelopmentPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+  planId       Int
+  title        String          // e.g., "Improve React Testing skills to level 4"
+  description  String?
+  skill        Skill?          @relation(fields: [skillId], references: [id])
+  skillId      Int?            // Optional: links to Skill for gap-driven development
+  currentLevel Float?          // Snapshot of weighted skill score at goal creation
+  targetLevel  Float?          // Target skill level (e.g., 4.0)
+  priority     Int             @default(2) // 1=high, 2=medium, 3=low
+  status       String          @default("not_started") // not_started | in_progress | completed | cancelled
+  targetDate   DateTime?
+  completedAt  DateTime?
+  sortOrder    Int             @default(0)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  actions      DevelopmentAction[]
+
+  @@index([planId])
+  @@index([skillId])
+  @@index([status])
+}
+
+model DevelopmentAction {
+  id          Int             @id @default(autoincrement())
+  goal        DevelopmentGoal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  goalId      Int
+  title       String          // e.g., "Complete Testing JavaScript Applications course"
+  description String?
+  actionType  String          @default("experience") // experience | social | formal | self_directed (70-20-10 model)
+  status      String          @default("not_started") // not_started | in_progress | completed | skipped
+  dueDate     DateTime?
+  completedAt DateTime?
+  evidence    String?         // URL or text describing evidence of completion
+  sortOrder   Int             @default(0)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([goalId])
+  @@index([status])
+}
+
+// ============================================================
+// OKRs (Objectives & Key Results)
+// Flat model (no cascading). Three metric types: NUMBER, PERCENT, BINARY
+// Scoring: 0.0-1.0. Objective score = weighted avg of KR scores (weight field)
+// 0.7 = good for ASPIRATIONAL, 1.0 expected for COMMITTED
+// ============================================================
+
+model TimePeriod {
+  id        Int         @id @default(autoincrement())
+  name      String      // Freeform: "Q1 2026", "H1 2026", "March Sprint"
+  startDate DateTime
+  endDate   DateTime
+  status    String      @default("ACTIVE") // PLANNING | ACTIVE | CLOSED | ARCHIVED
+  closedAt  DateTime?
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  objectives Objective[]
+}
+
+model Objective {
+  id             Int          @id @default(autoincrement())
+  title          String       // Qualitative, inspirational: "Improve frontend code quality"
+  description    String?
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id], onDelete: Cascade)
+  collaboratorId Int
+  timePeriod     TimePeriod   @relation(fields: [timePeriodId], references: [id], onDelete: Cascade)
+  timePeriodId   Int
+  type           String       @default("ASPIRATIONAL") // COMMITTED | ASPIRATIONAL
+  status         String       @default("DRAFT") // DRAFT | ACTIVE | CLOSED
+  score          Float?       // Final score 0.0-1.0, set on period close
+  sortOrder      Int          @default(0)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  keyResults     KeyResult[]
+  kpis           KPI[]        // KPIs optionally linked to this objective
+
+  @@index([collaboratorId, timePeriodId])
+  @@index([status])
+}
+
+model KeyResult {
+  id              Int       @id @default(autoincrement())
+  title           String    // Measurable: "Increase test coverage to 80%"
+  objective       Objective @relation(fields: [objectiveId], references: [id], onDelete: Cascade)
+  objectiveId     Int
+  metricType      String    @default("NUMBER") // NUMBER | PERCENT | BINARY
+  targetDirection String    @default("INCREASE") // INCREASE | DECREASE
+  startValue      Float     @default(0)
+  currentValue    Float     @default(0) // Denormalized from latest check-in for performance
+  targetValue     Float     @default(1) // Default 1 makes BINARY work out of the box
+  unit            String?   // Optional label: "tickets", "users", "bugs"
+  weight          Int       @default(1) // Relative weight for objective progress calculation
+  confidence      String    @default("ON_TRACK") // ON_TRACK | AT_RISK | OFF_TRACK
+  score           Float?    // Final score 0.0-1.0, set on period close
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  checkIns        CheckIn[]
+
+  @@index([objectiveId])
+}
+
+model CheckIn {
+  id          Int       @id @default(autoincrement())
+  keyResult   KeyResult @relation(fields: [keyResultId], references: [id], onDelete: Cascade)
+  keyResultId Int
+  value       Float     // Absolute current value at time of check-in
+  confidence  String    @default("ON_TRACK") // ON_TRACK | AT_RISK | OFF_TRACK
+  note        String?   // Optional comment: "Closed 5 more tickets this week"
+  createdAt   DateTime  @default(now())
+  // Check-ins are append-only (immutable). No updatedAt.
+
+  @@index([keyResultId, createdAt])
+}
+
+// ============================================================
+// PERFORMANCE REVIEWS
+// Manager-only MVP. 5-point scale (1-5).
+// Auto-populates skill deltas. Future: OKR + IDP progress.
+// Backlog: self-assessment (token link), 360 feedback, calibration
+// ============================================================
+
+model ReviewCycle {
+  id          String    @id @default(uuid())
+  name        String    // "Q1 2026 Performance Review"
+  periodStart DateTime  // Start of the period being reviewed
+  periodEnd   DateTime  // End of the period being reviewed
+  status      String    @default("draft") // draft | active | completed | archived
+  createdBy   String    // Manager/admin who created the cycle
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  reviews     Review[]
+}
+
+model Review {
+  id                  String    @id @default(uuid())
+  cycle               ReviewCycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  cycleId             String
+  collaborator        Collaborator   @relation(fields: [collaboratorId], references: [id], onDelete: Cascade)
+  collaboratorId      Int
+  reviewerId          String?        // Who performed this review (manager name/id)
+  developmentPlan     DevelopmentPlan? @relation(fields: [developmentPlanId], references: [id])
+  developmentPlanId   Int?           // Optional: IDP that informed or resulted from this review
+  status              String    @default("not_started") // not_started | in_progress | completed
+  overallRating       Int?      // 1-5: 1=Unsatisfactory, 2=Needs Improvement, 3=Meets, 4=Exceeds, 5=Outstanding
+  strengths           String?   // Free text: what they do well
+  areasForImprovement String?   // Free text: where to grow
+  overallComments     String?   // Free text: general assessment
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  skillRatings        ReviewSkillRating[]
+
+  @@unique([cycleId, collaboratorId]) // One review per person per cycle
+  @@index([collaboratorId])
+}
+
+model ReviewSkillRating {
+  id            String  @id @default(uuid())
+  review        Review  @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  reviewId      String
+  skill         Skill   @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  skillId       Int
+  rating        Int?    // 1-5: manager's subjective review rating
+  previousLevel Float?  // Snapshot: skill level at periodStart
+  currentLevel  Float?  // Snapshot: skill level at review time
+  comment       String? // Optional per-skill comment
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([reviewId, skillId]) // One rating per skill per review
+}
+
+// ============================================================
+// KPIs (Key Performance Indicators)
+// Manual tracking with trends. Optional link to OKR Objectives.
+// Can be org/department level (collaboratorId null) or individual.
+// ============================================================
+
+model KPI {
+  id              Int         @id @default(autoincrement())
+  name            String      // "Sprint Velocity", "Bug Resolution Time"
+  description     String?
+  unit            String?     // "%", "hours", "tickets", "USD"
+  baselineValue   Float?      // Starting value for progress calculation
+  targetValue     Float?      // Desired target
+  targetDirection String      @default("HIGHER_IS_BETTER") // HIGHER_IS_BETTER | LOWER_IS_BETTER
+  department      String?     // Freeform team/department name
+  collaborator    Collaborator? @relation(fields: [collaboratorId], references: [id])
+  collaboratorId  Int?        // Null = org/department level, set = individual KPI
+  objective       Objective?  @relation(fields: [objectiveId], references: [id])
+  objectiveId     Int?        // Optional link to an OKR Objective
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  entries         KPIEntry[]
+
+  @@index([collaboratorId])
+  @@index([objectiveId])
+  @@index([isActive])
+}
+
+model KPIEntry {
+  id         Int      @id @default(autoincrement())
+  kpi        KPI      @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+  kpiId      Int
+  value      Float    // The recorded metric value
+  note       String?  // Optional context
+  recordedAt DateTime // When the measurement was taken (may differ from createdAt)
+  createdAt  DateTime @default(now())
+
+  @@index([kpiId, recordedAt])
+}
+
+// ============================================================
+// CHECK-IN NOTES (1:1 Meeting Notes)
+// Chronological notes linked to collaborator.
+// Everything about a person is accessible from their profile.
+// ============================================================
+
+model CheckInNote {
+  id             Int          @id @default(autoincrement())
+  collaborator   Collaborator @relation(fields: [collaboratorId], references: [id], onDelete: Cascade)
+  collaboratorId Int
+  title          String?      // Optional subject: "Q1 Career Discussion"
+  content        String       // Meeting notes, action items, observations
+  meetingDate    DateTime     // When the 1:1 happened
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([collaboratorId, meetingDate])
+}
+
+
