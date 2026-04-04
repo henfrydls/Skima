@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
+import CollaboratorSelect from './CollaboratorSelect.jsx';
 import { API_BASE } from '../../lib/apiBase';
 
 /**
@@ -83,19 +84,12 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
 
           <div>
             <label className={labelClass}>Collaborator *</label>
-            <select
-              name="collaboratorId"
-              value={form.collaboratorId}
-              onChange={handleChange}
-              className={inputClass}
-              required
+            <CollaboratorSelect
+              collaborators={collaborators}
+              value={form.collaboratorId ? parseInt(form.collaboratorId, 10) : null}
+              onChange={(id) => setForm(prev => ({ ...prev, collaboratorId: id || '' }))}
               disabled={isEdit}
-            >
-              <option value="">Select collaborator...</option>
-              {collaborators.map(c => (
-                <option key={c.id} value={c.id}>{c.nombre} ({c.rol})</option>
-              ))}
-            </select>
+            />
           </div>
 
           <div>
