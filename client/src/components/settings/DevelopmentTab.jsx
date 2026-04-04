@@ -368,10 +368,13 @@ export default function DevelopmentTab({ isActive }) {
                   </span>
 
                   {/* Title + Collaborator */}
-                  <div className="flex-1 min-w-0">
-                    <span className="font-medium text-sm text-gray-800 truncate block">{plan.title}</span>
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className="font-medium text-sm text-gray-800 truncate">{plan.title}</span>
                     {plan.collaborator && (
-                      <span className="text-xs text-gray-400">{plan.collaborator.name}</span>
+                      <>
+                        <span className="text-gray-300">&bull;</span>
+                        <span className="text-sm text-gray-500 truncate">{plan.collaborator.nombre}</span>
+                      </>
                     )}
                   </div>
 
@@ -413,6 +416,11 @@ export default function DevelopmentTab({ isActive }) {
                   <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/50">
                     {/* Plan details */}
                     <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-4">
+                      {plan.collaborator && (
+                        <span className="text-sm text-gray-600 w-full mb-1 font-medium">
+                          Collaborator: {plan.collaborator.nombre}{plan.collaborator.rol ? ` — ${plan.collaborator.rol}` : ''}
+                        </span>
+                      )}
                       {plan.description && (
                         <p className="text-sm text-gray-500 w-full mb-1">{plan.description}</p>
                       )}

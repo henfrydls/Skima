@@ -29,8 +29,8 @@ const TABS = [
   { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'perfiles', label: 'Role Profiles', icon: Briefcase },
   { id: 'colaboradores', label: 'Collaborators', icon: Users },
-  { id: 'evaluaciones', label: 'Evaluations', icon: ClipboardCheck },
   { id: 'development', label: 'Development', icon: Target },
+  { id: 'evaluaciones', label: 'Evaluations', icon: ClipboardCheck },
 ];
 
 export default function SettingsPage() {
@@ -147,15 +147,15 @@ export default function SettingsPage() {
           </div>
         )}
 
-        {mountedTabs.includes('evaluaciones') && (
-          <div className={activeTab === 'evaluaciones' ? 'flex flex-col flex-1' : 'hidden'}>
-            <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} dataVersion={dataVersion} />
-          </div>
-        )}
-
         {mountedTabs.includes('development') && (
           <div className={activeTab === 'development' ? 'block' : 'hidden'}>
             <DevelopmentTab isActive={activeTab === 'development'} />
+          </div>
+        )}
+
+        {mountedTabs.includes('evaluaciones') && (
+          <div className={activeTab === 'evaluaciones' ? 'flex flex-col flex-1' : 'hidden'}>
+            <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} dataVersion={dataVersion} />
           </div>
         )}
       </div>
