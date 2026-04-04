@@ -92,6 +92,9 @@ describe('Demo Mode — Completeness Check', () => {
     ['DELETE', '/api/skills/1'],
     ['DELETE', '/api/role-profiles/TestRole'],
     ['DELETE', '/api/evaluations/test-uuid'],
+    ['DELETE', '/api/development-plans/1'],
+    ['DELETE', '/api/development-goals/1'],
+    ['DELETE', '/api/development-actions/1'],
   ];
 
   destructiveEndpoints.forEach(([method, path]) => {

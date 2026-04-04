@@ -9,6 +9,9 @@ const DEMO_BLOCKED = [
   ['DELETE', /^\/api\/skills\/\d+$/],
   ['DELETE', /^\/api\/role-profiles\/[^/]+$/],
   ['DELETE', /^\/api\/evaluations\/[^/]+$/],
+  ['DELETE', /^\/api\/development-plans\/\d+$/],
+  ['DELETE', /^\/api\/development-goals\/\d+$/],
+  ['DELETE', /^\/api\/development-actions\/\d+$/],
 ];
 
 export function demoModeMiddleware(req, res, next) {
