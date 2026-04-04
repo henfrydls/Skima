@@ -80,10 +80,10 @@ describe('ActionRow', () => {
     expect(screen.queryByText(/May/)).not.toBeInTheDocument();
   });
 
-  it('completed actions have reduced opacity', () => {
+  it('completed actions do not have reduced opacity on the row', () => {
     const { container } = renderAction();
     const row = container.querySelector('.opacity-60');
-    expect(row).toBeInTheDocument();
+    expect(row).not.toBeInTheDocument();
   });
 
   it('completed actions have line-through text', () => {

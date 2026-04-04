@@ -430,22 +430,19 @@ export default function DevelopmentTab({ isActive }) {
                       {plan.status === 'completed' && plan.completedAt ? (
                         <span className="flex items-center gap-1">
                           <CheckCircle2 size={12} className="text-emerald-500" />
-                          {formatDate(plan.startDate)} - {formatDate(plan.completedAt)}
+                          {formatDate(plan.startDate)}{plan.startDate ? ' - ' : ''}{formatDate(plan.completedAt)}
                         </span>
-                      ) : (
-                        <>
-                          {plan.startDate && (
-                            <span className="flex items-center gap-1">
-                              <Calendar size={12} /> Start: {formatDate(plan.startDate)}
-                            </span>
-                          )}
-                          {plan.endDate && (
-                            <span className="flex items-center gap-1">
-                              <Calendar size={12} /> End: {formatDate(plan.endDate)}
-                            </span>
-                          )}
-                        </>
-                      )}
+                      ) : (plan.startDate || plan.endDate) ? (
+                        <span className="flex items-center gap-1">
+                          <Calendar size={12} />
+                          {plan.startDate && plan.endDate
+                            ? `${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}`
+                            : plan.startDate
+                              ? `Started ${formatDate(plan.startDate)}`
+                              : `Due ${formatDate(plan.endDate)}`
+                          }
+                        </span>
+                      ) : null}
                     </div>
 
                     {/* Goals header */}
@@ -571,7 +568,7 @@ export default function DevelopmentTab({ isActive }) {
                                         return (
                                           <div
                                             key={action.id}
-                                            className={`flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors ${isCompleted ? 'opacity-60' : ''}`}
+                                            className="flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors"
                                           >
                                             {/* Status indicator */}
                                             <CheckCircle2
@@ -584,23 +581,23 @@ export default function DevelopmentTab({ isActive }) {
                                               {typeConfig.label}
                                             </span>
 
-                                            {/* Title */}
+                                            {/* Title + inline completion date */}
                                             <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
                                               {action.title}
+                                              {isCompleted && action.completedAt && (
+                                                <span className="no-underline inline-flex items-center ml-2 text-xs text-gray-400 font-normal" style={{ textDecoration: 'none' }}>
+                                                  &middot; {formatDate(action.completedAt)}
+                                                </span>
+                                              )}
                                             </span>
 
-                                            {/* Date: show completedAt for completed, dueDate otherwise */}
-                                            {isCompleted && action.completedAt ? (
-                                              <span className="flex items-center gap-1 text-xs text-gray-400">
-                                                <CheckCircle2 size={12} className="text-emerald-500" />
-                                                {formatDate(action.completedAt)}
-                                              </span>
-                                            ) : action.dueDate ? (
+                                            {/* Due date for non-completed actions */}
+                                            {!isCompleted && action.dueDate && (
                                               <span className="flex items-center gap-1 text-xs text-gray-400">
                                                 <Calendar size={12} />
                                                 {formatDate(action.dueDate)}
                                               </span>
-                                            ) : null}
+                                            )}
 
                                             {/* Delete */}
                                             <button

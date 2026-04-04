@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2, CheckCircle2 } from 'lucide-react';
+import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -52,7 +52,7 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
   };
 
   return (
-    <div className={`flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors ${isCompleted ? 'opacity-60' : ''}`}>
+    <div className="flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors">
       {/* Checkbox - interactive in edit mode, static indicator in read-only */}
       {readOnly ? (
         <span className="flex-shrink-0">
@@ -82,23 +82,23 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
         {typeConfig.label}
       </span>
 
-      {/* Title */}
+      {/* Title + inline completion date */}
       <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
         {action.title}
+        {isCompleted && action.completedAt && (
+          <span className="no-underline inline-flex items-center ml-2 text-xs text-gray-400 font-normal" style={{ textDecoration: 'none' }}>
+            &middot; {formatDate(action.completedAt)}
+          </span>
+        )}
       </span>
 
-      {/* Date: show completedAt for completed, dueDate otherwise */}
-      {isCompleted && action.completedAt ? (
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <CheckCircle2 size={12} className="text-emerald-500" />
-          {formatDate(action.completedAt)}
-        </span>
-      ) : action.dueDate ? (
+      {/* Due date for non-completed actions */}
+      {!isCompleted && action.dueDate && (
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <Calendar size={12} />
           {formatDate(action.dueDate)}
         </span>
-      ) : null}
+      )}
 
       {/* Delete - hidden in read-only mode */}
       {!readOnly && (

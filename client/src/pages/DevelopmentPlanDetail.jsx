@@ -118,7 +118,12 @@ export default function DevelopmentPlanDetail() {
         ) : (plan.startDate || plan.endDate) ? (
           <p className="flex items-center gap-1.5 text-xs text-gray-400 mt-2">
             <Calendar size={14} />
-            {formatDate(plan.startDate)}{plan.endDate ? ` - ${formatDate(plan.endDate)}` : ''}
+            {plan.startDate && plan.endDate
+              ? `${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}`
+              : plan.startDate
+                ? `Started ${formatDate(plan.startDate)}`
+                : `Due ${formatDate(plan.endDate)}`
+            }
           </p>
         ) : null}
       </div>

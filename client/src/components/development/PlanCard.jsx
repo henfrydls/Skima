@@ -57,7 +57,12 @@ export default function PlanCard({ plan }) {
         ) : (plan.startDate || plan.endDate) ? (
           <p className="flex items-center gap-1.5 text-xs text-gray-400">
             <Calendar size={12} />
-            {formatDate(plan.startDate)}{plan.endDate ? ` - ${formatDate(plan.endDate)}` : ''}
+            {plan.startDate && plan.endDate
+              ? `${formatDate(plan.startDate)} - ${formatDate(plan.endDate)}`
+              : plan.startDate
+                ? `Started ${formatDate(plan.startDate)}`
+                : `Due ${formatDate(plan.endDate)}`
+            }
           </p>
         ) : null}
 
