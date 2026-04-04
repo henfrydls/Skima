@@ -7,8 +7,8 @@ import { API_BASE } from '../lib/apiBase';
 
 const STATUS_BADGES = {
   draft: { bg: 'bg-gray-100', text: 'text-gray-600', label: 'Draft' },
-  active: { bg: 'bg-primary/10', text: 'text-primary', label: 'Active' },
-  completed: { bg: 'bg-competent/10', text: 'text-competent', label: 'Completed' },
+  active: { bg: 'bg-[#2d676e]/10', text: 'text-[#2d676e]', label: 'Active' },
+  completed: { bg: 'bg-emerald-50', text: 'text-emerald-600', label: 'Completed' },
 };
 
 /**
@@ -99,7 +99,7 @@ export default function DevelopmentPlanDetail() {
           </span>
         </div>
         {plan.collaborator && (
-          <p className="text-sm text-gray-500">{plan.collaborator.name}</p>
+          <p className="text-sm text-gray-500">{plan.collaborator.nombre || plan.collaborator.name}</p>
         )}
         {plan.description && (
           <p className="text-sm text-gray-400 mt-1">{plan.description}</p>
