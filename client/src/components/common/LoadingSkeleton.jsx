@@ -312,6 +312,59 @@ export function EvolutionSkeleton() {
   );
 }
 
+/**
+ * DevelopmentSkeleton - Full Development page loading state
+ * Matches the layout of DevelopmentPage: 2-column grid of plan cards
+ */
+export function DevelopmentSkeleton({ count = 4 }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-pulse">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 space-y-3">
+          {/* Status badge */}
+          <div className="h-5 bg-gray-200 rounded-full w-16" />
+          {/* Title */}
+          <div className="h-6 bg-gray-200 rounded w-3/4" />
+          {/* Collaborator */}
+          <div className="h-4 bg-gray-200 rounded w-1/3" />
+          {/* Date */}
+          <div className="h-3 bg-gray-100 rounded w-2/5" />
+          {/* Goal count */}
+          <div className="h-4 bg-gray-100 rounded w-20" />
+          {/* Progress bar */}
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-2 bg-gray-100 rounded-full" />
+            <div className="h-3 bg-gray-200 rounded w-8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * DevelopmentSettingsSkeleton - Loading state for Settings > Development tab
+ * Matches the accordion plan rows layout
+ */
+export function DevelopmentSettingsSkeleton({ count = 3 }) {
+  return (
+    <div className="space-y-3 animate-pulse">
+      {[...Array(count)].map((_, i) => (
+        <div key={i} className="bg-white rounded-lg border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-4 h-4 bg-gray-200 rounded" />
+            <div className="h-5 bg-gray-200 rounded-full w-14" />
+            <div className="flex-1 h-4 bg-gray-200 rounded w-48" />
+            <div className="h-3 bg-gray-100 rounded w-16" />
+            <div className="w-20 h-2 bg-gray-100 rounded-full" />
+            <div className="h-3 bg-gray-100 rounded w-8" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export default {
   TableSkeleton,
   MatrixSkeleton,
@@ -320,5 +373,7 @@ export default {
   DashboardSkeleton,
   CollaboratorListSkeleton,
   EvolutionSkeleton,
+  DevelopmentSkeleton,
+  DevelopmentSettingsSkeleton,
 };
 

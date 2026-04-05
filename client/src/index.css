@@ -126,6 +126,25 @@
     animation: tooltip-fade-in 0.2s ease-out 0.3s both;
   }
 
+  /* Accordion expand - slide down with fade for expandable sections */
+  @keyframes expand-down {
+    from {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      max-height: 2000px;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-expand {
+    animation: expand-down 0.25s ease-out;
+    overflow: hidden;
+  }
+
   /* Micro-lift para cards interactivos */
   .hover-lift {
     @apply transition-all duration-200;

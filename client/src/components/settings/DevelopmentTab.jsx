@@ -467,11 +467,17 @@ export default function DevelopmentTab({ isActive }) {
   // --- Loading ---
   if (loading) {
     return (
-      <div className="space-y-4 animate-pulse">
+      <div className="space-y-3 animate-pulse">
         {[1, 2, 3].map(i => (
           <div key={i} className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="h-4 bg-gray-200 rounded w-48 mb-2" />
-            <div className="h-3 bg-gray-100 rounded w-32" />
+            <div className="flex items-center gap-3">
+              <div className="w-4 h-4 bg-gray-200 rounded" />
+              <div className="h-5 bg-gray-200 rounded-full w-14" />
+              <div className="flex-1 h-4 bg-gray-200 rounded w-48" />
+              <div className="h-3 bg-gray-100 rounded w-16" />
+              <div className="w-20 h-2 bg-gray-100 rounded-full" />
+              <div className="h-3 bg-gray-100 rounded w-8" />
+            </div>
           </div>
         ))}
       </div>
@@ -479,7 +485,7 @@ export default function DevelopmentTab({ isActive }) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in">
       {/* Header with Create button */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">
@@ -569,7 +575,7 @@ export default function DevelopmentTab({ isActive }) {
 
                 {/* Expanded: Goals */}
                 {isExpanded && (
-                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/50">
+                  <div className="border-t border-gray-100 px-4 py-4 bg-gray-50/50 animate-expand">
                     {/* Plan details */}
                     <div className="flex flex-wrap gap-4 text-xs text-gray-400 mb-4">
                       {plan.collaborator && (
@@ -695,7 +701,7 @@ export default function DevelopmentTab({ isActive }) {
 
                               {/* Expanded: Actions */}
                               {isGoalExpanded && (
-                                <div className="border-t border-gray-100 px-3 py-3">
+                                <div className="border-t border-gray-100 px-3 py-3 animate-expand">
                                   {goal.description && (
                                     <p className="text-sm text-gray-500 mb-3">{goal.description}</p>
                                   )}

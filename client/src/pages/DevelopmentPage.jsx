@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { EmptyState, CardSkeleton } from '../components/common';
+import { EmptyState, DevelopmentSkeleton } from '../components/common';
 import { PlanCard } from '../components/development';
 import { API_BASE } from '../lib/apiBase';
 
@@ -77,9 +77,7 @@ export default function DevelopmentPage() {
 
       {/* Content */}
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
-        </div>
+        <DevelopmentSkeleton />
       ) : plans.length === 0 ? (
         <EmptyState
           icon={Target}
@@ -91,7 +89,7 @@ export default function DevelopmentPage() {
           }
         />
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div key={filter} className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-stagger">
           {plans.map(plan => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
