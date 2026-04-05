@@ -46,14 +46,20 @@ const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.v
 function ActionStatusDropdown({ action, onStatusChange }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
-  const containerRef = useRef(null);
   const btnRef = useRef(null);
+  const dropdownRef = useRef(null);
   const current = ACTION_STATUS_MAP[action.status] || ACTION_STATUS_MAP.not_started;
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
+      // Check both the button and the portal dropdown
+      if (
+        btnRef.current && !btnRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
+        setOpen(false);
+      }
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
@@ -63,13 +69,11 @@ function ActionStatusDropdown({ action, onStatusChange }) {
     e.stopPropagation();
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
-      const dropdownHeight = 130; // approximate
+      const dropdownHeight = 130;
       const spaceBelow = window.innerHeight - rect.bottom;
       if (spaceBelow < dropdownHeight) {
-        // Open upward
         setPos({ top: rect.top - dropdownHeight, left: rect.left });
       } else {
-        // Open downward
         setPos({ top: rect.bottom + 4, left: rect.left });
       }
     }
@@ -77,7 +81,7 @@ function ActionStatusDropdown({ action, onStatusChange }) {
   };
 
   return (
-    <div ref={containerRef} className="relative flex-shrink-0">
+    <div className="relative flex-shrink-0">
       <button
         ref={btnRef}
         type="button"
@@ -90,6 +94,7 @@ function ActionStatusDropdown({ action, onStatusChange }) {
       </button>
       {open && createPortal(
         <div
+          ref={dropdownRef}
           className="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]"
           style={{ top: pos.top, left: pos.left }}
         >
