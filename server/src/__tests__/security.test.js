@@ -92,6 +92,15 @@ describe('Demo Mode — Completeness Check', () => {
     ['DELETE', '/api/skills/1'],
     ['DELETE', '/api/role-profiles/TestRole'],
     ['DELETE', '/api/evaluations/test-uuid'],
+    ['DELETE', '/api/development-plans/1'],
+    ['DELETE', '/api/development-goals/1'],
+    ['DELETE', '/api/development-actions/1'],
+    ['POST', '/api/development-plans'],
+    ['PUT', '/api/development-plans/1'],
+    ['POST', '/api/development-plans/1/goals'],
+    ['PUT', '/api/development-goals/1'],
+    ['POST', '/api/development-goals/1/actions'],
+    ['PUT', '/api/development-actions/1'],
   ];
 
   destructiveEndpoints.forEach(([method, path]) => {

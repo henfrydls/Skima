@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, AlertTriangle, X } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, Target, AlertTriangle, X } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
 import EvaluationsTab from '../components/settings/EvaluationsTab';
 import RoleProfilesTab from '../components/settings/RoleProfilesTab';
+import DevelopmentTab from '../components/settings/DevelopmentTab';
 
 /**
  * SettingsPage — System Master Data Management
@@ -28,6 +29,7 @@ const TABS = [
   { id: 'skills', label: 'Skills', icon: Layers },
   { id: 'perfiles', label: 'Role Profiles', icon: Briefcase },
   { id: 'colaboradores', label: 'Collaborators', icon: Users },
+  { id: 'development', label: 'Development', icon: Target },
   { id: 'evaluaciones', label: 'Evaluations', icon: ClipboardCheck },
 ];
 
@@ -83,7 +85,7 @@ export default function SettingsPage() {
       <div>
         <h1 className="text-2xl font-light text-slate-800">Settings</h1>
         <p className="text-sm text-gray-500 mt-1">
-          Manage collaborators, skills, categories, and evaluations
+          Manage collaborators, skills, categories, evaluations, and development plans
         </p>
       </div>
 
@@ -142,6 +144,12 @@ export default function SettingsPage() {
         {mountedTabs.includes('colaboradores') && (
           <div className={activeTab === 'colaboradores' ? 'block' : 'hidden'}>
             <CollaboratorsTab onNavigate={handleNavigate} isActive={activeTab === 'colaboradores'} dataVersion={dataVersion} />
+          </div>
+        )}
+
+        {mountedTabs.includes('development') && (
+          <div className={activeTab === 'development' ? 'block' : 'hidden'}>
+            <DevelopmentTab isActive={activeTab === 'development'} />
           </div>
         )}
 

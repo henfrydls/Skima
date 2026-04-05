@@ -3,12 +3,14 @@ export { default as Card } from './Card';
 export { default as Badge } from './Badge';
 export { default as Avatar } from './Avatar';
 export { default as LevelDot } from './LevelDot';
-export { 
-  TableSkeleton, 
-  MatrixSkeleton, 
-  KPISkeleton, 
+export {
+  TableSkeleton,
+  MatrixSkeleton,
+  KPISkeleton,
   CardSkeleton,
   DashboardSkeleton,
-  CollaboratorListSkeleton
+  CollaboratorListSkeleton,
+  DevelopmentSkeleton,
+  DevelopmentSettingsSkeleton
 } from './LoadingSkeleton';
 export { EmptyState } from './EmptyState';

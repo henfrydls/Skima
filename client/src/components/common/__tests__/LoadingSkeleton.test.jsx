@@ -7,7 +7,9 @@ import {
   CardSkeleton,
   DashboardSkeleton,
   CollaboratorListSkeleton,
-  EvolutionSkeleton
+  EvolutionSkeleton,
+  DevelopmentSkeleton,
+  DevelopmentSettingsSkeleton
 } from '../LoadingSkeleton';
 
 describe('LoadingSkeleton Components', () => {
@@ -234,6 +236,55 @@ describe('LoadingSkeleton Components', () => {
     });
   });
 
+  describe('DevelopmentSkeleton', () => {
+    it('renders default 4 plan card skeletons', () => {
+      const { container } = render(<DevelopmentSkeleton />);
+      const cards = container.querySelectorAll('.bg-white.rounded-lg');
+      expect(cards.length).toBe(4);
+    });
+
+    it('renders custom number of card skeletons', () => {
+      const { container } = render(<DevelopmentSkeleton count={2} />);
+      const cards = container.querySelectorAll('.bg-white.rounded-lg');
+      expect(cards.length).toBe(2);
+    });
+
+    it('renders progress bar skeleton in each card', () => {
+      const { container } = render(<DevelopmentSkeleton />);
+      const progressBars = container.querySelectorAll('.h-2.bg-gray-100.rounded-full');
+      expect(progressBars.length).toBe(4);
+    });
+
+    it('applies animate-pulse class', () => {
+      const { container } = render(<DevelopmentSkeleton />);
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+    });
+
+    it('uses 2-column grid layout', () => {
+      const { container } = render(<DevelopmentSkeleton />);
+      expect(container.querySelector('.grid-cols-1.sm\\:grid-cols-2')).toBeInTheDocument();
+    });
+  });
+
+  describe('DevelopmentSettingsSkeleton', () => {
+    it('renders default 3 accordion row skeletons', () => {
+      const { container } = render(<DevelopmentSettingsSkeleton />);
+      const rows = container.querySelectorAll('.bg-white.rounded-lg');
+      expect(rows.length).toBe(3);
+    });
+
+    it('renders custom number of row skeletons', () => {
+      const { container } = render(<DevelopmentSettingsSkeleton count={5} />);
+      const rows = container.querySelectorAll('.bg-white.rounded-lg');
+      expect(rows.length).toBe(5);
+    });
+
+    it('applies animate-pulse class', () => {
+      const { container } = render(<DevelopmentSettingsSkeleton />);
+      expect(container.querySelector('.animate-pulse')).toBeInTheDocument();
+    });
+  });
+
   describe('General skeleton behavior', () => {
     it('all skeletons have gray-200 background for skeleton bars', () => {
       const components = [
@@ -242,7 +293,9 @@ describe('LoadingSkeleton Components', () => {
         <KPISkeleton key="kpi" />,
         <CardSkeleton key="card" />,
         <DashboardSkeleton key="dashboard" />,
-        <CollaboratorListSkeleton key="collab" />
+        <CollaboratorListSkeleton key="collab" />,
+        <DevelopmentSkeleton key="dev" />,
+        <DevelopmentSettingsSkeleton key="dev-settings" />
       ];
 
       components.forEach(component => {
@@ -260,7 +313,9 @@ describe('LoadingSkeleton Components', () => {
         <KPISkeleton key="kpi" />,
         <CardSkeleton key="card" />,
         <DashboardSkeleton key="dashboard" />,
-        <CollaboratorListSkeleton key="collab" />
+        <CollaboratorListSkeleton key="collab" />,
+        <DevelopmentSkeleton key="dev" />,
+        <DevelopmentSettingsSkeleton key="dev-settings" />
       ];
 
       components.forEach(component => {

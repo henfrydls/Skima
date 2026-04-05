@@ -63,6 +63,17 @@ export async function ensureDatabase() {
       `CREATE UNIQUE INDEX IF NOT EXISTS "EvaluationSession_uuid_key" ON "EvaluationSession"("uuid")`,
       `CREATE INDEX IF NOT EXISTS "EvaluationSession_collaboratorId_idx" ON "EvaluationSession"("collaboratorId")`,
       `CREATE INDEX IF NOT EXISTS "EvaluationSession_evaluatedAt_idx" ON "EvaluationSession"("evaluatedAt")`,
+      // Development (IDP) tables
+      `CREATE TABLE IF NOT EXISTS "DevelopmentPlan" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "collaboratorId" INTEGER NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "targetRole" TEXT, "status" TEXT NOT NULL DEFAULT 'draft', "startDate" DATETIME, "endDate" DATETIME, "completedAt" DATETIME, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, CONSTRAINT "DevelopmentPlan_collaboratorId_fkey" FOREIGN KEY ("collaboratorId") REFERENCES "Collaborator" ("id") ON DELETE RESTRICT ON UPDATE CASCADE)`,
+      `CREATE TABLE IF NOT EXISTS "DevelopmentGoal" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "planId" INTEGER NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "skillId" INTEGER, "currentLevel" REAL, "targetLevel" REAL, "priority" INTEGER NOT NULL DEFAULT 2, "status" TEXT NOT NULL DEFAULT 'not_started', "targetDate" DATETIME, "completedAt" DATETIME, "sortOrder" INTEGER NOT NULL DEFAULT 0, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, CONSTRAINT "DevelopmentGoal_planId_fkey" FOREIGN KEY ("planId") REFERENCES "DevelopmentPlan" ("id") ON DELETE CASCADE ON UPDATE CASCADE, CONSTRAINT "DevelopmentGoal_skillId_fkey" FOREIGN KEY ("skillId") REFERENCES "Skill" ("id") ON DELETE SET NULL ON UPDATE CASCADE)`,
+      `CREATE TABLE IF NOT EXISTS "DevelopmentAction" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "goalId" INTEGER NOT NULL, "title" TEXT NOT NULL, "description" TEXT, "actionType" TEXT NOT NULL DEFAULT 'experience', "status" TEXT NOT NULL DEFAULT 'not_started', "dueDate" DATETIME, "completedAt" DATETIME, "evidence" TEXT, "sortOrder" INTEGER NOT NULL DEFAULT 0, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, CONSTRAINT "DevelopmentAction_goalId_fkey" FOREIGN KEY ("goalId") REFERENCES "DevelopmentGoal" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentPlan_collaboratorId_idx" ON "DevelopmentPlan"("collaboratorId")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentPlan_status_idx" ON "DevelopmentPlan"("status")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentGoal_planId_idx" ON "DevelopmentGoal"("planId")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentGoal_skillId_idx" ON "DevelopmentGoal"("skillId")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentGoal_status_idx" ON "DevelopmentGoal"("status")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentAction_goalId_idx" ON "DevelopmentAction"("goalId")`,
+      `CREATE INDEX IF NOT EXISTS "DevelopmentAction_status_idx" ON "DevelopmentAction"("status")`,
     ];
     for (const sql of statements) {
       await prisma.$executeRawUnsafe(sql);

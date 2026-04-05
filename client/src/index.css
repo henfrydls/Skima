@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent layout shift when modals open/close (scrollbar space always reserved) */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   h1 {
     @apply text-4xl font-light text-primary;
   }
@@ -124,6 +129,25 @@
 
   .tooltip-delayed {
     animation: tooltip-fade-in 0.2s ease-out 0.3s both;
+  }
+
+  /* Accordion expand - slide down with fade for expandable sections */
+  @keyframes expand-down {
+    from {
+      opacity: 0;
+      max-height: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      max-height: 2000px;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-expand {
+    animation: expand-down 0.25s ease-out;
+    overflow: hidden;
   }
 
   /* Micro-lift para cards interactivos */
