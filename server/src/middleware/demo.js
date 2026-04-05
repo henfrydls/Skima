@@ -12,6 +12,12 @@ const DEMO_BLOCKED = [
   ['DELETE', /^\/api\/development-plans\/\d+$/],
   ['DELETE', /^\/api\/development-goals\/\d+$/],
   ['DELETE', /^\/api\/development-actions\/\d+$/],
+  ['POST',   /^\/api\/development-plans$/],
+  ['PUT',    /^\/api\/development-plans\/\d+$/],
+  ['POST',   /^\/api\/development-plans\/\d+\/goals$/],
+  ['PUT',    /^\/api\/development-goals\/\d+$/],
+  ['POST',   /^\/api\/development-goals\/\d+\/actions$/],
+  ['PUT',    /^\/api\/development-actions\/\d+$/],
 ];
 
 export function demoModeMiddleware(req, res, next) {

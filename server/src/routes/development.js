@@ -36,7 +36,7 @@ router.get('/development-plans', async (req, res) => {
     res.json(plans);
   } catch (error) {
     console.error('[API] GET /api/development-plans failed:', error);
-    res.status(500).json({ message: 'Error fetching development plans', error: error.message });
+    res.status(500).json({ message: 'Error fetching development plans' });
   }
 });
 
@@ -61,7 +61,7 @@ router.get('/development-plans/:id', async (req, res) => {
     res.json(plan);
   } catch (error) {
     console.error('[API] GET /api/development-plans/:id failed:', error);
-    res.status(500).json({ message: 'Error fetching development plan', error: error.message });
+    res.status(500).json({ message: 'Error fetching development plan' });
   }
 });
 
@@ -72,6 +72,12 @@ router.post('/development-plans', authMiddleware, async (req, res) => {
 
     if (!collaboratorId || !title) {
       return res.status(400).json({ message: 'collaboratorId and title are required' });
+    }
+    if (title.length > 255) {
+      return res.status(400).json({ message: 'Title must be under 255 characters' });
+    }
+    if (description && description.length > 2000) {
+      return res.status(400).json({ message: 'Description must be under 2000 characters' });
     }
 
     const plan = await prisma.developmentPlan.create({
@@ -92,7 +98,7 @@ router.post('/development-plans', authMiddleware, async (req, res) => {
     res.status(201).json(plan);
   } catch (error) {
     console.error('[API] POST /api/development-plans failed:', error);
-    res.status(500).json({ message: 'Error creating development plan', error: error.message });
+    res.status(500).json({ message: 'Error creating development plan' });
   }
 });
 
@@ -101,6 +107,14 @@ router.put('/development-plans/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { title, description, targetRole, status, startDate, endDate } = req.body;
+
+    const VALID_PLAN_STATUSES = ['draft', 'active', 'completed', 'cancelled'];
+    if (status && !VALID_PLAN_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${VALID_PLAN_STATUSES.join(', ')}` });
+    }
+    if (title && title.length > 255) {
+      return res.status(400).json({ message: 'Title must be under 255 characters' });
+    }
 
     const data = {};
     if (title !== undefined) data.title = title;
@@ -130,7 +144,7 @@ router.put('/development-plans/:id', authMiddleware, async (req, res) => {
     res.json(plan);
   } catch (error) {
     console.error('[API] PUT /api/development-plans/:id failed:', error);
-    res.status(500).json({ message: 'Error updating development plan', error: error.message });
+    res.status(500).json({ message: 'Error updating development plan' });
   }
 });
 
@@ -145,7 +159,7 @@ router.delete('/development-plans/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Development plan deleted' });
   } catch (error) {
     console.error('[API] DELETE /api/development-plans/:id failed:', error);
-    res.status(500).json({ message: 'Error deleting development plan', error: error.message });
+    res.status(500).json({ message: 'Error deleting development plan' });
   }
 });
 
@@ -161,6 +175,9 @@ router.post('/development-plans/:planId/goals', authMiddleware, async (req, res)
 
     if (!title) {
       return res.status(400).json({ message: 'title is required' });
+    }
+    if (title.length > 255) {
+      return res.status(400).json({ message: 'Title must be under 255 characters' });
     }
 
     // Verify plan exists
@@ -194,7 +211,7 @@ router.post('/development-plans/:planId/goals', authMiddleware, async (req, res)
     res.status(201).json(goal);
   } catch (error) {
     console.error('[API] POST /api/development-plans/:planId/goals failed:', error);
-    res.status(500).json({ message: 'Error creating development goal', error: error.message });
+    res.status(500).json({ message: 'Error creating development goal' });
   }
 });
 
@@ -203,6 +220,11 @@ router.put('/development-goals/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { title, description, skillId, currentLevel, targetLevel, priority, status, targetDate, sortOrder } = req.body;
+
+    const VALID_GOAL_STATUSES = ['not_started', 'in_progress', 'completed', 'cancelled'];
+    if (status && !VALID_GOAL_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${VALID_GOAL_STATUSES.join(', ')}` });
+    }
 
     const data = {};
     if (title !== undefined) data.title = title;
@@ -232,7 +254,7 @@ router.put('/development-goals/:id', authMiddleware, async (req, res) => {
     res.json(goal);
   } catch (error) {
     console.error('[API] PUT /api/development-goals/:id failed:', error);
-    res.status(500).json({ message: 'Error updating development goal', error: error.message });
+    res.status(500).json({ message: 'Error updating development goal' });
   }
 });
 
@@ -244,7 +266,7 @@ router.delete('/development-goals/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Development goal deleted' });
   } catch (error) {
     console.error('[API] DELETE /api/development-goals/:id failed:', error);
-    res.status(500).json({ message: 'Error deleting development goal', error: error.message });
+    res.status(500).json({ message: 'Error deleting development goal' });
   }
 });
 
@@ -260,6 +282,13 @@ router.post('/development-goals/:goalId/actions', authMiddleware, async (req, re
 
     if (!title) {
       return res.status(400).json({ message: 'title is required' });
+    }
+    if (title.length > 255) {
+      return res.status(400).json({ message: 'Title must be under 255 characters' });
+    }
+    const VALID_ACTION_TYPES = ['experience', 'social', 'formal', 'self_directed'];
+    if (actionType && !VALID_ACTION_TYPES.includes(actionType)) {
+      return res.status(400).json({ message: `Invalid action type. Must be one of: ${VALID_ACTION_TYPES.join(', ')}` });
     }
 
     // Verify goal exists
@@ -298,7 +327,7 @@ router.post('/development-goals/:goalId/actions', authMiddleware, async (req, re
     res.status(201).json(action);
   } catch (error) {
     console.error('[API] POST /api/development-goals/:goalId/actions failed:', error);
-    res.status(500).json({ message: 'Error creating development action', error: error.message });
+    res.status(500).json({ message: 'Error creating development action' });
   }
 });
 
@@ -307,6 +336,14 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const { title, description, actionType, status, dueDate, evidence, sortOrder } = req.body;
+
+    const VALID_ACTION_STATUSES = ['not_started', 'in_progress', 'completed', 'skipped'];
+    if (status && !VALID_ACTION_STATUSES.includes(status)) {
+      return res.status(400).json({ message: `Invalid status. Must be one of: ${VALID_ACTION_STATUSES.join(', ')}` });
+    }
+    if (evidence && evidence.length > 2000) {
+      return res.status(400).json({ message: 'Evidence must be under 2000 characters' });
+    }
 
     const data = {};
     if (title !== undefined) data.title = title;
@@ -333,7 +370,7 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
     res.json(action);
   } catch (error) {
     console.error('[API] PUT /api/development-actions/:id failed:', error);
-    res.status(500).json({ message: 'Error updating development action', error: error.message });
+    res.status(500).json({ message: 'Error updating development action' });
   }
 });
 
@@ -345,7 +382,7 @@ router.delete('/development-actions/:id', authMiddleware, async (req, res) => {
     res.json({ message: 'Development action deleted' });
   } catch (error) {
     console.error('[API] DELETE /api/development-actions/:id failed:', error);
-    res.status(500).json({ message: 'Error deleting development action', error: error.message });
+    res.status(500).json({ message: 'Error deleting development action' });
   }
 });
 
@@ -435,7 +472,7 @@ router.get('/collaborators/:id/suggested-goals', async (req, res) => {
     res.json(topGaps);
   } catch (error) {
     console.error('[API] GET /api/collaborators/:id/suggested-goals failed:', error);
-    res.status(500).json({ message: 'Error fetching suggested goals', error: error.message });
+    res.status(500).json({ message: 'Error fetching suggested goals' });
   }
 });
 
@@ -494,7 +531,7 @@ router.get('/development-plans/:id/progress', async (req, res) => {
     });
   } catch (error) {
     console.error('[API] GET /api/development-plans/:id/progress failed:', error);
-    res.status(500).json({ message: 'Error computing plan progress', error: error.message });
+    res.status(500).json({ message: 'Error computing plan progress' });
   }
 });
 
