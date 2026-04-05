@@ -52,7 +52,8 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
     setSaving(false);
   };
 
-  const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
+  const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
+  const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(
@@ -107,7 +108,7 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
           {isEdit && (
             <div>
               <label className={labelClass}>Status</label>
-              <select name="status" value={form.status} onChange={handleChange} className={inputClass}>
+              <select name="status" value={form.status} onChange={handleChange} className={selectClass}>
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
                 <option value="completed">Completed</option>
