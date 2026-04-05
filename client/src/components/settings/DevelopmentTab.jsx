@@ -416,6 +416,39 @@ export default function DevelopmentTab({ isActive }) {
     }
   };
 
+  // --- Completion prompts ---
+  const handleCompleteGoal = async (goalId) => {
+    try {
+      const res = await authFetch(`${API_BASE}/api/development-goals/${goalId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('Goal marked as completed!');
+      if (expandedPlanId) refetchPlanDetail(expandedPlanId);
+    } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') setShowLogin(true);
+      else toast.error('Failed to complete goal');
+    }
+  };
+
+  const handleCompletePlan = async (planId) => {
+    try {
+      const res = await authFetch(`${API_BASE}/api/development-plans/${planId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'completed' }),
+      });
+      if (!res.ok) throw new Error('Failed');
+      toast.success('Plan marked as completed!');
+      fetchPlans();
+    } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') setShowLogin(true);
+      else toast.error('Failed to complete plan');
+    }
+  };
+
   // --- Helpers ---
   const getPlanProgress = (plan) => {
     const goals = plan.goals || [];
@@ -733,11 +766,51 @@ export default function DevelopmentTab({ isActive }) {
                                       })}
                                     </div>
                                   )}
+
+                                  {/* Goal completion prompt */}
+                                  {actions.length > 0
+                                    && actions.every(a => a.status === 'completed' || a.status === 'skipped')
+                                    && goal.status !== 'completed'
+                                    && goal.status !== 'cancelled'
+                                    && (
+                                    <div className="mt-3 mx-3 mb-2 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+                                      <span className="text-sm text-emerald-700 flex items-center gap-2">
+                                        <CheckCircle2 size={16} />
+                                        All actions completed! Mark this goal as completed?
+                                      </span>
+                                      <button
+                                        onClick={() => handleCompleteGoal(goal.id)}
+                                        className="px-3 py-1 bg-emerald-600 text-white text-xs font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                                      >
+                                        Complete Goal
+                                      </button>
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>
                           );
                         })}
+                      </div>
+                    )}
+
+                    {/* Plan completion prompt */}
+                    {goals.length > 0
+                      && goals.every(g => g.status === 'completed' || g.status === 'cancelled')
+                      && plan.status !== 'completed'
+                      && plan.status !== 'cancelled'
+                      && (
+                      <div className="mt-4 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center justify-between">
+                        <span className="text-sm text-emerald-700 flex items-center gap-2">
+                          <CheckCircle2 size={18} />
+                          All goals completed! Mark this plan as completed?
+                        </span>
+                        <button
+                          onClick={() => handleCompletePlan(plan.id)}
+                          className="px-4 py-1.5 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors"
+                        >
+                          Complete Plan
+                        </button>
                       </div>
                     )}
                   </div>
