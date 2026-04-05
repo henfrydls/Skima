@@ -183,6 +183,14 @@ router.post('/development-plans/:planId/goals', authMiddleware, async (req, res)
       include: { actions: true }
     });
 
+    // Reopen completed plan — adding a new goal means it's no longer complete
+    if (plan.status === 'completed') {
+      await prisma.developmentPlan.update({
+        where: { id: planId },
+        data: { status: 'active', completedAt: null }
+      });
+    }
+
     res.status(201).json(goal);
   } catch (error) {
     console.error('[API] POST /api/development-plans/:planId/goals failed:', error);
@@ -269,6 +277,23 @@ router.post('/development-goals/:goalId/actions', authMiddleware, async (req, re
         dueDate: dueDate ? new Date(dueDate) : null
       }
     });
+
+    // Reopen completed goal — adding a new action means it's no longer complete
+    if (goal.status === 'completed') {
+      await prisma.developmentGoal.update({
+        where: { id: goalId },
+        data: { status: 'in_progress', completedAt: null }
+      });
+
+      // Also reopen the parent plan if it was completed
+      const parentPlan = await prisma.developmentPlan.findUnique({ where: { id: goal.planId } });
+      if (parentPlan?.status === 'completed') {
+        await prisma.developmentPlan.update({
+          where: { id: goal.planId },
+          data: { status: 'active', completedAt: null }
+        });
+      }
+    }
 
     res.status(201).json(action);
   } catch (error) {
