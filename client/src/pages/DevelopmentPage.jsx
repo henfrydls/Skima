@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Target } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -21,8 +21,10 @@ const FILTERS = [
 export default function DevelopmentPage() {
   const navigate = useNavigate();
   const [plans, setPlans] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [visible, setVisible] = useState(false);
+  const isFirstLoad = useRef(true);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -35,16 +37,24 @@ export default function DevelopmentPage() {
       // Sort: active first, then cancelled, completed, draft last
       const statusOrder = { active: 0, cancelled: 1, completed: 2, draft: 3 };
       data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
-      setPlans(data);
+
+      // Fade out, update, fade in
+      setVisible(false);
+      // Small delay for fade-out, then update data
+      setTimeout(() => {
+        setPlans(data);
+        setInitialLoading(false);
+        isFirstLoad.current = false;
+        // Fade in after data update
+        requestAnimationFrame(() => setVisible(true));
+      }, isFirstLoad.current ? 0 : 150);
     } catch (err) {
       toast.error('Failed to load development plans');
-    } finally {
-      setLoading(false);
+      setInitialLoading(false);
     }
   }, [filter]);
 
   useEffect(() => {
-    setLoading(true);
     fetchPlans();
   }, [fetchPlans]);
 
@@ -76,20 +86,24 @@ export default function DevelopmentPage() {
       </div>
 
       {/* Content */}
-      {loading ? (
+      {initialLoading ? (
         <DevelopmentSkeleton />
       ) : plans.length === 0 ? (
-        <EmptyState
-          icon={Target}
-          title="No development plans yet"
-          description={
-            filter === 'all'
-              ? 'Create plans in Settings \u2192 Development.'
-              : `No ${filter} plans found.`
-          }
-        />
+        <div className={`transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}>
+          <EmptyState
+            icon={Target}
+            title="No development plans yet"
+            description={
+              filter === 'all'
+                ? 'Create plans in Settings \u2192 Development.'
+                : `No ${filter} plans found.`
+            }
+          />
+        </div>
       ) : (
-        <div key={filter} className="grid grid-cols-1 sm:grid-cols-2 gap-4 animate-stagger">
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-2 gap-4 transition-opacity duration-200 ${visible ? 'opacity-100' : 'opacity-0'}`}
+        >
           {plans.map(plan => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
