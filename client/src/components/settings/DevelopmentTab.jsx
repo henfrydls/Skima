@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -44,31 +45,54 @@ const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.v
  */
 function ActionStatusDropdown({ action, onStatusChange }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef(null);
+  const [pos, setPos] = useState({ top: 0, left: 0 });
+  const containerRef = useRef(null);
+  const btnRef = useRef(null);
   const current = ACTION_STATUS_MAP[action.status] || ACTION_STATUS_MAP.not_started;
 
   useEffect(() => {
     if (!open) return;
     const handleClick = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+      if (containerRef.current && !containerRef.current.contains(e.target)) setOpen(false);
     };
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
 
+  const handleOpen = (e) => {
+    e.stopPropagation();
+    if (!open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      const dropdownHeight = 130; // approximate
+      const spaceBelow = window.innerHeight - rect.bottom;
+      if (spaceBelow < dropdownHeight) {
+        // Open upward
+        setPos({ top: rect.top - dropdownHeight, left: rect.left });
+      } else {
+        // Open downward
+        setPos({ top: rect.bottom + 4, left: rect.left });
+      }
+    }
+    setOpen(!open);
+  };
+
   return (
-    <div ref={ref} className="relative flex-shrink-0">
+    <div ref={containerRef} className="relative flex-shrink-0">
       <button
+        ref={btnRef}
         type="button"
-        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        onClick={handleOpen}
         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors hover:ring-2 hover:ring-primary/20 ${current.bg} ${current.text}`}
         title="Change status"
       >
         {current.label}
         <ChevronDown size={10} />
       </button>
-      {open && (
-        <div className="absolute left-0 bottom-full mb-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+      {open && createPortal(
+        <div
+          className="fixed z-[9999] bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]"
+          style={{ top: pos.top, left: pos.left }}
+        >
           {ACTION_STATUS_OPTIONS.map(opt => (
             <button
               key={opt.value}
@@ -83,7 +107,8 @@ function ActionStatusDropdown({ action, onStatusChange }) {
               {opt.label}
             </button>
           ))}
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
