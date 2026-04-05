@@ -68,7 +68,7 @@ function ActionStatusDropdown({ action, onStatusChange }) {
         <ChevronDown size={10} />
       </button>
       {open && (
-        <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+        <div className="absolute left-0 bottom-full mb-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]">
           {ACTION_STATUS_OPTIONS.map(opt => (
             <button
               key={opt.value}
