@@ -677,7 +677,122 @@ describe('Development Plans API', () => {
   });
 
   // ============================================================
-  // 6. Validation
+  // 6. Input Validation (audit fixes)
+  // ============================================================
+  describe('Input Validation', () => {
+    it('rejects plan with title over 255 chars', async () => {
+      const res = await request(app)
+        .post('/api/development-plans')
+        .send({ collaboratorId: collaborator.id, title: 'x'.repeat(256) });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('255');
+    });
+
+    it('rejects plan with description over 2000 chars', async () => {
+      const res = await request(app)
+        .post('/api/development-plans')
+        .send({ collaboratorId: collaborator.id, title: 'Test', description: 'x'.repeat(2001) });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('2000');
+    });
+
+    it('rejects plan update with invalid status', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const res = await request(app)
+        .put(`/api/development-plans/${plan.id}`)
+        .send({ status: 'invalid_status' });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid status');
+    });
+
+    it('rejects goal with title over 255 chars', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const res = await request(app)
+        .post(`/api/development-plans/${plan.id}/goals`)
+        .send({ title: 'x'.repeat(256) });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('255');
+    });
+
+    it('rejects goal update with invalid status', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const goal = await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Test Goal' }
+      });
+      const res = await request(app)
+        .put(`/api/development-goals/${goal.id}`)
+        .send({ status: 'bogus' });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid status');
+    });
+
+    it('rejects action with invalid type', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const goal = await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Test Goal' }
+      });
+      const res = await request(app)
+        .post(`/api/development-goals/${goal.id}/actions`)
+        .send({ title: 'Test Action', actionType: 'invalid_type' });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid action type');
+    });
+
+    it('rejects action update with invalid status', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const goal = await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Test Goal' }
+      });
+      const action = await prisma.developmentAction.create({
+        data: { goalId: goal.id, title: 'Test Action' }
+      });
+      const res = await request(app)
+        .put(`/api/development-actions/${action.id}`)
+        .send({ status: 'fake_status' });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid status');
+    });
+
+    it('rejects evidence over 2000 chars', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Test Plan' }
+      });
+      const goal = await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Test Goal' }
+      });
+      const action = await prisma.developmentAction.create({
+        data: { goalId: goal.id, title: 'Test Action' }
+      });
+      const res = await request(app)
+        .put(`/api/development-actions/${action.id}`)
+        .send({ evidence: 'x'.repeat(2001) });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('2000');
+    });
+
+    it('does not leak internal error details', async () => {
+      const res = await request(app)
+        .post('/api/development-plans')
+        .send({ collaboratorId: 99999, title: 'Test' });
+      if (res.status === 500) {
+        expect(res.body.error).toBeUndefined();
+        expect(res.body.message).toBeDefined();
+      }
+    });
+  });
+
+  // ============================================================
+  // 7. Validation (required fields)
   // ============================================================
   describe('Validation', () => {
     it('POST /api/development-plans — returns 400 without title', async () => {

@@ -167,4 +167,18 @@ describe('GoalAccordion', () => {
     fireEvent.click(screen.getByText('Add Action'));
     expect(onAddAction).toHaveBeenCalledWith(mockGoal);
   });
+
+  it('has keyboard accessibility on header', () => {
+    renderGoal({ readOnly: true });
+    const header = screen.getByRole('button');
+    expect(header).toHaveAttribute('tabIndex', '0');
+    expect(header).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  it('expands on Enter key', () => {
+    renderGoal({ readOnly: true });
+    const header = screen.getByRole('button');
+    fireEvent.keyDown(header, { key: 'Enter' });
+    expect(header).toHaveAttribute('aria-expanded', 'true');
+  });
 });

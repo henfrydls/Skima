@@ -126,4 +126,18 @@ describe('PlanCard', () => {
     renderCard({ goals: [] });
     expect(screen.getByText('0 goals')).toBeInTheDocument();
   });
+
+  it('has keyboard accessibility attributes', () => {
+    renderCard();
+    const card = screen.getByRole('button');
+    expect(card).toHaveAttribute('tabIndex', '0');
+    expect(card).toHaveAttribute('aria-label');
+  });
+
+  it('renders cancelled status badge in red', () => {
+    renderCard({ status: 'cancelled' });
+    expect(screen.getByText('Cancelled')).toBeInTheDocument();
+    const badge = screen.getByText('Cancelled');
+    expect(badge.className).toContain('text-red');
+  });
 });
