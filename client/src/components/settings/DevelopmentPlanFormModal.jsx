@@ -112,6 +112,7 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
                 <option value="draft">Draft</option>
                 <option value="active">Active</option>
                 <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
               </select>
             </div>
           )}

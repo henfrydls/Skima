@@ -16,6 +16,7 @@ const STATUS_BADGES = {
   draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
   active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active', bar: 'bg-primary' },
   completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed', bar: 'bg-emerald-500' },
+  cancelled: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', label: 'Cancelled', bar: 'bg-red-400' },
 };
 
 const PRIORITY_COLORS = {
@@ -61,8 +62,13 @@ function ActionStatusDropdown({ action, onStatusChange }) {
         setOpen(false);
       }
     };
+    const handleKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
+    document.addEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [open]);
 
   const handleOpen = (e) => {
@@ -519,6 +525,10 @@ export default function DevelopmentTab({ isActive }) {
                 <div
                   className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                   onClick={() => setExpandedPlanId(isExpanded ? null : plan.id)}
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={isExpanded}
+                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedPlanId(isExpanded ? null : plan.id); } }}
                 >
                   <span className="text-gray-400 flex-shrink-0">
                     {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
@@ -636,6 +646,10 @@ export default function DevelopmentTab({ isActive }) {
                               <div
                                 className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-gray-50 transition-colors"
                                 onClick={() => setExpandedGoalId(isGoalExpanded ? null : goal.id)}
+                                role="button"
+                                tabIndex={0}
+                                aria-expanded={isGoalExpanded}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpandedGoalId(isGoalExpanded ? null : goal.id); } }}
                               >
                                 <span className="text-gray-400 flex-shrink-0">
                                   {isGoalExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

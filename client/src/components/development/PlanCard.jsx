@@ -5,6 +5,7 @@ const STATUS_BADGES = {
   draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
   active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active', bar: 'bg-primary' },
   completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed', bar: 'bg-emerald-500' },
+  cancelled: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', label: 'Cancelled', bar: 'bg-red-400' },
 };
 
 /**
@@ -33,6 +34,10 @@ export default function PlanCard({ plan }) {
     <div
       className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
       onClick={() => navigate(`/development/${plan.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/development/${plan.id}`); } }}
+      aria-label={`View development plan: ${plan.title}`}
     >
       <div className="space-y-3">
         {/* Status badge */}

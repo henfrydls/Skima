@@ -32,6 +32,10 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
       <div
         className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
         onClick={() => setExpanded(!expanded)}
+        role="button"
+        tabIndex={0}
+        aria-expanded={expanded}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setExpanded(!expanded); } }}
       >
         {/* Expand chevron */}
         <span className="text-gray-400 flex-shrink-0">
@@ -81,7 +85,7 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
 
       {/* Expanded content */}
       {expanded && (
-        <div className="border-t border-gray-100 px-4 py-3">
+        <div className="border-t border-gray-100 px-4 py-3 animate-expand">
           {/* Description */}
           {goal.description && (
             <p className="text-sm text-gray-500 mb-3">{goal.description}</p>
