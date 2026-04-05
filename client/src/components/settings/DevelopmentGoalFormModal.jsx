@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
 import GapSuggestions from '../development/GapSuggestions';
+import SkillSelect from './SkillSelect';
 import { API_BASE } from '../../lib/apiBase';
 
 /**
@@ -134,22 +135,13 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className={labelClass}>Linked Skill</label>
-              <select name="skillId" value={form.skillId} onChange={handleChange} className={selectClass}>
-                <option value="">None</option>
-                {groupedSkills ? (
-                  Object.entries(groupedSkills).map(([catName, catSkills]) => (
-                    <optgroup key={catName} label={catName}>
-                      {catSkills.map(s => (
-                        <option key={s.id} value={s.id}>{s.nombre}</option>
-                      ))}
-                    </optgroup>
-                  ))
-                ) : (
-                  skills.map(s => (
-                    <option key={s.id} value={s.id}>{s.nombre}</option>
-                  ))
-                )}
-              </select>
+              <SkillSelect
+                skills={skills}
+                categories={categories}
+                collaboratorId={collaboratorId}
+                value={form.skillId ? parseInt(form.skillId, 10) : null}
+                onChange={(skillId) => setForm(prev => ({ ...prev, skillId: skillId || '' }))}
+              />
             </div>
             <div>
               <label className={labelClass}>Target Level</label>
