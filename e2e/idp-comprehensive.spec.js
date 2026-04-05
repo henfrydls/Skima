@@ -323,14 +323,32 @@ test.describe('IDP — Full CRUD Flow', () => {
 
     // Set priority to High
     const prioritySelect = page.locator('select[name="priority"]');
-    await prioritySelect.selectOption('high');
+    await prioritySelect.selectOption('1');
 
     // Submit goal
-    const addGoalSubmit = page.locator('.modal-overlay button').filter({ hasText: /add goal/i }).first();
-    await addGoalSubmit.click();
-    await page.waitForTimeout(800);
+    const addGoalSubmit = page.locator('form button[type="submit"]').filter({ hasText: /add goal/i }).first();
+    if (await addGoalSubmit.isVisible({ timeout: 2000 }).catch(() => false)) {
+      await addGoalSubmit.click();
+    } else {
+      // Fallback: try any button with "Add Goal" text
+      await page.locator('button').filter({ hasText: /add goal/i }).last().click();
+    }
+    await page.waitForTimeout(1500); // Wait for modal close + API + re-render
 
-    // Verify goal appears under the plan
+    // Wait for modal to close
+    await page.waitForFunction(() => !document.querySelector('.modal-overlay, [class*="modal"]'), { timeout: 5000 }).catch(() => {});
+    await page.waitForTimeout(500);
+
+    // Verify goal appears under the plan (may need to re-expand)
+    let goalVisible = await page.locator('text=Learn TypeScript').isVisible({ timeout: 3000 }).catch(() => false);
+    if (!goalVisible) {
+      // Plan may have collapsed after modal — re-expand
+      const reExpandPlan = page.locator('.cursor-pointer').filter({ hasText: 'E2E Test Plan' }).first();
+      if (await reExpandPlan.isVisible({ timeout: 2000 }).catch(() => false)) {
+        await reExpandPlan.click();
+        await page.waitForTimeout(500);
+      }
+    }
     await expect(page.locator('text=Learn TypeScript')).toBeVisible({ timeout: 5000 });
 
     // Step 6: Expand the goal to add actions

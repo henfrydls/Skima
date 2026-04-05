@@ -59,7 +59,7 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
     description: goal?.description || '',
     skillId: goal?.skillId || '',
     targetLevel: goal?.targetLevel || 4,
-    priority: goal?.priority || 'medium',
+    priority: goal?.priority || 2,
   });
 
   const handleChange = (e) => {
@@ -84,6 +84,7 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
       ...form,
       skillId: form.skillId ? parseInt(form.skillId, 10) : null,
       targetLevel: parseFloat(form.targetLevel),
+      priority: parseInt(form.priority, 10) || 2,
     };
     await onSubmit(payload);
     setSaving(false);
@@ -162,10 +163,10 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
 
           <div>
             <label className={labelClass}>Priority</label>
-            <select name="priority" value={form.priority} onChange={handleChange} className={selectClass}>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+            <select name="priority" value={form.priority} onChange={(e) => setForm(prev => ({ ...prev, priority: parseInt(e.target.value, 10) }))} className={selectClass}>
+              <option value={1}>High</option>
+              <option value={2}>Medium</option>
+              <option value={3}>Low</option>
             </select>
           </div>
 

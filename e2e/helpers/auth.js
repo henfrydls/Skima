@@ -1,71 +1,110 @@
+const API_BASE = 'http://localhost:3001';
+
+// Cached auth token — shared across tests in the same worker
+let cachedToken = null;
+
 /**
  * Enter the demo — calls seed-demo API then navigates to dashboard.
- * Handles both online demo (cookie flow) and local dev (direct seed).
+ * Also pre-fetches an auth token for Settings access.
  */
 export async function enterDemo(page) {
-  // First, seed demo data via API directly (more reliable than /demo route)
-  const apiBase = 'http://localhost:3001';
-  await page.request.post(`${apiBase}/api/seed-demo`);
+  // Seed demo data
+  await page.request.post(`${API_BASE}/api/seed-demo`);
+
+  // Pre-fetch auth token (one login, reuse for all tests)
+  if (!cachedToken) {
+    const passwords = ['admin123', ''];
+    for (const pw of passwords) {
+      try {
+        const res = await page.request.post(`${API_BASE}/api/auth/login`, {
+          data: { password: pw }
+        });
+        if (res.ok()) {
+          const data = await res.json();
+          cachedToken = data.token;
+          break;
+        }
+      } catch { /* try next */ }
+    }
+  }
 
   // Navigate to dashboard
   await page.goto('/');
-
-  // Wait for either main content (dashboard) or setup page, then handle
   await page.waitForLoadState('networkidle', { timeout: 15000 });
 
-  // If we landed on setup, the seed worked but config isn't set — go to dashboard directly
-  const url = page.url();
-  if (url.includes('/setup')) {
-    // Seed data exists, but no SystemConfig. Create one via API.
-    await page.request.post(`${apiBase}/api/setup`, {
+  // Handle setup wizard if needed
+  if (page.url().includes('/setup')) {
+    await page.request.post(`${API_BASE}/api/setup`, {
       data: { companyName: 'Test Co', adminName: 'Admin' }
     });
     await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 10000 });
   }
 
+  // Inject auth token into localStorage for Settings access
+  if (cachedToken) {
+    await page.evaluate((t) => {
+      localStorage.setItem('auth_token', t);
+    }, cachedToken);
+  }
+
   // Wait for main content
   await page.waitForSelector('main', { timeout: 10000 }).catch(() => {
-    return page.waitForSelector('[class*="dashboard"], [class*="content"], h1', { timeout: 5000 });
+    return page.waitForSelector('h1', { timeout: 5000 });
   });
 }
 
 /**
- * Login to Settings via API (avoids rate limiter and UI flakiness).
- * Gets a JWT token from the API, injects into localStorage, then navigates.
+ * Navigate to Settings with authentication.
+ * Injects token into localStorage then does a fresh page load so React
+ * AuthContext reads it on mount.
  */
 export async function loginToSettings(page) {
-  const apiBase = 'http://localhost:3001';
-
-  // Must be on a page in the app's origin before setting localStorage
+  // First go to any app page to set localStorage on the correct origin
   await page.goto('/');
   await page.waitForLoadState('domcontentloaded');
 
-  // Get token via API
-  let token = null;
-  const passwords = ['admin123', ''];
-  for (const pw of passwords) {
+  // Ensure we have a token
+  if (!cachedToken) {
     try {
-      const res = await page.request.post(`${apiBase}/api/auth/login`, {
-        data: { password: pw }
+      const res = await page.request.post(`${API_BASE}/api/auth/login`, {
+        data: { password: 'admin123' }
       });
       if (res.ok()) {
         const data = await res.json();
-        token = data.token;
-        break;
+        cachedToken = data.token;
       }
-    } catch { /* try next */ }
+    } catch { /* rate limited */ }
   }
 
-  if (token) {
-    // Inject token into localStorage
+  // Inject token into localStorage
+  if (cachedToken) {
     await page.evaluate((t) => {
       localStorage.setItem('auth_token', t);
-    }, token);
+    }, cachedToken);
   }
 
-  // Navigate to settings — token is now in localStorage, app will read it on mount
+  // Now navigate to settings — React mounts fresh, reads token from localStorage
   await page.goto('/settings');
   await page.waitForLoadState('networkidle', { timeout: 10000 });
+
+  // If still Access Denied, the token was invalid or expired — reload once more
+  const accessDenied = await page.locator('text=Access Denied').isVisible({ timeout: 2000 }).catch(() => false);
+  if (accessDenied && cachedToken) {
+    // Re-inject and hard reload
+    await page.evaluate((t) => {
+      localStorage.setItem('auth_token', t);
+    }, cachedToken);
+    await page.reload();
+    await page.waitForLoadState('networkidle', { timeout: 10000 });
+  }
+
   await page.waitForSelector('main', { timeout: 10000 }).catch(() => {});
+}
+
+/**
+ * Reset cached token (use in tests that reset the database)
+ */
+export function resetAuthCache() {
+  cachedToken = null;
 }
