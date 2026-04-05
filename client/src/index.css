@@ -3,6 +3,11 @@
 @tailwind utilities;
 
 @layer base {
+  /* Prevent layout shift when modals open/close (scrollbar space always reserved) */
+  html {
+    scrollbar-gutter: stable;
+  }
+
   h1 {
     @apply text-4xl font-light text-primary;
   }
