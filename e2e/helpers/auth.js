@@ -31,42 +31,41 @@ export async function enterDemo(page) {
 }
 
 /**
- * Login to Settings by reading the password hint from the login modal.
- * The demo seed shows "Default password: admin123" — we extract and use it.
- * This is what a real user would do.
+ * Login to Settings via API (avoids rate limiter and UI flakiness).
+ * Gets a JWT token from the API, injects into localStorage, then navigates.
  */
 export async function loginToSettings(page) {
-  await page.goto('/settings');
-  await page.waitForLoadState('networkidle');
+  const apiBase = 'http://localhost:3001';
 
-  // Check if we hit "Access Denied"
-  const accessDenied = await page.locator('text=Access Denied').isVisible({ timeout: 3000 }).catch(() => false);
-  if (!accessDenied) return; // Already authenticated
+  // Must be on a page in the app's origin before setting localStorage
+  await page.goto('/');
+  await page.waitForLoadState('domcontentloaded');
 
-  // Click "Sign In" button on the access denied page
-  const signInBtn = page.locator('button').filter({ hasText: /sign in/i }).first();
-  await signInBtn.click();
-  await page.waitForTimeout(500);
-
-  // The login modal should appear — look for the password hint
-  const hintEl = page.locator('text=/default password/i').first();
-  const hasHint = await hintEl.isVisible({ timeout: 3000 }).catch(() => false);
-
-  if (hasHint) {
-    // Extract password from hint text like "Default password: admin123"
-    const hintText = await hintEl.textContent();
-    const password = hintText.match(/:\s*(\S+)/)?.[1] || 'admin123';
-    await page.fill('input[type="password"]', password);
-  } else {
-    // No hint — try submitting without password (no-password mode)
-    // do nothing, just submit
+  // Get token via API
+  let token = null;
+  const passwords = ['admin123', ''];
+  for (const pw of passwords) {
+    try {
+      const res = await page.request.post(`${apiBase}/api/auth/login`, {
+        data: { password: pw }
+      });
+      if (res.ok()) {
+        const data = await res.json();
+        token = data.token;
+        break;
+      }
+    } catch { /* try next */ }
   }
 
-  // Click the Sign In button inside the modal
-  const modalSignIn = page.locator('.modal-overlay button, [class*="modal"] button').filter({ hasText: /sign in/i }).first();
-  await modalSignIn.click();
-  await page.waitForLoadState('networkidle', { timeout: 10000 });
+  if (token) {
+    // Inject token into localStorage
+    await page.evaluate((t) => {
+      localStorage.setItem('auth_token', t);
+    }, token);
+  }
 
-  // Should now be on settings page
+  // Navigate to settings — token is now in localStorage, app will read it on mount
+  await page.goto('/settings');
+  await page.waitForLoadState('networkidle', { timeout: 10000 });
   await page.waitForSelector('main', { timeout: 10000 }).catch(() => {});
 }
