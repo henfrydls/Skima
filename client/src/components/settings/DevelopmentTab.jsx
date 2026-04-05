@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,6 +30,65 @@ const ACTION_TYPE_BADGES = {
   self_directed: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Self-directed' },
 };
 
+const ACTION_STATUS_OPTIONS = [
+  { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
+  { value: 'in_progress', bg: 'bg-blue-50', text: 'text-blue-700', label: 'In Progress' },
+  { value: 'completed', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Completed' },
+  { value: 'skipped', bg: 'bg-amber-50', text: 'text-amber-600', label: 'Skipped' },
+];
+
+const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.value, s]));
+
+/**
+ * ActionStatusDropdown - Clickable status badge that opens a dropdown to change action status
+ */
+function ActionStatusDropdown({ action, onStatusChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const current = ACTION_STATUS_MAP[action.status] || ACTION_STATUS_MAP.not_started;
+
+  useEffect(() => {
+    if (!open) return;
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative flex-shrink-0">
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors hover:ring-2 hover:ring-primary/20 ${current.bg} ${current.text}`}
+        title="Change status"
+      >
+        {current.label}
+        <ChevronDown size={10} />
+      </button>
+      {open && (
+        <div className="absolute left-0 top-full mt-1 z-30 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[130px]">
+          {ACTION_STATUS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpen(false);
+                if (opt.value !== action.status) onStatusChange(action.id, opt.value);
+              }}
+              className={`w-full text-left px-3 py-1.5 text-xs font-medium transition-colors hover:bg-gray-50 ${opt.value === action.status ? `${opt.bg} ${opt.text}` : 'text-gray-600'}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /**
  * DevelopmentTab — Settings tab for IDP CRUD management
  *
@@ -46,6 +105,7 @@ export default function DevelopmentTab({ isActive }) {
   // Data
   const [plans, setPlans] = useState([]);
   const [skills, setSkills] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Expanded plan tracking
@@ -92,6 +152,7 @@ export default function DevelopmentTab({ isActive }) {
       if (!res.ok) return;
       const data = await res.json();
       setSkills(data.skills || []);
+      setCategories(data.categories || []);
     } catch {
       // Non-critical
     }
@@ -274,6 +335,35 @@ export default function DevelopmentTab({ isActive }) {
         actions: (g.actions || []).map(a => a.id === updatedAction.id ? updatedAction : a),
       })),
     })));
+  };
+
+  const handleActionStatusChange = async (actionId, newStatus) => {
+    try {
+      const res = await authFetch(`${API_BASE}/api/development-actions/${actionId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error('Failed to update status');
+      const updated = await res.json();
+      // Optimistic update in place
+      setPlans(prev => prev.map(p => ({
+        ...p,
+        goals: (p.goals || []).map(g => ({
+          ...g,
+          actions: (g.actions || []).map(a => a.id === actionId ? updated : a),
+        })),
+      })));
+      toast.success(`Status changed to ${ACTION_STATUS_MAP[newStatus]?.label || newStatus}`);
+    } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') {
+        setShowLogin(true);
+      } else {
+        toast.error('Failed to update action status');
+        // Refetch to restore correct state
+        if (expandedPlanId) refetchPlanDetail(expandedPlanId);
+      }
+    }
   };
 
   const handleDeleteAction = async () => {
@@ -496,7 +586,7 @@ export default function DevelopmentTab({ isActive }) {
                                 {goal.skill && (
                                   <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
                                     <Target size={10} />
-                                    {goal.skill.name}
+                                    {goal.skill.nombre}
                                   </span>
                                 )}
 
@@ -570,10 +660,10 @@ export default function DevelopmentTab({ isActive }) {
                                             key={action.id}
                                             className="flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors"
                                           >
-                                            {/* Status indicator */}
-                                            <CheckCircle2
-                                              size={16}
-                                              className={isCompleted ? 'text-competent flex-shrink-0' : 'text-gray-300 flex-shrink-0'}
+                                            {/* Status dropdown */}
+                                            <ActionStatusDropdown
+                                              action={action}
+                                              onStatusChange={handleActionStatusChange}
                                             />
 
                                             {/* Type badge */}
@@ -655,6 +745,7 @@ export default function DevelopmentTab({ isActive }) {
           goal={goalModal.mode === 'edit' ? goalModal.goal : null}
           collaboratorId={goalModal.collaboratorId || goalModal.goal?.plan?.collaboratorId}
           skills={skills}
+          categories={categories}
           onClose={() => setGoalModal(null)}
           onSubmit={goalModal.mode === 'edit' ? handleUpdateGoal : handleCreateGoal}
         />
