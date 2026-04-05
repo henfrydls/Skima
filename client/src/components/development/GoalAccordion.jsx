@@ -17,8 +17,9 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const [expanded, setExpanded] = useState(false);
 
   const actions = goal.actions || [];
-  const completedActions = actions.filter(a => a.status === 'completed').length;
-  const progress = actions.length > 0 ? (completedActions / actions.length) * 100 : 0;
+  const countableActions = actions.filter(a => a.status !== 'skipped');
+  const completedActions = countableActions.filter(a => a.status === 'completed').length;
+  const progress = countableActions.length > 0 ? (completedActions / countableActions.length) * 100 : 0;
 
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -58,7 +59,7 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
 
         {/* Progress */}
         <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-right">
-          {completedActions}/{actions.length}
+          {completedActions}/{countableActions.length}
         </span>
 
         {/* Mini progress bar */}

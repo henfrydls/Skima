@@ -419,11 +419,11 @@ export default function DevelopmentTab({ isActive }) {
   // --- Helpers ---
   const getPlanProgress = (plan) => {
     const goals = plan.goals || [];
-    const totalActions = goals.reduce((sum, g) => sum + (g.actions?.length || 0), 0);
+    const countableActions = goals.reduce((sum, g) => sum + (g.actions?.filter(a => a.status !== 'skipped').length || 0), 0);
     const completedActions = goals.reduce(
       (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
     );
-    return totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+    return countableActions > 0 ? Math.round((completedActions / countableActions) * 100) : 0;
   };
 
   const formatDate = (dateStr) => {
@@ -586,8 +586,9 @@ export default function DevelopmentTab({ isActive }) {
                         {goals.map(goal => {
                           const isGoalExpanded = expandedGoalId === goal.id;
                           const actions = goal.actions || [];
-                          const completedActions = actions.filter(a => a.status === 'completed').length;
-                          const goalProgress = actions.length > 0 ? Math.round((completedActions / actions.length) * 100) : 0;
+                          const countableActions = actions.filter(a => a.status !== 'skipped');
+                          const completedActions = countableActions.filter(a => a.status === 'completed').length;
+                          const goalProgress = countableActions.length > 0 ? Math.round((completedActions / countableActions.length) * 100) : 0;
                           const priorityColor = PRIORITY_COLORS[goal.priority] || PRIORITY_COLORS.medium;
 
                           return (
@@ -622,7 +623,7 @@ export default function DevelopmentTab({ isActive }) {
 
                                 {/* Progress */}
                                 <span className="text-xs text-gray-400 flex-shrink-0">
-                                  {completedActions}/{actions.length}
+                                  {completedActions}/{countableActions.length}
                                 </span>
 
                                 <div className="w-12 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">

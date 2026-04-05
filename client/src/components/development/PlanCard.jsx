@@ -16,11 +16,11 @@ export default function PlanCard({ plan }) {
 
   const status = STATUS_BADGES[plan.status] || STATUS_BADGES.draft;
   const goals = plan.goals || [];
-  const totalActions = goals.reduce((sum, g) => sum + (g.actions?.length || 0), 0);
+  const countableActions = goals.reduce((sum, g) => sum + (g.actions?.filter(a => a.status !== 'skipped').length || 0), 0);
   const completedActions = goals.reduce(
     (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
   );
-  const progress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+  const progress = countableActions > 0 ? Math.round((completedActions / countableActions) * 100) : 0;
 
   const collaboratorName = plan.collaborator?.nombre || plan.collaborator?.name;
 
