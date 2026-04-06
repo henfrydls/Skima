@@ -46,6 +46,8 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
         <span
           className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_COLORS[goal.priority] || PRIORITY_COLORS.medium}`}
           title={`${goal.priority || 'medium'} priority`}
+          aria-label={`Priority: ${goal.priority === 'high' ? 'high' : goal.priority === 'low' ? 'low' : 'medium'}`}
+          role="img"
         />
 
         {/* Title */}

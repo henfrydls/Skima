@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import Button from '../common/Button';
 import GapSuggestions from '../development/GapSuggestions';
 import SkillSelect from './SkillSelect';
+import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
 
 /**
@@ -16,6 +17,7 @@ import { API_BASE } from '../../lib/apiBase';
  */
 export default function GoalFormModal({ goal = null, collaboratorId, skills: propSkills = [], categories: propCategories = [], onClose, onSubmit }) {
   const isEdit = !!goal;
+  const { authFetch } = useAuth();
   const [saving, setSaving] = useState(false);
   const [fetchedSkills, setFetchedSkills] = useState([]);
   const [fetchedCategories, setFetchedCategories] = useState([]);
@@ -25,7 +27,7 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
     if (propSkills.length > 0) return;
     const fetchSkills = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/data`);
+        const res = await authFetch(`${API_BASE}/api/data`);
         if (!res.ok) return;
         const data = await res.json();
         setFetchedSkills(data.skills || []);
@@ -35,7 +37,7 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
       }
     };
     fetchSkills();
-  }, [propSkills.length]);
+  }, [propSkills.length, authFetch]);
 
   // Use prop data if available, otherwise fetched
   const skills = propSkills.length > 0 ? propSkills : fetchedSkills;

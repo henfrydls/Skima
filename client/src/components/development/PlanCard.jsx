@@ -1,12 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Target, Calendar, CheckCircle2 } from 'lucide-react';
-
-const STATUS_BADGES = {
-  draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft', bar: 'bg-gray-400' },
-  active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active', bar: 'bg-primary' },
-  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed', bar: 'bg-emerald-500' },
-  cancelled: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', label: 'Cancelled', bar: 'bg-red-400' },
-};
+import { PLAN_STATUS_BADGES } from '../../lib/developmentConstants';
 
 /**
  * PlanCard - Card for development plan list
@@ -15,7 +9,7 @@ const STATUS_BADGES = {
 export default function PlanCard({ plan }) {
   const navigate = useNavigate();
 
-  const status = STATUS_BADGES[plan.status] || STATUS_BADGES.draft;
+  const status = PLAN_STATUS_BADGES[plan.status] || PLAN_STATUS_BADGES.draft;
   const goals = plan.goals || [];
   const countableActions = goals.reduce((sum, g) => sum + (g.actions?.filter(a => a.status !== 'skipped').length || 0), 0);
   const completedActions = goals.reduce(
@@ -32,7 +26,7 @@ export default function PlanCard({ plan }) {
 
   return (
     <div
-      className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer hover:shadow-md hover:-translate-y-0.5 transition-all duration-200"
+      className="bg-white rounded-lg shadow-sm border border-gray-100 p-4 cursor-pointer hover-lift transition-all duration-200"
       onClick={() => navigate(`/development/${plan.id}`)}
       role="button"
       tabIndex={0}
@@ -46,7 +40,7 @@ export default function PlanCard({ plan }) {
         </span>
 
         {/* Title */}
-        <h3 className="font-semibold text-lg text-gray-900 truncate">{plan.title}</h3>
+        <h3 className="font-medium text-lg text-gray-900 truncate">{plan.title}</h3>
 
         {/* Collaborator */}
         {collaboratorName && (

@@ -90,7 +90,7 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
                     <Icon size={14} />
                     <div>
                       <div className="font-medium text-xs">{t.label}</div>
-                      <div className="text-[10px] text-gray-400">{t.desc}</div>
+                      <div className="text-xs text-gray-400">{t.desc}</div>
                     </div>
                   </button>
                 );

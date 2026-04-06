@@ -37,7 +37,7 @@ export default function GapSuggestions({ collaboratorId, onSelect }) {
   if (!collaboratorId || loading || suggestions.length === 0) return null;
 
   return (
-    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+    <section aria-label="Skill gap suggestions" className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
       <div className="flex items-center gap-2 text-amber-700 text-xs font-medium mb-2">
         <Lightbulb size={14} />
         Suggested from skill gaps
@@ -60,6 +60,6 @@ export default function GapSuggestions({ collaboratorId, onSelect }) {
           </button>
         ))}
       </div>
-    </div>
+    </section>
   );
 }

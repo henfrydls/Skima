@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
 import CollaboratorSelect from './CollaboratorSelect.jsx';
+import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
 
 /**
@@ -14,6 +15,7 @@ import { API_BASE } from '../../lib/apiBase';
  */
 export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   const isEdit = !!plan;
+  const { authFetch } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -27,11 +29,11 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   });
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/collaborators`)
+    authFetch(`${API_BASE}/api/collaborators`)
       .then(res => res.ok ? res.json() : [])
       .then(data => setCollaborators(data))
       .catch(() => {});
-  }, []);
+  }, [authFetch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

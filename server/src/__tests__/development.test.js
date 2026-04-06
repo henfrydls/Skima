@@ -789,6 +789,34 @@ describe('Development Plans API', () => {
         expect(res.body.message).toBeDefined();
       }
     });
+
+    it('rejects plan with end date before start date', async () => {
+      const collab = await prisma.collaborator.findFirst();
+      const res = await request(app)
+        .post('/api/development-plans')
+        .send({
+          collaboratorId: collab.id,
+          title: 'Test',
+          startDate: '2026-06-01',
+          endDate: '2026-01-01'
+        });
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('End date');
+    });
+
+    it('returns 400 for non-numeric plan ID', async () => {
+      const res = await request(app)
+        .get('/api/development-plans/abc');
+      expect(res.status).toBe(400);
+      expect(res.body.message).toContain('Invalid');
+    });
+
+    it('returns 400 for non-numeric goal ID', async () => {
+      const res = await request(app)
+        .put('/api/development-goals/xyz')
+        .send({ title: 'test' });
+      expect(res.status).toBe(400);
+    });
   });
 
   // ============================================================

@@ -25,6 +25,7 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
   const TypeIcon = typeConfig.icon;
 
   const handleToggle = async () => {
+    if (readOnly) return;
     if (toggling) return;
     setToggling(true);
     try {
@@ -66,6 +67,7 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
         <button
           onClick={handleToggle}
           disabled={toggling}
+          aria-label={`Mark "${action.title}" as ${action.status === 'completed' ? 'incomplete' : 'complete'}`}
           className="flex-shrink-0 text-gray-400 hover:text-primary transition-colors disabled:opacity-50"
         >
           {isCompleted ? (

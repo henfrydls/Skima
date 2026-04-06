@@ -8,6 +8,13 @@ const router = express.Router();
 // DEVELOPMENT PLANS - CRUD
 // ============================================================
 
+// TODO: Add rate limiting on POST endpoints (express-rate-limit)
+// See Sprint 7.5 audit item 7.5.4
+
+// NOTE: GET endpoints are intentionally public (no authMiddleware) for MVP.
+// The app is single-user/local-first. When multi-user auth is added,
+// protect these with authMiddleware. See Sprint 7.5 audit item 7.5.1.
+
 // GET /api/development-plans — list all plans (optional filters)
 router.get('/development-plans', async (req, res) => {
   try {
@@ -15,7 +22,9 @@ router.get('/development-plans', async (req, res) => {
     const where = {};
 
     if (collaboratorId) {
-      where.collaboratorId = parseInt(collaboratorId, 10);
+      const parsedCollabId = parseInt(collaboratorId, 10);
+      if (isNaN(parsedCollabId)) return res.status(400).json({ message: 'Invalid collaborator ID' });
+      where.collaboratorId = parsedCollabId;
     }
     if (status) {
       where.status = status;
@@ -43,8 +52,11 @@ router.get('/development-plans', async (req, res) => {
 // GET /api/development-plans/:id — get plan detail with nested goals and actions
 router.get('/development-plans/:id', async (req, res) => {
   try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
+
     const plan = await prisma.developmentPlan.findUnique({
-      where: { id: parseInt(req.params.id, 10) },
+      where: { id },
       include: {
         collaborator: true,
         goals: {
@@ -73,16 +85,21 @@ router.post('/development-plans', authMiddleware, async (req, res) => {
     if (!collaboratorId || !title) {
       return res.status(400).json({ message: 'collaboratorId and title are required' });
     }
+    const parsedCollaboratorId = parseInt(collaboratorId, 10);
+    if (isNaN(parsedCollaboratorId)) return res.status(400).json({ message: 'Invalid collaborator ID' });
     if (title.length > 255) {
       return res.status(400).json({ message: 'Title must be under 255 characters' });
     }
     if (description && description.length > 2000) {
       return res.status(400).json({ message: 'Description must be under 2000 characters' });
     }
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      return res.status(400).json({ message: 'End date must be after start date' });
+    }
 
     const plan = await prisma.developmentPlan.create({
       data: {
-        collaboratorId: parseInt(collaboratorId, 10),
+        collaboratorId: parsedCollaboratorId,
         title,
         description: description || null,
         targetRole: targetRole || null,
@@ -106,6 +123,7 @@ router.post('/development-plans', authMiddleware, async (req, res) => {
 router.put('/development-plans/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
     const { title, description, targetRole, status, startDate, endDate } = req.body;
 
     const VALID_PLAN_STATUSES = ['draft', 'active', 'completed', 'cancelled'];
@@ -114,6 +132,9 @@ router.put('/development-plans/:id', authMiddleware, async (req, res) => {
     }
     if (title && title.length > 255) {
       return res.status(400).json({ message: 'Title must be under 255 characters' });
+    }
+    if (startDate && endDate && new Date(endDate) < new Date(startDate)) {
+      return res.status(400).json({ message: 'End date must be after start date' });
     }
 
     const data = {};
@@ -152,6 +173,7 @@ router.put('/development-plans/:id', authMiddleware, async (req, res) => {
 router.delete('/development-plans/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
 
     // Prisma cascade handles goals+actions deletion
     await prisma.developmentPlan.delete({ where: { id } });
@@ -171,6 +193,7 @@ router.delete('/development-plans/:id', authMiddleware, async (req, res) => {
 router.post('/development-plans/:planId/goals', authMiddleware, async (req, res) => {
   try {
     const planId = parseInt(req.params.planId, 10);
+    if (isNaN(planId)) return res.status(400).json({ message: 'Invalid plan ID' });
     const { title, description, skillId, currentLevel, targetLevel, priority, targetDate } = req.body;
 
     if (!title) {
@@ -219,6 +242,7 @@ router.post('/development-plans/:planId/goals', authMiddleware, async (req, res)
 router.put('/development-goals/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
     const { title, description, skillId, currentLevel, targetLevel, priority, status, targetDate, sortOrder } = req.body;
 
     const VALID_GOAL_STATUSES = ['not_started', 'in_progress', 'completed', 'cancelled'];
@@ -262,6 +286,7 @@ router.put('/development-goals/:id', authMiddleware, async (req, res) => {
 router.delete('/development-goals/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
     await prisma.developmentGoal.delete({ where: { id } });
     res.json({ message: 'Development goal deleted' });
   } catch (error) {
@@ -278,6 +303,7 @@ router.delete('/development-goals/:id', authMiddleware, async (req, res) => {
 router.post('/development-goals/:goalId/actions', authMiddleware, async (req, res) => {
   try {
     const goalId = parseInt(req.params.goalId, 10);
+    if (isNaN(goalId)) return res.status(400).json({ message: 'Invalid goal ID' });
     const { title, description, actionType, dueDate } = req.body;
 
     if (!title) {
@@ -335,6 +361,7 @@ router.post('/development-goals/:goalId/actions', authMiddleware, async (req, re
 router.put('/development-actions/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
     const { title, description, actionType, status, dueDate, evidence, sortOrder } = req.body;
 
     const VALID_ACTION_STATUSES = ['not_started', 'in_progress', 'completed', 'skipped'];
@@ -378,6 +405,7 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
 router.delete('/development-actions/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
     await prisma.developmentAction.delete({ where: { id } });
     res.json({ message: 'Development action deleted' });
   } catch (error) {
@@ -401,6 +429,7 @@ const TARGET_LEVELS = {
 router.get('/collaborators/:id/suggested-goals', async (req, res) => {
   try {
     const collaboratorId = parseInt(req.params.id, 10);
+    if (isNaN(collaboratorId)) return res.status(400).json({ message: 'Invalid ID' });
 
     // Get the collaborator with their role
     const collaborator = await prisma.collaborator.findUnique({
@@ -439,6 +468,11 @@ router.get('/collaborators/:id/suggested-goals', async (req, res) => {
       }
     }
 
+    // Batch fetch all skills upfront to avoid N+1 queries (Sprint 7.5 audit item 7.5.3)
+    const skillIds = Object.keys(roleSkills).map(id => parseInt(id, 10));
+    const allSkills = await prisma.skill.findMany({ where: { id: { in: skillIds } } });
+    const skillMap = new Map(allSkills.map(s => [s.id, s]));
+
     // Calculate gaps
     const gaps = [];
     for (const [skillIdStr, criticality] of Object.entries(roleSkills)) {
@@ -450,8 +484,7 @@ router.get('/collaborators/:id/suggested-goals', async (req, res) => {
       const gapSize = targetLevel - currentLevel;
 
       if (gapSize > 0) {
-        // Get skill name
-        const skill = await prisma.skill.findUnique({ where: { id: skillId } });
+        const skill = skillMap.get(skillId);
         if (!skill) continue;
 
         gaps.push({
@@ -483,8 +516,11 @@ router.get('/collaborators/:id/suggested-goals', async (req, res) => {
 // GET /api/development-plans/:id/progress — computed progress
 router.get('/development-plans/:id/progress', async (req, res) => {
   try {
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
+
     const plan = await prisma.developmentPlan.findUnique({
-      where: { id: parseInt(req.params.id, 10) },
+      where: { id },
       include: {
         goals: {
           include: { actions: true }

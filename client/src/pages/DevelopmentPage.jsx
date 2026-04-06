@@ -11,6 +11,7 @@ const FILTERS = [
   { id: 'active', label: 'Active' },
   { id: 'draft', label: 'Draft' },
   { id: 'completed', label: 'Completed' },
+  { id: 'cancelled', label: 'Cancelled' },
 ];
 
 /**
@@ -74,6 +75,7 @@ export default function DevelopmentPage() {
           <button
             key={f.id}
             onClick={() => setFilter(f.id)}
+            aria-pressed={filter === f.id}
             className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
               filter === f.id
                 ? 'bg-primary text-white'
@@ -96,7 +98,7 @@ export default function DevelopmentPage() {
             description={
               filter === 'all'
                 ? 'Create plans in Settings \u2192 Development.'
-                : `No ${filter} plans found.`
+                : `No ${filter} plans found. Create plans in Settings \u2192 Development.`
             }
           />
         </div>
