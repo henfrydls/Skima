@@ -203,6 +203,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setPlanModal(null); return; }
       if (!res.ok) throw new Error('Failed to create plan');
       toast.success('Plan created');
       setPlanModal(null);
@@ -224,6 +225,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setPlanModal(null); return; }
       if (!res.ok) throw new Error('Failed to update');
       toast.success('Plan updated');
       setPlanModal(null);
@@ -242,6 +244,7 @@ export default function DevelopmentTab({ isActive }) {
     setDeleting(true);
     try {
       const res = await authFetch(`${API_BASE}/api/development-plans/${deletePlanTarget.id}`, { method: 'DELETE' });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setDeletePlanTarget(null); setDeleting(false); return; }
       if (!res.ok) throw new Error('Failed to delete');
       toast.success('Plan deleted');
       setDeletePlanTarget(null);
@@ -267,6 +270,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setGoalModal(null); return; }
       if (!res.ok) throw new Error('Failed to create goal');
       toast.success('Goal added');
       setGoalModal(null);
@@ -288,6 +292,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setGoalModal(null); return; }
       if (!res.ok) throw new Error('Failed to update goal');
       toast.success('Goal updated');
       setGoalModal(null);
@@ -306,6 +311,7 @@ export default function DevelopmentTab({ isActive }) {
     setDeleting(true);
     try {
       const res = await authFetch(`${API_BASE}/api/development-goals/${deleteGoalTarget.id}`, { method: 'DELETE' });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setDeleteGoalTarget(null); setDeleting(false); return; }
       if (!res.ok) throw new Error('Failed to delete');
       toast.success('Goal deleted');
       setDeleteGoalTarget(null);
@@ -330,6 +336,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setActionModal(null); return; }
       if (!res.ok) throw new Error('Failed to create action');
       toast.success('Action added');
       setActionModal(null);
@@ -361,6 +368,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); return; }
       if (!res.ok) throw new Error('Failed to update status');
       const updated = await res.json();
       // Optimistic update in place
@@ -388,6 +396,7 @@ export default function DevelopmentTab({ isActive }) {
     setDeleting(true);
     try {
       const res = await authFetch(`${API_BASE}/api/development-actions/${deleteActionTarget.id}`, { method: 'DELETE' });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setDeleteActionTarget(null); setDeleting(false); return; }
       if (!res.ok) throw new Error('Failed to delete');
       toast.success('Action deleted');
       setDeleteActionTarget(null);
@@ -411,6 +420,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' }),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); return; }
       if (!res.ok) throw new Error('Failed');
       toast.success('Goal marked as completed!');
       if (expandedPlanId) refetchPlanDetail(expandedPlanId);
@@ -427,6 +437,7 @@ export default function DevelopmentTab({ isActive }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: 'completed' }),
       });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); return; }
       if (!res.ok) throw new Error('Failed');
       toast.success('Plan marked as completed!');
       fetchPlans();
@@ -521,29 +532,30 @@ export default function DevelopmentTab({ isActive }) {
                   </span>
 
                   {/* Title + Collaborator */}
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                  <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-2">
                     <span className="font-medium text-sm text-gray-800 truncate">{plan.title}</span>
                     {plan.collaborator && (
                       <>
-                        <span className="text-gray-300">&bull;</span>
-                        <span className="text-sm text-gray-500 truncate">{plan.collaborator.nombre}</span>
+                        <span className="text-gray-300 hidden sm:inline">&bull;</span>
+                        <span className="text-xs sm:text-sm text-gray-500 truncate">{plan.collaborator.nombre}</span>
                       </>
                     )}
                   </div>
 
-                  {/* Goals count */}
-                  <span className="text-xs text-gray-400 flex-shrink-0">
-                    {goals.length} {goals.length === 1 ? 'goal' : 'goals'}
-                  </span>
+                  {/* Goals count + Progress bar + Percentage (hidden on mobile) */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <span className="text-xs text-gray-400 flex-shrink-0">
+                      {goals.length} {goals.length === 1 ? 'goal' : 'goals'}
+                    </span>
 
-                  {/* Progress bar */}
-                  <div className="w-20 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
-                      style={{ width: `${progress}%` }}
-                    />
+                    <div className="w-20 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all duration-300 ${status.bar}`}
+                        style={{ width: `${progress}%` }}
+                      />
+                    </div>
+                    <span className="text-xs text-gray-400 w-8 text-right flex-shrink-0">{progress}%</span>
                   </div>
-                  <span className="text-xs text-gray-400 w-8 text-right flex-shrink-0">{progress}%</span>
 
                   {/* Edit / Delete buttons */}
                   <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
@@ -649,27 +661,29 @@ export default function DevelopmentTab({ isActive }) {
 
                                 {/* Skill badge */}
                                 {goal.skill && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
+                                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
                                     <Target size={10} />
                                     {goal.skill.nombre}
                                   </span>
                                 )}
 
-                                {/* Progress */}
-                                <span className="text-xs text-gray-400 flex-shrink-0">
-                                  {completedActions}/{countableActions.length}
-                                </span>
+                                {/* Progress (hidden on mobile) */}
+                                <div className="hidden sm:flex items-center gap-2">
+                                  <span className="text-xs text-gray-400 flex-shrink-0">
+                                    {completedActions}/{countableActions.length}
+                                  </span>
 
-                                <div className="w-12 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
-                                  <div
-                                    className="h-full bg-primary rounded-full transition-all duration-300"
-                                    style={{ width: `${goalProgress}%` }}
-                                  />
+                                  <div className="w-12 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+                                    <div
+                                      className="h-full bg-primary rounded-full transition-all duration-300"
+                                      style={{ width: `${goalProgress}%` }}
+                                    />
+                                  </div>
                                 </div>
 
                                 {/* Completion date */}
                                 {goal.completedAt && (
-                                  <span className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
+                                  <span className="hidden sm:flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
                                     <CheckCircle2 size={12} className="text-emerald-500" />
                                     {formatDate(goal.completedAt)}
                                   </span>

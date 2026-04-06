@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import { createPortal } from 'react-dom';
 import { X, Briefcase, Users, GraduationCap, BookOpen } from 'lucide-react';
 import Button from '../common/Button';
@@ -41,14 +42,16 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
     setSaving(false);
   };
 
+  useFocusTrap();
+
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(
     <div className="modal-overlay z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
             {isEdit ? 'Edit Action' : 'Add Action'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
