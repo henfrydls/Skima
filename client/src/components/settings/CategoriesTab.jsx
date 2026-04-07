@@ -37,40 +37,6 @@ import toast from 'react-hot-toast';
 
 import { API_BASE } from '../../lib/apiBase';
 
-// Color Picker Popover
-const PRESET_COLORS = [
-  '#2d676e', // Primary (teal)
-  '#a6ae3d', // Competent (olive)
-  '#da8a0c', // Warning (ocre)
-  '#ef4444', // Critical (red)
-  '#6366f1', // Indigo
-  '#8b5cf6', // Purple
-];
-
-function ColorPicker({ color, onChange, isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div className="fixed inset-0 z-10" onClick={onClose} />
-      <div className="absolute left-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-gray-100 p-3 z-20">
-        <div className="flex gap-2 mb-2">
-          {PRESET_COLORS.map(c => (
-            <button
-              key={c}
-              onClick={() => { onChange(c); onClose(); }}
-              className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                color === c ? 'border-gray-800' : 'border-transparent'
-              }`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
 // Create/Edit Category Modal
 function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) {
   const [formData, setFormData] = useState({
@@ -166,7 +132,6 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
 // Category Row Component (uses @dnd-kit/sortable for smooth cursor)
 function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
   const isArchived = category.isActive === false;
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
 
   const {
@@ -207,21 +172,6 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
         className="text-gray-400 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity touch-none"
       >
         <GripVertical size={18} />
-      </div>
-
-      {/* Color Dot */}
-      <div className="relative">
-        <button
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          className="w-4 h-4 rounded-full border border-gray-200 hover:scale-125 transition-transform"
-          style={{ backgroundColor: PRESET_COLORS[category.id % PRESET_COLORS.length] }}
-        />
-        <ColorPicker
-          color={PRESET_COLORS[category.id % PRESET_COLORS.length]}
-          onChange={() => {}}
-          isOpen={showColorPicker}
-          onClose={() => setShowColorPicker(false)}
-        />
       </div>
 
       {/* Name */}

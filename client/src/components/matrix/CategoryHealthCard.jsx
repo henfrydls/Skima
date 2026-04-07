@@ -176,10 +176,11 @@ export default function CategoryHealthCard({
   const weakestSkills = findWeakestSkills(collaborators, skills, category.id);
 
   // Overall health indicator
-  const healthScore = distribution.total > 0 
+  const hasEvaluations = distribution.total > 0;
+  const healthScore = hasEvaluations
     ? (distribution.experts * 3 + distribution.competent * 2 + distribution.beginners * 1) / distribution.total
     : 0;
-  const healthLabel = healthScore >= 2.5 ? 'Healthy' : healthScore >= 2 ? 'Moderate' : 'Needs Attention';
+  const healthLabel = !hasEvaluations ? 'No evaluations yet' : healthScore >= 2.5 ? 'Healthy' : healthScore >= 2 ? 'Moderate' : 'Needs Attention';
 
   return (
     <div className="bg-surface rounded-lg shadow-sm border border-gray-100 overflow-hidden transition-all duration-200 hover:shadow-md">
@@ -231,17 +232,24 @@ export default function CategoryHealthCard({
       {/* Expanded Panel */}
       {isExpanded && (
         <div className="border-t border-gray-100 p-6 bg-gray-50/30 animate-fade-in">
-          <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-            <AlertTriangle size={14} className="text-warning" />
-            Top 3 Weakest Skills
-          </h4>
-          <WeakestSkillsList skills={weakestSkills} />
+          {hasEvaluations ? (
+            <>
+              <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
+                <AlertTriangle size={14} className="text-warning" />
+                Top 3 Weakest Skills
+              </h4>
+              <WeakestSkillsList skills={weakestSkills} />
+            </>
+          ) : (
+            <p className="text-sm text-gray-400 text-center py-2">No evaluations yet for this category.</p>
+          )}
           
           {/* Health Summary */}
           <div className="mt-4 pt-4 border-t border-gray-100">
             <p className="text-xs text-gray-500">
               Overall status: <span className={`font-medium ${
-                healthScore >= 2.5 ? 'text-primary' : 
+                !hasEvaluations ? 'text-gray-400' :
+                healthScore >= 2.5 ? 'text-primary' :
                 healthScore >= 2 ? 'text-warning' : 'text-critical'
               }`}>{healthLabel}</span>
             </p>

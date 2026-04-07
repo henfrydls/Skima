@@ -30,7 +30,7 @@ import Button from '../common/Button';
 import { API_BASE } from '../../lib/apiBase';
 
 // Edit Skill Modal with Rubric
-function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading }) {
+function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading, defaultCategoryId = null }) {
   const [formData, setFormData] = useState({
     nombre: '',
     categoriaId: categories[0]?.id || ''
@@ -39,17 +39,17 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
 
   useEffect(() => {
     if (skill) {
-      setFormData({ 
-        nombre: skill.nombre, 
-        categoriaId: skill.categoriaId || categories[0]?.id 
+      setFormData({
+        nombre: skill.nombre,
+        categoriaId: skill.categoriaId || categories[0]?.id
       });
     } else {
-      setFormData({ 
-        nombre: '', 
-        categoriaId: categories[0]?.id || '' 
+      setFormData({
+        nombre: '',
+        categoriaId: defaultCategoryId || categories[0]?.id || ''
       });
     }
-  }, [skill, isOpen, categories]);
+  }, [skill, isOpen, categories, defaultCategoryId]);
 
   if (!isOpen) return null;
 
@@ -62,7 +62,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
 
   return createPortal(
     <div className="modal-overlay z-[100]">
-      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-y-auto animate-scale-in">
+      <div className="bg-surface rounded-lg shadow-xl w-full max-w-lg mx-4 max-h-[90vh] overflow-visible animate-scale-in">
         <div className="flex items-center justify-between p-4 border-b border-gray-100 sticky top-0 bg-surface">
           <h2 className="text-lg font-medium text-gray-800">
             {skill ? 'Edit Skill' : 'New Skill'}
@@ -149,16 +149,6 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading 
   );
 }
 
-// Color palette (shared with CategoriesTab)
-const PRESET_COLORS = [
-  '#2d676e', // Primary (teal)
-  '#a6ae3d', // Competent (olive)
-  '#da8a0c', // Warning (ocre)
-  '#ef4444', // Critical (red)
-  '#6366f1', // Indigo
-  '#8b5cf6', // Purple
-];
-
 // Category Accordion Component
 function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDeleteSkill }) {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -176,11 +166,6 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
           ) : (
             <ChevronRight size={18} className="text-gray-400" />
           )}
-          {/* Color Dot - matching CategoriesTab */}
-          <div
-            className="w-4 h-4 rounded-full border border-gray-200 flex-shrink-0"
-            style={{ backgroundColor: PRESET_COLORS[category.id % PRESET_COLORS.length] }}
-          />
           <span className="font-medium text-gray-800">{category.nombre}</span>
         </div>
         {/* Skill Count Badge - matching CategoriesTab */}
@@ -580,6 +565,7 @@ export default function SkillsTab({ isActive = false }) {
         onClose={() => { setIsModalOpen(false); setEditingSkill(null); setNewSkillCategory(null); }}
         onSave={handleSaveSkill}
         isLoading={isSaving}
+        defaultCategoryId={newSkillCategory}
       />
       {/* ConfirmModal removed - using Toast Undo */}
       <LoginModal
