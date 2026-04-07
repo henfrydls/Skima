@@ -509,22 +509,13 @@ export default function DevelopmentTab({ isActive }) {
 
       {/* Plans list */}
       {plans.length === 0 ? (
-        collaborators.length === 0 ? (
-          <div className="px-3 py-4 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm text-center">
-            <p className="text-amber-700 flex items-center justify-center gap-1.5">
-              <AlertCircle size={14} />
-              No collaborators created. Go to the <strong className="mx-1">Collaborators</strong> tab first.
-            </p>
-          </div>
-        ) : (
-          <EmptyState
-            icon={Target}
-            title="No development plans"
-            description="Create your first plan to start growing your team."
-            actionLabel="Create Plan"
-            onAction={() => setPlanModal({ mode: 'create' })}
-          />
-        )
+        <EmptyState
+          icon={Target}
+          title="No development plans"
+          description="Create your first plan to start growing your team."
+          actionLabel="Create Plan"
+          onAction={() => setPlanModal({ mode: 'create' })}
+        />
       ) : (
         <div className="space-y-3">
           {plans.map(plan => {
