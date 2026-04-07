@@ -182,11 +182,6 @@ export default function TransposedMatrixTable({
                         >
                           {skill.nombre}
                         </span>
-                        {skill.nombre.length > 35 && (
-                          <span className="text-xs text-gray-400 flex-shrink-0">
-                            #{skill.id}
-                          </span>
-                        )}
                       </div>
                     </td>
                     
