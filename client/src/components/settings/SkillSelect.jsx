@@ -178,6 +178,8 @@ export default function SkillSelect({ skills, categories, collaboratorId, value,
         ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className={`
           w-full flex items-center gap-2 pl-3 pr-3 py-2 rounded-lg border bg-white text-sm text-left
           transition-all duration-150
@@ -204,6 +206,8 @@ export default function SkillSelect({ skills, categories, collaboratorId, value,
         <div
           ref={dropdownRef}
           style={dropdownStyle}
+          role="listbox"
+          aria-label="Select skill"
           className="bg-white rounded-lg border border-gray-200 shadow-lg z-[9999] overflow-hidden flex flex-col"
         >
           {/* Search input */}
@@ -226,6 +230,8 @@ export default function SkillSelect({ skills, categories, collaboratorId, value,
             {/* None option */}
             <button
               type="button"
+              role="option"
+              aria-selected={!value}
               onClick={() => handleSelect(null)}
               className={`
                 w-full text-left px-3 py-2 text-sm transition-colors
@@ -247,6 +253,8 @@ export default function SkillSelect({ skills, categories, collaboratorId, value,
                     <button
                       key={s.id}
                       type="button"
+                      role="option"
+                      aria-selected={s.id === value}
                       onClick={() => handleSelect(s.id)}
                       className={`
                         w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors
@@ -294,6 +302,8 @@ export default function SkillSelect({ skills, categories, collaboratorId, value,
                             <button
                               key={s.id}
                               type="button"
+                              role="option"
+                              aria-selected={s.id === value}
                               onClick={() => handleSelect(s.id)}
                               className={`
                                 w-full text-left pl-6 pr-3 py-2 text-sm flex items-center gap-2 transition-colors

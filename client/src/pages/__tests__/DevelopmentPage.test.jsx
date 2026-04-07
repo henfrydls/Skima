@@ -170,7 +170,7 @@ describe('DevelopmentPage', () => {
     fireEvent.click(screen.getByText('Active'));
 
     await waitFor(() => {
-      expect(screen.getByText('No active plans found.')).toBeInTheDocument();
+      expect(screen.getByText('No active plans found. Create plans in Settings \u2192 Development.')).toBeInTheDocument();
     });
   });
 });

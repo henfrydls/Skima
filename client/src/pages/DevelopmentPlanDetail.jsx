@@ -1,16 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ChevronLeft, Target, CheckCircle2, Clock, Calendar } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { CardSkeleton } from '../components/common';
 import { GoalAccordion } from '../components/development';
 import { API_BASE } from '../lib/apiBase';
-
-const STATUS_BADGES = {
-  draft: { bg: 'bg-gray-100', text: 'text-gray-600', border: 'border-gray-200', label: 'Draft' },
-  active: { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', label: 'Active' },
-  completed: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', label: 'Completed' },
-  cancelled: { bg: 'bg-red-50', text: 'text-red-600', border: 'border-red-200', label: 'Cancelled' },
-};
+import { PLAN_STATUS_BADGES } from '../lib/developmentConstants';
 
 /**
  * DevelopmentPlanDetail - Read-only detail view for a single development plan
@@ -33,6 +28,7 @@ export default function DevelopmentPlanDetail() {
       setPlan(data);
     } catch (err) {
       setError(err.message);
+      toast.error('Failed to load plan details');
     } finally {
       setLoading(false);
     }
@@ -63,10 +59,44 @@ export default function DevelopmentPlanDetail() {
   if (loading) {
     return (
       <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-pulse">
+        {/* Back link skeleton */}
         <div className="h-4 bg-gray-200 rounded w-32" />
-        <div className="h-8 bg-gray-200 rounded w-64" />
-        <CardSkeleton />
-        <CardSkeleton />
+        {/* Header skeleton */}
+        <div className="space-y-2">
+          <div className="h-8 bg-gray-200 rounded w-64" />
+          <div className="h-4 bg-gray-200 rounded w-40" />
+        </div>
+        {/* Progress card skeleton */}
+        <div className="bg-white rounded-lg shadow-sm p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="h-3 bg-gray-200 rounded w-28" />
+            <div className="h-4 bg-gray-200 rounded w-10" />
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full w-full" />
+          <div className="grid grid-cols-3 gap-4">
+            <div className="h-10 bg-gray-200 rounded" />
+            <div className="h-10 bg-gray-200 rounded" />
+            <div className="h-10 bg-gray-200 rounded" />
+          </div>
+        </div>
+        {/* Goal accordion skeletons */}
+        <div className="space-y-3">
+          <div className="h-4 bg-gray-200 rounded w-16 mb-3" />
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-3">
+            <div className="h-4 w-4 bg-gray-200 rounded" />
+            <div className="h-2 w-2 bg-gray-200 rounded-full" />
+            <div className="h-4 bg-gray-200 rounded flex-1" />
+            <div className="h-4 bg-gray-200 rounded w-10" />
+            <div className="h-2 bg-gray-200 rounded-full w-16" />
+          </div>
+          <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center gap-3">
+            <div className="h-4 w-4 bg-gray-200 rounded" />
+            <div className="h-2 w-2 bg-gray-200 rounded-full" />
+            <div className="h-4 bg-gray-200 rounded flex-1" />
+            <div className="h-4 bg-gray-200 rounded w-10" />
+            <div className="h-2 bg-gray-200 rounded-full w-16" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -84,13 +114,14 @@ export default function DevelopmentPlanDetail() {
     );
   }
 
-  const status = STATUS_BADGES[plan.status] || STATUS_BADGES.draft;
+  const status = PLAN_STATUS_BADGES[plan.status] || PLAN_STATUS_BADGES.draft;
 
   return (
     <div className="min-h-full bg-gray-50 -m-6 p-6 space-y-6 animate-fade-in">
       {/* Back link */}
       <button
         onClick={() => navigate('/development')}
+        aria-label="Back to Development Plans"
         className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-primary transition-colors"
       >
         <ChevronLeft size={16} /> Development

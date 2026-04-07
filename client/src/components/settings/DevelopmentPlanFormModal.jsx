@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import useFocusTrap from '../../hooks/useFocusTrap';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
 import CollaboratorSelect from './CollaboratorSelect.jsx';
+import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
 
 /**
@@ -14,6 +16,7 @@ import { API_BASE } from '../../lib/apiBase';
  */
 export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   const isEdit = !!plan;
+  const { authFetch } = useAuth();
   const [collaborators, setCollaborators] = useState([]);
   const [saving, setSaving] = useState(false);
 
@@ -27,11 +30,11 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   });
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/collaborators`)
+    authFetch(`${API_BASE}/api/collaborators`)
       .then(res => res.ok ? res.json() : [])
       .then(data => setCollaborators(data))
       .catch(() => {});
-  }, []);
+  }, [authFetch]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -52,16 +55,18 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
     setSaving(false);
   };
 
+  useFocusTrap();
+
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
   const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(
     <div className="modal-overlay z-50 p-4" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in" role="dialog" aria-modal="true" aria-labelledby="modal-title">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+          <h2 id="modal-title" className="text-lg font-semibold text-gray-900">
             {isEdit ? 'Edit Plan' : 'New Development Plan'}
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">

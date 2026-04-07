@@ -69,11 +69,13 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
   }
 
   return (
-    <div className="relative min-w-[280px]" ref={containerRef}>
+    <div className="relative w-full" ref={containerRef}>
       {/* Trigger button */}
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
+        aria-haspopup="listbox"
+        aria-expanded={isOpen}
         className={`
           w-full flex items-center gap-2 pl-3 pr-3 py-2 rounded-lg border bg-white text-sm text-left
           transition-all duration-150
@@ -92,7 +94,7 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
 
       {/* Dropdown panel */}
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-30 overflow-hidden">
+        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-30 overflow-hidden" role="listbox" aria-label="Select collaborator">
           {/* Search input */}
           <div className="p-2 border-b border-gray-100">
             <div className="relative">
@@ -117,6 +119,8 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
                 {/* Placeholder option */}
                 <button
                   type="button"
+                  role="option"
+                  aria-selected={!value}
                   onClick={() => handleSelect(null)}
                   className={`
                     w-full text-left px-3 py-2 text-sm transition-colors
@@ -138,6 +142,8 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
                       <button
                         key={c.id}
                         type="button"
+                        role="option"
+                        aria-selected={c.id === value}
                         onClick={() => handleSelect(c.id)}
                         className={`
                           w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors
@@ -164,6 +170,8 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
                       <button
                         key={c.id}
                         type="button"
+                        role="option"
+                        aria-selected={c.id === value}
                         onClick={() => handleSelect(c.id)}
                         className={`
                           w-full text-left px-3 py-2 text-sm flex items-center gap-2 transition-colors
