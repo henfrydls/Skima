@@ -1001,12 +1001,14 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       {/* Header with inline status badges */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4 flex-1">
-          <CollaboratorSelect
-            collaborators={collaborators}
-            value={selectedCollaborator}
-            onChange={handleCollaboratorSwitch}
-          />
-          
+          <div className="max-w-md w-full">
+            <CollaboratorSelect
+              collaborators={collaborators}
+              value={selectedCollaborator}
+              onChange={handleCollaboratorSwitch}
+            />
+          </div>
+
           {/* Inline Status Badges - only show when collaborator selected */}
           {selectedCollaborator && (() => {
             const collab = collaborators.find(c => c.id === selectedCollaborator);

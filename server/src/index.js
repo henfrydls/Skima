@@ -963,7 +963,7 @@ export function createApp() {
         }
       }
 
-      // Transaction: Update profile + all collaborators using this role + evaluation sessions
+      // Transaction: Update profile + all collaborators using this role + evaluation sessions + development plans
       await prisma.$transaction([
         // 1. Update the role profile name
         prisma.roleProfile.update({
@@ -979,6 +979,11 @@ export function createApp() {
         prisma.evaluationSession.updateMany({
           where: { collaboratorRol: rol },
           data: { collaboratorRol: trimmedNewName }
+        }),
+        // 4. Update development plans that target this role
+        prisma.developmentPlan.updateMany({
+          where: { targetRole: rol },
+          data: { targetRole: trimmedNewName }
         })
       ]);
 

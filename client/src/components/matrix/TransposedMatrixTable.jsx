@@ -177,16 +177,12 @@ export default function TransposedMatrixTable({
                       `}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span 
-                          className="text-gray-800 truncate" 
+                        <span
+                          className="text-gray-800 truncate"
+                          title={skill.nombre}
                         >
                           {skill.nombre}
                         </span>
-                        {skill.nombre.length > 35 && (
-                          <span className="text-xs text-gray-400 flex-shrink-0">
-                            #{skill.id}
-                          </span>
-                        )}
                       </div>
                     </td>
                     

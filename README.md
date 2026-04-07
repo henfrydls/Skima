@@ -25,6 +25,7 @@
 - **Collaborator Profiles** — individual evolution sparklines and skill breakdowns
 - **Evaluation System** — weighted formula (level x frequency x criticality) for objective scoring
 - **Role Profiles** — define expected competencies per role and track alignment
+- **Development Plans (IDPs)** — create growth plans for team members, link goals to skill gaps, track actions and progress
 - **Time Travel** — compare team state across quarters, semesters, and years
 - **Demo Mode** — explore with rich sample data before configuring your own
 - **Export / Import** — move data in and out as needed
@@ -152,9 +153,9 @@ npm run db:seed          # Load demo data
 ### Testing
 
 ```bash
-npm test                 # All tests (778 tests, 80%+ coverage)
-npm run test:client      # React component and logic tests (696 tests)
-npm run test:server      # API and middleware tests (82 tests)
+npm test                 # All tests (939 tests, 75%+ coverage)
+npm run test:client      # React component and logic tests (771 tests)
+npm run test:server      # API and middleware tests (168 tests)
 npm run test:coverage    # Full coverage report (client + server)
 ```
 
@@ -166,6 +167,7 @@ client/src/
     auth/                # LoginModal, ProtectedRoute
     common/              # Button, Card, Badge, StatCard, etc.
     dashboard/           # ExecutiveKPIGrid, DashboardHeader, StrategicInsights
+    development/         # PlanCard, GoalAccordion, ActionRow, GapSuggestions
     evolution/           # EvolutionChart, EvolutionList
     layout/              # Layout, Sidebar
     matrix/              # TransposedMatrixTable, CollaboratorList
@@ -177,7 +179,7 @@ client/src/
   App.jsx
 
 server/src/
-  routes/                # auth.js, evolution.js, demo.js
+  routes/                # auth.js, evolution.js, demo.js, development.js
   middleware/            # auth.js (JWT)
   data/                  # seedData.js
   db.js                  # Prisma client + dynamic DB path
@@ -197,7 +199,7 @@ server/src/
 | Backend | Express 5, Prisma 6 |
 | Database | SQLite |
 | Desktop | Tauri 2 |
-| Testing | Vitest, React Testing Library (778 tests, 80%+ coverage) |
+| Testing | Vitest, React Testing Library (939 tests, 75%+ coverage) |
 | CI/CD | GitHub Actions |
 
 ---

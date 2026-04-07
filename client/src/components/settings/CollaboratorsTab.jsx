@@ -162,7 +162,7 @@ function CreateCollaboratorModal({ isOpen, onClose, onSave, roleProfiles = {} })
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                placeholder="maria@empresa.com"
+                placeholder="jane@company.com"
               />
             </div>
           )}

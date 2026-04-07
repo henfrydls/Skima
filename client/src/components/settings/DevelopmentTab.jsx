@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
+import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -123,6 +123,7 @@ export default function DevelopmentTab({ isActive }) {
   const [plans, setPlans] = useState([]);
   const [skills, setSkills] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Expanded plan tracking
@@ -175,10 +176,22 @@ export default function DevelopmentTab({ isActive }) {
     }
   }, []);
 
+  const fetchCollaborators = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/collaborators`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setCollaborators(data);
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
   useEffect(() => {
     if (isActive) {
       fetchPlans();
       fetchSkills();
+      fetchCollaborators();
     }
   }, [isActive, fetchPlans, fetchSkills]);
 

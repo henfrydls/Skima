@@ -107,4 +107,10 @@ describe('EmptyState', () => {
     expect(screen.getByText('Confirm')).toBeInTheDocument();
     expect(screen.getByText('Cancel')).toBeInTheDocument();
   });
+
+  it('renders multi-line description with whitespace-pre-line', () => {
+    render(<EmptyState description={"Line one.\nLine two."} />);
+    const desc = screen.getByText(/Line one/);
+    expect(desc.className).toContain('whitespace-pre-line');
+  });
 });

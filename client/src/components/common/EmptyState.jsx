@@ -25,7 +25,7 @@ export function EmptyState({
         {title}
       </h3>
       
-      <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed">
+      <p className="text-gray-500 mb-8 max-w-sm mx-auto text-sm leading-relaxed whitespace-pre-line">
         {description}
       </p>
       

@@ -90,12 +90,21 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
 
           <div>
             <label className={labelClass}>Collaborator *</label>
-            <CollaboratorSelect
-              collaborators={collaborators}
-              value={form.collaboratorId ? parseInt(form.collaboratorId, 10) : null}
-              onChange={(id) => setForm(prev => ({ ...prev, collaboratorId: id || '' }))}
-              disabled={isEdit}
-            />
+            {!isEdit && collaborators.length === 0 ? (
+              <div className="px-3 py-3 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm">
+                <p className="text-amber-700 flex items-center gap-1.5">
+                  <span className="flex-shrink-0">⚠</span>
+                  No collaborators yet. Create them in <strong>Collaborators</strong> tab.
+                </p>
+              </div>
+            ) : (
+              <CollaboratorSelect
+                collaborators={collaborators}
+                value={form.collaboratorId ? parseInt(form.collaboratorId, 10) : null}
+                onChange={(id) => setForm(prev => ({ ...prev, collaboratorId: id || '' }))}
+                disabled={isEdit}
+              />
+            )}
           </div>
 
           <div>

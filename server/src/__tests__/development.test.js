@@ -677,6 +677,62 @@ describe('Development Plans API', () => {
   });
 
   // ============================================================
+  // 5b. Database Schema (regression: ensureDatabase creates IDP tables)
+  // ============================================================
+  describe('Database Schema', () => {
+    it('development plan tables exist after ensureDatabase', async () => {
+      const plans = await prisma.developmentPlan.findMany({ take: 1 });
+      expect(Array.isArray(plans)).toBe(true);
+    });
+
+    it('development goal tables exist after ensureDatabase', async () => {
+      const goals = await prisma.developmentGoal.findMany({ take: 1 });
+      expect(Array.isArray(goals)).toBe(true);
+    });
+
+    it('development action tables exist after ensureDatabase', async () => {
+      const actions = await prisma.developmentAction.findMany({ take: 1 });
+      expect(Array.isArray(actions)).toBe(true);
+    });
+  });
+
+  // ============================================================
+  // 5c. Role Rename cascades to developmentPlan.targetRole
+  // ============================================================
+  describe('Role Profile Rename', () => {
+    it('updates targetRole in development plans when role is renamed', async () => {
+      // Create a distinct role profile for this test
+      await prisma.roleProfile.create({
+        data: { rol: 'Old Role', skills: '{}' }
+      });
+
+      // Create collaborator with that role
+      const collab = await prisma.collaborator.create({
+        data: { nombre: 'Rename Test User', rol: 'Old Role' }
+      });
+
+      // Create development plan targeting that role
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collab.id, title: 'Rename Test Plan', targetRole: 'Old Role' }
+      });
+
+      // Rename the role
+      const res = await request(app)
+        .put('/api/role-profiles/Old%20Role/rename')
+        .send({ newName: 'New Role' });
+      expect(res.status).toBe(200);
+
+      // Verify development plan targetRole was updated
+      const updatedPlan = await prisma.developmentPlan.findUnique({ where: { id: plan.id } });
+      expect(updatedPlan.targetRole).toBe('New Role');
+
+      // Verify collaborator role was updated
+      const updatedCollab = await prisma.collaborator.findUnique({ where: { id: collab.id } });
+      expect(updatedCollab.rol).toBe('New Role');
+    });
+  });
+
+  // ============================================================
   // 6. Input Validation (audit fixes)
   // ============================================================
   describe('Input Validation', () => {

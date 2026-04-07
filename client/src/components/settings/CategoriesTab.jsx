@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -25,6 +25,7 @@ import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
 import Button from '../common/Button';
 import toast from 'react-hot-toast';
+import { PRESET_COLORS, getCategoryColor, setCategoryColor } from '../../lib/categoryColors';
 
 /**
  * CategoriesTab — Gestión de Categorías (Connected to API)
@@ -37,52 +38,23 @@ import toast from 'react-hot-toast';
 
 import { API_BASE } from '../../lib/apiBase';
 
-// Color Picker Popover
-const PRESET_COLORS = [
-  '#2d676e', // Primary (teal)
-  '#a6ae3d', // Competent (olive)
-  '#da8a0c', // Warning (ocre)
-  '#ef4444', // Critical (red)
-  '#6366f1', // Indigo
-  '#8b5cf6', // Purple
-];
-
-function ColorPicker({ color, onChange, isOpen, onClose }) {
-  if (!isOpen) return null;
-
-  return (
-    <>
-      <div className="fixed inset-0 z-10" onClick={onClose} />
-      <div className="absolute left-0 top-full mt-1 bg-surface rounded-lg shadow-lg border border-gray-100 p-3 z-20">
-        <div className="flex gap-2 mb-2">
-          {PRESET_COLORS.map(c => (
-            <button
-              key={c}
-              onClick={() => { onChange(c); onClose(); }}
-              className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
-                color === c ? 'border-gray-800' : 'border-transparent'
-              }`}
-              style={{ backgroundColor: c }}
-            />
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
 // Create/Edit Category Modal
 function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) {
   const [formData, setFormData] = useState({
     nombre: '',
-    abrev: ''
+    abrev: '',
+    color: PRESET_COLORS[0]
   });
 
   useEffect(() => {
     if (category) {
-      setFormData({ nombre: category.nombre, abrev: category.abrev || '' });
+      setFormData({
+        nombre: category.nombre,
+        abrev: category.abrev || '',
+        color: getCategoryColor(category.id)
+      });
     } else {
-      setFormData({ nombre: '', abrev: '' });
+      setFormData({ nombre: '', abrev: '', color: PRESET_COLORS[0] });
     }
   }, [category, isOpen]);
 
@@ -91,6 +63,10 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.nombre && formData.abrev) {
+      // Save color to localStorage (will be applied after category is created/updated)
+      if (category?.id) {
+        setCategoryColor(category.id, formData.color);
+      }
       onSave(formData);
     }
   };
@@ -141,6 +117,28 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
             />
           </div>
 
+          {/* Color Selector */}
+          <fieldset>
+            <legend className="block text-sm font-medium text-gray-700 mb-2">Color</legend>
+            <div className="flex flex-wrap gap-2 justify-center" role="radiogroup" aria-label="Select category color">
+              {PRESET_COLORS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color: c })}
+                  className={`w-7 h-7 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
+                    formData.color === c
+                      ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                      : 'hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: c }}
+                  aria-label={`Color ${c}`}
+                  aria-pressed={formData.color === c}
+                />
+              ))}
+            </div>
+          </fieldset>
+
           <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
@@ -163,11 +161,59 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   );
 }
 
+// Color Picker Popover
+function ColorPicker({ categoryId, currentColor, onColorChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-4 h-4 rounded-full border border-gray-200 hover:scale-125 transition-transform flex-shrink-0"
+        style={{ backgroundColor: currentColor }}
+        title="Change color"
+      />
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-20">
+          <div className="flex gap-1.5">
+            {PRESET_COLORS.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setCategoryColor(categoryId, c);
+                  onColorChange(c);
+                  setIsOpen(false);
+                }}
+                className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                  currentColor === c ? 'border-gray-800 scale-110' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Category Row Component (uses @dnd-kit/sortable for smooth cursor)
-function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onColorChange }) {
   const isArchived = category.isActive === false;
-  const [showColorPicker, setShowColorPicker] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [currentColor, setCurrentColor] = useState(() => getCategoryColor(category.id));
 
   const {
     attributes,
@@ -209,20 +255,15 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
         <GripVertical size={18} />
       </div>
 
-      {/* Color Dot */}
-      <div className="relative">
-        <button
-          onClick={() => setShowColorPicker(!showColorPicker)}
-          className="w-4 h-4 rounded-full border border-gray-200 hover:scale-125 transition-transform"
-          style={{ backgroundColor: PRESET_COLORS[category.id % PRESET_COLORS.length] }}
-        />
-        <ColorPicker
-          color={PRESET_COLORS[category.id % PRESET_COLORS.length]}
-          onChange={() => {}}
-          isOpen={showColorPicker}
-          onClose={() => setShowColorPicker(false)}
-        />
-      </div>
+      {/* Color Picker */}
+      <ColorPicker
+        categoryId={category.id}
+        currentColor={currentColor}
+        onColorChange={(color) => {
+          setCurrentColor(color);
+          if (onColorChange) onColorChange(category.id, color);
+        }}
+      />
 
       {/* Name */}
       <div className="flex-1">
@@ -467,6 +508,8 @@ export default function CategoriesTab() {
         if (!res.ok) throw new Error('Error creating category');
         
         const newCategory = await res.json();
+        // Save color for the newly created category
+        if (data.color) setCategoryColor(newCategory.id, data.color);
         setCategories([...categories, newCategory]);
         invalidatePreload();
         setShowModal(false);

@@ -97,8 +97,8 @@ export default function DevelopmentPage() {
             title="No development plans yet"
             description={
               filter === 'all'
-                ? 'Create plans in Settings \u2192 Development.'
-                : `No ${filter} plans found. Create plans in Settings \u2192 Development.`
+                ? 'No development plans have been created.\nCreate plans in Settings \u2192 Development.'
+                : `No ${filter} plans found.\nCreate plans in Settings \u2192 Development.`
             }
           />
         </div>
