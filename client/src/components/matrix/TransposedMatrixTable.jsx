@@ -177,8 +177,9 @@ export default function TransposedMatrixTable({
                       `}
                     >
                       <div className="flex items-center justify-between gap-2">
-                        <span 
-                          className="text-gray-800 truncate" 
+                        <span
+                          className="text-gray-800 truncate"
+                          title={skill.nombre}
                         >
                           {skill.nombre}
                         </span>
