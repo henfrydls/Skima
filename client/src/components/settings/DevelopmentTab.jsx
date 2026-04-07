@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2 } from 'lucide-react';
+import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -123,6 +123,7 @@ export default function DevelopmentTab({ isActive }) {
   const [plans, setPlans] = useState([]);
   const [skills, setSkills] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Expanded plan tracking
@@ -175,10 +176,22 @@ export default function DevelopmentTab({ isActive }) {
     }
   }, []);
 
+  const fetchCollaborators = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/collaborators`);
+      if (!res.ok) return;
+      const data = await res.json();
+      setCollaborators(data);
+    } catch {
+      // Non-critical
+    }
+  }, []);
+
   useEffect(() => {
     if (isActive) {
       fetchPlans();
       fetchSkills();
+      fetchCollaborators();
     }
   }, [isActive, fetchPlans, fetchSkills]);
 
@@ -496,13 +509,22 @@ export default function DevelopmentTab({ isActive }) {
 
       {/* Plans list */}
       {plans.length === 0 ? (
-        <EmptyState
-          icon={Target}
-          title="No development plans"
-          description="Create your first plan to start growing your team."
-          actionLabel="Create Plan"
-          onAction={() => setPlanModal({ mode: 'create' })}
-        />
+        collaborators.length === 0 ? (
+          <div className="px-3 py-4 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm text-center">
+            <p className="text-amber-700 flex items-center justify-center gap-1.5">
+              <AlertCircle size={14} />
+              No collaborators created. Go to the <strong className="mx-1">Collaborators</strong> tab first.
+            </p>
+          </div>
+        ) : (
+          <EmptyState
+            icon={Target}
+            title="No development plans"
+            description="Create your first plan to start growing your team."
+            actionLabel="Create Plan"
+            onAction={() => setPlanModal({ mode: 'create' })}
+          />
+        )
       ) : (
         <div className="space-y-3">
           {plans.map(plan => {

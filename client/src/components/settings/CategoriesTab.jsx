@@ -120,7 +120,7 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
           {/* Color Selector */}
           <fieldset>
             <legend className="block text-sm font-medium text-gray-700 mb-2">Color</legend>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Select category color">
+            <div className="flex flex-wrap gap-2 pl-0.5" role="radiogroup" aria-label="Select category color">
               {PRESET_COLORS.map(c => (
                 <button
                   key={c}
