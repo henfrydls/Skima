@@ -12,6 +12,7 @@ export const PRESET_COLORS = [
   '#8b5cf6', // Purple
   '#ec4899', // Pink
   '#06b6d4', // Cyan
+  '#10b981', // Emerald (success)
 ];
 
 const STORAGE_KEY = 'skima_category_colors';

@@ -94,7 +94,7 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
               <div className="px-3 py-3 border border-dashed border-amber-300 rounded-lg bg-amber-50/50 text-sm">
                 <p className="text-amber-700 flex items-center gap-1.5">
                   <span className="flex-shrink-0">⚠</span>
-                  No collaborators created. Go to the <strong className="mx-1">Collaborators</strong> tab first.
+                  No collaborators yet. Create them in <strong>Collaborators</strong> tab.
                 </p>
               </div>
             ) : (
