@@ -42,14 +42,19 @@ import { API_BASE } from '../../lib/apiBase';
 function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) {
   const [formData, setFormData] = useState({
     nombre: '',
-    abrev: ''
+    abrev: '',
+    color: PRESET_COLORS[0]
   });
 
   useEffect(() => {
     if (category) {
-      setFormData({ nombre: category.nombre, abrev: category.abrev || '' });
+      setFormData({
+        nombre: category.nombre,
+        abrev: category.abrev || '',
+        color: getCategoryColor(category.id)
+      });
     } else {
-      setFormData({ nombre: '', abrev: '' });
+      setFormData({ nombre: '', abrev: '', color: PRESET_COLORS[0] });
     }
   }, [category, isOpen]);
 
@@ -58,6 +63,10 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (formData.nombre && formData.abrev) {
+      // Save color to localStorage (will be applied after category is created/updated)
+      if (category?.id) {
+        setCategoryColor(category.id, formData.color);
+      }
       onSave(formData);
     }
   };
@@ -107,6 +116,28 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
               required
             />
           </div>
+
+          {/* Color Selector */}
+          <fieldset>
+            <legend className="block text-sm font-medium text-gray-700 mb-2">Color</legend>
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Select category color">
+              {PRESET_COLORS.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setFormData({ ...formData, color: c })}
+                  className={`w-7 h-7 rounded-full transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary ${
+                    formData.color === c
+                      ? 'ring-2 ring-offset-2 ring-gray-400 scale-110'
+                      : 'hover:scale-110'
+                  }`}
+                  style={{ backgroundColor: c }}
+                  aria-label={`Color ${c}`}
+                  aria-pressed={formData.color === c}
+                />
+              ))}
+            </div>
+          </fieldset>
 
           <div className="flex justify-end gap-3 pt-4">
             <Button
@@ -477,6 +508,8 @@ export default function CategoriesTab() {
         if (!res.ok) throw new Error('Error creating category');
         
         const newCategory = await res.json();
+        // Save color for the newly created category
+        if (data.color) setCategoryColor(newCategory.id, data.color);
         setCategories([...categories, newCategory]);
         invalidatePreload();
         setShowModal(false);
