@@ -849,7 +849,7 @@ export default function RoleProfilesTab({ isActive = true, onDirtyChange, onData
                                          e.stopPropagation();
                                          setActiveActionMenu(activeActionMenu === role ? null : role);
                                       }}
-                                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors opacity-0 group-hover:opacity-100"
+                                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
                                    >
                                       <MoreVertical size={18} />
                                    </button>
