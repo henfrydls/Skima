@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { invalidatePreload } from '../../lib/dataPreload';
 import { createPortal } from 'react-dom';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -25,6 +25,7 @@ import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
 import Button from '../common/Button';
 import toast from 'react-hot-toast';
+import { PRESET_COLORS, getCategoryColor, setCategoryColor } from '../../lib/categoryColors';
 
 /**
  * CategoriesTab — Gestión de Categorías (Connected to API)
@@ -129,10 +130,59 @@ function CategoryModal({ isOpen, onClose, onSave, category = null, isLoading }) 
   );
 }
 
+// Color Picker Popover
+function ColorPicker({ categoryId, currentColor, onColorChange }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setIsOpen(false);
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [isOpen]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-4 h-4 rounded-full border border-gray-200 hover:scale-125 transition-transform flex-shrink-0"
+        style={{ backgroundColor: currentColor }}
+        title="Change color"
+      />
+      {isOpen && (
+        <div className="absolute left-0 top-full mt-1 bg-white rounded-lg shadow-lg border border-gray-200 p-2 z-20">
+          <div className="flex gap-1.5">
+            {PRESET_COLORS.map(c => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setCategoryColor(categoryId, c);
+                  onColorChange(c);
+                  setIsOpen(false);
+                }}
+                className={`w-6 h-6 rounded-full border-2 transition-transform hover:scale-110 ${
+                  currentColor === c ? 'border-gray-800 scale-110' : 'border-transparent'
+                }`}
+                style={{ backgroundColor: c }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Category Row Component (uses @dnd-kit/sortable for smooth cursor)
-function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
+function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore, onColorChange }) {
   const isArchived = category.isActive === false;
   const [showMenu, setShowMenu] = useState(false);
+  const [currentColor, setCurrentColor] = useState(() => getCategoryColor(category.id));
 
   const {
     attributes,
@@ -173,6 +223,16 @@ function CategoryRow({ category, skillCount, onEdit, onDelete, onRestore }) {
       >
         <GripVertical size={18} />
       </div>
+
+      {/* Color Picker */}
+      <ColorPicker
+        categoryId={category.id}
+        currentColor={currentColor}
+        onColorChange={(color) => {
+          setCurrentColor(color);
+          if (onColorChange) onColorChange(category.id, color);
+        }}
+      />
 
       {/* Name */}
       <div className="flex-1">

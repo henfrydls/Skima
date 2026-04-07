@@ -22,6 +22,7 @@ import ConfirmModal from '../common/ConfirmModal';
 import EmptyState from '../common/EmptyState';
 import ToastUndo from '../common/ToastUndo';
 import Button from '../common/Button';
+import { getCategoryColor } from '../../lib/categoryColors';
 
 /**
  * SkillsTab — Skills Management by Category (Connected to API)
@@ -166,6 +167,10 @@ function CategoryAccordion({ category, skills, onEditSkill, onAddSkill, onDelete
           ) : (
             <ChevronRight size={18} className="text-gray-400" />
           )}
+          <span
+            className="w-3 h-3 rounded-full flex-shrink-0"
+            style={{ backgroundColor: getCategoryColor(category.id) }}
+          />
           <span className="font-medium text-gray-800">{category.nombre}</span>
         </div>
         {/* Skill Count Badge - matching CategoriesTab */}
