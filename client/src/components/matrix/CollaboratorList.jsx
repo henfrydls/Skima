@@ -280,7 +280,7 @@ function CollaboratorCard({ collaborator, onSelect, previousSnapshot = null }) {
                   'bg-gray-100 text-gray-400'
                 } ${index >= mobileLimit ? 'hidden lg:inline-flex' : ''}`}
               >
-                {key}: {valor.toFixed(1)}
+                {key}: {(valor ?? 0).toFixed(1)}
               </span>
             ))}
             {/* +N badge - only on desktop if more than 5 */}
@@ -375,9 +375,9 @@ export default function CollaboratorList({ collaborators = [], onSelect, initial
     if (sortBy === 'name') {
       result.sort((a, b) => a.nombre.localeCompare(b.nombre));
     } else if (sortBy === 'score') {
-      result.sort((a, b) => a.promedio - b.promedio);
+      result.sort((a, b) => (a.promedio ?? -1) - (b.promedio ?? -1));
     } else if (sortBy === 'score-desc') {
-      result.sort((a, b) => b.promedio - a.promedio);
+      result.sort((a, b) => (b.promedio ?? -1) - (a.promedio ?? -1));
     }
 
     return result;

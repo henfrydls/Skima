@@ -71,11 +71,12 @@ function CollaboratorListView({ collaborators = [], onSelect }) {
               <p className="text-sm text-gray-500">{col.rol}</p>
             </div>
             <div className="text-right">
-              <p className={`text-3xl font-light ${getStatusColor(col.promedio)}`}>
-                {col.promedio.toFixed(1)}
+              <p className={`text-3xl font-light ${getStatusColor(col.promedio ?? 0)}`}>
+                {col.promedio != null ? col.promedio.toFixed(1) : '—'}
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                {col.promedio >= 3.5 ? 'Strength' : col.promedio >= 2.5 ? 'Competent' : 'Needs Attention'}
+                {col.promedio == null ? 'Unevaluated' :
+                 col.promedio >= 3.5 ? 'Strength' : col.promedio >= 2.5 ? 'Competent' : 'Needs Attention'}
               </p>
             </div>
           </div>
@@ -126,8 +127,8 @@ function CollaboratorDetailView({ colaborador, onBack }) {
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-500 mb-1">Overall Average</p>
-            <p className={`text-5xl font-light ${getStatusColor(colaborador.promedio)}`}>
-              {colaborador.promedio.toFixed(1)}
+            <p className={`text-5xl font-light ${getStatusColor(colaborador.promedio ?? 0)}`}>
+              {colaborador.promedio != null ? colaborador.promedio.toFixed(1) : '—'}
             </p>
           </div>
         </div>
@@ -231,8 +232,8 @@ function CategoryGridView({ categories = [] }) {
               <h3 className="text-lg font-medium text-gray-800">{cat.nombre}</h3>
               <p className="text-xs text-gray-400 uppercase tracking-wide">{cat.abrev}</p>
             </div>
-            <p className={`text-4xl font-light ${getStatusColor(cat.promedio)}`}>
-              {cat.promedio.toFixed(1)}
+            <p className={`text-4xl font-light ${getStatusColor(cat.promedio ?? 0)}`}>
+              {(cat.promedio ?? 0).toFixed(1)}
             </p>
           </div>
           
@@ -240,15 +241,15 @@ function CategoryGridView({ categories = [] }) {
             <div className="h-2 bg-gray-100 rounded-full" />
             <div 
               className={`absolute top-0 h-2 rounded-full ${
-                cat.promedio >= 3.5 ? 'bg-primary' : cat.promedio >= 2.5 ? 'bg-competent' : 'bg-warning'
+                (cat.promedio ?? 0) >= 3.5 ? 'bg-primary' : (cat.promedio ?? 0) >= 2.5 ? 'bg-competent' : 'bg-warning'
               }`}
-              style={{ width: `${(cat.promedio / 5) * 100}%` }}
+              style={{ width: `${((cat.promedio ?? 0) / 5) * 100}%` }}
             />
           </div>
           
           <p className="text-xs text-gray-400 mt-3">
-            {cat.promedio >= 3.5 ? 'Team strength' :
-             cat.promedio >= 2.5 ? 'Competent level' : 'Needs development'}
+            {(cat.promedio ?? 0) >= 3.5 ? 'Team strength' :
+             (cat.promedio ?? 0) >= 2.5 ? 'Competent level' : 'Needs development'}
           </p>
         </div>
       ))}

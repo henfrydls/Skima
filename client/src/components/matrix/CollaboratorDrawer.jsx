@@ -273,25 +273,29 @@ export default function CollaboratorDrawer({
             <div className="p-6 border-b border-gray-100">
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-center gap-2">
-                    <span className={`text-3xl font-light tabular-nums ${
-                      collaborator.promedio >= 3.5 ? 'text-primary' : 
-                      collaborator.promedio >= 2.5 ? 'text-competent' : 'text-warning'
-                    }`}>
-                      {collaborator.promedio.toFixed(1)}
-                    </span>
-                    {promedioDelta && (
-                      <span className={`flex items-center text-sm ${
-                        /* TASK 2: Neutralize delta color when role changed */
-                        hasRoleChanged ? 'text-slate-500' :
-                        promedioDelta.direction === 'up' ? 'text-success' : 
-                        promedioDelta.direction === 'down' ? 'text-critical' : 'text-gray-400'
+                  {collaborator.promedio != null ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`text-3xl font-light tabular-nums ${
+                        collaborator.promedio >= 3.5 ? 'text-primary' :
+                        collaborator.promedio >= 2.5 ? 'text-competent' : 'text-warning'
                       }`}>
-                        {promedioDelta.direction === 'up' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-                        {promedioDelta.formatted}
+                        {collaborator.promedio.toFixed(1)}
                       </span>
-                    )}
-                  </div>
+                      {promedioDelta && (
+                        <span className={`flex items-center text-sm ${
+                          /* TASK 2: Neutralize delta color when role changed */
+                          hasRoleChanged ? 'text-slate-500' :
+                          promedioDelta.direction === 'up' ? 'text-success' :
+                          promedioDelta.direction === 'down' ? 'text-critical' : 'text-gray-400'
+                        }`}>
+                          {promedioDelta.direction === 'up' ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                          {promedioDelta.formatted}
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-3xl font-light text-gray-400">&mdash;</span>
+                  )}
                   <p className="text-xs text-gray-500 mt-1">Average</p>
                 </div>
                 <div className="text-center p-4 bg-warning/5 rounded-lg border border-warning/10">
@@ -305,24 +309,35 @@ export default function CollaboratorDrawer({
               </div>
             </div>
 
-            {/* Lollipop Chart */}
-            <div className="p-6 border-b border-gray-100">
-              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
-                Level by Category
-              </h3>
-              <LollipopChart 
-                categorias={collaborator.categorias} 
-                previousCategorias={previousSnapshot?.categorias}
-              />
-              {/* Only show legend if there are actual previous values visible */}
-              {previousSnapshot?.categorias && 
-               Object.keys(collaborator.categorias || {}).some(key => previousSnapshot.categorias[key] !== undefined) && (
-                <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
-                  <div className="w-3 h-3 rounded-full bg-gray-300" />
-                  <span>Previous value</span>
-                </div>
-              )}
-            </div>
+            {/* No evaluations empty state */}
+            {collaborator.promedio == null && gaps.length === 0 && strengths.length === 0 && (
+              <div className="p-6 border-b border-gray-100 text-center">
+                <p className="text-sm text-gray-500">
+                  No evaluations yet. Evaluate this collaborator in Settings &rarr; Evaluations.
+                </p>
+              </div>
+            )}
+
+            {/* Lollipop Chart - only show if there are categories */}
+            {Object.keys(collaborator.categorias || {}).length > 0 && (
+              <div className="p-6 border-b border-gray-100">
+                <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+                  Level by Category
+                </h3>
+                <LollipopChart
+                  categorias={collaborator.categorias}
+                  previousCategorias={previousSnapshot?.categorias}
+                />
+                {/* Only show legend if there are actual previous values visible */}
+                {previousSnapshot?.categorias &&
+                 Object.keys(collaborator.categorias || {}).some(key => previousSnapshot.categorias[key] !== undefined) && (
+                  <div className="mt-4 flex items-center gap-2 text-xs text-gray-400">
+                    <div className="w-3 h-3 rounded-full bg-gray-300" />
+                    <span>Previous value</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Gaps Section */}
             {gaps.length > 0 && (
@@ -339,8 +354,8 @@ export default function CollaboratorDrawer({
                          <p className="text-xs text-gray-500">{gap.accion}</p>
                       </div>
                       <span className={`px-2 py-1 text-[10px] uppercase font-bold tracking-wider rounded-md border ${
-                          gap.estado === 'CRITICAL GAP' 
-                            ? 'bg-critical/10 text-critical border-critical/20' 
+                          gap.estado === 'CRITICAL GAP'
+                            ? 'bg-critical/10 text-critical border-critical/20'
                             : 'bg-warning/10 text-warning border-warning/20'
                         }`}>
                         {gap.estado === 'CRITICAL GAP' ? 'CRITICAL' : 'IMPROVE'}
@@ -348,7 +363,7 @@ export default function CollaboratorDrawer({
                     </div>
                   ))}
                 </div>
-                
+
                 <h4 className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2 hidden">
                   Suggested Actions
                 </h4>
