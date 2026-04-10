@@ -2,7 +2,7 @@
   "name": "skima",
   "version": "1.3.2",
   "private": true,
-  "description": "Skima - Skills Management App",
+  "description": "Skima - People Development Platform",
   "scripts": {
     "dev": "concurrently -n server,client -c blue,green \"npm run dev:server\" \"npm run dev:client\"",
     "dev:client": "cd client && npm run dev",

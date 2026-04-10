@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  A local-first talent intelligence platform for tracking team competencies.<br/>
-  No account, no cloud, no tracking — all data stays on your device.
+  Open-source people development platform — skills matrix, development plans, gap analysis, and team growth tracking.<br/>
+  Self-hosted, local-first. No account, no cloud, no tracking.
 </p>
 
 <p align="center">
