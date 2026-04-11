@@ -272,6 +272,63 @@ router.post('/', async (req, res) => {
         ],
       });
 
+      // Plan 3: Active plan for Carmen Rivera (Frontend Developer, id=209)
+      const plan3 = await tx.developmentPlan.create({
+        data: {
+          collaboratorId: 209,
+          title: 'Frontend Mastery Plan',
+          description: 'Accelerate frontend skills to reach senior level.',
+          targetRole: 'Senior Frontend Developer',
+          status: 'active',
+          startDate: oneMonthAgo,
+          endDate: new Date(now.getTime() + 120 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      const goal4 = await tx.developmentGoal.create({
+        data: {
+          planId: plan3.id,
+          title: 'Master React advanced patterns',
+          skillId: 10,
+          currentLevel: 3.0,
+          targetLevel: 4.5,
+          priority: 1,
+          status: 'in_progress',
+          sortOrder: 0,
+        },
+      });
+
+      await tx.developmentAction.createMany({
+        data: [
+          { goalId: goal4.id, title: 'Complete React patterns course', actionType: 'formal', status: 'completed', completedAt: twoWeeksAgo, sortOrder: 0 },
+          { goalId: goal4.id, title: 'Build custom hooks library', actionType: 'experience', status: 'in_progress', sortOrder: 1 },
+        ],
+      });
+
+      // Plan 4: Draft plan for Miguel Angel Torres (id=211)
+      await tx.developmentPlan.create({
+        data: {
+          collaboratorId: 211,
+          title: 'Cloud Certification Roadmap',
+          description: 'Prepare for AWS Solutions Architect certification.',
+          status: 'draft',
+          startDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+          endDate: new Date(now.getTime() + 180 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      // Plan 5: Cancelled plan for Luis Hernandez (Backend Developer, id=206)
+      await tx.developmentPlan.create({
+        data: {
+          collaboratorId: 206,
+          title: 'DevOps Transition Plan',
+          description: 'Cancelled due to team restructuring.',
+          status: 'cancelled',
+          startDate: new Date(now.getTime() - 60 * 24 * 60 * 60 * 1000),
+          endDate: new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000),
+        },
+      });
+
       return snapshots.length;
     }, { timeout: 30000 });
 
