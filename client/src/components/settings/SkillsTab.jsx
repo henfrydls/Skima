@@ -39,6 +39,7 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading,
   const [catDropdownOpen, setCatDropdownOpen] = useState(false);
 
   useEffect(() => {
+    if (!isOpen) return; // Only reset when modal opens
     if (skill) {
       setFormData({
         nombre: skill.nombre,
@@ -50,7 +51,8 @@ function EditSkillModal({ skill, categories, isOpen, onClose, onSave, isLoading,
         categoriaId: defaultCategoryId || categories[0]?.id || ''
       });
     }
-  }, [skill, isOpen, categories, defaultCategoryId]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [skill, isOpen, defaultCategoryId]);
 
   if (!isOpen) return null;
 
