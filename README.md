@@ -65,6 +65,13 @@
 <br/>
 
 <p align="center">
+  <img src="docs/skima-development.png" alt="Development Plans" width="100%" />
+</p>
+<p align="center"><sub>Development Plans — Create growth plans, link goals to skill gaps, track actions and progress</sub></p>
+
+<br/>
+
+<p align="center">
   <img src="docs/skima-setup.png" alt="Setup Wizard" width="100%" />
 </p>
 <p align="center"><sub>Setup — Get started with demo data or configure your own space</sub></p>
