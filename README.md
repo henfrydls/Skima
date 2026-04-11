@@ -81,7 +81,7 @@ Skima runs entirely on your device — no account, no cloud, no tracking.
 
 ### Desktop App
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/henfrydls/skills-dashboard/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/henfrydls/Skima/releases):
 
 | Platform | Format |
 |----------|--------|
@@ -99,6 +99,13 @@ Run Skima as a local web service with a single command. Requires [Docker](https:
 docker compose up -d
 ```
 
+Or pull directly from GitHub Container Registry:
+
+```bash
+docker pull ghcr.io/henfrydls/skima:latest
+docker run -d -p 3000:3001 -v skima-data:/app/data ghcr.io/henfrydls/skima:latest
+```
+
 Open `http://localhost:3000` in your browser. Data persists in a Docker volume.
 
 To run with demo data pre-loaded:
@@ -112,8 +119,8 @@ docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
 Requires [Node.js](https://nodejs.org/) 20+.
 
 ```bash
-git clone https://github.com/henfrydls/skills-dashboard.git
-cd skills-dashboard
+git clone https://github.com/henfrydls/Skima.git
+cd Skima
 npm install
 npm run dev
 ```
@@ -171,7 +178,7 @@ client/src/
     evolution/           # EvolutionChart, EvolutionList
     layout/              # Layout, Sidebar
     matrix/              # TransposedMatrixTable, CollaboratorList
-    settings/            # CategoriesTab, CollaboratorsTab, SkillsTab
+    settings/            # CategoriesTab, CollaboratorsTab, SkillsTab, DevelopmentTab, EvaluationsTab
   contexts/              # AuthContext, ConfigContext
   hooks/                 # useEvolutionData
   lib/                   # dashboardLogic, skillsLogic, evolutionLogic

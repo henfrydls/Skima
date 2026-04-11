@@ -40,7 +40,7 @@ export default function LandingPage() {
               Know what your team <span className="text-primary">can do.</span>
             </h1>
             <p className="text-lg text-slate-600 max-w-lg leading-relaxed">
-              Map skills. Spot gaps. Track growth.<br />
+              Map skills. Spot gaps. Plan growth. Track progress.<br />
               Free and source-available. Your data never leaves your machine.
             </p>
             <div className="flex flex-wrap items-center gap-6">
@@ -161,6 +161,12 @@ export default function LandingPage() {
               title="Role Profiles"
               description="Define expected skills per role. Measure coverage and identify training priorities."
               image="/screenshots/skima-roles.png"
+            />
+            <FeatureCard
+              icon={<Target size={24} />}
+              title="Development Plans"
+              description="Create growth plans linked to skill gaps. Track goals, actions, and progress toward role targets."
+              image="/screenshots/skima-dashboard.png"
             />
           </div>
         </div>
