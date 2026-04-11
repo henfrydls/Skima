@@ -166,7 +166,7 @@ export default function LandingPage() {
               icon={<Target size={24} />}
               title="Development Plans"
               description="Create growth plans linked to skill gaps. Track goals, actions, and progress toward role targets."
-              image="/screenshots/skima-dashboard.png"
+              image="/screenshots/skima-development.png"
             />
           </div>
         </div>
