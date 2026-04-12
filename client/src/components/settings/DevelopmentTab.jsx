@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle, Search, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -25,7 +25,7 @@ const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.v
 /**
  * ActionStatusDropdown - Clickable status badge that opens a dropdown to change action status
  */
-function ActionStatusDropdown({ action, onStatusChange }) {
+function ActionStatusDropdown({ action, onStatusChange, disabled }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, left: 0 });
   const btnRef = useRef(null);
@@ -54,6 +54,7 @@ function ActionStatusDropdown({ action, onStatusChange }) {
 
   const handleOpen = (e) => {
     e.stopPropagation();
+    if (disabled) return;
     if (!open && btnRef.current) {
       const rect = btnRef.current.getBoundingClientRect();
       const dropdownHeight = 130;
@@ -73,11 +74,11 @@ function ActionStatusDropdown({ action, onStatusChange }) {
         ref={btnRef}
         type="button"
         onClick={handleOpen}
-        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium cursor-pointer transition-colors hover:ring-2 hover:ring-primary/20 ${current.bg} ${current.text}`}
-        title="Change status"
+        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${disabled ? 'cursor-default' : 'cursor-pointer hover:ring-2 hover:ring-primary/20'} ${current.bg} ${current.text}`}
+        title={disabled ? current.label : "Change status"}
       >
         {current.label}
-        <ChevronDown size={10} />
+        {!disabled && <ChevronDown size={10} />}
       </button>
       {open && createPortal(
         <div
@@ -125,6 +126,7 @@ export default function DevelopmentTab({ isActive }) {
   const [categories, setCategories] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Expanded plan tracking
   const [expandedPlanId, setExpandedPlanId] = useState(null);
@@ -154,7 +156,7 @@ export default function DevelopmentTab({ isActive }) {
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       // Sort: active first, then cancelled, completed, draft last
-      const statusOrder = { active: 0, cancelled: 1, completed: 2, draft: 3 };
+      const statusOrder = { active: 0, completed: 1, draft: 2, cancelled: 3 };
       data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
       setPlans(data);
     } catch {
@@ -495,34 +497,63 @@ export default function DevelopmentTab({ isActive }) {
     );
   }
 
+  const filteredPlans = plans.filter(plan => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const collabName = collaborators.find(c => c.id === plan.collaboratorId)?.nombre || '';
+    return (
+      plan.title.toLowerCase().includes(query) ||
+      collabName.toLowerCase().includes(query) ||
+      plan.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with Create button */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
-        </p>
-        <Button onClick={() => setPlanModal({ mode: 'create' })}>
-          <Plus size={18} className="mr-1.5" /> New Plan
-        </Button>
+      {/* Header Row (Standardized) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-xs">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search plan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-500 hidden sm:block">
+            {filteredPlans.length} {filteredPlans.length === 1 ? 'plan' : 'plans'}
+          </p>
+          <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
+          <Button onClick={() => setPlanModal({ mode: 'create' })}>
+            <Plus size={18} className="mr-1.5" /> New Plan
+          </Button>
+        </div>
       </div>
 
       {/* Plans list */}
-      {plans.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <EmptyState
           icon={Target}
-          title="No development plans"
-          description="Create your first plan to start growing your team."
-          actionLabel="Create Plan"
-          onAction={() => setPlanModal({ mode: 'create' })}
+          title={searchQuery ? "No matching plans" : "No development plans"}
+          description={searchQuery ? "Try a different search term." : "Create your first plan to start growing your team."}
+          actionLabel={searchQuery ? null : "Create Plan"}
+          onAction={searchQuery ? null : () => setPlanModal({ mode: 'create' })}
         />
       ) : (
         <div className="space-y-3">
-          {plans.map(plan => {
+          {filteredPlans.map(plan => {
             const isExpanded = expandedPlanId === plan.id;
             const status = PLAN_STATUS_BADGES[plan.status] || PLAN_STATUS_BADGES.draft;
             const progress = getPlanProgress(plan);
             const goals = plan.goals || [];
+            const canEdit = plan.status === 'active' || plan.status === 'draft';
+            const canDelete = plan.status !== 'completed';
 
             return (
               <div key={plan.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -572,6 +603,7 @@ export default function DevelopmentTab({ isActive }) {
 
                   {/* Edit / Delete buttons */}
                   <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                    {canEdit ? (
                     <button
                       onClick={() => setPlanModal({ mode: 'edit', plan })}
                       className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
@@ -579,6 +611,12 @@ export default function DevelopmentTab({ isActive }) {
                     >
                       <Edit2 size={14} />
                     </button>
+                    ) : (
+                    <span className="p-1.5 text-gray-300" title="Read-only">
+                      <Lock size={14} />
+                    </span>
+                    )}
+                    {canDelete ? (
                     <button
                       onClick={() => setDeletePlanTarget(plan)}
                       className="p-1.5 text-gray-400 hover:text-critical rounded transition-colors"
@@ -586,6 +624,11 @@ export default function DevelopmentTab({ isActive }) {
                     >
                       <Trash2 size={14} />
                     </button>
+                    ) : (
+                    <span className="p-1.5 text-gray-300" title="Read-only">
+                      <Lock size={14} />
+                    </span>
+                    )}
                   </div>
                 </div>
 
@@ -623,12 +666,14 @@ export default function DevelopmentTab({ isActive }) {
                     {/* Goals header */}
                     <div className="flex items-center justify-between mb-3">
                       <h3 className="text-xs font-medium text-gray-500 uppercase tracking-wide">Goals</h3>
+                      {canEdit && (
                       <Button
                         size="sm"
                         onClick={() => setGoalModal({ mode: 'create', planId: plan.id, collaboratorId: plan.collaboratorId })}
                       >
                         <Plus size={14} className="mr-1" /> Add Goal
                       </Button>
+                      )}
                     </div>
 
                     {goals.length === 0 ? (
@@ -703,6 +748,7 @@ export default function DevelopmentTab({ isActive }) {
                                 )}
 
                                 {/* Edit / Delete */}
+                                {canEdit && (
                                 <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => setGoalModal({ mode: 'edit', goal })}
@@ -719,6 +765,7 @@ export default function DevelopmentTab({ isActive }) {
                                     <Trash2 size={12} />
                                   </button>
                                 </div>
+                                )}
                               </div>
 
                               {/* Expanded: Actions */}
@@ -731,12 +778,14 @@ export default function DevelopmentTab({ isActive }) {
                                   {/* Actions header */}
                                   <div className="flex items-center justify-between mb-2">
                                     <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">Actions</span>
+                                    {canEdit && (
                                     <button
                                       onClick={() => setActionModal({ mode: 'create', goalId: goal.id })}
                                       className="inline-flex items-center gap-1 text-xs text-primary hover:text-primary/80 font-medium transition-colors"
                                     >
                                       <Plus size={14} /> Add Action
                                     </button>
+                                    )}
                                   </div>
 
                                   {actions.length === 0 ? (
@@ -756,6 +805,7 @@ export default function DevelopmentTab({ isActive }) {
                                             <ActionStatusDropdown
                                               action={action}
                                               onStatusChange={handleActionStatusChange}
+                                              disabled={!canEdit}
                                             />
 
                                             {/* Type badge */}
@@ -782,6 +832,7 @@ export default function DevelopmentTab({ isActive }) {
                                             )}
 
                                             {/* Delete */}
+                                            {canEdit && (
                                             <button
                                               onClick={() => setDeleteActionTarget(action)}
                                               className="flex-shrink-0 text-gray-300 hover:text-critical transition-colors opacity-0 group-hover:opacity-100"
@@ -789,6 +840,7 @@ export default function DevelopmentTab({ isActive }) {
                                             >
                                               <Trash2 size={14} />
                                             </button>
+                                            )}
                                           </div>
                                         );
                                       })}
