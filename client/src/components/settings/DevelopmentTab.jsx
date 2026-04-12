@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Plus, Target, ChevronDown, ChevronRight, Edit2, Trash2, Calendar, CheckCircle2, AlertCircle, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -125,6 +125,7 @@ export default function DevelopmentTab({ isActive }) {
   const [categories, setCategories] = useState([]);
   const [collaborators, setCollaborators] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Expanded plan tracking
   const [expandedPlanId, setExpandedPlanId] = useState(null);
@@ -154,7 +155,7 @@ export default function DevelopmentTab({ isActive }) {
       if (!res.ok) throw new Error('Failed to fetch');
       const data = await res.json();
       // Sort: active first, then cancelled, completed, draft last
-      const statusOrder = { active: 0, cancelled: 1, completed: 2, draft: 3 };
+      const statusOrder = { active: 0, completed: 1, draft: 2, cancelled: 3 };
       data.sort((a, b) => (statusOrder[a.status] ?? 1) - (statusOrder[b.status] ?? 1));
       setPlans(data);
     } catch {
@@ -495,30 +496,57 @@ export default function DevelopmentTab({ isActive }) {
     );
   }
 
+  const filteredPlans = plans.filter(plan => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    const collabName = collaborators.find(c => c.id === plan.collaboratorId)?.nombre || '';
+    return (
+      plan.title.toLowerCase().includes(query) ||
+      collabName.toLowerCase().includes(query) ||
+      plan.status.toLowerCase().includes(query)
+    );
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      {/* Header with Create button */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">
-          {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
-        </p>
-        <Button onClick={() => setPlanModal({ mode: 'create' })}>
-          <Plus size={18} className="mr-1.5" /> New Plan
-        </Button>
+      {/* Header Row (Standardized) */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        {/* Search */}
+        <div className="relative flex-1 max-w-xs">
+          <Search size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search plan..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
+          />
+        </div>
+
+        {/* Actions */}
+        <div className="flex items-center gap-3">
+          <p className="text-sm text-gray-500 hidden sm:block">
+            {filteredPlans.length} {filteredPlans.length === 1 ? 'plan' : 'plans'}
+          </p>
+          <div className="h-4 w-px bg-gray-300 mx-2 hidden sm:block"></div>
+          <Button onClick={() => setPlanModal({ mode: 'create' })}>
+            <Plus size={18} className="mr-1.5" /> New Plan
+          </Button>
+        </div>
       </div>
 
       {/* Plans list */}
-      {plans.length === 0 ? (
+      {filteredPlans.length === 0 ? (
         <EmptyState
           icon={Target}
-          title="No development plans"
-          description="Create your first plan to start growing your team."
-          actionLabel="Create Plan"
-          onAction={() => setPlanModal({ mode: 'create' })}
+          title={searchQuery ? "No matching plans" : "No development plans"}
+          description={searchQuery ? "Try a different search term." : "Create your first plan to start growing your team."}
+          actionLabel={searchQuery ? null : "Create Plan"}
+          onAction={searchQuery ? null : () => setPlanModal({ mode: 'create' })}
         />
       ) : (
         <div className="space-y-3">
-          {plans.map(plan => {
+          {filteredPlans.map(plan => {
             const isExpanded = expandedPlanId === plan.id;
             const status = PLAN_STATUS_BADGES[plan.status] || PLAN_STATUS_BADGES.draft;
             const progress = getPlanProgress(plan);
