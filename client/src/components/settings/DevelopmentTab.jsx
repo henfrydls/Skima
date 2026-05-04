@@ -376,6 +376,29 @@ export default function DevelopmentTab({ isActive }) {
     })));
   };
 
+  // Full edit submission from ActionFormModal (mode='edit')
+  const handleEditAction = async (formData) => {
+    try {
+      const { action } = actionModal;
+      const res = await authFetch(`${API_BASE}/api/development-actions/${action.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      if (res.status === 403) { toast.error('This action is not available in demo mode'); setActionModal(null); return; }
+      if (!res.ok) throw new Error('Failed to update action');
+      toast.success('Action updated');
+      setActionModal(null);
+      if (expandedPlanId) refetchPlanDetail(expandedPlanId);
+    } catch (err) {
+      if (err.message === 'SESSION_EXPIRED') {
+        setShowLogin(true);
+      } else {
+        toast.error('Failed to update action');
+      }
+    }
+  };
+
   const handleActionStatusChange = async (actionId, newStatus) => {
     try {
       const res = await authFetch(`${API_BASE}/api/development-actions/${actionId}`, {
@@ -833,15 +856,24 @@ export default function DevelopmentTab({ isActive }) {
                                               </span>
                                             )}
 
-                                            {/* Delete */}
-                                            {canEdit && (
-                                            <button
-                                              onClick={() => setDeleteActionTarget(action)}
-                                              className="flex-shrink-0 text-gray-300 hover:text-critical transition-colors opacity-0 group-hover:opacity-100"
-                                              title="Delete action"
-                                            >
-                                              <Trash2 size={14} />
-                                            </button>
+                                            {/* Edit / Delete — allowed whenever the plan can be deleted (not completed) */}
+                                            {canDelete && (
+                                            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                                              <button
+                                                onClick={() => setActionModal({ mode: 'edit', action })}
+                                                className="text-gray-300 hover:text-primary transition-colors"
+                                                title="Edit action"
+                                              >
+                                                <Edit2 size={14} />
+                                              </button>
+                                              <button
+                                                onClick={() => setDeleteActionTarget(action)}
+                                                className="text-gray-300 hover:text-critical transition-colors"
+                                                title="Delete action"
+                                              >
+                                                <Trash2 size={14} />
+                                              </button>
+                                            </div>
                                             )}
                                           </div>
                                         );
@@ -953,7 +985,7 @@ export default function DevelopmentTab({ isActive }) {
         <ActionFormModal
           action={actionModal.mode === 'edit' ? actionModal.action : null}
           onClose={() => setActionModal(null)}
-          onSubmit={handleCreateAction}
+          onSubmit={actionModal.mode === 'edit' ? handleEditAction : handleCreateAction}
         />
       )}
 
