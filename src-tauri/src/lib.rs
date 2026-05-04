@@ -44,6 +44,8 @@ fn get_db_path(app: &tauri::App) -> String {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_process::init())
         .manage(SidecarState(Mutex::new(None)))
         .setup(|app| {
             let db_path = get_db_path(app);

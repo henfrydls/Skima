@@ -26,6 +26,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": [
       "nsis"
     ],
@@ -53,5 +54,14 @@
       }
     }
   },
-  "plugins": {}
+  "plugins": {
+    "updater": {
+      "active": true,
+      "endpoints": [
+        "https://github.com/henfrydls/Skima/releases/latest/download/latest.json"
+      ],
+      "dialog": false,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM0RDRGMTlFNzQ2NDkxNjAKUldSZ2tXUjBudkhVTk91UU5jdXRXTnVzUzJoUGtlQ3A4aXBWQ2tvR1lQOTFhVC92cndYWU13Yk4K"
+    }
+  }
 }
