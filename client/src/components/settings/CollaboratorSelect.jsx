@@ -22,14 +22,18 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
 
   const selected = collaborators.find(c => c.id === value);
 
-  // Position panel relative to the trigger; flips above when there's no room below.
+  // Position panel relative to the trigger. Prefer opening downward; only
+  // flip up when the panel doesn't fit below AND there's more room above.
   const updatePosition = () => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const maxH = Math.min(Math.max(spaceBelow, spaceAbove) - 20, 360);
-    const openUp = spaceAbove > spaceBelow;
+    const PREFERRED_HEIGHT = 360;
+    const MARGIN = 20;
+    const fitsBelow = spaceBelow >= 200;
+    const openUp = !fitsBelow && spaceAbove > spaceBelow;
+    const maxH = Math.min(openUp ? spaceAbove - MARGIN : spaceBelow - MARGIN, PREFERRED_HEIGHT);
 
     setDropdownStyle({
       position: 'fixed',

@@ -36,8 +36,14 @@ export default function Select({
     const rect = triggerRef.current.getBoundingClientRect();
     const spaceBelow = window.innerHeight - rect.bottom;
     const spaceAbove = rect.top;
-    const maxH = Math.min(Math.max(spaceBelow, spaceAbove) - 20, 320);
-    const openUp = spaceAbove > spaceBelow;
+    // Prefer opening downward (predictable). Only flip up when the panel
+    // would not fit below AND there's strictly more room above.
+    const PREFERRED_HEIGHT = 320;
+    const MARGIN = 20;
+    const fitsBelow = spaceBelow >= Math.min(PREFERRED_HEIGHT, spaceBelow) + MARGIN
+      || spaceBelow >= 200; // Always prefer below if we have at least ~200px
+    const openUp = !fitsBelow && spaceAbove > spaceBelow;
+    const maxH = Math.min(openUp ? spaceAbove - MARGIN : spaceBelow - MARGIN, PREFERRED_HEIGHT);
 
     setDropdownStyle({
       position: 'fixed',
