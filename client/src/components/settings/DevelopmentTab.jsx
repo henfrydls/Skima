@@ -856,19 +856,19 @@ export default function DevelopmentTab({ isActive }) {
                                               </span>
                                             )}
 
-                                            {/* Edit / Delete — allowed whenever the plan can be deleted (not completed) */}
+                                            {/* Edit / Delete — same spacing as plan-level icons (p-1.5 + gap-1.5) */}
                                             {canDelete && (
-                                            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100">
+                                            <div className="flex-shrink-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100">
                                               <button
                                                 onClick={() => setActionModal({ mode: 'edit', action })}
-                                                className="text-gray-300 hover:text-primary transition-colors"
+                                                className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
                                                 title="Edit action"
                                               >
                                                 <Edit2 size={14} />
                                               </button>
                                               <button
                                                 onClick={() => setDeleteActionTarget(action)}
-                                                className="text-gray-300 hover:text-critical transition-colors"
+                                                className="p-1.5 text-gray-400 hover:text-critical rounded transition-colors"
                                                 title="Delete action"
                                               >
                                                 <Trash2 size={14} />
