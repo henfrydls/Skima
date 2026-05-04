@@ -3,7 +3,8 @@ import {
     findBestMatchingPeriod,
     generateTimePeriods,
     getSnapshotData,
-    getPreviousPeriodDate
+    getPreviousPeriodDate,
+    formatDateOnlyMonthYear
 } from './timeLogic';
 
 describe('timeLogic', () => {
@@ -527,6 +528,7 @@ describe('timeLogic', () => {
             expect(prevDate.getDate()).toBe(29);
         });
 
+        // (intentionally placed at the end of getPreviousPeriodDate describe; no-op marker)
         it('should handle different quarters correctly', () => {
             // Q2 (Apr-Jun)
             const q2Date = new Date(2025, 4, 15);
@@ -542,6 +544,44 @@ describe('timeLogic', () => {
             const q4Date = new Date(2025, 10, 15);
             const prevQ4 = getPreviousPeriodDate(q4Date, 'quarter');
             expect(prevQ4.getMonth()).toBe(8); // Sep 30
+        });
+    });
+
+    // Bug #32: dates stored as UTC midnight (e.g. "2025-03-01T00:00:00.000Z" or "2025-03-01")
+    // render as the previous month in negative timezones because `new Date(...)` parses
+    // YYYY-MM-DD strings as UTC.
+    describe('formatDateOnlyMonthYear (bug #32)', () => {
+        it('parses YYYY-MM-DD as a local date (no timezone shift)', () => {
+            // Without the fix, "2025-03-01" parsed as UTC midnight becomes
+            // Feb 28 23:00:00 in UTC-1 → "Feb 2025".
+            // With the fix it must always render the stored month, regardless of timezone.
+            const result = formatDateOnlyMonthYear('2025-03-01');
+            expect(result).toBe('Mar 2025');
+        });
+
+        it('handles ISO datetime UTC midnight without month rollover', () => {
+            const result = formatDateOnlyMonthYear('2025-03-01T00:00:00.000Z');
+            expect(result).toBe('Mar 2025');
+        });
+
+        it('handles ISO datetime with offset (already-local timestamps)', () => {
+            const result = formatDateOnlyMonthYear('2025-03-01T12:00:00.000Z');
+            expect(result).toBe('Mar 2025');
+        });
+
+        it('returns null for null/undefined/empty input', () => {
+            expect(formatDateOnlyMonthYear(null)).toBeNull();
+            expect(formatDateOnlyMonthYear(undefined)).toBeNull();
+            expect(formatDateOnlyMonthYear('')).toBeNull();
+        });
+
+        it('returns null for malformed input', () => {
+            expect(formatDateOnlyMonthYear('not-a-date')).toBeNull();
+        });
+
+        it('handles January 1st (year boundary) without rollover', () => {
+            const result = formatDateOnlyMonthYear('2025-01-01');
+            expect(result).toBe('Jan 2025');
         });
     });
 });

@@ -22,7 +22,7 @@ vi.mock('react-hot-toast', () => ({
 const mockAction = {
   id: 1,
   title: 'Complete testing course',
-  type: 'formal',
+  actionType: 'formal',
   status: 'completed',
   dueDate: '2026-05-01',
   completedAt: '2026-04-15T00:00:00Z',
@@ -51,21 +51,36 @@ describe('ActionRow', () => {
   });
 
   it('shows correct type badge for experience (blue)', () => {
-    renderAction({ action: { ...mockAction, type: 'experience' } });
+    renderAction({ action: { ...mockAction, actionType: 'experience' } });
     const badge = screen.getByText('Experience');
     expect(badge.closest('span')).toHaveClass('bg-blue-50', 'text-blue-700');
   });
 
   it('shows correct type badge for social (purple)', () => {
-    renderAction({ action: { ...mockAction, type: 'social' } });
+    renderAction({ action: { ...mockAction, actionType: 'social' } });
     const badge = screen.getByText('Social');
     expect(badge.closest('span')).toHaveClass('bg-purple-50', 'text-purple-700');
   });
 
   it('shows correct type badge for self_directed (amber)', () => {
-    renderAction({ action: { ...mockAction, type: 'self_directed' } });
+    renderAction({ action: { ...mockAction, actionType: 'self_directed' } });
     const badge = screen.getByText('Self-directed');
     expect(badge.closest('span')).toHaveClass('bg-amber-50', 'text-amber-700');
+  });
+
+  // Bug #33: API returns `actionType`, component must read that field (not `type`)
+  it('reads actionType from real API shape (not legacy "type")', () => {
+    const apiAction = {
+      id: 99,
+      title: 'Real API shape action',
+      actionType: 'formal',
+      status: 'not_started',
+      dueDate: null,
+      completedAt: null,
+    };
+    renderAction({ action: apiAction });
+    const badge = screen.getByText('Formal');
+    expect(badge.closest('span')).toHaveClass('bg-green-50', 'text-green-700');
   });
 
   it('shows due date when provided', () => {

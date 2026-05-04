@@ -518,4 +518,102 @@ describe('Evolution Routes', () => {
       expect(employee.sparkline).toEqual([2.0, 4.0]);
     });
   });
+
+  // ============================================
+  // Bug #31: collaborator silently dropped when role profile has no non-N skills
+  // ============================================
+  describe('Role profile fallback (bug #31)', () => {
+    async function seedWithRoleProfile(profileSkills) {
+      const category = await prisma.category.create({
+        data: { id: 50, nombre: 'Tech', abrev: 'T' }
+      });
+      const skill = await prisma.skill.create({
+        data: { id: 50, nombre: 'JS', categoriaId: category.id }
+      });
+      const collab = await prisma.collaborator.create({
+        data: { nombre: 'Orphan', rol: 'Engineer', isActive: true, joinedAt: new Date('2024-01-01') }
+      });
+      const session = await prisma.evaluationSession.create({
+        data: {
+          collaboratorId: collab.id,
+          collaboratorNombre: 'Orphan',
+          collaboratorRol: 'Engineer',
+          evaluatedAt: new Date()
+        }
+      });
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: collab.id,
+          skillId: skill.id,
+          nivel: 3.5,
+          criticidad: 'C',
+          frecuencia: 'D',
+          evaluationSessionId: session.id
+        }
+      });
+      // Create the role profile with the given skills config (skillId → criticality)
+      await prisma.roleProfile.create({
+        data: {
+          rol: 'Engineer',
+          skills: JSON.stringify(profileSkills)
+        }
+      });
+      return { collab, skill, session };
+    }
+
+    it('includes the collaborator when role profile marks every skill as N', async () => {
+      // Profile says skill 50 is N (not relevant to role) — without the fallback,
+      // validAssessments ends up empty and the collaborator is silently dropped.
+      const { collab } = await seedWithRoleProfile({ '50': 'N' });
+
+      const res = await request(app).get('/api/skills/evolution');
+      const ids = res.body.employees.map(e => e.id);
+      expect(ids).toContain(collab.id);
+    });
+
+    it('includes the collaborator when role profile is empty (no skills configured)', async () => {
+      const { collab } = await seedWithRoleProfile({});
+      const res = await request(app).get('/api/skills/evolution');
+      const ids = res.body.employees.map(e => e.id);
+      expect(ids).toContain(collab.id);
+    });
+
+    it('still excludes the collaborator if every assessment has nivel <= 0 (real "no data" case)', async () => {
+      const category = await prisma.category.create({
+        data: { id: 60, nombre: 'Tech', abrev: 'T' }
+      });
+      const skill = await prisma.skill.create({
+        data: { id: 60, nombre: 'JS', categoriaId: category.id }
+      });
+      const collab = await prisma.collaborator.create({
+        data: { nombre: 'Empty', rol: 'Engineer', isActive: true, joinedAt: new Date('2024-01-01') }
+      });
+      const session = await prisma.evaluationSession.create({
+        data: {
+          collaboratorId: collab.id,
+          collaboratorNombre: 'Empty',
+          collaboratorRol: 'Engineer',
+          evaluatedAt: new Date()
+        }
+      });
+      // nivel=0 means "not evaluated" — must remain excluded even with fallback
+      await prisma.assessment.create({
+        data: {
+          collaboratorId: collab.id,
+          skillId: skill.id,
+          nivel: 0,
+          criticidad: 'C',
+          frecuencia: 'D',
+          evaluationSessionId: session.id
+        }
+      });
+      await prisma.roleProfile.create({
+        data: { rol: 'Engineer', skills: JSON.stringify({ '60': 'N' }) }
+      });
+
+      const res = await request(app).get('/api/skills/evolution');
+      const ids = res.body.employees.map(e => e.id);
+      expect(ids).not.toContain(collab.id);
+    });
+  });
 });

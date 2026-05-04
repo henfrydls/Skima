@@ -258,3 +258,24 @@ export const findBestMatchingPeriod = (currentPeriodId, targetGranularity, allPe
   
   return bestFallback ? bestFallback.id : (candidates.length > 0 ? candidates[0].id : null);
 };
+
+/**
+ * Formats a date-only value (YYYY-MM-DD or ISO datetime) as "Mon YYYY" without
+ * timezone shifting. The native `new Date('2025-03-01').toLocaleDateString()`
+ * parses YYYY-MM-DD as UTC midnight, which renders as the previous day in any
+ * timezone west of UTC — collapsing month boundaries on the 1st.
+ *
+ * Bug #32 fix: extract the YYYY-MM portion and format from there.
+ */
+export const formatDateOnlyMonthYear = (value) => {
+  if (!value) return null;
+  const str = String(value);
+  const match = str.match(/^(\d{4})-(\d{2})/);
+  if (!match) return null;
+  const year = parseInt(match[1], 10);
+  const monthIdx = parseInt(match[2], 10) - 1;
+  if (monthIdx < 0 || monthIdx > 11) return null;
+  // Construct a local-noon date so toLocaleDateString never shifts months
+  const d = new Date(year, monthIdx, 1, 12, 0, 0);
+  return d.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+};

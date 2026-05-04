@@ -97,7 +97,7 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
   useFocusTrap();
 
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
-  const selectClass = 'w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer';
+  const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(

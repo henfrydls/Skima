@@ -747,8 +747,10 @@ export default function DevelopmentTab({ isActive }) {
                                   </span>
                                 )}
 
-                                {/* Edit / Delete */}
-                                {canEdit && (
+                                {/* Edit / Delete — allowed whenever the plan can be deleted (not completed).
+                                    Cancelled plans still allow goal-level corrections so a user can clean up
+                                    or fix mistakes before/after a plan is abandoned. */}
+                                {canDelete && (
                                 <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => setGoalModal({ mode: 'edit', goal })}
@@ -794,7 +796,7 @@ export default function DevelopmentTab({ isActive }) {
                                     <div className="space-y-1">
                                       {actions.map(action => {
                                         const isCompleted = action.status === 'completed';
-                                        const typeConfig = ACTION_TYPE_BADGES[action.type] || ACTION_TYPE_BADGES.experience;
+                                        const typeConfig = ACTION_TYPE_BADGES[action.actionType] || ACTION_TYPE_BADGES.experience;
 
                                         return (
                                           <div

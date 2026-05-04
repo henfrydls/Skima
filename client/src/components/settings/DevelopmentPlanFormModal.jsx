@@ -58,7 +58,7 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   useFocusTrap();
 
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
-  const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer transition-colors';
+  const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary cursor-pointer transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(

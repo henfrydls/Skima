@@ -487,6 +487,83 @@ describe('DevelopmentTab', () => {
     });
   });
 
+  // --- Goal-level edit/delete visibility (bug #35) ---
+  describe('Goal edit/delete buttons by plan status (bug #35)', () => {
+    function planWithGoal(basePlan, goalOverrides = {}) {
+      return {
+        ...basePlan,
+        goals: [
+          {
+            id: 500,
+            title: 'Editable Goal',
+            description: '',
+            status: 'active',
+            priority: 'medium',
+            targetLevel: 4,
+            actions: [],
+            ...goalOverrides,
+          },
+        ],
+      };
+    }
+
+    async function expandPlan(title) {
+      await waitFor(() => screen.getByText(title));
+      fireEvent.click(screen.getByText(title).closest('[role="button"]'));
+    }
+
+    it('shows Edit goal button on ACTIVE plan', async () => {
+      setupFetch([planWithGoal(mockActivePlan)]);
+      renderTab();
+      await expandPlan('Q2 Growth Plan');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      expect(screen.getByTitle('Edit goal')).toBeInTheDocument();
+    });
+
+    it('shows Edit goal button on DRAFT plan', async () => {
+      setupFetch([planWithGoal(mockDraftPlan)]);
+      renderTab();
+      await expandPlan('Backend Upskilling');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      expect(screen.getByTitle('Edit goal')).toBeInTheDocument();
+    });
+
+    it('shows Edit goal button on CANCELLED plan (regression: was hidden)', async () => {
+      setupFetch([planWithGoal(mockCancelledPlan)]);
+      renderTab();
+      await expandPlan('Cancelled Initiative');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      expect(screen.getByTitle('Edit goal')).toBeInTheDocument();
+    });
+
+    it('shows Delete goal button on CANCELLED plan', async () => {
+      setupFetch([planWithGoal(mockCancelledPlan)]);
+      renderTab();
+      await expandPlan('Cancelled Initiative');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      expect(screen.getByTitle('Delete goal')).toBeInTheDocument();
+    });
+
+    it('hides Edit and Delete goal buttons on COMPLETED plan (frozen record)', async () => {
+      setupFetch([planWithGoal(mockCompletedPlan)]);
+      renderTab();
+      await expandPlan('Onboarding Plan');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      expect(screen.queryByTitle('Edit goal')).not.toBeInTheDocument();
+      expect(screen.queryByTitle('Delete goal')).not.toBeInTheDocument();
+    });
+
+    it('clicking Edit goal opens the goal form modal in edit mode', async () => {
+      setupFetch([planWithGoal(mockActivePlan)]);
+      renderTab();
+      await expandPlan('Q2 Growth Plan');
+      await waitFor(() => screen.getByText('Editable Goal'));
+      fireEvent.click(screen.getByTitle('Edit goal'));
+      // GoalFormModal is mocked; verify the modal opened
+      await waitFor(() => expect(screen.getByTestId('goal-form-modal')).toBeInTheDocument());
+    });
+  });
+
   // --- ActionStatusDropdown disabled state ---
   describe('ActionStatusDropdown disabled for completed/cancelled plans', () => {
     function makePlanWithAction(basePlan, actionStatus = 'not_started') {
@@ -502,7 +579,7 @@ describe('DevelopmentTab', () => {
               {
                 id: 300,
                 title: 'Test Action',
-                type: 'experience',
+                actionType: 'experience',
                 status: actionStatus,
               },
             ],
