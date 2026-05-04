@@ -98,6 +98,20 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 Just install and open — no setup, no accounts, no internet required.
 
+#### Automatic Updates
+
+Starting with **v1.4.0**, Skima checks for new releases on startup and lets you install them in-app — no more manual reinstalls.
+
+- A modal appears when a new version is available, with `Update now` / `Remind me later` / `Skip this version` options
+- Trigger a manual check anytime under **Settings → About → Check for updates**
+- Disable auto-checks via the **Check for updates automatically** toggle in the same panel
+
+> **Upgrading from v1.3.5 or earlier?** The auto-updater first ships in v1.4.0, so existing installs need to download v1.4.0 manually one time. After that, all future updates are automatic.
+
+Updates are cryptographically signed; Skima refuses any binary that doesn't match the publisher signature.
+
+**Linux note:** auto-update works for the **AppImage** build. If you installed via `.deb` or `.rpm`, your system package manager owns the install path so Skima can't replace itself in-place — Skima will detect this and prompt you to download the latest release from GitHub manually. Switch to the AppImage build if you want fully automatic updates.
+
 ### Docker
 
 Run Skima as a local web service with a single command. Requires [Docker](https://docs.docker.com/get-docker/).

@@ -3,6 +3,7 @@ import { createBrowserRouter, RouterProvider, Navigate, useLocation } from 'reac
 import { Layout } from './components/layout';
 import { AuthProvider } from './contexts/AuthContext';
 import { ConfigProvider, useConfig } from './contexts/ConfigContext';
+import { UpdateProvider } from './contexts/UpdateContext';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import SessionExpiredModal from './components/common/SessionExpiredModal';
 import { Toaster } from 'react-hot-toast';
@@ -162,9 +163,11 @@ function App() {
   return (
     <ConfigProvider>
       <AuthWithConfig>
-        <RouterProvider router={router} />
-        <SessionExpiredModal />
-        <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+        <UpdateProvider>
+          <RouterProvider router={router} />
+          <SessionExpiredModal />
+          <Toaster position="bottom-right" toastOptions={{ duration: 4000 }} />
+        </UpdateProvider>
       </AuthWithConfig>
     </ConfigProvider>
   );

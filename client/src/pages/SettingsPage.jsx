@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
-import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, Target, AlertTriangle, X } from 'lucide-react';
+import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, Target, AlertTriangle, X, Info } from 'lucide-react';
 import CollaboratorsTab from '../components/settings/CollaboratorsTab';
 import SkillsTab from '../components/settings/SkillsTab';
 import CategoriesTab from '../components/settings/CategoriesTab';
 import EvaluationsTab from '../components/settings/EvaluationsTab';
 import RoleProfilesTab from '../components/settings/RoleProfilesTab';
 import DevelopmentTab from '../components/settings/DevelopmentTab';
+import AboutTab from '../components/settings/AboutTab';
 
 /**
  * SettingsPage — System Master Data Management
@@ -31,6 +32,7 @@ const TABS = [
   { id: 'colaboradores', label: 'Collaborators', icon: Users },
   { id: 'development', label: 'Development', icon: Target },
   { id: 'evaluaciones', label: 'Evaluations', icon: ClipboardCheck },
+  { id: 'about', label: 'About', icon: Info },
 ];
 
 export default function SettingsPage() {
@@ -156,6 +158,12 @@ export default function SettingsPage() {
         {mountedTabs.includes('evaluaciones') && (
           <div className={activeTab === 'evaluaciones' ? 'flex flex-col flex-1' : 'hidden'}>
             <EvaluationsTab initialContext={navigationContext} isActive={activeTab === 'evaluaciones'} dataVersion={dataVersion} />
+          </div>
+        )}
+
+        {mountedTabs.includes('about') && (
+          <div className={activeTab === 'about' ? 'block' : 'hidden'}>
+            <AboutTab />
           </div>
         )}
       </div>
