@@ -16,6 +16,19 @@ const STORAGE_KEYS = {
 const SNOOZE_MS = 24 * 60 * 60 * 1000; // 24h
 const AUTO_CHECK_DELAY_MS = 4000;
 
+// GitHub's storage CDN (objects.githubusercontent.com) hangs on requests
+// without a User-Agent. reqwest (used by the Tauri updater) sends none by
+// default, so the client waits ~60s before reqwest aborts and the user
+// sees a generic "error sending request". Setting an explicit UA fixes
+// it. The timeout is a safety net for genuine network unreachability.
+const UPDATE_CHECK_OPTIONS = {
+  timeout: 30_000,
+  headers: {
+    'User-Agent': 'Skima-Updater',
+    Accept: 'application/octet-stream',
+  },
+};
+
 const isTauri = () => typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
 const getAutoCheckPref = () => localStorage.getItem(STORAGE_KEYS.AUTO_CHECK) !== 'false';
@@ -71,7 +84,7 @@ export function UpdateProvider({ children }) {
     setState('checking');
     setError(null);
     try {
-      const result = await checkForUpdate();
+      const result = await checkForUpdate(UPDATE_CHECK_OPTIONS);
       localStorage.setItem(STORAGE_KEYS.LAST_CHECKED, String(Date.now()));
 
       if (!result) {
