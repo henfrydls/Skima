@@ -1,6 +1,6 @@
 [package]
 name = "skima"
-version = "1.3.5"
+version = "1.4.0-rc.1"
 description = "Skima - People Development Platform"
 authors = ["DLSLabs"]
 edition = "2024"

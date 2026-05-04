@@ -66,8 +66,8 @@ if (!arg) {
 const currentVersion = getCurrentVersion();
 const newVersion = bumpVersion(currentVersion, arg);
 
-// Validate semver format
-if (!/^\d+\.\d+\.\d+$/.test(newVersion)) {
+// Validate semver format (with optional pre-release suffix like -rc.1, -beta.2)
+if (!/^\d+\.\d+\.\d+(-[a-zA-Z0-9.-]+)?$/.test(newVersion)) {
   console.error(`Invalid version: ${newVersion}`);
   process.exit(1);
 }
