@@ -856,9 +856,9 @@ export default function DevelopmentTab({ isActive }) {
                                               </span>
                                             )}
 
-                                            {/* Edit / Delete — same spacing as plan-level icons (p-1.5 + gap-1.5) */}
+                                            {/* Edit / Delete — same spacing as plan-level icons (p-1.5 + gap-1) */}
                                             {canDelete && (
-                                            <div className="flex-shrink-0 flex items-center gap-1.5 opacity-0 group-hover:opacity-100">
+                                            <div className="flex-shrink-0 flex items-center gap-1 opacity-0 group-hover:opacity-100">
                                               <button
                                                 onClick={() => setActionModal({ mode: 'edit', action })}
                                                 className="p-1.5 text-gray-400 hover:text-primary rounded transition-colors"
