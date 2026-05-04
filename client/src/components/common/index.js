@@ -14,3 +14,4 @@ export {
   DevelopmentSettingsSkeleton
 } from './LoadingSkeleton';
 export { EmptyState } from './EmptyState';
+export { default as Select } from './Select';

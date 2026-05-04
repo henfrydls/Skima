@@ -3,6 +3,7 @@ import useFocusTrap from '../../hooks/useFocusTrap';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
+import Select from '../common/Select';
 import CollaboratorSelect from './CollaboratorSelect.jsx';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
@@ -58,7 +59,6 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
   useFocusTrap();
 
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
-  const selectClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(
@@ -122,12 +122,17 @@ export default function PlanFormModal({ plan = null, onClose, onSubmit }) {
           {isEdit && (
             <div>
               <label className={labelClass}>Status</label>
-              <select name="status" value={form.status} onChange={handleChange} className={selectClass}>
-                <option value="draft">Draft</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="cancelled">Cancelled</option>
-              </select>
+              <Select
+                name="status"
+                value={form.status}
+                onChange={(v) => setForm(prev => ({ ...prev, status: v }))}
+                options={[
+                  { value: 'draft', label: 'Draft' },
+                  { value: 'active', label: 'Active' },
+                  { value: 'completed', label: 'Completed' },
+                  { value: 'cancelled', label: 'Cancelled' },
+                ]}
+              />
             </div>
           )}
 

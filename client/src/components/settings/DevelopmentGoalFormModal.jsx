@@ -3,6 +3,7 @@ import useFocusTrap from '../../hooks/useFocusTrap';
 import { createPortal } from 'react-dom';
 import { X } from 'lucide-react';
 import Button from '../common/Button';
+import Select from '../common/Select';
 import GapSuggestions from '../development/GapSuggestions';
 import SkillSelect from './SkillSelect';
 import { useAuth } from '../../contexts/AuthContext';
@@ -97,7 +98,6 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
   useFocusTrap();
 
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
-  const selectClass = 'w-full px-3 py-2 rounded-lg border border-gray-200 bg-white text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
 
   return createPortal(
@@ -150,21 +150,27 @@ export default function GoalFormModal({ goal = null, collaboratorId, skills: pro
             </div>
             <div>
               <label className={labelClass}>Target Level</label>
-              <select name="targetLevel" value={form.targetLevel} onChange={handleChange} className={selectClass}>
-                {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(n => (
-                  <option key={n} value={n}>{n.toFixed(1)}</option>
-                ))}
-              </select>
+              <Select
+                name="targetLevel"
+                value={form.targetLevel}
+                onChange={(v) => setForm(prev => ({ ...prev, targetLevel: v }))}
+                options={[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(n => ({ value: n, label: n.toFixed(1) }))}
+              />
             </div>
           </div>
 
           <div>
             <label className={labelClass}>Priority</label>
-            <select name="priority" value={form.priority} onChange={(e) => setForm(prev => ({ ...prev, priority: parseInt(e.target.value, 10) }))} className={selectClass}>
-              <option value={1}>High</option>
-              <option value={2}>Medium</option>
-              <option value={3}>Low</option>
-            </select>
+            <Select
+              name="priority"
+              value={form.priority}
+              onChange={(v) => setForm(prev => ({ ...prev, priority: v }))}
+              options={[
+                { value: 1, label: 'High' },
+                { value: 2, label: 'Medium' },
+                { value: 3, label: 'Low' },
+              ]}
+            />
           </div>
 
           {/* Gap suggestions */}

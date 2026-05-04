@@ -20,7 +20,7 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
 
   const [form, setForm] = useState({
     title: action?.title || '',
-    type: action?.type || 'experience',
+    actionType: action?.actionType || 'experience',
     description: action?.description || '',
     dueDate: action?.dueDate?.slice(0, 10) || '',
   });
@@ -78,12 +78,12 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
             <div className="grid grid-cols-2 gap-2">
               {ACTION_TYPES.map(t => {
                 const Icon = t.icon;
-                const selected = form.type === t.id;
+                const selected = form.actionType === t.id;
                 return (
                   <button
                     key={t.id}
                     type="button"
-                    onClick={() => setForm(prev => ({ ...prev, type: t.id }))}
+                    onClick={() => setForm(prev => ({ ...prev, actionType: t.id }))}
                     className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm text-left transition-colors ${
                       selected
                         ? 'border-primary bg-primary/5 text-primary'

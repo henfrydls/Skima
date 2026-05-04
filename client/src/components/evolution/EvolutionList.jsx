@@ -1,4 +1,5 @@
 import { LineChart, Line, ResponsiveContainer, Tooltip } from 'recharts';
+import { formatDateOnlyMonthYear } from '../../lib/timeLogic';
 
 /**
  * EvolutionList - Detailed Collaborator Table
@@ -165,7 +166,7 @@ export default function EvolutionList({ collaborators, timeRange = '12m' }) {
                   <td className="px-4 py-4 text-right">
                     {collab.joinedAt ? (
                       <span className="text-xs text-slate-500 tabular-nums">
-                        {new Date(collab.joinedAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        {formatDateOnlyMonthYear(collab.joinedAt)}
                       </span>
                     ) : (
                       <span className="text-xs text-slate-400 italic">--</span>

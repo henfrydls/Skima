@@ -189,27 +189,38 @@ router.get('/', async (req, res) => {
       const roleSkills = profileMap.get(cRole);
 
       // Calculate average score for this session (Smart Filter)
-      const validAssessments = session.assessments.filter(a => {
+      let validAssessments = session.assessments.filter(a => {
         // Base valid check
         if (!a.nivel || a.nivel <= 0) return false;
 
         // Inactive Skill Check
         if (a.skill && !a.skill.isActive) return false;
-        
+
         // Role Profile check (if exists)
         if (roleSkills) {
           const skillIdStr = a.skillId.toString();
           // If skill is in profile, check criticality
           // If not in profile, decided policy: Include or Exclude?
-          // Usually if profile exists, we respect it strictly. 
+          // Usually if profile exists, we respect it strictly.
           // Assuming profile contains ALL relevant skills. If not in profile -> 'N'.
           // Let's use flexible check: If defined as 'N', exclude.
-          const criticality = roleSkills[skillIdStr] || 'N'; 
+          const criticality = roleSkills[skillIdStr] || 'N';
           return criticality !== 'N';
         }
-        
-        return true; 
+
+        return true;
       });
+
+      // Bug #31 fallback: when the role profile filters out every assessment
+      // (e.g. all skills marked 'N', empty profile, role renamed/deleted, or
+      // an evaluation done before role configuration is finished), fall back to
+      // the collaborator's raw assessments instead of silently dropping them
+      // from Evolution. We still require a real evaluation (nivel > 0).
+      if (validAssessments.length === 0 && roleSkills) {
+        validAssessments = session.assessments.filter(a => (
+          a.nivel > 0 && (!a.skill || a.skill.isActive)
+        ));
+      }
 
       if (validAssessments.length === 0) return;
       

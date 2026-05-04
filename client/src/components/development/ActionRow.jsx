@@ -21,7 +21,7 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
   const [toggling, setToggling] = useState(false);
 
   const isCompleted = action.status === 'completed';
-  const typeConfig = ACTION_TYPES[action.type] || ACTION_TYPES.experience;
+  const typeConfig = ACTION_TYPES[action.actionType] || ACTION_TYPES.experience;
   const TypeIcon = typeConfig.icon;
 
   const handleToggle = async () => {
