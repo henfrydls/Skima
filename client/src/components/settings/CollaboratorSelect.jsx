@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { User, ChevronDown, Search } from 'lucide-react';
 
 /**
@@ -8,38 +9,77 @@ import { User, ChevronDown, Search } from 'lucide-react';
  * - value: selected collaborator id (or null)
  * - onChange: (id) => void
  * - disabled: boolean (optional) - renders static text when true
+ *
+ * The options panel is rendered into a React portal with fixed positioning so
+ * it escapes parent containers that have `overflow-hidden` (e.g. modal dialogs).
  */
 export default function CollaboratorSelect({ collaborators, value, onChange, disabled = false }) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const containerRef = useRef(null);
+  const [dropdownStyle, setDropdownStyle] = useState({});
+  const triggerRef = useRef(null);
+  const dropdownRef = useRef(null);
 
   const selected = collaborators.find(c => c.id === value);
 
-  // Close on outside click
+  // Position panel relative to the trigger; flips above when there's no room below.
+  const updatePosition = () => {
+    if (!triggerRef.current) return;
+    const rect = triggerRef.current.getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    const maxH = Math.min(Math.max(spaceBelow, spaceAbove) - 20, 360);
+    const openUp = spaceAbove > spaceBelow;
+
+    setDropdownStyle({
+      position: 'fixed',
+      left: rect.left,
+      width: rect.width,
+      maxHeight: maxH,
+      ...(openUp
+        ? { bottom: window.innerHeight - rect.top + 4 }
+        : { top: rect.bottom + 4 }
+      ),
+    });
+  };
+
+  // Position on open + reposition on scroll/resize while open
+  useEffect(() => {
+    if (!isOpen) return;
+    updatePosition();
+    const handle = () => updatePosition();
+    window.addEventListener('scroll', handle, true);
+    window.addEventListener('resize', handle);
+    return () => {
+      window.removeEventListener('scroll', handle, true);
+      window.removeEventListener('resize', handle);
+    };
+  }, [isOpen]);
+
+  // Close on outside click / Escape
   useEffect(() => {
     if (!isOpen) return;
     const handleClick = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        triggerRef.current && !triggerRef.current.contains(e.target) &&
+        dropdownRef.current && !dropdownRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
         setSearch('');
       }
     };
-    document.addEventListener('mousedown', handleClick);
-    return () => document.removeEventListener('mousedown', handleClick);
-  }, [isOpen]);
-
-  // Close on Escape
-  useEffect(() => {
-    if (!isOpen) return;
     const handleKey = (e) => {
       if (e.key === 'Escape') {
         setIsOpen(false);
         setSearch('');
       }
     };
+    document.addEventListener('mousedown', handleClick);
     document.addEventListener('keydown', handleKey);
-    return () => document.removeEventListener('keydown', handleKey);
+    return () => {
+      document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('keydown', handleKey);
+    };
   }, [isOpen]);
 
   const filtered = collaborators.filter(c =>
@@ -69,9 +109,10 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
   }
 
   return (
-    <div className="relative w-full" ref={containerRef}>
+    <div className="relative w-full">
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         type="button"
         onClick={() => setIsOpen(!isOpen)}
         aria-haspopup="listbox"
@@ -92,11 +133,17 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
         <ChevronDown size={14} className={`text-gray-400 flex-shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
 
-      {/* Dropdown panel */}
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white rounded-lg border border-gray-200 shadow-lg z-30 overflow-hidden" role="listbox" aria-label="Select collaborator">
+      {/* Dropdown panel — rendered via portal so it escapes modal overflow:hidden */}
+      {isOpen && createPortal(
+        <div
+          ref={dropdownRef}
+          style={dropdownStyle}
+          role="listbox"
+          aria-label="Select collaborator"
+          className="bg-white rounded-lg border border-gray-200 shadow-lg z-[9999] overflow-hidden flex flex-col"
+        >
           {/* Search input */}
-          <div className="p-2 border-b border-gray-100">
+          <div className="p-2 border-b border-gray-100 flex-shrink-0">
             <div className="relative">
               <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
@@ -111,7 +158,7 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
           </div>
 
           {/* Options list */}
-          <div className="max-h-[280px] overflow-y-auto">
+          <div className="overflow-y-auto">
             {filtered.length === 0 ? (
               <div className="px-3 py-4 text-sm text-gray-400 text-center">No results</div>
             ) : (
@@ -190,7 +237,8 @@ export default function CollaboratorSelect({ collaborators, value, onChange, dis
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
