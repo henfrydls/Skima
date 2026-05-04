@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import GoalFormModal from '../DevelopmentGoalFormModal';
 
 vi.mock('../../../contexts/AuthContext', () => ({
@@ -22,28 +22,43 @@ const renderModal = (props = {}) => render(
 );
 
 describe('DevelopmentGoalFormModal — dropdown styling (bug #34)', () => {
-  it('Target Level select shows native chevron (no appearance-none)', () => {
+  // After bug #34, native <select> elements were replaced with the custom
+  // Select component (button + portal panel) used elsewhere in the app.
+  it('Target Level uses the custom Select (no native <select> element)', () => {
     renderModal();
-    const targetSelect = document.querySelector('select[name="targetLevel"]');
-    expect(targetSelect).toBeInTheDocument();
-    // appearance-none would hide the native dropdown chevron, making the select
-    // look like a plain text input — that was bug #34.
-    expect(targetSelect.className).not.toMatch(/appearance-none/);
+    const nativeSelect = document.querySelector('select[name="targetLevel"]');
+    expect(nativeSelect).toBeNull();
+    // The trigger button exposes name="targetLevel"
+    const trigger = document.querySelector('button[name="targetLevel"]');
+    expect(trigger).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
   });
 
-  it('Priority select shows native chevron (no appearance-none)', () => {
+  it('Priority uses the custom Select', () => {
     renderModal();
-    const prioritySelect = document.querySelector('select[name="priority"]');
-    expect(prioritySelect).toBeInTheDocument();
-    expect(prioritySelect.className).not.toMatch(/appearance-none/);
+    expect(document.querySelector('select[name="priority"]')).toBeNull();
+    const trigger = document.querySelector('button[name="priority"]');
+    expect(trigger).toBeInTheDocument();
+    expect(trigger).toHaveAttribute('aria-haspopup', 'listbox');
   });
 
-  it('Priority select uses the same styling tokens as the rest of the app', () => {
+  it('Priority dropdown shows High/Medium/Low options when opened', () => {
     renderModal();
-    const prioritySelect = document.querySelector('select[name="priority"]');
-    // Canonical tokens used across the app's selects/inputs
-    expect(prioritySelect.className).toMatch(/border-gray-200/);
-    expect(prioritySelect.className).toMatch(/rounded-lg/);
-    expect(prioritySelect.className).toMatch(/focus:ring-primary/);
+    const trigger = document.querySelector('button[name="priority"]');
+    fireEvent.click(trigger);
+    // Panel renders into document.body via portal
+    expect(screen.getByRole('option', { name: 'High' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Medium' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Low' })).toBeInTheDocument();
+  });
+
+  it('Selecting a Priority option calls onChange with the option value', () => {
+    const onSubmit = vi.fn();
+    renderModal({ onSubmit });
+    const trigger = document.querySelector('button[name="priority"]');
+    fireEvent.click(trigger);
+    fireEvent.click(screen.getByRole('option', { name: 'Low' }));
+    // The trigger label should now show 'Low'
+    expect(trigger.textContent).toContain('Low');
   });
 });
