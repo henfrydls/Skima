@@ -1,4 +1,4 @@
-import { Download, RotateCcw, AlertCircle, Loader2 } from 'lucide-react';
+import { Download, RotateCcw, AlertCircle, Loader2, ExternalLink, PackageOpen } from 'lucide-react';
 import Button from './Button';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import { useAppVersion } from '../../hooks/useAppVersion';
@@ -108,6 +108,47 @@ export default function UpdateModal() {
               <p className="text-sm text-gray-600">
                 Skima will restart automatically when finished.
               </p>
+            </div>
+          </>
+        )}
+
+        {state === 'manual-only' && (
+          <>
+            <div className="flex items-center gap-3 px-6 py-4 border-b border-gray-100">
+              <div className="w-10 h-10 rounded-full bg-warning/10 flex items-center justify-center flex-shrink-0">
+                <PackageOpen size={20} className="text-warning" />
+              </div>
+              <div>
+                <h2 id="update-modal-title" className="text-lg font-semibold text-gray-900">
+                  Manual update required
+                </h2>
+                <p className="text-xs text-gray-500">
+                  Skima {updateInfo?.version} is available
+                </p>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 space-y-3">
+              <p className="text-sm text-gray-600">
+                Auto-update isn't supported for your install method (.deb / .rpm
+                packages are managed by your system package manager).
+              </p>
+              <p className="text-sm text-gray-600">
+                Download the latest release from GitHub and install it manually.
+                Or switch to the AppImage build for future automatic updates.
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 px-6 py-3 border-t border-gray-100 bg-gray-50">
+              <Button variant="secondary" size="sm" onClick={dismissError}>Close</Button>
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => window.open('https://github.com/henfrydls/Skima/releases/latest', '_blank', 'noopener')}
+              >
+                <ExternalLink size={14} className="mr-1.5" />
+                Download from GitHub
+              </Button>
             </div>
           </>
         )}

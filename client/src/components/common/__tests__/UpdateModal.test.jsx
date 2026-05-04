@@ -97,6 +97,24 @@ describe('UpdateModal', () => {
     });
   });
 
+  describe('manual-only state (Linux .deb / .rpm)', () => {
+    it('shows manual update message and Download from GitHub CTA', () => {
+      mockContext.state = 'manual-only';
+      mockContext.updateInfo = { version: '1.5.0', notes: '' };
+      render(<UpdateModal />);
+      expect(screen.getByText(/Manual update required/i)).toBeInTheDocument();
+      expect(screen.getByText(/1\.5\.0/)).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /Download from GitHub/i })).toBeInTheDocument();
+    });
+
+    it('Close button dismisses the modal', () => {
+      mockContext.state = 'manual-only';
+      render(<UpdateModal />);
+      fireEvent.click(screen.getByRole('button', { name: /Close/i }));
+      expect(mockContext.dismissError).toHaveBeenCalled();
+    });
+  });
+
   describe('error state', () => {
     it('shows the error message', () => {
       mockContext.state = 'error';

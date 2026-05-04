@@ -110,6 +110,8 @@ Starting with **v1.4.0**, Skima checks for new releases on startup and lets you 
 
 Updates are cryptographically signed; Skima refuses any binary that doesn't match the publisher signature.
 
+**Linux note:** auto-update works for the **AppImage** build. If you installed via `.deb` or `.rpm`, your system package manager owns the install path so Skima can't replace itself in-place — Skima will detect this and prompt you to download the latest release from GitHub manually. Switch to the AppImage build if you want fully automatic updates.
+
 ### Docker
 
 Run Skima as a local web service with a single command. Requires [Docker](https://docs.docker.com/get-docker/).

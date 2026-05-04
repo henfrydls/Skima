@@ -21,13 +21,29 @@ const isTauri = () => typeof window !== 'undefined' && !!window.__TAURI_INTERNAL
 const getAutoCheckPref = () => localStorage.getItem(STORAGE_KEYS.AUTO_CHECK) !== 'false';
 
 /**
+ * Detect the "unsupported Linux package format" error from the Tauri updater.
+ * Tauri v2 supports auto-update on Linux ONLY when the app is running as an
+ * AppImage. Users who installed via .deb / .rpm hit this on `downloadAndInstall`.
+ * The error message comes from the plugin (e.g. "binary for the package format
+ * deb is not supported") so we match defensively.
+ */
+function isLinuxPackageUnsupportedError(err) {
+  const msg = (err?.message || String(err) || '').toLowerCase();
+  return /(unsupported|not supported|no installer|cannot install).*\b(linux|package|deb|rpm|format)\b|\b(deb|rpm)\b.*\b(not supported|unsupported)\b/.test(msg);
+}
+
+/**
  * UpdateProvider - Wraps the app to enable Tauri auto-update.
  *
  * State machine:
  *   idle → checking → (up-to-date | available | error)
- *   available → downloading → installing → (relaunch) | error
+ *   available → downloading → installing → (relaunch) | error | manual-only
  *
- * The modal renders for: available | downloading | installing | error.
+ * `manual-only` fires when the user clicks "Update now" on a Linux .deb / .rpm
+ * install — Tauri can't apply the update and we surface a friendly CTA to
+ * download manually from GitHub Releases.
+ *
+ * The modal renders for: available | downloading | installing | error | manual-only.
  *
  * Preferences (localStorage):
  *   - skima.update.autoCheck   - 'true' (default) | 'false'
@@ -128,6 +144,12 @@ export function UpdateProvider({ children }) {
       // After install completes, restart
       await relaunch();
     } catch (e) {
+      if (isLinuxPackageUnsupportedError(e)) {
+        // Friendly fallback for .deb / .rpm users — auto-update isn't possible,
+        // they need to download from GitHub manually.
+        setState('manual-only');
+        return;
+      }
       setError(e?.message || String(e));
       setState('error');
     }
@@ -160,7 +182,7 @@ export function UpdateProvider({ children }) {
     return () => clearTimeout(t);
   }, [checkNow]);
 
-  const showModal = state === 'available' || state === 'downloading' || state === 'installing' || state === 'error';
+  const showModal = state === 'available' || state === 'downloading' || state === 'installing' || state === 'error' || state === 'manual-only';
 
   const value = {
     state,

@@ -261,5 +261,65 @@ describe('UpdateContext', () => {
         expect(screen.getByTestId('state').textContent).toBe('error');
       });
     });
+
+    it('transitions to "manual-only" on Linux .deb / .rpm unsupported error', async () => {
+      // Tauri v2 emits this error message when running outside an AppImage
+      mockDownloadAndInstall.mockRejectedValue(
+        new Error('binary for the package format deb is not supported')
+      );
+      mockCheck.mockResolvedValue({
+        version: '1.5.0',
+        body: '',
+        downloadAndInstall: mockDownloadAndInstall,
+      });
+      renderWithProvider();
+
+      await act(async () => { screen.getByTestId('check').click(); });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+
+      await act(async () => { screen.getByTestId('install').click(); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('state').textContent).toBe('manual-only');
+      });
+    });
+
+    it('matches the unsupported error in alternate phrasings (rpm)', async () => {
+      mockDownloadAndInstall.mockRejectedValue(
+        new Error('Linux package format rpm is unsupported')
+      );
+      mockCheck.mockResolvedValue({
+        version: '1.5.0',
+        body: '',
+        downloadAndInstall: mockDownloadAndInstall,
+      });
+      renderWithProvider();
+
+      await act(async () => { screen.getByTestId('check').click(); });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+      await act(async () => { screen.getByTestId('install').click(); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('state').textContent).toBe('manual-only');
+      });
+    });
+
+    it('does NOT route to manual-only for unrelated install errors', async () => {
+      mockDownloadAndInstall.mockRejectedValue(new Error('Network timeout'));
+      mockCheck.mockResolvedValue({
+        version: '1.5.0',
+        body: '',
+        downloadAndInstall: mockDownloadAndInstall,
+      });
+      renderWithProvider();
+
+      await act(async () => { screen.getByTestId('check').click(); });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+      await act(async () => { screen.getByTestId('install').click(); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('state').textContent).toBe('error');
+      });
+    });
   });
 });
