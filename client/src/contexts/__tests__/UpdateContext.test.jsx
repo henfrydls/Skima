@@ -87,7 +87,11 @@ describe('UpdateContext', () => {
       });
     });
 
-    it('transitions to "error" on check failure', async () => {
+    it('transitions to "error" on check failure (after exhausting retries)', async () => {
+      // checkNow now retries 3x with 1.5s + 3s backoff (~4.5s total) before
+      // surfacing the error. Disable auto-check so it doesn't add an extra
+      // call during the longer wait window.
+      localStorage.setItem('skima.update.autoCheck', 'false');
       mockCheck.mockRejectedValue(new Error('Network error'));
       renderWithProvider();
 
@@ -95,8 +99,26 @@ describe('UpdateContext', () => {
 
       await waitFor(() => {
         expect(screen.getByTestId('state').textContent).toBe('error');
-      });
-    });
+      }, { timeout: 8000 });
+      // 3 attempts (1 initial + 2 retries before giving up)
+      expect(mockCheck).toHaveBeenCalledTimes(3);
+    }, 10_000);
+
+    it('succeeds on the second retry after one transient failure', async () => {
+      // Simulates the intermittent pre-TCP failures observed on Windows.
+      localStorage.setItem('skima.update.autoCheck', 'false');
+      mockCheck
+        .mockRejectedValueOnce(new Error('error sending request'))
+        .mockResolvedValueOnce(null);
+      renderWithProvider();
+
+      await act(async () => { screen.getByTestId('check').click(); });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('state').textContent).toBe('up-to-date');
+      }, { timeout: 5000 });
+      expect(mockCheck).toHaveBeenCalledTimes(2);
+    }, 8_000);
   });
 
   describe('preferences', () => {

@@ -29,6 +29,26 @@ const UPDATE_CHECK_OPTIONS = {
   },
 };
 
+// On Windows we still see intermittent pre-TCP `error sending request`
+// failures even with the User-Agent fix and Schannel TLS. Retry with
+// backoff so a single transient failure doesn't surface as an error
+// modal when a retry would have succeeded. Three attempts, 1.5s + 3s
+// backoff, total worst case ~5s extra latency for the rare bad path.
+async function checkWithRetry(retries = 3) {
+  let lastErr;
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await checkForUpdate(UPDATE_CHECK_OPTIONS);
+    } catch (e) {
+      lastErr = e;
+      if (i < retries - 1) {
+        await new Promise(r => setTimeout(r, 1500 * (i + 1)));
+      }
+    }
+  }
+  throw lastErr;
+}
+
 const isTauri = () => typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
 const getAutoCheckPref = () => localStorage.getItem(STORAGE_KEYS.AUTO_CHECK) !== 'false';
@@ -84,7 +104,7 @@ export function UpdateProvider({ children }) {
     setState('checking');
     setError(null);
     try {
-      const result = await checkForUpdate(UPDATE_CHECK_OPTIONS);
+      const result = await checkWithRetry();
       localStorage.setItem(STORAGE_KEYS.LAST_CHECKED, String(Date.now()));
 
       if (!result) {
