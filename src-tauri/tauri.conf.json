@@ -1,6 +1,6 @@
 {
   "productName": "Skima",
-  "version": "1.4.0-rc.6",
+  "version": "1.4.0",
   "identifier": "com.dlslabs.skima",
   "build": {
     "beforeDevCommand": "npm run dev:client",
