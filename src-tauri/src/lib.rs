@@ -1,12 +1,36 @@
 use std::sync::Mutex;
 use std::net::TcpStream;
 use std::time::Duration;
-use tauri::Manager;
+use tauri::{Manager, State};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
 /// Holds the sidecar child process so we can kill it on exit
 struct SidecarState(Mutex<Option<CommandChild>>);
+
+/// Proactively kill the sidecar before the updater installer runs.
+///
+/// Auto-update on Windows fails with "Error opening file for writing" if
+/// `skima-server.exe` is still alive when NSIS tries to overwrite it. The
+/// app's normal exit handler kills the sidecar, but `kill()` only sends a
+/// signal — Windows takes a few hundred ms to actually release the file lock,
+/// and the installer doesn't wait that long.
+///
+/// Frontend should call this *before* `downloadAndInstall` so the sidecar is
+/// guaranteed dead well before the installer touches the binary.
+#[tauri::command]
+async fn prepare_for_update(state: State<'_, SidecarState>) -> Result<(), String> {
+    // Take ownership of the child so the Exit handler doesn't try to kill it again
+    let child = state.0.lock().unwrap().take();
+    if let Some(child) = child {
+        let _ = child.kill();
+    }
+    // Give Windows ~1.5s to flush handles and release the file lock on
+    // skima-server.exe before the installer overwrites it. We're about to
+    // exit anyway so blocking the task is fine.
+    std::thread::sleep(Duration::from_millis(1500));
+    Ok(())
+}
 
 /// Wait for the sidecar to start accepting TCP connections
 fn wait_for_sidecar(port: u16, max_seconds: u32) -> bool {
@@ -46,6 +70,7 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
+        .invoke_handler(tauri::generate_handler![prepare_for_update])
         .manage(SidecarState(Mutex::new(None)))
         .setup(|app| {
             let db_path = get_db_path(app);

@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef } f
 import toast from 'react-hot-toast';
 import { check as checkForUpdate } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
+import { invoke } from '@tauri-apps/api/core';
 import UpdateModal from '../components/common/UpdateModal';
 
 const UpdateContext = createContext(null);
@@ -156,6 +157,18 @@ export function UpdateProvider({ children }) {
     setProgress({ downloaded: 0, total: 0 });
 
     try {
+      // Kill the sidecar BEFORE the installer runs. If we don't, Windows
+      // holds an open handle on skima-server.exe and NSIS errors with
+      // "Error opening file for writing". The Rust command also waits
+      // ~1.5s so the OS has time to release the file lock.
+      try {
+        await invoke('prepare_for_update');
+      } catch (e) {
+        // Non-fatal — log and proceed; installer will retry on its own
+        // eslint-disable-next-line no-console
+        console.warn('[updater] prepare_for_update failed:', e);
+      }
+
       let total = 0;
       await handle.downloadAndInstall((event) => {
         // Tauri's progress event shape:
