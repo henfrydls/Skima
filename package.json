@@ -1,6 +1,6 @@
 {
   "name": "skima",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "private": true,
   "description": "Skima - People Development Platform",
   "scripts": {
@@ -10,9 +10,10 @@
     "build": "npm run build:client && npm run build:server",
     "build:client": "cd client && npm run build",
     "build:server": "echo 'Server is JS, no build needed'",
-    "test": "npm run test:client && npm run test:server",
+    "test": "npm run test:client && npm run test:server && npm run test:scripts",
     "test:client": "cd client && npm test",
     "test:server": "cd server && npm test",
+    "test:scripts": "node --test scripts/__tests__/*.test.js",
     "test:coverage": "npm run test:coverage:client && npm run test:coverage:server",
     "test:coverage:client": "cd client && npx vitest run --coverage",
     "test:coverage:server": "cd server && npx vitest run --coverage",

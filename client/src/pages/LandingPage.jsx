@@ -1,9 +1,13 @@
+import { useState } from 'react';
 import { ArrowRight, Download, ShieldCheck, CheckCircle, LayoutGrid, TrendingUp, BarChart3, Shield, Clock, Eye, Search, Users, LineChart, Target, Database, Cpu } from 'lucide-react';
+import DownloadModal from '../components/common/DownloadModal';
 
 const GITHUB_URL = 'https://github.com/henfrydls/Skima';
-const GITHUB_RELEASES = 'https://github.com/henfrydls/Skima/releases';
+const GITHUB_RELEASES = `${GITHUB_URL}/releases`;
 
 export default function LandingPage() {
+  const [downloadOpen, setDownloadOpen] = useState(false);
+
   return (
     <div className="min-h-screen bg-white text-slate-800">
       {/* ===== NAV ===== */}
@@ -51,15 +55,14 @@ export default function LandingPage() {
                 Try Live Demo
                 <ArrowRight size={18} />
               </a>
-              <a
-                href={GITHUB_RELEASES}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => setDownloadOpen(true)}
                 className="inline-flex items-center gap-2 border-2 border-slate-300 hover:border-primary text-slate-700 hover:text-primary px-6 py-3.5 rounded-xl font-bold text-base transition-all"
               >
                 <Download size={18} />
                 Download Free
-              </a>
+              </button>
             </div>
             <p className="text-xs text-slate-400">
               No sign-up required. Explore with sample data.
@@ -289,15 +292,14 @@ export default function LandingPage() {
               Free and source-available. Set up in under 5 minutes.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-10">
-              <a
-                href={GITHUB_RELEASES}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
+                onClick={() => setDownloadOpen(true)}
                 className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-amber-200/30 hover:-translate-y-0.5 transition-all duration-200"
               >
                 Download Free
                 <Download size={18} />
-              </a>
+              </button>
               <a
                 href="/demo"
                 className="inline-flex items-center gap-2 text-white/80 hover:text-white font-medium text-base transition-colors"
@@ -328,6 +330,8 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {downloadOpen && <DownloadModal isOpen onClose={() => setDownloadOpen(false)} />}
     </div>
   );
 }

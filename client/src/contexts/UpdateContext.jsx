@@ -4,6 +4,7 @@ import { check as checkForUpdate } from '@tauri-apps/plugin-updater';
 import { relaunch } from '@tauri-apps/plugin-process';
 import { invoke } from '@tauri-apps/api/core';
 import UpdateModal from '../components/common/UpdateModal';
+import { useConfig } from './ConfigContext';
 
 const UpdateContext = createContext(null);
 
@@ -42,6 +43,11 @@ async function checkWithRetry(retries = 3) {
       return await checkForUpdate(UPDATE_CHECK_OPTIONS);
     } catch (e) {
       lastErr = e;
+      // Don't retry on "platform not in manifest" — it's not a transient
+      // network failure, retrying just delays the silent up-to-date result.
+      if (isPlatformNotInManifestError(e)) {
+        throw e;
+      }
       if (i < retries - 1) {
         await new Promise(r => setTimeout(r, 1500 * (i + 1)));
       }
@@ -67,6 +73,25 @@ function isLinuxPackageUnsupportedError(err) {
 }
 
 /**
+ * Detect the "platform key not in manifest" error from the Tauri updater.
+ *
+ * The plugin throws this when latest.json's `platforms` object doesn't contain
+ * a key matching the running OS/arch. Most common cause is a CI race during
+ * release publishing — one platform's matrix job updated latest.json before
+ * another one's entry got merged in (see issue #51). Genuine "platform not
+ * supported" is rare and indistinguishable from the race case.
+ *
+ * UX decision: treat as "up-to-date" silently rather than surfacing an error
+ * modal. Worst case: user misses an update for a few minutes until next
+ * auto-check (or restart) when CI has settled. Better than a scary modal that
+ * looks like the app is broken.
+ */
+function isPlatformNotInManifestError(err) {
+  const msg = (err?.message || String(err) || '').toLowerCase();
+  return /none of the fallback platforms.*were found/i.test(msg);
+}
+
+/**
  * UpdateProvider - Wraps the app to enable Tauri auto-update.
  *
  * State machine:
@@ -86,6 +111,10 @@ function isLinuxPackageUnsupportedError(err) {
  *   - skima.update.lastCheckedAt - ms timestamp of the most recent check
  */
 export function UpdateProvider({ children }) {
+  // Setup wizard runs on first launch — we suppress auto-check until it's done
+  // so the "Update failed" / "Available" modal doesn't overlay the welcome screen.
+  const { isSetup } = useConfig();
+
   const [state, setState] = useState('idle');
   const [updateInfo, setUpdateInfo] = useState(null);
   const [progress, setProgress] = useState({ downloaded: 0, total: 0 });
@@ -140,6 +169,15 @@ export function UpdateProvider({ children }) {
       });
       setState('available');
     } catch (e) {
+      // Bug #58: silently treat "platform not in manifest" as up-to-date.
+      // Most often this is the CI race in #51 (manifest mid-publishing for
+      // the user's platform) — we don't want to scare users with an error
+      // modal for a transient state.
+      if (isPlatformNotInManifestError(e)) {
+        setState('up-to-date');
+        if (!silent) toast.success("You're up to date");
+        return;
+      }
       setError(e?.message || String(e));
       setState('error');
       if (!silent) toast.error('Could not check for updates');
@@ -219,14 +257,17 @@ export function UpdateProvider({ children }) {
   }, []);
 
   // Auto-check on mount, with delay so we don't block startup.
+  // Bug #57: don't run auto-check until setup wizard is complete — otherwise
+  // the modal appears over the welcome screen on a fresh first launch.
   useEffect(() => {
     if (!isTauri()) return;
     if (!getAutoCheckPref()) return;
+    if (!isSetup) return;
     const t = setTimeout(() => {
       checkNow({ silent: true });
     }, AUTO_CHECK_DELAY_MS);
     return () => clearTimeout(t);
-  }, [checkNow]);
+  }, [checkNow, isSetup]);
 
   const showModal = state === 'available' || state === 'downloading' || state === 'installing' || state === 'error' || state === 'manual-only';
 

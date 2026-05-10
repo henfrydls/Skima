@@ -15,3 +15,4 @@ export {
 } from './LoadingSkeleton';
 export { EmptyState } from './EmptyState';
 export { default as Select } from './Select';
+export { default as DownloadModal } from './DownloadModal';
