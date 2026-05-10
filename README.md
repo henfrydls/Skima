@@ -98,6 +98,31 @@ Download the latest release for your platform from [GitHub Releases](https://git
 
 Just install and open — no setup, no accounts, no internet required.
 
+#### First time on macOS? One extra step needed
+
+Skima is open-source and not signed with a paid Apple Developer certificate, so macOS Gatekeeper will block the app on first launch with the message *"Apple could not verify Skima is free of malware."* This is a one-time setup step. Pick one method:
+
+**Method 1 — Terminal (recommended, 1 step)**
+
+After dragging Skima.app to Applications, open Terminal and run:
+
+```bash
+xattr -cr /Applications/Skima.app
+```
+
+Then double-click Skima.app — it opens normally without warning.
+
+**Method 2 — System Settings (manual, 4 steps)**
+
+1. Try opening Skima.app — Apple shows the "could not verify" dialog. Click **Done**.
+2. Open **System Settings → Privacy & Security**.
+3. Scroll down to *"Skima was blocked..."* and click **Open Anyway**.
+4. Enter your admin password to confirm.
+
+> macOS 15 (Sequoia) and later: the **Open Anyway** button only appears in System Settings, never in the alert dialog itself.
+
+**Why this happens:** Apple charges $99/year for code-signing certificates required to bypass Gatekeeper. As a free open-source project, we'll get certified once Skima has enough users to justify it. Your install method is safe — Skima is fully [open source](https://github.com/henfrydls/Skima) and you can audit the code.
+
 #### Automatic Updates
 
 Starting with **v1.4.0**, Skima checks for new releases on startup and lets you install them in-app — no more manual reinstalls.

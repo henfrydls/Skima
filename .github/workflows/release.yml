@@ -181,3 +181,27 @@ jobs:
           prerelease: false
           includeUpdaterJson: true
           args: ${{ matrix.args }}
+
+  # Validate latest.json after all matrix jobs complete (issue #51).
+  # tauri-action's per-platform uploads can leave the manifest with a partial
+  # set of platforms if a job's updater artifact step silently skipped (e.g.
+  # macOS before bundle.targets included "app"). This job audits the final
+  # manifest and re-publishes it with a fresh pub_date as the canonical
+  # "release fully aggregated" signal. Runs even if some build-tauri jobs
+  # fail so partial-but-functional manifests still get the audit trail.
+  aggregate-updater-json:
+    needs: [build-tauri]
+    if: always() && needs.build-tauri.result != 'cancelled'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Aggregate and validate latest.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.ref_name }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: node scripts/aggregate-updater-json.js

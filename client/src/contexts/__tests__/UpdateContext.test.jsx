@@ -19,6 +19,12 @@ vi.mock('../../hooks/useAppVersion', () => ({
   useAppVersion: () => '1.4.0',
 }));
 
+// ConfigContext: tests can override isSetup by mutating mockConfig before render
+const mockConfig = { isSetup: true };
+vi.mock('../ConfigContext', () => ({
+  useConfig: () => mockConfig,
+}));
+
 // Mock UpdateModal since we test UI in its own file
 vi.mock('../../components/common/UpdateModal', () => ({
   default: () => <div data-testid="update-modal" />,
@@ -51,6 +57,8 @@ describe('UpdateContext', () => {
     localStorage.clear();
     // Default: pretend we're in Tauri so auto-check would normally run
     window.__TAURI_INTERNALS__ = {};
+    // Default: setup is complete
+    mockConfig.isSetup = true;
   });
 
   afterEach(() => {
@@ -84,6 +92,21 @@ describe('UpdateContext', () => {
       await waitFor(() => {
         expect(screen.getByTestId('state').textContent).toBe('available');
         expect(screen.getByTestId('version').textContent).toBe('1.5.0');
+      });
+    });
+
+    // Bug #58: when latest.json doesn't have the user's platform (race in CI publishing
+    // or genuinely unsupported), the plugin throws. We surface this as "up-to-date" silently
+    // because most of the time it just means the manifest is mid-publishing.
+    it('treats "platform not in manifest" error as up-to-date silently', async () => {
+      // Tauri error message format observed during v1.4.0 production validation
+      mockCheck.mockRejectedValue(new Error(
+        'None of the fallback platforms `["darwin-aarch64-app", "darwin-aarch64"]` were found in the response `platforms` object'
+      ));
+      renderWithProvider();
+      await act(async () => { screen.getByTestId('check').click(); });
+      await waitFor(() => {
+        expect(screen.getByTestId('state').textContent).toBe('up-to-date');
       });
     });
 
@@ -226,6 +249,25 @@ describe('UpdateContext', () => {
       renderWithProvider();
       await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
       expect(screen.getByTestId('state').textContent).toBe('available');
+    });
+
+    // Bug #57: don't run auto-check while setup wizard is showing on first install
+    it('does not run when setup is incomplete (config.isSetup=false)', async () => {
+      mockConfig.isSetup = false;
+      vi.useFakeTimers();
+      renderWithProvider();
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+      expect(mockCheck).not.toHaveBeenCalled();
+    });
+
+    it('runs auto-check after setup completes (config flips to isSetup=true)', async () => {
+      // This guards against accidental regression where setup-gating becomes too aggressive
+      mockConfig.isSetup = true;
+      mockCheck.mockResolvedValue(null);
+      vi.useFakeTimers();
+      renderWithProvider();
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+      expect(mockCheck).toHaveBeenCalledTimes(1);
     });
 
     it('clears stale skipVersion when a newer version is found', async () => {

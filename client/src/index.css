@@ -157,6 +157,26 @@
   .hover-lift:hover {
     @apply shadow-md -translate-y-0.5;
   }
+
+  /* Mac install help block: subtle pulse after the user clicks "Download for macOS"
+     to draw attention to the install instructions without being noisy. */
+  @keyframes mac-help-pulse {
+    0%   { background-color: rgb(255 251 235); border-color: rgb(253 230 138); }
+    40%  { background-color: rgb(254 243 199); border-color: rgb(251 191 36); }
+    100% { background-color: rgb(255 251 235); border-color: rgb(253 230 138); }
+  }
+  .animate-mac-pulse {
+    animation: mac-help-pulse 1.4s ease-in-out;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-mac-pulse,
+    .animate-fade-in,
+    .animate-scale-in,
+    .animate-expand {
+      animation-duration: 0.01ms;
+    }
+  }
 }
 
 /* Remove focus border on Recharts SVG elements (the outline appears on inner <g> groups) */
