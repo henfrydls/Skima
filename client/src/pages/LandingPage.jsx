@@ -331,7 +331,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      <DownloadModal isOpen={downloadOpen} onClose={() => setDownloadOpen(false)} />
+      {downloadOpen && <DownloadModal isOpen onClose={() => setDownloadOpen(false)} />}
     </div>
   );
 }
