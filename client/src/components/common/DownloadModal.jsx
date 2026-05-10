@@ -73,11 +73,27 @@ function groupAssets(assets, primary) {
   return cards;
 }
 
+/**
+ * Card label for the secondary "Other platforms" list. Convention validated
+ * against Notion/Cursor/VS Code/LibreOffice: OS first, format in parentheses.
+ */
 function labelForAsset(name) {
   if (name.endsWith('.exe')) return 'Windows installer';
   if (name.endsWith('.dmg')) return 'macOS (Universal)';
-  if (name.endsWith('.AppImage')) return 'Linux AppImage';
-  if (name.endsWith('.deb')) return 'Linux .deb';
+  if (name.endsWith('.AppImage')) return 'Linux (AppImage)';
+  if (name.endsWith('.deb')) return 'Linux (.deb)';
+  return name;
+}
+
+/**
+ * Compact format-only label for the subtitle below the primary CTA.
+ * The OS is already in the button, so we don't repeat it here.
+ */
+function formatForAsset(name) {
+  if (name.endsWith('.exe')) return 'Installer';
+  if (name.endsWith('.dmg')) return 'DMG';
+  if (name.endsWith('.AppImage')) return 'AppImage';
+  if (name.endsWith('.deb')) return '.deb';
   return name;
 }
 
@@ -327,7 +343,7 @@ export default function DownloadModal({ isOpen, onClose }) {
                 Download Skima
               </h2>
               <p className="text-xs text-gray-500">
-                {isLoading ? 'Fetching latest version...' : `v${version || '1.4.0'} · Free forever`}
+                {isLoading ? 'Fetching latest version...' : `v${version || '1.4.0'}`}
                 {isFallback && <span className="ml-1 text-gray-400">· offline</span>}
               </p>
             </div>
@@ -350,7 +366,7 @@ export default function DownloadModal({ isOpen, onClose }) {
               Download for {osLabel}
             </a>
             <p className="text-xs text-gray-400 mt-2 text-center">
-              {primaryAsset.name}
+              {formatForAsset(primaryAsset.name)}
               {primaryAsset.size > 0 && <span> · {formatBytes(primaryAsset.size)}</span>}
             </p>
           </div>
@@ -363,7 +379,7 @@ export default function DownloadModal({ isOpen, onClose }) {
         {otherCards.length > 0 && (
           <div className="px-6 pb-4">
             <p className="text-xs text-gray-400 uppercase tracking-wide mb-2">
-              {primaryAsset ? 'Also available for' : 'Pick your platform'}
+              {primaryAsset ? 'Other platforms' : 'Pick your platform'}
             </p>
             <div className="grid grid-cols-2 gap-2">
               {otherCards.map((card) => (
@@ -394,7 +410,7 @@ export default function DownloadModal({ isOpen, onClose }) {
             View source on GitHub
             <ExternalLink size={10} />
           </a>
-          <span className="text-xs text-gray-400">PolyForm Noncommercial</span>
+          <span className="text-xs text-gray-400">Free for noncommercial use</span>
         </div>
       </div>
     </div>,

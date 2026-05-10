@@ -114,8 +114,8 @@ describe('DownloadModal', () => {
     it('lists non-primary platforms when on macOS', () => {
       renderModal('Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0)');
       expect(screen.getByText(/Windows installer/i)).toBeInTheDocument();
-      expect(screen.getByText(/Linux AppImage/i)).toBeInTheDocument();
-      expect(screen.getByText(/Linux \.deb/i)).toBeInTheDocument();
+      expect(screen.getByText(/Linux \(AppImage\)/i)).toBeInTheDocument();
+      expect(screen.getByText(/Linux \(\.deb\)/i)).toBeInTheDocument();
     });
 
     it('does not duplicate the primary platform in the other-platforms list', () => {
