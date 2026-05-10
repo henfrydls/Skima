@@ -31,17 +31,25 @@
  *   already-published releases.
  */
 
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
-const TAG_NAME = process.env.TAG_NAME;
-const REPO = process.env.GITHUB_REPOSITORY || 'henfrydls/Skima';
-const DRY_RUN = process.env.DRY_RUN === '1';
+// Validators for config strings before interpolating into URL paths.
+// In CI these come from `${{ github.ref_name }}` and `${{ github.repository }}`,
+// but DRY_RUN local invocation is also supported — defense-in-depth against
+// path traversal if someone passes a malicious value.
+const SAFE_REF = /^[\w.+/-]+$/;
+const SAFE_REPO = /^[\w.-]+\/[\w.-]+$/;
 
-if (!GITHUB_TOKEN || !TAG_NAME) {
-  console.error('GITHUB_TOKEN and TAG_NAME are required');
-  process.exit(1);
-}
+// Cap on the size of latest.json we'll download. The real file is ~3KB; if
+// anything above this lands as latest.json it's a misuploaded asset, not a
+// real manifest — abort rather than OOM the runner.
+const MAX_MANIFEST_BYTES = 1_000_000;
 
-const [OWNER, REPO_NAME] = REPO.split('/');
+// Resolved at main() time, after env validation runs. Module-level scope so
+// the helper functions can read them.
+let GITHUB_TOKEN;
+let TAG_NAME;
+let DRY_RUN;
+let OWNER;
+let REPO_NAME;
 
 // Platform keys that tauri-plugin-updater queries on each OS/arch.
 // If any are missing from the final manifest after the matrix jobs complete,
@@ -122,11 +130,20 @@ async function uploadAsset(release, filename, content) {
   return res.json();
 }
 
-function summarizePlatforms(manifest) {
-  const present = Object.keys(manifest.platforms || {}).sort();
-  const missing = EXPECTED_PLATFORMS.filter((p) => !present.includes(p));
+/**
+ * Pure helper: given a manifest object, return which expected platforms
+ * are present and which are missing. Exported for unit testing.
+ */
+function summarizePlatforms(manifest, expectedPlatforms = EXPECTED_PLATFORMS) {
+  const platforms = manifest && typeof manifest.platforms === 'object' && manifest.platforms !== null
+    ? manifest.platforms
+    : {};
+  const present = Object.keys(platforms).sort();
+  const missing = expectedPlatforms.filter((p) => !present.includes(p));
   return { present, missing };
 }
+
+module.exports = { summarizePlatforms, EXPECTED_PLATFORMS };
 
 async function main() {
   console.log(`Aggregating latest.json for ${TAG_NAME}${DRY_RUN ? ' (dry-run)' : ''}...`);
@@ -141,6 +158,16 @@ async function main() {
     console.error(
       'latest.json not found in release assets. ' +
       'All build-tauri matrix jobs may have failed or did not produce updater artifacts.'
+    );
+    process.exit(1);
+  }
+
+  // Defense-in-depth: refuse to download anything pretending to be the manifest
+  // that's wildly larger than expected.
+  if (latestJsonAsset.size > MAX_MANIFEST_BYTES) {
+    console.error(
+      `latest.json asset size ${latestJsonAsset.size} exceeds ${MAX_MANIFEST_BYTES} byte cap. ` +
+      `Refusing to download. Investigate which job uploaded a malformed manifest.`
     );
     process.exit(1);
   }
@@ -163,11 +190,10 @@ async function main() {
   if (missing.length > 0) {
     console.log(`\nPlatforms missing (${missing.length}):`);
     missing.forEach((p) => console.log(`  - ${p}`));
-    console.log(
-      '\nWARNING: Some platforms are missing. Users on those platforms ' +
-      'will see "platform not in manifest" until next release. Investigate ' +
-      'the failed/skipped build-tauri jobs.'
-    );
+    // GitHub Actions annotation so the run summary surfaces the partial state
+    // instead of burying it in stdout.
+    const missingList = missing.join(', ');
+    console.log(`::warning title=Updater manifest is incomplete::Missing platforms: ${missingList}. Users on these platforms will see "platform not in manifest" errors until the next release.`);
   } else {
     console.log('\nAll expected platforms are present in the manifest.');
   }
@@ -191,15 +217,55 @@ async function main() {
     return;
   }
 
+  // Critical: the delete-then-upload sequence must be atomic from the user's
+  // perspective. If upload fails after delete succeeds, the release is left
+  // with NO latest.json — every client gets a 404 on the next auto-check.
+  // Try the upload, and on failure, attempt to put back the original content
+  // so existing clients keep working until we manually re-run.
   console.log('\nDeleting existing latest.json...');
   await deleteAsset(latestJsonAsset.id);
-  console.log('Uploading canonical latest.json...');
-  await uploadAsset(release, 'latest.json', finalContent);
+  try {
+    console.log('Uploading canonical latest.json...');
+    await uploadAsset(release, 'latest.json', finalContent);
+  } catch (uploadErr) {
+    console.error('Upload failed after delete; attempting to restore previous manifest...');
+    try {
+      await uploadAsset(release, 'latest.json', rawContent);
+      console.error('Restored previous manifest. Investigate the upload failure and re-run this job.');
+    } catch (restoreErr) {
+      console.error('Restore ALSO failed. The release has no latest.json. Manual intervention required.');
+      console.error('Restore error:', restoreErr.message);
+    }
+    throw uploadErr;
+  }
 
   console.log(`\nDone. latest.json re-published with ${present.length} platform(s).`);
 }
 
-main().catch((e) => {
-  console.error('Unhandled error:', e);
-  process.exit(1);
-});
+// Only run when invoked as the entry point (not when required for tests).
+if (require.main === module) {
+  // Validate env at entry, not at require time
+  GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+  TAG_NAME = process.env.TAG_NAME;
+  DRY_RUN = process.env.DRY_RUN === '1';
+  const REPO = process.env.GITHUB_REPOSITORY || 'henfrydls/Skima';
+
+  if (!GITHUB_TOKEN || !TAG_NAME) {
+    console.error('GITHUB_TOKEN and TAG_NAME are required');
+    process.exit(1);
+  }
+  if (!SAFE_REF.test(TAG_NAME)) {
+    console.error(`Invalid TAG_NAME: must match ${SAFE_REF}`);
+    process.exit(1);
+  }
+  if (!SAFE_REPO.test(REPO)) {
+    console.error(`Invalid GITHUB_REPOSITORY: must match ${SAFE_REPO}`);
+    process.exit(1);
+  }
+  [OWNER, REPO_NAME] = REPO.split('/');
+
+  main().catch((e) => {
+    console.error('Unhandled error:', e);
+    process.exit(1);
+  });
+}

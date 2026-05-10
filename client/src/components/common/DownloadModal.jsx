@@ -101,12 +101,24 @@ function MacInstallHelp({ pulsing }) {
   const [isExpanded, setIsExpanded] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showWhy, setShowWhy] = useState(false);
+  const copiedTimerRef = useRef(null);
+
+  // Cancel pending copy-feedback timer if the component unmounts mid-flight,
+  // so React doesn't try to setState on an unmounted node.
+  useEffect(() => () => {
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+  }, []);
+
+  const flashCopied = () => {
+    setCopied(true);
+    if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
+    copiedTimerRef.current = setTimeout(() => setCopied(false), 2000);
+  };
 
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(TERMINAL_CMD);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      flashCopied();
     } catch {
       // Fallback for older browsers / non-HTTPS contexts
       const ta = document.createElement('textarea');
@@ -115,8 +127,7 @@ function MacInstallHelp({ pulsing }) {
       ta.select();
       try {
         document.execCommand('copy');
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+        flashCopied();
       } catch {
         // Silent fail — copy buttons are nice-to-have
       } finally {
@@ -248,6 +259,12 @@ export default function DownloadModal({ isOpen, onClose }) {
   const [detectedOS] = useState(detectOS);
   const [pulsing, setPulsing] = useState(false);
   const previousFocus = useRef(null);
+  const pulsingTimerRef = useRef(null);
+
+  // Cancel pulse timer on unmount to avoid setState on unmounted component
+  useEffect(() => () => {
+    if (pulsingTimerRef.current) clearTimeout(pulsingTimerRef.current);
+  }, []);
 
   useFocusTrap();
 
@@ -279,7 +296,8 @@ export default function DownloadModal({ isOpen, onClose }) {
     if (detectedOS === 'macos') {
       // Pulse the help block to draw attention to install instructions
       setPulsing(true);
-      setTimeout(() => setPulsing(false), 1500);
+      if (pulsingTimerRef.current) clearTimeout(pulsingTimerRef.current);
+      pulsingTimerRef.current = setTimeout(() => setPulsing(false), 1500);
     }
   };
 

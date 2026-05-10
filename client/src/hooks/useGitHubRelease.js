@@ -29,12 +29,12 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 // Sizes are approximate — exact bytes don't matter for fallback display since
 // the redirect URL works regardless of filename version.
 const FALLBACK_RELEASE = {
-  version: '1.4.0',
+  version: '1.4.1',
   assets: [
-    { name: 'Skima_1.4.0_x64-setup.exe', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.0_x64-setup.exe`, size: 105_000_000 },
-    { name: 'Skima_1.4.0_universal.dmg', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.0_universal.dmg`, size: 240_000_000 },
-    { name: 'Skima_1.4.0_amd64.AppImage', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.0_amd64.AppImage`, size: 195_000_000 },
-    { name: 'Skima_1.4.0_amd64.deb', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.0_amd64.deb`, size: 122_000_000 },
+    { name: 'Skima_1.4.1_x64-setup.exe', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_x64-setup.exe`, size: 105_000_000 },
+    { name: 'Skima_1.4.1_universal.dmg', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_universal.dmg`, size: 240_000_000 },
+    { name: 'Skima_1.4.1_amd64.AppImage', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_amd64.AppImage`, size: 195_000_000 },
+    { name: 'Skima_1.4.1_amd64.deb', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_amd64.deb`, size: 122_000_000 },
   ],
 };
 
