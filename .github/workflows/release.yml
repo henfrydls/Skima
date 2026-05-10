@@ -161,6 +161,18 @@ jobs:
           # and existing v1.4.0+ clients will refuse the update.
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+          # macOS code signing + Apple notarization. These secrets only have
+          # effect on the macOS runner; tauri-action ignores them on Win/Linux.
+          # Without them the .dmg/.app is unsigned and Gatekeeper hard-blocks it
+          # on first launch with "Apple could not verify Skima". Setting all 6
+          # makes tauri-action sign with Developer ID + submit to Apple's
+          # notarization service automatically. See issue #54.
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'Skima ${{ github.ref_name }}'
