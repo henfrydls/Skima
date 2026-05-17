@@ -152,27 +152,20 @@ jobs:
       - name: Ensure resources directory exists
         run: mkdir -p src-tauri/resources && touch src-tauri/resources/.gitkeep
 
-      # Compile the modern Asset Catalog (Liquid Glass) icon from
-      # src-tauri/icons/Skima.icon. macOS 26 (Tahoe) wraps any app whose
-      # bundle lacks Assets.car in a gray "squircle jail" container — see
-      # issue tracking macOS 26 icon support. Tauri picks up the generated
-      # Assets.car automatically via bundle.resources ("resources/*") and
+      # macOS 26 (Tahoe) wraps any app whose bundle lacks a modern Asset
+      # Catalog (Assets.car keyed by CFBundleIconName) in a gray "squircle
+      # jail" container. The catalog is shipped pre-compiled in
+      # src-tauri/resources/Assets.car (built locally via
+      # scripts/build-macos.sh from src-tauri/icons/Skima.icon) because
+      # the macos-latest runners still use Xcode <26 — actool there does
+      # not produce a usable .car for the .icon source format. Tauri
+      # picks the catalog up via bundle.resources ("resources/*") and
       # merges src-tauri/Info.plist (CFBundleIconName=Skima) into the
-      # final Info.plist before signing, so no post-build patching is
-      # needed. The Skima.icns that actool emits also replaces the legacy
-      # icons/icon.icns so macOS <26 gets the same artwork.
-      - name: Compile macOS Asset Catalog icon
-        if: matrix.platform == 'macos-latest'
-        run: |
-          mkdir -p build/icon-assets
-          xcrun actool src-tauri/icons/Skima.icon \
-            --compile build/icon-assets \
-            --platform macosx --target-device mac \
-            --minimum-deployment-target 26.0 \
-            --app-icon Skima --include-all-app-icons \
-            --output-partial-info-plist build/icon-assets/partial.plist
-          cp build/icon-assets/Assets.car src-tauri/resources/Assets.car
-          cp build/icon-assets/Skima.icns src-tauri/icons/icon.icns
+      # final Info.plist before signing.
+      #
+      # When GitHub adds a macos-26 runner with Xcode 26+, we can drop
+      # the committed Assets.car and reintroduce the `xcrun actool ...`
+      # step here. Tracking issue: see repo issues for "macos-26 runner".
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
