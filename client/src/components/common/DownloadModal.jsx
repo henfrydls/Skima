@@ -176,18 +176,18 @@ function MacInstallHelp({ pulsing }) {
             <p className="text-xs text-amber-800 mb-2">
               Move Skima.app to your Applications folder, then run:
             </p>
-            <div className="bg-gray-900 rounded flex items-center gap-2 p-2 font-mono text-xs">
-              <code className="flex-1 text-white truncate">{TERMINAL_CMD}</code>
+            <div className="bg-gray-900 rounded flex items-center gap-2 px-2 py-2 font-mono text-xs">
+              <code className="flex-1 min-w-0 text-white overflow-x-auto whitespace-nowrap">{TERMINAL_CMD}</code>
               <button
                 type="button"
                 onClick={handleCopy}
                 aria-label={copied ? 'Copied to clipboard' : 'Copy Terminal command'}
-                className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors min-w-[80px] justify-center ${
+                className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors justify-center ${
                   copied ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
             <p className="text-xs text-amber-700 mt-2">
