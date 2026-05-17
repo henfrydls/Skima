@@ -203,6 +203,23 @@ jobs:
   # manifest and re-publishes it with a fresh pub_date as the canonical
   # "release fully aggregated" signal. Runs even if some build-tauri jobs
   # fail so partial-but-functional manifests still get the audit trail.
+  # Ensure -rc., -beta., -alpha. tags publish as GitHub prereleases.
+  # tauri-action accepts an explicit `prerelease` input but as of v0.5.x
+  # has occasionally landed in `false` even when the input evaluates to
+  # `true` (template-rendered booleans don't always survive the action's
+  # internal type coercion). This step re-asserts the flag once after all
+  # build matrix jobs have either succeeded or failed, so the prerelease
+  # state is correct regardless of which platforms actually published.
+  set-prerelease-flag:
+    needs: [build-tauri]
+    if: always() && (contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') || contains(github.ref_name, '-alpha.'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark release as prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --prerelease --repo "${{ github.repository }}"
+
   aggregate-updater-json:
     needs: [build-tauri]
     if: always() && needs.build-tauri.result != 'cancelled'
