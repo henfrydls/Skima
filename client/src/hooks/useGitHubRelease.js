@@ -28,11 +28,17 @@ const CACHE_TTL_MS = 10 * 60 * 1000;
 // Last-known release used when the GitHub API is unreachable or rate-limited.
 // Sizes are approximate — exact bytes don't matter for fallback display since
 // the redirect URL works regardless of filename version.
+//
+// macOS ships two arch-specific dmgs since v1.4.1. We used to bundle them into
+// a single universal dmg via lipo, but the resulting universal Node sidecar
+// crashes on Apple Silicon at v8::Isolate::Initialize (ICU data mismatch
+// after lipo merge). Splitting by arch is the standard remedy.
 const FALLBACK_RELEASE = {
   version: '1.4.1',
   assets: [
     { name: 'Skima_1.4.1_x64-setup.exe', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_x64-setup.exe`, size: 105_000_000 },
-    { name: 'Skima_1.4.1_universal.dmg', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_universal.dmg`, size: 240_000_000 },
+    { name: 'Skima_1.4.1_aarch64.dmg', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_aarch64.dmg`, size: 130_000_000 },
+    { name: 'Skima_1.4.1_x64.dmg', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_x64.dmg`, size: 135_000_000 },
     { name: 'Skima_1.4.1_amd64.AppImage', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_amd64.AppImage`, size: 195_000_000 },
     { name: 'Skima_1.4.1_amd64.deb', url: `https://github.com/${REPO}/releases/latest/download/Skima_1.4.1_amd64.deb`, size: 122_000_000 },
   ],
