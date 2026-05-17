@@ -80,8 +80,21 @@ jobs:
             args: ''
           - platform: windows-latest
             args: ''
+          # macOS split into per-arch builds. We used to produce a single
+          # --target universal-apple-darwin .dmg via `lipo -create` on the
+          # Node sidecar, but the resulting universal binary crashes on
+          # M-series Macs at v8::Isolate::Initialize because lipo does not
+          # correctly merge the embedded ICU data (icudt78_dat) across the
+          # x86_64 and arm64 slices. Each arch now ships its own .dmg so
+          # the sidecar stays native to the host. Tauri's latest.json
+          # auto-aggregator (aggregate-updater-json job below) collates the
+          # darwin-aarch64 and darwin-x86_64 entries.
           - platform: macos-latest
-            args: '--target universal-apple-darwin'
+            args: '--target aarch64-apple-darwin'
+            mac-arch: aarch64
+          - platform: macos-latest
+            args: '--target x86_64-apple-darwin'
+            mac-arch: x86_64
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -95,7 +108,8 @@ jobs:
       - name: Install Rust Stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          # Each macOS job only needs its own Rust target.
+          targets: ${{ matrix.mac-arch == 'aarch64' && 'aarch64-apple-darwin' || (matrix.mac-arch == 'x86_64' && 'x86_64-apple-darwin' || '') }}
 
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -123,27 +137,22 @@ jobs:
           name: sidecar-node20-win-x64
           path: src-tauri/binaries/
 
-      - name: Download Sidecar (macOS x64)
-        if: matrix.platform == 'macos-latest'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-macos-x64
-          path: src-tauri/binaries/
-
-      - name: Download Sidecar (macOS ARM)
-        if: matrix.platform == 'macos-latest'
+      - name: Download Sidecar (macOS arm64)
+        if: matrix.mac-arch == 'aarch64'
         uses: actions/download-artifact@v4
         with:
           name: sidecar-node20-macos-arm64
           path: src-tauri/binaries/
 
-      - name: Create macOS Universal Sidecar
-        if: matrix.platform == 'macos-latest'
-        run: |
-          lipo -create \
-            src-tauri/binaries/skima-server-x86_64-apple-darwin \
-            src-tauri/binaries/skima-server-aarch64-apple-darwin \
-            -output src-tauri/binaries/skima-server-universal-apple-darwin
+      - name: Download Sidecar (macOS x64)
+        if: matrix.mac-arch == 'x86_64'
+        uses: actions/download-artifact@v4
+        with:
+          name: sidecar-node20-macos-x64
+          path: src-tauri/binaries/
+
+      # No `lipo -create` step — see matrix comment for why. Each macOS
+      # job now ships only its native sidecar.
 
       - name: Make Sidecar Executable
         if: matrix.platform != 'windows-latest'
