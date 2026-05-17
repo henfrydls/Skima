@@ -1,6 +1,6 @@
 {
   "productName": "Skima",
-  "version": "1.4.1",
+  "version": "1.4.1-rc.1",
   "identifier": "com.dlslabs.skima",
   "build": {
     "beforeDevCommand": "npm run dev:client",
@@ -58,7 +58,7 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "https://github.com/henfrydls/Skima/releases/latest/download/latest.json"
+        "https://github.com/henfrydls/Skima/releases/download/v1.4.1-rc.2/latest.json"
       ],
       "dialog": false,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDM0RDRGMTlFNzQ2NDkxNjAKUldSZ2tXUjBudkhVTk91UU5jdXRXTnVzUzJoUGtlQ3A4aXBWQ2tvR1lQOTFhVC92cndYWU13Yk4K"

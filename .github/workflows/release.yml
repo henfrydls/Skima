@@ -195,7 +195,11 @@ jobs:
           releaseName: 'Skima ${{ github.ref_name }}'
           releaseBody: ''
           releaseDraft: false
-          prerelease: false
+          # Tags shaped vX.Y.Z-rc.N (or -beta.N, -alpha.N) are published as
+          # GitHub prereleases so they do not show up under /releases/latest/
+          # and existing v1.4.0 users are not auto-prompted to "upgrade" to
+          # an RC. Plain semver tags (vX.Y.Z) continue to publish as normal.
+          prerelease: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') || contains(github.ref_name, '-alpha.') }}
           includeUpdaterJson: true
           args: ${{ matrix.args }}
 
