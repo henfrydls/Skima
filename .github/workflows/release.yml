@@ -20,10 +20,20 @@ jobs:
           - platform: windows-latest
             target: node20-win-x64
             sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
-          - platform: macos-latest
+          # Sidecar build runs on macos-13 (Ventura / Intel hardware) on
+          # purpose: pkg embeds a prebuilt Node, and Nodes compiled against
+          # older system ICU tend to be forward-compatible with newer macOS
+          # versions, but not the other way round. macos-latest (Sequoia
+          # 15.x) sidecars abort with EXC_BREAKPOINT at v8::Isolate::
+          # Initialize when loaded into macOS 26 Tahoe — referenced symbol
+          # icudt78_dat. Building on the older runner sidesteps that.
+          # The arm64 sidecar is produced via pkg's cross-compile (pkg
+          # downloads the prebuilt arm64 Node from its cache), the runner
+          # arch doesn't matter for that step.
+          - platform: macos-13
             target: node20-macos-x64
             sidecar-name: skima-server-x86_64-apple-darwin
-          - platform: macos-latest
+          - platform: macos-13
             target: node20-macos-arm64
             sidecar-name: skima-server-aarch64-apple-darwin
 
