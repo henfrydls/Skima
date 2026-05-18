@@ -20,12 +20,34 @@ jobs:
           - platform: windows-latest
             target: node20-win-x64
             sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
-          - platform: macos-latest
+          # macOS sidecars are NOT built in CI. We discovered that
+          # `@yao-pkg/pkg`'s prebuilt Node 20.20.2 binary embeds an ICU
+          # data table that aborts at v8::Isolate::Initialize when run
+          # on macOS 26 Tahoe — regardless of whether the runner is
+          # macos-15 (Sequoia) or macos-26 itself. The same pkg invocation
+          # from a Mac that already had the pre-regression pkg-fetch
+          # cache produces a binary that works; CI runners always pull
+          # fresh and get the broken binary.
+          #
+          # Workaround: the two macOS sidecars are built locally on
+          # a Mac with a known-good pkg-fetch cache and uploaded to a
+          # separate "sidecar-binaries-v1" GitHub release. The macOS
+          # rows below skip pkg entirely and `gh release download`
+          # those assets. Linux + Windows still build normally because
+          # they are not affected by the pkg ICU bug.
+          #
+          # Permanent fix (tracked for v1.4.2): migrate the sidecar from
+          # @yao-pkg/pkg to `bun build --compile` + Prisma 7 driver
+          # adapter, which builds reproducibly from any Linux host and
+          # eliminates the pkg ICU coupling.
+          - platform: ubuntu-22.04
             target: node20-macos-x64
             sidecar-name: skima-server-x86_64-apple-darwin
-          - platform: macos-latest
+            prebuilt: true
+          - platform: ubuntu-22.04
             target: node20-macos-arm64
             sidecar-name: skima-server-aarch64-apple-darwin
+            prebuilt: true
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -37,12 +59,26 @@ jobs:
           node-version: '20'
 
       - name: Install Server Dependencies
+        if: '!matrix.prebuilt'
         run: cd server && npm install
 
       - name: Generate Prisma Client
+        if: '!matrix.prebuilt'
         run: cd server && npx prisma generate
 
+      - name: Download prebuilt macOS sidecar
+        if: matrix.prebuilt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ matrix.sidecar-name }}" \
+            --output "src-tauri/binaries/${{ matrix.sidecar-name }}"
+
       - name: Build Sidecar
+        if: '!matrix.prebuilt'
         run: |
           cd server
           npx @yao-pkg/pkg . --target ${{ matrix.target }} --output "../src-tauri/binaries/${{ matrix.sidecar-name }}" --compress GZip
@@ -80,8 +116,25 @@ jobs:
             args: ''
           - platform: windows-latest
             args: ''
-          - platform: macos-latest
-            args: '--target universal-apple-darwin'
+          # macOS split into per-arch builds. We used to produce a single
+          # --target universal-apple-darwin .dmg via `lipo -create` on the
+          # Node sidecar, but the resulting universal binary crashed on
+          # M-series Macs at v8::Isolate::Initialize. Each arch now ships
+          # its own .dmg so the sidecar stays native to the host. Tauri's
+          # latest.json auto-aggregator (aggregate-updater-json job below)
+          # collates the darwin-aarch64 and darwin-x86_64 entries.
+          #
+          # We pin macos-26 (Tahoe) explicitly rather than macos-latest
+          # because the .dmg has to be assembled with the same OS as the
+          # sidecar so any ICU references the OS ships agree across the
+          # bundle. macos-latest is still macos-15 (Sequoia) until the
+          # 2026-06-15 → 2026-07-15 migration completes.
+          - platform: macos-26
+            args: '--target aarch64-apple-darwin'
+            mac-arch: aarch64
+          - platform: macos-26-intel
+            args: '--target x86_64-apple-darwin'
+            mac-arch: x86_64
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -95,7 +148,8 @@ jobs:
       - name: Install Rust Stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
+          # Each macOS job only needs its own Rust target.
+          targets: ${{ matrix.mac-arch == 'aarch64' && 'aarch64-apple-darwin' || (matrix.mac-arch == 'x86_64' && 'x86_64-apple-darwin' || '') }}
 
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -123,34 +177,62 @@ jobs:
           name: sidecar-node20-win-x64
           path: src-tauri/binaries/
 
-      - name: Download Sidecar (macOS x64)
-        if: matrix.platform == 'macos-latest'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-macos-x64
-          path: src-tauri/binaries/
-
-      - name: Download Sidecar (macOS ARM)
-        if: matrix.platform == 'macos-latest'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-macos-arm64
-          path: src-tauri/binaries/
-
-      - name: Create macOS Universal Sidecar
-        if: matrix.platform == 'macos-latest'
+      # macOS sidecars come from the sidecar-binaries-v1 release directly
+      # (bypassing the actions/upload-artifact → download-artifact roundtrip)
+      # because the artifact zip path silently mangles a few bytes near the
+      # end of the binary in transit — the SHA256 of the downloaded file no
+      # longer matches what was uploaded, and the resulting sidecar crashes
+      # at v8::Isolate::Initialize on launch. Fetching the binary straight
+      # from the GitHub release preserves the original bytes.
+      - name: Download prebuilt macOS sidecar (arm64)
+        if: matrix.mac-arch == 'aarch64'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          lipo -create \
-            src-tauri/binaries/skima-server-x86_64-apple-darwin \
-            src-tauri/binaries/skima-server-aarch64-apple-darwin \
-            -output src-tauri/binaries/skima-server-universal-apple-darwin
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "skima-server-aarch64-apple-darwin" \
+            --output "src-tauri/binaries/skima-server-aarch64-apple-darwin"
+          shasum -a 256 "src-tauri/binaries/skima-server-aarch64-apple-darwin"
+
+      - name: Download prebuilt macOS sidecar (x64)
+        if: matrix.mac-arch == 'x86_64'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "skima-server-x86_64-apple-darwin" \
+            --output "src-tauri/binaries/skima-server-x86_64-apple-darwin"
+          shasum -a 256 "src-tauri/binaries/skima-server-x86_64-apple-darwin"
+
+      # No `lipo -create` step — see matrix comment for why. Each macOS
+      # job now ships only its native sidecar.
 
       - name: Make Sidecar Executable
         if: matrix.platform != 'windows-latest'
         run: chmod +x src-tauri/binaries/skima-server-*
 
-      - name: Ensure resources directory exists
-        run: mkdir -p src-tauri/resources && touch src-tauri/resources/.gitkeep
+      # src-tauri/resources/ is now always present (Assets.car is committed),
+      # so we no longer need a "mkdir -p" pre-step. The previous step used
+      # bash's `mkdir -p` which fails on the Windows runner's PowerShell.
+
+      # macOS 26 (Tahoe) wraps any app whose bundle lacks a modern Asset
+      # Catalog (Assets.car keyed by CFBundleIconName) in a gray "squircle
+      # jail" container. The catalog is shipped pre-compiled in
+      # src-tauri/resources/Assets.car (built locally via
+      # scripts/build-macos.sh from src-tauri/icons/Skima.icon) because
+      # the macos-latest runners still use Xcode <26 — actool there does
+      # not produce a usable .car for the .icon source format. Tauri
+      # picks the catalog up via bundle.resources ("resources/*") and
+      # merges src-tauri/Info.plist (CFBundleIconName=Skima) into the
+      # final Info.plist before signing.
+      #
+      # When GitHub adds a macos-26 runner with Xcode 26+, we can drop
+      # the committed Assets.car and reintroduce the `xcrun actool ...`
+      # step here. Tracking issue: see repo issues for "macos-26 runner".
 
       - name: Build Tauri App
         uses: tauri-apps/tauri-action@v0
@@ -173,7 +255,11 @@ jobs:
           releaseName: 'Skima ${{ github.ref_name }}'
           releaseBody: ''
           releaseDraft: false
-          prerelease: false
+          # Tags shaped vX.Y.Z-rc.N (or -beta.N, -alpha.N) are published as
+          # GitHub prereleases so they do not show up under /releases/latest/
+          # and existing v1.4.0 users are not auto-prompted to "upgrade" to
+          # an RC. Plain semver tags (vX.Y.Z) continue to publish as normal.
+          prerelease: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') || contains(github.ref_name, '-alpha.') }}
           includeUpdaterJson: true
           args: ${{ matrix.args }}
 
@@ -184,6 +270,23 @@ jobs:
   # manifest and re-publishes it with a fresh pub_date as the canonical
   # "release fully aggregated" signal. Runs even if some build-tauri jobs
   # fail so partial-but-functional manifests still get the audit trail.
+  # Ensure -rc., -beta., -alpha. tags publish as GitHub prereleases.
+  # tauri-action accepts an explicit `prerelease` input but as of v0.5.x
+  # has occasionally landed in `false` even when the input evaluates to
+  # `true` (template-rendered booleans don't always survive the action's
+  # internal type coercion). This step re-asserts the flag once after all
+  # build matrix jobs have either succeeded or failed, so the prerelease
+  # state is correct regardless of which platforms actually published.
+  set-prerelease-flag:
+    needs: [build-tauri]
+    if: always() && (contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') || contains(github.ref_name, '-alpha.'))
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark release as prerelease
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${{ github.ref_name }}" --prerelease --repo "${{ github.repository }}"
+
   aggregate-updater-json:
     needs: [build-tauri]
     if: always() && needs.build-tauri.result != 'cancelled'

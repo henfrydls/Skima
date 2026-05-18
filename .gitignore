@@ -73,7 +73,17 @@ credentials/
 # Tauri
 src-tauri/target/
 src-tauri/binaries/
-src-tauri/resources/
+# Ignore the contents of src-tauri/resources/ (built artifacts only)
+# but make exceptions for tracked files. Note: cannot use the dir-form
+# `src-tauri/resources/` here because git refuses to re-include files
+# whose parent dir is ignored — we have to glob the children.
+src-tauri/resources/*
+!src-tauri/resources/.gitkeep
+# Ship the compiled macOS 26 Asset Catalog (built locally via
+# scripts/build-macos.sh from src-tauri/icons/Skima.icon). GitHub Actions
+# macos-latest runners still use Xcode <26 as of 2026, so actool there
+# does not produce Assets.car — we have to ship the prebuilt artifact.
+!src-tauri/resources/Assets.car
 
 # pkg output
 *.exe

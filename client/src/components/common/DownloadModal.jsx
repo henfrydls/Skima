@@ -36,6 +36,37 @@ function detectOS() {
   return 'unknown';
 }
 
+/**
+ * Best-effort detection of Apple Silicon vs Intel Mac. Returns one of:
+ *   'apple-silicon' | 'intel' | 'unknown'.
+ *
+ * Chromium (Chrome/Edge/Brave/Arc) exposes the arch via
+ * userAgentData.getHighEntropyValues(['architecture']) — 'arm' or 'x86'.
+ * Safari intentionally does not, so we fall back to a heuristic:
+ *   - The user agent string from Safari on Apple Silicon since Big Sur
+ *     still says "Intel Mac OS X" (Apple kept it for compat). It is
+ *     therefore NOT a signal of Intel hardware.
+ *   - As of 2026 the active install base of Macs skews Apple Silicon
+ *     (every new Mac since late 2020), so when we cannot tell we
+ *     default to 'unknown' and the UI lets the user pick.
+ *
+ * Async because getHighEntropyValues returns a Promise.
+ */
+async function detectMacArch() {
+  if (typeof navigator === 'undefined') return 'unknown';
+  const uaData = navigator.userAgentData;
+  if (uaData && typeof uaData.getHighEntropyValues === 'function') {
+    try {
+      const hints = await uaData.getHighEntropyValues(['architecture']);
+      if (hints.architecture === 'arm') return 'apple-silicon';
+      if (hints.architecture === 'x86') return 'intel';
+    } catch {
+      // Permission denied or unsupported — fall through
+    }
+  }
+  return 'unknown';
+}
+
 function formatBytes(bytes) {
   if (!bytes) return '';
   const mb = bytes / (1024 * 1024);
@@ -43,15 +74,61 @@ function formatBytes(bytes) {
 }
 
 /**
+ * Find the macOS asset matching the given arch.
+ *   'apple-silicon' → *_aarch64.dmg
+ *   'intel'         → *_x64.dmg or *_x86_64.dmg
+ *   'unknown'       → any .dmg (legacy universal or first available)
+ */
+function pickMacDmgForArch(assets, arch) {
+  const find = (predicate) => assets.find(predicate);
+  if (arch === 'apple-silicon') {
+    return (
+      find((a) => /_aarch64\.dmg$/i.test(a.name)) ||
+      find((a) => /_arm64\.dmg$/i.test(a.name)) ||
+      find((a) => a.name.endsWith('.dmg'))
+    );
+  }
+  if (arch === 'intel') {
+    return (
+      find((a) => /_x86_64\.dmg$/i.test(a.name)) ||
+      find((a) => /_x64\.dmg$/i.test(a.name)) ||
+      find((a) => a.name.endsWith('.dmg'))
+    );
+  }
+  return find((a) => a.name.endsWith('.dmg'));
+}
+
+/**
  * Pick the primary asset for a given OS from the assets list.
  * Returns null if no matching asset (renders the modal as multi-platform).
+ * macArch is honored only when os === 'macos' and there is more than one
+ * dmg in the release.
  */
-function pickPrimaryAsset(os, assets) {
+function pickPrimaryAsset(os, assets, macArch = 'unknown') {
   const find = (predicate) => assets.find(predicate);
   if (os === 'windows') return find((a) => a.name.endsWith('.exe'));
-  if (os === 'macos') return find((a) => a.name.endsWith('.dmg'));
+  if (os === 'macos') return pickMacDmgForArch(assets, macArch);
   if (os === 'linux') return find((a) => a.name.endsWith('.AppImage'));
   return null;
+}
+
+/**
+ * Stable ordering for the secondary card list so that flipping the Mac
+ * arch toggle only swaps which dmg sits in the primary CTA — the other
+ * platform cards keep their position. Without this, swapping Apple
+ * Silicon ↔ Intel would re-thread the grid (the previously-primary
+ * macOS would drop into the cards list at the back, shifting Linux
+ * and Windows around).
+ *
+ * The order: macOS (the other arch first), then Linux AppImage, Linux
+ * .deb, Windows installer, then anything else.
+ */
+function assetPriority(name) {
+  if (name.endsWith('.dmg')) return 0;
+  if (name.endsWith('.AppImage')) return 1;
+  if (name.endsWith('.deb')) return 2;
+  if (name.endsWith('.exe')) return 3;
+  return 99;
 }
 
 /**
@@ -64,9 +141,20 @@ function groupAssets(assets, primary) {
     cards.push({ ...primary, label: labelForAsset(primary.name) });
     seen.add(primary.name);
   }
-  for (const a of assets) {
-    if (seen.has(a.name)) continue;
-    if (a.name.endsWith('.sig') || a.name === 'latest.json') continue;
+  // Skip updater-only artifacts: .sig signatures, latest.json manifest,
+  // and the Tauri updater .app.tar.gz bundles (those are consumed by the
+  // in-app auto-updater, not surfaced to end-users on the landing page).
+  const filtered = assets
+    .filter((a) => !seen.has(a.name))
+    .filter((a) => !a.name.endsWith('.sig'))
+    .filter((a) => a.name !== 'latest.json')
+    .filter((a) => !a.name.endsWith('.app.tar.gz'));
+  filtered.sort((a, b) => {
+    const dp = assetPriority(a.name) - assetPriority(b.name);
+    if (dp !== 0) return dp;
+    return a.name.localeCompare(b.name);
+  });
+  for (const a of filtered) {
     cards.push({ ...a, label: labelForAsset(a.name) });
     seen.add(a.name);
   }
@@ -79,7 +167,11 @@ function groupAssets(assets, primary) {
  */
 function labelForAsset(name) {
   if (name.endsWith('.exe')) return 'Windows installer';
-  if (name.endsWith('.dmg')) return 'macOS (Universal)';
+  if (name.endsWith('.dmg')) {
+    if (/_aarch64\.dmg$/i.test(name) || /_arm64\.dmg$/i.test(name)) return 'macOS (Apple Silicon)';
+    if (/_x86_64\.dmg$/i.test(name) || /_x64\.dmg$/i.test(name)) return 'macOS (Intel)';
+    return 'macOS (Universal)';
+  }
   if (name.endsWith('.AppImage')) return 'Linux (AppImage)';
   if (name.endsWith('.deb')) return 'Linux (.deb)';
   return name;
@@ -91,7 +183,11 @@ function labelForAsset(name) {
  */
 function formatForAsset(name) {
   if (name.endsWith('.exe')) return 'Installer';
-  if (name.endsWith('.dmg')) return 'DMG';
+  if (name.endsWith('.dmg')) {
+    if (/_aarch64\.dmg$/i.test(name) || /_arm64\.dmg$/i.test(name)) return 'DMG · Apple Silicon';
+    if (/_x86_64\.dmg$/i.test(name) || /_x64\.dmg$/i.test(name)) return 'DMG · Intel';
+    return 'DMG';
+  }
   if (name.endsWith('.AppImage')) return 'AppImage';
   if (name.endsWith('.deb')) return '.deb';
   return name;
@@ -176,18 +272,18 @@ function MacInstallHelp({ pulsing }) {
             <p className="text-xs text-amber-800 mb-2">
               Move Skima.app to your Applications folder, then run:
             </p>
-            <div className="bg-gray-900 rounded flex items-center gap-2 p-2 font-mono text-xs">
-              <code className="flex-1 text-white truncate">{TERMINAL_CMD}</code>
+            <div className="bg-gray-900 rounded flex items-center gap-2 px-2 py-2 font-mono text-xs">
+              <code className="flex-1 min-w-0 text-white overflow-x-auto whitespace-nowrap">{TERMINAL_CMD}</code>
               <button
                 type="button"
                 onClick={handleCopy}
                 aria-label={copied ? 'Copied to clipboard' : 'Copy Terminal command'}
-                className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors min-w-[80px] justify-center ${
+                className={`flex-shrink-0 inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium transition-colors justify-center ${
                   copied ? 'bg-green-700 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? 'Copied' : 'Copy'}
               </button>
             </div>
             <p className="text-xs text-amber-700 mt-2">
@@ -257,9 +353,21 @@ function MacInstallHelp({ pulsing }) {
 export default function DownloadModal({ isOpen, onClose }) {
   const { version, assets, isLoading, isFallback } = useGitHubRelease();
   const [detectedOS] = useState(detectOS);
+  const [detectedMacArch, setDetectedMacArch] = useState('unknown');
+  const [archOverride, setArchOverride] = useState(null); // null = follow detected, otherwise 'apple-silicon' | 'intel'
   const [pulsing, setPulsing] = useState(false);
   const previousFocus = useRef(null);
   const pulsingTimerRef = useRef(null);
+
+  // Detect Mac arch asynchronously (userAgentData.getHighEntropyValues returns
+  // a Promise). Only runs once on mount. Safari and older browsers fall through
+  // to 'unknown' and the UI offers both dmgs at equal prominence.
+  useEffect(() => {
+    if (detectedOS !== 'macos') return;
+    let cancelled = false;
+    detectMacArch().then((arch) => { if (!cancelled) setDetectedMacArch(arch); });
+    return () => { cancelled = true; };
+  }, [detectedOS]);
 
   // Cancel pulse timer on unmount to avoid setState on unmounted component
   useEffect(() => () => {
@@ -285,12 +393,32 @@ export default function DownloadModal({ isOpen, onClose }) {
     return () => document.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  const primaryAsset = useMemo(() => pickPrimaryAsset(detectedOS, assets), [detectedOS, assets]);
+  // Active Mac arch = manual override if set, otherwise detected.
+  // 'unknown' means we never confirmed — UI defaults to Apple Silicon
+  // (active install base skews heavily that way as of 2026) but shows
+  // a discreet swap link.
+  const activeMacArch = archOverride || (detectedMacArch === 'unknown' ? 'apple-silicon' : detectedMacArch);
+  // Whether to show the "I have an Intel/Apple Silicon Mac" toggle. Only
+  // visible when there is more than one dmg in the release to swap between.
+  const macDmgCount = useMemo(() => assets.filter((a) => a.name.endsWith('.dmg')).length, [assets]);
+  const showMacArchToggle = detectedOS === 'macos' && macDmgCount > 1;
+
+  const primaryAsset = useMemo(
+    () => pickPrimaryAsset(detectedOS, assets, activeMacArch),
+    [detectedOS, assets, activeMacArch]
+  );
   const allCards = useMemo(() => groupAssets(assets, primaryAsset), [assets, primaryAsset]);
   const otherCards = useMemo(
     () => (primaryAsset ? allCards.filter((c) => c.name !== primaryAsset.name) : allCards),
     [allCards, primaryAsset]
   );
+
+  const swapMacArch = () => {
+    setArchOverride((current) => {
+      const effective = current || (detectedMacArch === 'unknown' ? 'apple-silicon' : detectedMacArch);
+      return effective === 'apple-silicon' ? 'intel' : 'apple-silicon';
+    });
+  };
 
   const handlePrimaryClick = () => {
     if (detectedOS === 'macos') {
@@ -382,11 +510,28 @@ export default function DownloadModal({ isOpen, onClose }) {
             >
               {detectedOS === 'macos' ? <Apple size={18} /> : detectedOS === 'windows' ? <Monitor size={18} /> : <Download size={18} />}
               Download for {osLabel}
+              {detectedOS === 'macos' && showMacArchToggle && (
+                <span className="text-amber-100 text-sm font-normal">
+                  ({activeMacArch === 'apple-silicon' ? 'Apple Silicon' : 'Intel'})
+                </span>
+              )}
             </a>
             <p className="text-xs text-gray-400 mt-2 text-center">
               {formatForAsset(primaryAsset.name)}
               {primaryAsset.size > 0 && <span> · {formatBytes(primaryAsset.size)}</span>}
             </p>
+            {showMacArchToggle && (
+              <p className="text-xs text-gray-500 mt-1 text-center">
+                {activeMacArch === 'apple-silicon' ? 'Have an Intel Mac?' : 'Have an Apple Silicon Mac?'}{' '}
+                <button
+                  type="button"
+                  onClick={swapMacArch}
+                  className="text-primary underline hover:text-primary-dark"
+                >
+                  Switch to {activeMacArch === 'apple-silicon' ? 'Intel' : 'Apple Silicon'}
+                </button>
+              </p>
+            )}
           </div>
         )}
 

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <!--
+    Entitlements for the ad-hoc-signed Skima bundle. The Node sidecar
+    (skima-server) embeds V8, which requires JIT-able executable memory
+    pages. macOS Hardened Runtime (which Tauri's bundler enables by
+    default on ad-hoc signed builds since Tauri v2) blocks JIT unless
+    we opt back into it here. Without these entitlements the sidecar
+    aborts at v8::Isolate::Initialize on launch, taking demo-data load
+    and the setup wizard down with it.
+
+    Required for V8:
+      - allow-jit: re-enable mmap PROT_EXEC for the JIT code cache
+      - allow-unsigned-executable-memory: V8 writes to its JIT pages
+        after marking them executable, which Hardened Runtime forbids
+        by default
+
+    Useful for the wider Node ecosystem the sidecar pulls in:
+      - disable-library-validation: lets Node load native .node addons
+        (Prisma's query engine, bcrypt, sqlite3) that are not signed
+        by Apple and may have different team identifiers
+      - disable-executable-page-protection: more permissive page
+        permissions for older V8 builds; harmless if unused
+  -->
+  <key>com.apple.security.cs.allow-jit</key>
+  <true/>
+  <key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+  <true/>
+  <key>com.apple.security.cs.disable-library-validation</key>
+  <true/>
+  <key>com.apple.security.cs.disable-executable-page-protection</key>
+  <true/>
+</dict>
+</plist>
