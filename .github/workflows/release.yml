@@ -177,19 +177,36 @@ jobs:
           name: sidecar-node20-win-x64
           path: src-tauri/binaries/
 
-      - name: Download Sidecar (macOS arm64)
+      # macOS sidecars come from the sidecar-binaries-v1 release directly
+      # (bypassing the actions/upload-artifact → download-artifact roundtrip)
+      # because the artifact zip path silently mangles a few bytes near the
+      # end of the binary in transit — the SHA256 of the downloaded file no
+      # longer matches what was uploaded, and the resulting sidecar crashes
+      # at v8::Isolate::Initialize on launch. Fetching the binary straight
+      # from the GitHub release preserves the original bytes.
+      - name: Download prebuilt macOS sidecar (arm64)
         if: matrix.mac-arch == 'aarch64'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-macos-arm64
-          path: src-tauri/binaries/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "skima-server-aarch64-apple-darwin" \
+            --output "src-tauri/binaries/skima-server-aarch64-apple-darwin"
+          shasum -a 256 "src-tauri/binaries/skima-server-aarch64-apple-darwin"
 
-      - name: Download Sidecar (macOS x64)
+      - name: Download prebuilt macOS sidecar (x64)
         if: matrix.mac-arch == 'x86_64'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-macos-x64
-          path: src-tauri/binaries/
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "skima-server-x86_64-apple-darwin" \
+            --output "src-tauri/binaries/skima-server-x86_64-apple-darwin"
+          shasum -a 256 "src-tauri/binaries/skima-server-x86_64-apple-darwin"
 
       # No `lipo -create` step — see matrix comment for why. Each macOS
       # job now ships only its native sidecar.
