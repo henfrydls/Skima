@@ -20,20 +20,24 @@ jobs:
           - platform: windows-latest
             target: node20-win-x64
             sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
-          # Sidecar build runs on macos-13 (Ventura / Intel hardware) on
-          # purpose: pkg embeds a prebuilt Node, and Nodes compiled against
-          # older system ICU tend to be forward-compatible with newer macOS
-          # versions, but not the other way round. macos-latest (Sequoia
-          # 15.x) sidecars abort with EXC_BREAKPOINT at v8::Isolate::
-          # Initialize when loaded into macOS 26 Tahoe — referenced symbol
-          # icudt78_dat. Building on the older runner sidesteps that.
-          # The arm64 sidecar is produced via pkg's cross-compile (pkg
-          # downloads the prebuilt arm64 Node from its cache), the runner
-          # arch doesn't matter for that step.
-          - platform: macos-13
+          # Sidecar build runs on macos-26 (Tahoe) on purpose: pkg embeds
+          # a prebuilt Node binary with a baked-in ICU data table. A
+          # sidecar compiled on macOS 15 Sequoia (which is still what
+          # `macos-latest` resolves to until June 15, 2026) aborts with
+          # EXC_BREAKPOINT at v8::Isolate::Initialize when loaded into
+          # macOS 26 Tahoe — the embedded icudt78_dat does not line up
+          # with Tahoe's libsystem ICU. Building on macos-26 itself
+          # avoids the cross-OS ICU mismatch entirely.
+          #
+          # macos-26 is GA since 2026-02-26
+          # (github.blog/changelog/2026-02-26-macos-26-is-now-generally-available-for-github-hosted-runners/).
+          # The arm64 sidecar is produced natively; the x86_64 sidecar
+          # uses macos-26-intel for the same reason (host-OS-matching
+          # ICU bundling, just on Intel hardware).
+          - platform: macos-26-intel
             target: node20-macos-x64
             sidecar-name: skima-server-x86_64-apple-darwin
-          - platform: macos-13
+          - platform: macos-26
             target: node20-macos-arm64
             sidecar-name: skima-server-aarch64-apple-darwin
 
@@ -92,17 +96,21 @@ jobs:
             args: ''
           # macOS split into per-arch builds. We used to produce a single
           # --target universal-apple-darwin .dmg via `lipo -create` on the
-          # Node sidecar, but the resulting universal binary crashes on
-          # M-series Macs at v8::Isolate::Initialize because lipo does not
-          # correctly merge the embedded ICU data (icudt78_dat) across the
-          # x86_64 and arm64 slices. Each arch now ships its own .dmg so
-          # the sidecar stays native to the host. Tauri's latest.json
-          # auto-aggregator (aggregate-updater-json job below) collates the
-          # darwin-aarch64 and darwin-x86_64 entries.
-          - platform: macos-latest
+          # Node sidecar, but the resulting universal binary crashed on
+          # M-series Macs at v8::Isolate::Initialize. Each arch now ships
+          # its own .dmg so the sidecar stays native to the host. Tauri's
+          # latest.json auto-aggregator (aggregate-updater-json job below)
+          # collates the darwin-aarch64 and darwin-x86_64 entries.
+          #
+          # We pin macos-26 (Tahoe) explicitly rather than macos-latest
+          # because the .dmg has to be assembled with the same OS as the
+          # sidecar so any ICU references the OS ships agree across the
+          # bundle. macos-latest is still macos-15 (Sequoia) until the
+          # 2026-06-15 → 2026-07-15 migration completes.
+          - platform: macos-26
             args: '--target aarch64-apple-darwin'
             mac-arch: aarch64
-          - platform: macos-latest
+          - platform: macos-26-intel
             args: '--target x86_64-apple-darwin'
             mac-arch: x86_64
 
