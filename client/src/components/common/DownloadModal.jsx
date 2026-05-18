@@ -113,6 +113,25 @@ function pickPrimaryAsset(os, assets, macArch = 'unknown') {
 }
 
 /**
+ * Stable ordering for the secondary card list so that flipping the Mac
+ * arch toggle only swaps which dmg sits in the primary CTA — the other
+ * platform cards keep their position. Without this, swapping Apple
+ * Silicon ↔ Intel would re-thread the grid (the previously-primary
+ * macOS would drop into the cards list at the back, shifting Linux
+ * and Windows around).
+ *
+ * The order: macOS (the other arch first), then Linux AppImage, Linux
+ * .deb, Windows installer, then anything else.
+ */
+function assetPriority(name) {
+  if (name.endsWith('.dmg')) return 0;
+  if (name.endsWith('.AppImage')) return 1;
+  if (name.endsWith('.deb')) return 2;
+  if (name.endsWith('.exe')) return 3;
+  return 99;
+}
+
+/**
  * Group assets into platform cards, primary first.
  */
 function groupAssets(assets, primary) {
@@ -122,9 +141,20 @@ function groupAssets(assets, primary) {
     cards.push({ ...primary, label: labelForAsset(primary.name) });
     seen.add(primary.name);
   }
-  for (const a of assets) {
-    if (seen.has(a.name)) continue;
-    if (a.name.endsWith('.sig') || a.name === 'latest.json') continue;
+  // Skip updater-only artifacts: .sig signatures, latest.json manifest,
+  // and the Tauri updater .app.tar.gz bundles (those are consumed by the
+  // in-app auto-updater, not surfaced to end-users on the landing page).
+  const filtered = assets
+    .filter((a) => !seen.has(a.name))
+    .filter((a) => !a.name.endsWith('.sig'))
+    .filter((a) => a.name !== 'latest.json')
+    .filter((a) => !a.name.endsWith('.app.tar.gz'));
+  filtered.sort((a, b) => {
+    const dp = assetPriority(a.name) - assetPriority(b.name);
+    if (dp !== 0) return dp;
+    return a.name.localeCompare(b.name);
+  });
+  for (const a of filtered) {
     cards.push({ ...a, label: labelForAsset(a.name) });
     seen.add(a.name);
   }
@@ -492,13 +522,13 @@ export default function DownloadModal({ isOpen, onClose }) {
             </p>
             {showMacArchToggle && (
               <p className="text-xs text-gray-500 mt-1 text-center">
-                {activeMacArch === 'apple-silicon' ? 'Tienes un Mac Intel?' : 'Tienes Apple Silicon (M1/M2/M3/M4)?'}{' '}
+                {activeMacArch === 'apple-silicon' ? 'Have an Intel Mac?' : 'Have an Apple Silicon Mac?'}{' '}
                 <button
                   type="button"
                   onClick={swapMacArch}
                   className="text-primary underline hover:text-primary-dark"
                 >
-                  Cambiar a {activeMacArch === 'apple-silicon' ? 'Intel' : 'Apple Silicon'}
+                  Switch to {activeMacArch === 'apple-silicon' ? 'Intel' : 'Apple Silicon'}
                 </button>
               </p>
             )}

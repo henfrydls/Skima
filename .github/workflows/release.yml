@@ -20,26 +20,34 @@ jobs:
           - platform: windows-latest
             target: node20-win-x64
             sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
-          # Sidecar build runs on macos-26 (Tahoe) on purpose: pkg embeds
-          # a prebuilt Node binary with a baked-in ICU data table. A
-          # sidecar compiled on macOS 15 Sequoia (which is still what
-          # `macos-latest` resolves to until June 15, 2026) aborts with
-          # EXC_BREAKPOINT at v8::Isolate::Initialize when loaded into
-          # macOS 26 Tahoe — the embedded icudt78_dat does not line up
-          # with Tahoe's libsystem ICU. Building on macos-26 itself
-          # avoids the cross-OS ICU mismatch entirely.
+          # macOS sidecars are NOT built in CI. We discovered that
+          # `@yao-pkg/pkg`'s prebuilt Node 20.20.2 binary embeds an ICU
+          # data table that aborts at v8::Isolate::Initialize when run
+          # on macOS 26 Tahoe — regardless of whether the runner is
+          # macos-15 (Sequoia) or macos-26 itself. The same pkg invocation
+          # from a Mac that already had the pre-regression pkg-fetch
+          # cache produces a binary that works; CI runners always pull
+          # fresh and get the broken binary.
           #
-          # macos-26 is GA since 2026-02-26
-          # (github.blog/changelog/2026-02-26-macos-26-is-now-generally-available-for-github-hosted-runners/).
-          # The arm64 sidecar is produced natively; the x86_64 sidecar
-          # uses macos-26-intel for the same reason (host-OS-matching
-          # ICU bundling, just on Intel hardware).
-          - platform: macos-26-intel
+          # Workaround: the two macOS sidecars are built locally on
+          # a Mac with a known-good pkg-fetch cache and uploaded to a
+          # separate "sidecar-binaries-v1" GitHub release. The macOS
+          # rows below skip pkg entirely and `gh release download`
+          # those assets. Linux + Windows still build normally because
+          # they are not affected by the pkg ICU bug.
+          #
+          # Permanent fix (tracked for v1.4.2): migrate the sidecar from
+          # @yao-pkg/pkg to `bun build --compile` + Prisma 7 driver
+          # adapter, which builds reproducibly from any Linux host and
+          # eliminates the pkg ICU coupling.
+          - platform: ubuntu-22.04
             target: node20-macos-x64
             sidecar-name: skima-server-x86_64-apple-darwin
-          - platform: macos-26
+            prebuilt: true
+          - platform: ubuntu-22.04
             target: node20-macos-arm64
             sidecar-name: skima-server-aarch64-apple-darwin
+            prebuilt: true
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -51,12 +59,26 @@ jobs:
           node-version: '20'
 
       - name: Install Server Dependencies
+        if: '!matrix.prebuilt'
         run: cd server && npm install
 
       - name: Generate Prisma Client
+        if: '!matrix.prebuilt'
         run: cd server && npx prisma generate
 
+      - name: Download prebuilt macOS sidecar
+        if: matrix.prebuilt
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p src-tauri/binaries
+          gh release download sidecar-binaries-v1 \
+            --repo "${{ github.repository }}" \
+            --pattern "${{ matrix.sidecar-name }}" \
+            --output "src-tauri/binaries/${{ matrix.sidecar-name }}"
+
       - name: Build Sidecar
+        if: '!matrix.prebuilt'
         run: |
           cd server
           npx @yao-pkg/pkg . --target ${{ matrix.target }} --output "../src-tauri/binaries/${{ matrix.sidecar-name }}" --compress GZip
