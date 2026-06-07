@@ -438,7 +438,8 @@ router.get('/', async (req, res) => {
     
   } catch (error) {
     console.error('[API] GET /api/skills/evolution failed:', error);
-    res.status(500).json({ message: 'Error fetching evolution data', error: error.message });
+    // Don't leak internal error details to the client.
+    res.status(500).json({ message: 'Error fetching evolution data' });
   }
 });
 
