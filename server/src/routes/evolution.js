@@ -360,21 +360,32 @@ router.get('/', async (req, res) => {
     
     // For each employee, check their latest assessments against role profile
     const supportCases = [];
-    
+
+    // Pre-fetch the latest in-range session per employee in ONE query, instead
+    // of a findFirst per employee (N+1). The query is globally ordered by
+    // evaluatedAt desc, so the first row seen for a collaborator is their latest.
+    const inRangeSessions = await prisma.evaluationSession.findMany({
+      where: {
+        collaboratorId: { in: employees.map((e) => e.id) },
+        evaluatedAt: { gte: startDate, lte: endDate }
+      },
+      orderBy: { evaluatedAt: 'desc' },
+      include: { assessments: true }
+    });
+    const latestSessionByCollaborator = new Map();
+    for (const s of inRangeSessions) {
+      if (!latestSessionByCollaborator.has(s.collaboratorId)) {
+        latestSessionByCollaborator.set(s.collaboratorId, s);
+      }
+    }
+
     for (const emp of employees) {
       const roleSkills = profileMap.get(emp.role);
       if (!roleSkills) continue; // No profile = no gaps to calculate
-      
-      // Get latest session for this employee
-      const latestSession = await prisma.evaluationSession.findFirst({
-        where: { 
-          collaboratorId: emp.id,
-          evaluatedAt: { gte: startDate, lte: endDate }
-        },
-        orderBy: { evaluatedAt: 'desc' },
-        include: { assessments: true }
-      });
-      
+
+      // Latest in-range session for this employee (from the pre-fetched map)
+      const latestSession = latestSessionByCollaborator.get(emp.id);
+
       if (!latestSession) continue;
       
       // Create skill level map from assessments
