@@ -70,6 +70,35 @@ describe('GoalAccordion', () => {
     expect(dot).toBeInTheDocument();
   });
 
+  // #36: priority arrives from the API as an integer (1=high, 2=medium, 3=low).
+  it('maps integer priority 1 to the high color', () => {
+    const { container } = renderGoal({ goal: { ...mockGoal, priority: 1 } });
+    expect(container.querySelector('.bg-critical')).toBeInTheDocument();
+  });
+
+  it('maps integer priority 3 to the low color', () => {
+    const { container } = renderGoal({ goal: { ...mockGoal, priority: 3 } });
+    expect(container.querySelector('.bg-gray-300')).toBeInTheDocument();
+  });
+
+  // #38: the goal's target level is saved but was never displayed.
+  it('surfaces the target level when present', () => {
+    renderGoal({ goal: { ...mockGoal, targetLevel: 4 } });
+    expect(screen.getByText(/Lvl 4/i)).toBeInTheDocument();
+  });
+
+  it('does not show a target-level badge when targetLevel is null', () => {
+    renderGoal({ goal: { ...mockGoal, targetLevel: null } });
+    expect(screen.queryByText(/Lvl/i)).not.toBeInTheDocument();
+  });
+
+  // #37: linked skill badge exposes context on hover via a title tooltip.
+  it('gives the linked skill badge a descriptive tooltip', () => {
+    renderGoal({ goal: { ...mockGoal, skill: { id: 1, name: 'React' }, targetLevel: 4 } });
+    const badge = screen.getByText('React').closest('span');
+    expect(badge).toHaveAttribute('title', expect.stringContaining('React'));
+  });
+
   it('shows action count (completed/total)', () => {
     renderGoal();
     // 1 completed out of 2

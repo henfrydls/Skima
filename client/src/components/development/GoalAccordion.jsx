@@ -1,12 +1,7 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Trash2, Edit2, Target, CheckCircle2 } from 'lucide-react';
 import ActionRow from './ActionRow';
-
-const PRIORITY_COLORS = {
-  high: 'bg-critical',
-  medium: 'bg-warning',
-  low: 'bg-gray-300',
-};
+import { getPriorityMeta } from '../../lib/goalPriority';
 
 /**
  * GoalAccordion - Expandable goal card with nested actions
@@ -20,6 +15,7 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const countableActions = actions.filter(a => a.status !== 'skipped');
   const completedActions = countableActions.filter(a => a.status === 'completed').length;
   const progress = countableActions.length > 0 ? (completedActions / countableActions.length) * 100 : 0;
+  const priority = getPriorityMeta(goal.priority);
 
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
@@ -44,9 +40,9 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
 
         {/* Priority dot */}
         <span
-          className={`w-2 h-2 rounded-full flex-shrink-0 ${PRIORITY_COLORS[goal.priority] || PRIORITY_COLORS.medium}`}
-          title={`${goal.priority || 'medium'} priority`}
-          aria-label={`Priority: ${goal.priority === 'high' ? 'high' : goal.priority === 'low' ? 'low' : 'medium'}`}
+          className={`w-2 h-2 rounded-full flex-shrink-0 ${priority.color}`}
+          title={`${priority.label} priority`}
+          aria-label={`Priority: ${priority.label}`}
           role="img"
         />
 
@@ -55,11 +51,24 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
           {goal.title}
         </span>
 
-        {/* Skill badge */}
+        {/* Skill badge — tooltip surfaces the linked skill + target on hover */}
         {goal.skill && (
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
+          <span
+            className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
+            title={`Linked skill: ${goal.skill.name}${goal.targetLevel != null ? ` · target level ${goal.targetLevel}` : ''}`}
+          >
             <Target size={10} />
             {goal.skill.name}
+          </span>
+        )}
+
+        {/* Target level badge (#38) */}
+        {goal.targetLevel != null && (
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 font-medium flex-shrink-0"
+            title={`Target level ${goal.targetLevel}`}
+          >
+            Lvl {goal.targetLevel}
           </span>
         )}
 
