@@ -101,6 +101,13 @@ describe('Demo Mode — Completeness Check', () => {
     ['PUT', '/api/development-goals/1'],
     ['POST', '/api/development-goals/1/actions'],
     ['PUT', '/api/development-actions/1'],
+    // Previously-unprotected mutators — the allowlist model now blocks them:
+    ['POST', '/api/collaborators'],
+    ['PUT', '/api/collaborators/1'],
+    ['PUT', '/api/collaborators/1/skills'],
+    ['POST', '/api/evaluations'],
+    ['PUT', '/api/role-profiles/TestRole'],
+    ['PUT', '/api/categories/reorder'],
   ];
 
   destructiveEndpoints.forEach(([method, path]) => {

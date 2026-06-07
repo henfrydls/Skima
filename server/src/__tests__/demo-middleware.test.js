@@ -99,6 +99,44 @@ describe('Demo Mode Middleware', () => {
       expect(res.status).toBe(403);
       expect(res.body.error).toBe('DEMO_MODE');
     });
+
+    // Previously-unprotected mutators — the allowlist model now blocks them so
+    // the shared public demo stays read-only.
+    it('POST /api/collaborators returns 403', async () => {
+      const res = await request(app)
+        .post('/api/collaborators')
+        .send({ nombre: 'Test', rol: 'Dev', area: 'Eng' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('POST /api/evaluations returns 403', async () => {
+      const res = await request(app)
+        .post('/api/evaluations')
+        .send({ collaboratorId: 1 });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('PUT /api/collaborators/1/skills returns 403', async () => {
+      const res = await request(app)
+        .put('/api/collaborators/1/skills')
+        .send({ 1: { nivel: 3, frecuencia: 'D' } });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('PUT /api/role-profiles/Developer returns 403', async () => {
+      const res = await request(app)
+        .put('/api/role-profiles/Developer')
+        .send({ 1: 'C' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -121,14 +159,6 @@ describe('Demo Mode Middleware', () => {
 
     it('GET /api/data is not blocked', async () => {
       const res = await request(app).get('/api/data');
-
-      expect(res.status).not.toBe(403);
-    });
-
-    it('POST /api/collaborators is not blocked', async () => {
-      const res = await request(app)
-        .post('/api/collaborators')
-        .send({ nombre: 'Test', rol: 'Dev', area: 'Eng' });
 
       expect(res.status).not.toBe(403);
     });
