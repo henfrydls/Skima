@@ -21,7 +21,7 @@ const mockGoal = {
   id: 1,
   title: 'Improve React Testing',
   description: 'Reach level 4 in testing',
-  skill: { id: 1, name: 'React' },
+  skill: { id: 1, nombre: 'React' },
   priority: 'high',
   status: 'in_progress',
   actions: [
@@ -94,7 +94,7 @@ describe('GoalAccordion', () => {
 
   // #37: linked skill badge exposes context on hover via a title tooltip.
   it('gives the linked skill badge a descriptive tooltip', () => {
-    renderGoal({ goal: { ...mockGoal, skill: { id: 1, name: 'React' }, targetLevel: 4 } });
+    renderGoal({ goal: { ...mockGoal, skill: { id: 1, nombre: 'React' }, targetLevel: 4 } });
     const badge = screen.getByText('React').closest('span');
     expect(badge).toHaveAttribute('title', expect.stringContaining('React'));
   });

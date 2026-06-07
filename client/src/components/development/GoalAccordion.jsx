@@ -55,10 +55,10 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
         {goal.skill && (
           <span
             className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
-            title={`Linked skill: ${goal.skill.name}${goal.targetLevel != null ? ` · target level ${goal.targetLevel}` : ''}`}
+            title={`Linked skill: ${goal.skill.nombre}${goal.targetLevel != null ? ` · target level ${goal.targetLevel}` : ''}`}
           >
             <Target size={10} />
-            {goal.skill.name}
+            {goal.skill.nombre}
           </span>
         )}
 
