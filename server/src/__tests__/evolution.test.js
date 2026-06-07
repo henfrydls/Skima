@@ -104,6 +104,22 @@ describe('Evolution Routes', () => {
       expect(res.body.insights.topImprover).toBeNull();
       expect(res.body.insights.supportCount).toBe(0);
     });
+
+    it('flags a support case when a critical skill is below the competent threshold', async () => {
+      // Critical skill (C) evaluated below 2.5 -> should surface as a support case.
+      const { collaborator } = await seedEvolutionData({ nivel: 1.0 });
+      await prisma.roleProfile.create({
+        data: { rol: 'Developer', skills: JSON.stringify({ 1: 'C' }) },
+      });
+
+      const res = await request(app).get('/api/skills/evolution');
+
+      expect(res.status).toBe(200);
+      expect(res.body.insights.supportCount).toBeGreaterThanOrEqual(1);
+      const supportCase = res.body.insights.supportCases.find((s) => s.id === collaborator.id);
+      expect(supportCase).toBeDefined();
+      expect(supportCase.criticalGaps).toBeGreaterThanOrEqual(1);
+    });
   });
 
   // ============================================

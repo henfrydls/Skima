@@ -135,6 +135,8 @@ Starting with **v1.4.0**, Skima checks for new releases on startup and lets you 
 
 Updates are cryptographically signed; Skima refuses any binary that doesn't match the publisher signature.
 
+**Desktop only:** the in-app updater ships with the desktop app. The web/[Docker](#docker) deployment and the online demo run in a browser, so they never auto-update — a self-hosted instance is updated by pulling the new image (see below).
+
 **Linux note:** auto-update works for the **AppImage** build. If you installed via `.deb` or `.rpm`, your system package manager owns the install path so Skima can't replace itself in-place — Skima will detect this and prompt you to download the latest release from GitHub manually. Switch to the AppImage build if you want fully automatic updates.
 
 ### Docker
@@ -153,6 +155,13 @@ docker run -d -p 3000:3001 -v skima-data:/app/data ghcr.io/henfrydls/skima:lates
 ```
 
 Open `http://localhost:3000` in your browser. Data persists in a Docker volume.
+
+**Updating a self-hosted instance:** pull the new image and restart — the in-app updater doesn't apply to the web/Docker deployment.
+
+```bash
+docker pull ghcr.io/henfrydls/skima:latest
+docker compose up -d   # or re-run your docker run with the new image
+```
 
 To run with demo data pre-loaded:
 

@@ -66,6 +66,23 @@ export default function UpdateModal() {
           </>
         )}
 
+        {state === 'preparing' && (
+          <>
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h2 id="update-modal-title" className="text-lg font-semibold text-gray-900">
+                Preparing update...
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">Skima {updateInfo?.version}</p>
+            </div>
+            <div className="px-6 py-6 flex flex-col items-center text-center gap-3">
+              <Loader2 size={32} className="text-primary animate-spin" />
+              <p className="text-sm text-gray-600">
+                Getting things ready — this only takes a moment.
+              </p>
+            </div>
+          </>
+        )}
+
         {state === 'downloading' && (
           <>
             <div className="px-6 py-4 border-b border-gray-100">

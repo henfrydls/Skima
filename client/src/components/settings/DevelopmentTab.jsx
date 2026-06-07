@@ -11,7 +11,8 @@ import LoginModal from '../auth/LoginModal';
 import PlanFormModal from './DevelopmentPlanFormModal';
 import GoalFormModal from './DevelopmentGoalFormModal';
 import ActionFormModal from './DevelopmentActionFormModal';
-import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES, PRIORITY_COLORS } from '../../lib/developmentConstants';
+import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES } from '../../lib/developmentConstants';
+import { getPriorityMeta } from '../../lib/goalPriority';
 
 const ACTION_STATUS_OPTIONS = [
   { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
@@ -712,7 +713,7 @@ export default function DevelopmentTab({ isActive }) {
                           const countableActions = actions.filter(a => a.status !== 'skipped');
                           const completedActions = countableActions.filter(a => a.status === 'completed').length;
                           const goalProgress = countableActions.length > 0 ? Math.round((completedActions / countableActions.length) * 100) : 0;
-                          const priorityColor = PRIORITY_COLORS[goal.priority] || PRIORITY_COLORS.medium;
+                          const priorityMeta = getPriorityMeta(goal.priority);
 
                           return (
                             <div key={goal.id} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
@@ -731,8 +732,8 @@ export default function DevelopmentTab({ isActive }) {
 
                                 {/* Priority dot */}
                                 <span
-                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityColor}`}
-                                  title={`${goal.priority || 'medium'} priority`}
+                                  className={`w-2 h-2 rounded-full flex-shrink-0 ${priorityMeta.color}`}
+                                  title={`${priorityMeta.label} priority`}
                                 />
 
                                 {/* Title */}
@@ -740,11 +741,24 @@ export default function DevelopmentTab({ isActive }) {
                                   {goal.title}
                                 </span>
 
-                                {/* Skill badge */}
+                                {/* Skill badge — tooltip surfaces the linked skill + target on hover */}
                                 {goal.skill && (
-                                  <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium">
+                                  <span
+                                    className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-primary/10 text-primary font-medium"
+                                    title={`Linked skill: ${goal.skill.nombre}${goal.targetLevel != null ? ` · target level ${goal.targetLevel}` : ''}`}
+                                  >
                                     <Target size={10} />
                                     {goal.skill.nombre}
+                                  </span>
+                                )}
+
+                                {/* Target level badge (#38) */}
+                                {goal.targetLevel != null && (
+                                  <span
+                                    className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-600 font-medium flex-shrink-0"
+                                    title={`Target level ${goal.targetLevel}`}
+                                  >
+                                    Lvl {goal.targetLevel}
                                   </span>
                                 )}
 

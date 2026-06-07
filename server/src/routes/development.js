@@ -35,7 +35,7 @@ router.get('/development-plans', async (req, res) => {
       include: {
         collaborator: true,
         goals: {
-          include: { actions: true },
+          include: { actions: true, skill: { select: { id: true, nombre: true } } },
           orderBy: { sortOrder: 'asc' }
         }
       },
@@ -60,7 +60,7 @@ router.get('/development-plans/:id', async (req, res) => {
       include: {
         collaborator: true,
         goals: {
-          include: { actions: true },
+          include: { actions: true, skill: { select: { id: true, nombre: true } } },
           orderBy: { sortOrder: 'asc' }
         }
       }

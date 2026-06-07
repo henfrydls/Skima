@@ -1,12 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import request from 'supertest';
 import { createApp, prisma } from '../index.js';
+import { resetSeedRateLimiter } from '../routes/demo.js';
 
 describe('Demo Mode Middleware', () => {
   let app;
 
   beforeEach(async () => {
     process.env.DEMO_MODE = 'true';
+    resetSeedRateLimiter();
     app = createApp();
 
     await prisma.assessment.deleteMany();
@@ -99,6 +101,44 @@ describe('Demo Mode Middleware', () => {
       expect(res.status).toBe(403);
       expect(res.body.error).toBe('DEMO_MODE');
     });
+
+    // Previously-unprotected mutators — the allowlist model now blocks them so
+    // the shared public demo stays read-only.
+    it('POST /api/collaborators returns 403', async () => {
+      const res = await request(app)
+        .post('/api/collaborators')
+        .send({ nombre: 'Test', rol: 'Dev', area: 'Eng' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('POST /api/evaluations returns 403', async () => {
+      const res = await request(app)
+        .post('/api/evaluations')
+        .send({ collaboratorId: 1 });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('PUT /api/collaborators/1/skills returns 403', async () => {
+      const res = await request(app)
+        .put('/api/collaborators/1/skills')
+        .send({ 1: { nivel: 3, frecuencia: 'D' } });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
+
+    it('PUT /api/role-profiles/Developer returns 403', async () => {
+      const res = await request(app)
+        .put('/api/role-profiles/Developer')
+        .send({ 1: 'C' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toBe('DEMO_MODE');
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -121,14 +161,6 @@ describe('Demo Mode Middleware', () => {
 
     it('GET /api/data is not blocked', async () => {
       const res = await request(app).get('/api/data');
-
-      expect(res.status).not.toBe(403);
-    });
-
-    it('POST /api/collaborators is not blocked', async () => {
-      const res = await request(app)
-        .post('/api/collaborators')
-        .send({ nombre: 'Test', rol: 'Dev', area: 'Eng' });
 
       expect(res.status).not.toBe(403);
     });
@@ -200,6 +232,32 @@ describe('Demo Mode Middleware', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.isOnlineDemo).toBe(false);
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // Group 5: seed-demo is rate-limited per IP in demo mode (DoS mitigation)
+  // ---------------------------------------------------------------------------
+  describe('seed-demo rate limit (DEMO_MODE)', () => {
+    it('429s after exceeding the per-IP reseed limit', async () => {
+      // SEED_MAX = 3 allowed within the window; the 4th is throttled.
+      for (let i = 0; i < 3; i++) {
+        const ok = await request(app).post('/api/seed-demo');
+        expect(ok.status).not.toBe(429);
+      }
+      const blocked = await request(app).post('/api/seed-demo');
+      expect(blocked.status).toBe(429);
+      expect(blocked.body.error).toBe('RATE_LIMITED');
+    });
+
+    it('does not rate-limit seed-demo when DEMO_MODE is unset', async () => {
+      delete process.env.DEMO_MODE;
+      resetSeedRateLimiter();
+      const freshApp = createApp();
+      for (let i = 0; i < 4; i++) {
+        const res = await request(freshApp).post('/api/seed-demo');
+        expect(res.status).not.toBe(429);
+      }
     });
   });
 });

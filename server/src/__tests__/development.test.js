@@ -153,6 +153,37 @@ describe('Development Plans API', () => {
       expect(res.status).toBe(404);
     });
 
+    // #37: the linked skill must be included on goals, otherwise the skill
+    // badge + tooltip in the UI never renders (goal.skill would be undefined).
+    it('GET /api/development-plans/:id — includes the linked skill on goals', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'Plan with skill' }
+      });
+      await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Master React', skillId: skill.id }
+      });
+
+      const res = await request(app).get(`/api/development-plans/${plan.id}`);
+
+      expect(res.status).toBe(200);
+      expect(res.body.goals[0].skill).toBeTruthy();
+      expect(res.body.goals[0].skill.nombre).toBe('React');
+    });
+
+    it('GET /api/development-plans — includes the linked skill on goals', async () => {
+      const plan = await prisma.developmentPlan.create({
+        data: { collaboratorId: collaborator.id, title: 'List skill check' }
+      });
+      await prisma.developmentGoal.create({
+        data: { planId: plan.id, title: 'Master React', skillId: skill.id }
+      });
+
+      const res = await request(app).get('/api/development-plans');
+      expect(res.status).toBe(200);
+      const found = res.body.find((p) => p.title === 'List skill check');
+      expect(found.goals[0].skill.nombre).toBe('React');
+    });
+
     it('PUT /api/development-plans/:id — updates plan fields', async () => {
       const plan = await prisma.developmentPlan.create({
         data: { collaboratorId: collaborator.id, title: 'Original' }
