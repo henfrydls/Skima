@@ -71,6 +71,20 @@ describe('UpdateModal', () => {
     });
   });
 
+  describe('preparing state', () => {
+    it('shows a preparing message (#52)', () => {
+      mockContext.state = 'preparing';
+      render(<UpdateModal />);
+      expect(screen.getByText(/Preparing update/i)).toBeInTheDocument();
+    });
+
+    it('does not render the "Update now" button while preparing', () => {
+      mockContext.state = 'preparing';
+      render(<UpdateModal />);
+      expect(screen.queryByRole('button', { name: /Update now/i })).not.toBeInTheDocument();
+    });
+  });
+
   describe('downloading state', () => {
     it('shows progress information', () => {
       mockContext.state = 'downloading';

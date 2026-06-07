@@ -6,6 +6,7 @@ import { UpdateProvider, useUpdate } from '../UpdateContext';
 const mockCheck = vi.fn();
 const mockDownloadAndInstall = vi.fn();
 const mockRelaunch = vi.fn();
+const mockInvoke = vi.fn();
 
 vi.mock('@tauri-apps/plugin-updater', () => ({
   check: () => mockCheck(),
@@ -13,6 +14,10 @@ vi.mock('@tauri-apps/plugin-updater', () => ({
 
 vi.mock('@tauri-apps/plugin-process', () => ({
   relaunch: () => mockRelaunch(),
+}));
+
+vi.mock('@tauri-apps/api/core', () => ({
+  invoke: (...args) => mockInvoke(...args),
 }));
 
 vi.mock('../../hooks/useAppVersion', () => ({
@@ -55,6 +60,8 @@ describe('UpdateContext', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     localStorage.clear();
+    // Default: prepare_for_update resolves immediately (sidecar shut down ok)
+    mockInvoke.mockResolvedValue(undefined);
     // Default: pretend we're in Tauri so auto-check would normally run
     window.__TAURI_INTERNALS__ = {};
     // Default: setup is complete
@@ -63,6 +70,7 @@ describe('UpdateContext', () => {
 
   afterEach(() => {
     delete window.__TAURI_INTERNALS__;
+    vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
@@ -200,6 +208,16 @@ describe('UpdateContext', () => {
       expect(mockCheck).not.toHaveBeenCalled();
     });
 
+    // DEV gate: `npm run tauri:dev` (MODE=development) hits the real GitHub
+    // release, so don't auto-check there — the manual button still works.
+    it('does not run in dev mode (tauri:dev)', async () => {
+      vi.stubEnv('MODE', 'development');
+      vi.useFakeTimers();
+      renderWithProvider();
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+      expect(mockCheck).not.toHaveBeenCalled();
+    });
+
     it('runs after 4s when in Tauri and autoCheck enabled (default)', async () => {
       mockCheck.mockResolvedValue(null);
       vi.useFakeTimers();
@@ -286,6 +304,30 @@ describe('UpdateContext', () => {
   });
 
   describe('installNow', () => {
+    it('passes through a "preparing" state before downloading (#52)', async () => {
+      // Hold prepare_for_update pending so we can observe the preparing state.
+      let resolvePrepare;
+      mockInvoke.mockReturnValueOnce(new Promise((res) => { resolvePrepare = res; }));
+      mockDownloadAndInstall.mockResolvedValue(undefined);
+      mockRelaunch.mockResolvedValue(undefined);
+      mockCheck.mockResolvedValue({
+        version: '1.5.0',
+        body: '',
+        downloadAndInstall: mockDownloadAndInstall,
+      });
+      renderWithProvider();
+
+      await act(async () => { screen.getByTestId('check').click(); });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+
+      await act(async () => { screen.getByTestId('install').click(); });
+      // prepare_for_update still pending -> we are 'preparing', not 'downloading'
+      expect(screen.getByTestId('state').textContent).toBe('preparing');
+
+      await act(async () => { resolvePrepare(); });
+      await waitFor(() => expect(mockRelaunch).toHaveBeenCalled());
+    });
+
     it('calls downloadAndInstall then relaunch', async () => {
       mockDownloadAndInstall.mockResolvedValue(undefined);
       mockRelaunch.mockResolvedValue(undefined);

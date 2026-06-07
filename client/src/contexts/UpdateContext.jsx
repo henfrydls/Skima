@@ -190,9 +190,12 @@ export function UpdateProvider({ children }) {
   const installNow = useCallback(async () => {
     const handle = updateHandleRef.current;
     if (!handle) return;
-    setState('downloading');
     setError(null);
     setProgress({ downloaded: 0, total: 0 });
+    // Show 'preparing' while the sidecar shuts down. prepare_for_update takes
+    // ~1.5s on Windows to release the file lock; without a distinct state the
+    // user stares at a 'Downloading... 0%' bar that isn't moving yet (#52).
+    setState('preparing');
 
     try {
       // Kill the sidecar BEFORE the installer runs. If we don't, Windows
@@ -207,6 +210,7 @@ export function UpdateProvider({ children }) {
         console.warn('[updater] prepare_for_update failed:', e);
       }
 
+      setState('downloading');
       let total = 0;
       await handle.downloadAndInstall((event) => {
         // Tauri's progress event shape:
@@ -261,6 +265,10 @@ export function UpdateProvider({ children }) {
   // the modal appears over the welcome screen on a fresh first launch.
   useEffect(() => {
     if (!isTauri()) return;
+    // In `tauri:dev` the updater hits the real GitHub release, so the modal
+    // would pop over the dev session. Skip auto-check there; the manual
+    // "Check for updates" button in Settings still works.
+    if (import.meta.env.MODE === 'development') return;
     if (!getAutoCheckPref()) return;
     if (!isSetup) return;
     const t = setTimeout(() => {
@@ -269,7 +277,7 @@ export function UpdateProvider({ children }) {
     return () => clearTimeout(t);
   }, [checkNow, isSetup]);
 
-  const showModal = state === 'available' || state === 'downloading' || state === 'installing' || state === 'error' || state === 'manual-only';
+  const showModal = state === 'available' || state === 'preparing' || state === 'downloading' || state === 'installing' || state === 'error' || state === 'manual-only';
 
   const value = {
     state,
