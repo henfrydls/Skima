@@ -11,11 +11,47 @@ import {
 
 const router = Router();
 
+// Per-IP rate limit for demo reseeds. seed-demo wipes + reseeds every table in
+// a ~30s transaction; on the public demo it is unauthenticated and allowlisted,
+// so without a limit anyone could hammer it as a DoS lever. Only enforced when
+// DEMO_MODE=true — the desktop app (and tests not in demo mode) are unaffected.
+// req.ip is reliable behind the proxy thanks to the TRUST_PROXY setting.
+const seedAttempts = new Map();
+const SEED_MAX = 3;
+const SEED_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
+
+function checkSeedRateLimit(ip) {
+  const now = Date.now();
+  const record = seedAttempts.get(ip);
+  if (!record || now - record.firstAttempt > SEED_WINDOW_MS) {
+    seedAttempts.set(ip, { count: 1, firstAttempt: now });
+    return true;
+  }
+  if (record.count >= SEED_MAX) return false;
+  record.count++;
+  return true;
+}
+
+// Allow tests to reset rate limiter state between cases.
+export function resetSeedRateLimiter() {
+  seedAttempts.clear();
+}
+
 // ============================================================
 // POST /api/seed-demo - Seed rich demo data for first-time experience
 // Uses the same chaos testing dataset as prisma/seed.js
 // ============================================================
 router.post('/', async (req, res) => {
+  // Throttle reseeds on the public demo only.
+  if (process.env.DEMO_MODE === 'true') {
+    const ip = req.ip || req.socket?.remoteAddress || 'unknown';
+    if (!checkSeedRateLimit(ip)) {
+      return res.status(429).json({
+        error: 'RATE_LIMITED',
+        message: 'Too many demo resets. Please wait a few minutes and try again.',
+      });
+    }
+  }
   try {
     // Wrap entire seed operation in transaction for atomicity
     const snapshotCount = await prisma.$transaction(async (tx) => {
