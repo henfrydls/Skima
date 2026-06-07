@@ -18,6 +18,15 @@ export { prisma };
 export function createApp() {
   const app = express();
 
+  // Behind a reverse proxy (Cloudflare/Nginx in the hosted demo), trust the
+  // first hop so req.ip is the real client and the login rate limiter buckets
+  // correctly. Off by default so a directly-exposed instance can't spoof its
+  // IP via X-Forwarded-For. Set TRUST_PROXY=1 (or a hop count) in the deploy.
+  if (process.env.TRUST_PROXY) {
+    const hops = Number(process.env.TRUST_PROXY);
+    app.set('trust proxy', Number.isNaN(hops) ? process.env.TRUST_PROXY : hops);
+  }
+
   // Security headers
   app.disable('x-powered-by');
   app.use((req, res, next) => {
@@ -28,7 +37,27 @@ export function createApp() {
     next();
   });
 
-  app.use(cors());
+  // CORS: permissive by default (the desktop Tauri webview and local dev call
+  // the API cross-origin and rely on this). Hosted deployments lock it down by
+  // setting ALLOWED_ORIGINS to a comma-separated origin list; a non-allowlisted
+  // browser origin then receives no CORS header and is blocked by the browser.
+  const allowedOrigins = process.env.ALLOWED_ORIGINS
+    ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : null;
+  app.use(
+    cors(
+      allowedOrigins
+        ? {
+            origin(origin, cb) {
+              // No Origin header = same-origin or non-browser client (curl,
+              // server-to-server) — always allowed.
+              if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+              return cb(null, false);
+            },
+          }
+        : undefined
+    )
+  );
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
