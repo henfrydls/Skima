@@ -35,6 +35,10 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=raw,value=latest,enable={{is_default_branch}}
+            # Lets a manual workflow_dispatch on a feature branch produce a
+            # throwaway tag (= branch name) so the image build/push path can be
+            # exercised without cutting a release tag.
+            type=ref,event=branch
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
@@ -43,3 +47,9 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          # GHCR rejects the SLSA provenance attestation manifest that buildx
+          # attaches by default ("ERROR: unknown blob" on push), especially
+          # after a package version has been deleted and its blobs are pending
+          # garbage collection. We don't consume the attestation anywhere, so
+          # disable it to keep pushes deterministic.
+          provenance: false
