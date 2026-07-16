@@ -362,7 +362,7 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     if (isNaN(id)) return res.status(400).json({ message: 'Invalid ID' });
-    const { title, description, actionType, status, dueDate, evidence, sortOrder } = req.body;
+    const { title, description, actionType, status, dueDate, completedAt, evidence, sortOrder } = req.body;
 
     const VALID_ACTION_STATUSES = ['not_started', 'in_progress', 'completed', 'skipped'];
     if (status && !VALID_ACTION_STATUSES.includes(status)) {
@@ -370,6 +370,25 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
     }
     if (evidence && evidence.length > 2000) {
       return res.status(400).json({ message: 'Evidence must be under 2000 characters' });
+    }
+
+    // Validate an explicit completion date if provided. Allows backdating (a user
+    // finished the action in the past), but rejects invalid dates and future dates
+    // — you can't complete something later than now. 24h tolerance so a date-only
+    // "today" from any timezone is never wrongly rejected.
+    let parsedCompletedAt;
+    const hasCompletedAt = completedAt !== undefined && completedAt !== null && completedAt !== '';
+    if (hasCompletedAt) {
+      if (typeof completedAt !== 'string') {
+        return res.status(400).json({ message: 'Invalid completion date' });
+      }
+      parsedCompletedAt = new Date(completedAt);
+      if (isNaN(parsedCompletedAt.getTime())) {
+        return res.status(400).json({ message: 'Invalid completion date' });
+      }
+      if (parsedCompletedAt.getTime() > Date.now() + 24 * 60 * 60 * 1000) {
+        return res.status(400).json({ message: 'Completion date cannot be in the future' });
+      }
     }
 
     const data = {};
@@ -383,10 +402,15 @@ router.put('/development-actions/:id', authMiddleware, async (req, res) => {
     if (status !== undefined) {
       data.status = status;
       if (status === 'completed') {
-        data.completedAt = new Date();
+        // Use the explicit (possibly backdated) date if given, else stamp now.
+        data.completedAt = parsedCompletedAt || new Date();
       } else {
         data.completedAt = null;
       }
+    } else if (completedAt !== undefined) {
+      // Editing the completion date without changing status (e.g. backdating an
+      // already-completed action). Empty/null clears it.
+      data.completedAt = hasCompletedAt ? parsedCompletedAt : null;
     }
 
     const action = await prisma.developmentAction.update({

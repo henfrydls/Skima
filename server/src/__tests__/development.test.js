@@ -425,6 +425,45 @@ describe('Development Plans API', () => {
       expect(res.body.completedAt).not.toBeNull();
     });
 
+    it('PUT /api/development-actions/:id — accepts an explicit (backdated) completedAt when completing', async () => {
+      const action = await prisma.developmentAction.create({
+        data: { goalId: goal.id, title: 'Action' }
+      });
+
+      const res = await request(app)
+        .put(`/api/development-actions/${action.id}`)
+        .send({ status: 'completed', completedAt: '2020-01-15' });
+
+      expect(res.status).toBe(200);
+      expect(new Date(res.body.completedAt).toISOString().slice(0, 10)).toBe('2020-01-15');
+    });
+
+    it('PUT /api/development-actions/:id — edits completedAt on a completed action without changing status', async () => {
+      const action = await prisma.developmentAction.create({
+        data: { goalId: goal.id, title: 'Action', status: 'completed', completedAt: new Date() }
+      });
+
+      const res = await request(app)
+        .put(`/api/development-actions/${action.id}`)
+        .send({ completedAt: '2020-02-01' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('completed');
+      expect(new Date(res.body.completedAt).toISOString().slice(0, 10)).toBe('2020-02-01');
+    });
+
+    it('PUT /api/development-actions/:id — rejects a future completedAt', async () => {
+      const action = await prisma.developmentAction.create({
+        data: { goalId: goal.id, title: 'Action' }
+      });
+
+      const res = await request(app)
+        .put(`/api/development-actions/${action.id}`)
+        .send({ status: 'completed', completedAt: '2099-12-31' });
+
+      expect(res.status).toBe(400);
+    });
+
     it('PUT /api/development-actions/:id — clears completedAt when status changes away from completed', async () => {
       const action = await prisma.developmentAction.create({
         data: { goalId: goal.id, title: 'Action', status: 'completed', completedAt: new Date() }
