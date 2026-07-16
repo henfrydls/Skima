@@ -58,6 +58,10 @@ export function createApp() {
         : undefined
     )
   );
+  // The import route carries a full-database backup, which easily exceeds the
+  // default 1mb cap — otherwise you could export a backup you can't re-import.
+  // body-parser skips the global 1mb parser below once this one reads the body.
+  app.use('/api/import', express.json({ limit: '25mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
@@ -874,8 +878,15 @@ export function createApp() {
     try {
       const { data } = req.body;
 
-      if (!data || !data.categories || !data.skills) {
+      if (!data || !Array.isArray(data.categories) || !Array.isArray(data.skills)) {
         return res.status(400).json({ message: 'Invalid data format' });
+      }
+      // A malformed collection must never trigger the destructive wipe: reject
+      // before touching the DB if any provided collection isn't an array.
+      for (const { key } of BACKUP_MODELS) {
+        if (data[key] !== undefined && !Array.isArray(data[key])) {
+          return res.status(400).json({ message: `Invalid data format: ${key} must be an array` });
+        }
       }
 
       await prisma.$transaction(async (tx) => {

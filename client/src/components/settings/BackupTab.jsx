@@ -7,18 +7,29 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { API_BASE } from '../../lib/apiBase';
 
-// Collections surfaced in the file summary (friendly order + labels).
+// Every backup-able collection, with friendly labels. All 20 are covered so the
+// summary never says "No records" when a backup only holds less-common data.
 const SUMMARY_KEYS = [
   ['collaborators', 'collaborators'],
   ['skills', 'skills'],
   ['categories', 'categories'],
   ['roleProfiles', 'role profiles'],
   ['assessments', 'assessments'],
+  ['snapshots', 'snapshots'],
   ['evaluationSessions', 'evaluation sessions'],
   ['developmentPlans', 'development plans'],
+  ['developmentGoals', 'goals'],
+  ['developmentActions', 'actions'],
+  ['timePeriods', 'time periods'],
   ['objectives', 'objectives'],
+  ['keyResults', 'key results'],
+  ['checkIns', 'check-ins'],
+  ['reviewCycles', 'review cycles'],
   ['reviews', 'reviews'],
+  ['reviewSkillRatings', 'skill ratings'],
   ['kpis', 'KPIs'],
+  ['kpiEntries', 'KPI entries'],
+  ['checkInNotes', 'check-in notes'],
 ];
 
 /**
@@ -110,6 +121,12 @@ export default function BackupTab() {
       });
       if (res.status === 403) {
         toast.error('Restoring is not available in demo mode');
+        setConfirmOpen(false);
+        setRestoring(false);
+        return;
+      }
+      if (res.status === 413) {
+        toast.error('This backup is too large to restore.');
         setConfirmOpen(false);
         setRestoring(false);
         return;

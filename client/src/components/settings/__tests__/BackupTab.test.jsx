@@ -60,6 +60,16 @@ describe('BackupTab', () => {
     expect(screen.getByRole('button', { name: /Restore from Backup/i })).not.toBeDisabled();
   });
 
+  it('counts collections beyond the common ones (e.g. snapshots) in the summary', async () => {
+    render(<BackupTab />);
+    fireEvent.change(screen.getByTestId('backup-file-input'), {
+      target: {
+        files: [makeFile({ version: '2.0', data: { categories: [], skills: [], snapshots: [{ id: 1 }, { id: 2 }, { id: 3 }] } })],
+      },
+    });
+    await waitFor(() => expect(screen.getByText(/3 snapshots/)).toBeInTheDocument());
+  });
+
   it('rejects a wrong-shape file', async () => {
     render(<BackupTab />);
     fireEvent.change(screen.getByTestId('backup-file-input'), { target: { files: [makeFile({ nope: true })] } });

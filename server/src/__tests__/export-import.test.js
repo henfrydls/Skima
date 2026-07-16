@@ -201,6 +201,25 @@ describe('Data portability endpoints', () => {
       expect(await prisma.kPIEntry.count()).toBe(1);
     });
 
+    it('rejects a payload whose collections are not arrays and does NOT wipe', async () => {
+      await seedAll();
+      const res = await request(app).post('/api/import').send({ data: { categories: {}, skills: {} } });
+      expect(res.status).toBe(400);
+      // the transaction must not have run — data is intact
+      expect(await prisma.collaborator.count()).toBeGreaterThan(0);
+      expect(await prisma.objective.count()).toBeGreaterThan(0);
+    });
+
+    it('accepts an import payload larger than 1MB (a backup must be restorable)', async () => {
+      const bigCategories = Array.from({ length: 1400 }, (_, i) => ({ id: i + 1, nombre: 'x'.repeat(900), abrev: 'C' }));
+      const size = JSON.stringify({ data: { categories: bigCategories, skills: [] } }).length;
+      expect(size).toBeGreaterThan(1024 * 1024); // > 1MB
+
+      const res = await request(app).post('/api/import').send({ data: { categories: bigCategories, skills: [] } });
+      expect(res.status).toBe(200);
+      expect(await prisma.category.count()).toBe(1400);
+    });
+
     it('imports a legacy v1.0 backup (only 5 collections) without crashing', async () => {
       await seedAll();
       const res = await request(app).post('/api/import').send({
