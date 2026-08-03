@@ -23,6 +23,7 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
     actionType: action?.actionType || 'experience',
     description: action?.description || '',
     dueDate: action?.dueDate?.slice(0, 10) || '',
+    completedAt: action?.completedAt?.slice(0, 10) || '',
   });
 
   const handleChange = (e) => {
@@ -34,15 +35,26 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
     e.preventDefault();
     if (!form.title.trim()) return;
     setSaving(true);
+    const { completedAt, ...rest } = form;
+    const originalCompletedAt = action?.completedAt?.slice(0, 10) || '';
     const payload = {
-      ...form,
+      ...rest,
       dueDate: form.dueDate || null,
+      // Only send completedAt if the user actually changed it. Re-sending the
+      // date-only value on an unrelated edit (e.g. just the title) would truncate
+      // the stored time-of-day and can shift the displayed date across a timezone
+      // boundary.
+      ...(action?.status === 'completed' && completedAt !== originalCompletedAt
+        ? { completedAt: completedAt || null }
+        : {}),
     };
     await onSubmit(payload);
     setSaving(false);
   };
 
   useFocusTrap();
+
+  const today = new Date().toISOString().slice(0, 10);
 
   const inputClass = 'w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors';
   const labelClass = 'block text-xs text-gray-400 uppercase tracking-wide mb-1';
@@ -117,6 +129,22 @@ export default function ActionFormModal({ action = null, onClose, onSubmit }) {
             <label className={labelClass}>Due Date</label>
             <input type="date" name="dueDate" value={form.dueDate} onChange={handleChange} className={inputClass} />
           </div>
+
+          {/* Completed date — editable only for an already-completed action (allows backdating) */}
+          {action?.status === 'completed' && (
+            <div>
+              <label className={labelClass}>Completed Date</label>
+              <input
+                type="date"
+                name="completedAt"
+                value={form.completedAt}
+                onChange={handleChange}
+                max={today}
+                className={inputClass}
+              />
+              <p className="text-xs text-gray-400 mt-1">Can&apos;t be later than today.</p>
+            </div>
+          )}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button variant="secondary" type="button" onClick={onClose}>Cancel</Button>
