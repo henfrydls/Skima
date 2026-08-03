@@ -2,9 +2,9 @@ import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
 import bcrypt from 'bcryptjs';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
-import { prisma, ensureDatabase } from './db.js';
+import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
+import { resolve, join } from 'path';
+import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -852,18 +852,38 @@ export function createApp() {
     { key: 'kpiEntries', model: 'kPIEntry' },
   ];
 
+  // How many pre-restore snapshots to retain on disk (oldest pruned first).
+  const SNAPSHOT_RETENTION = 10;
+
+  // Fields safe to expose in the activity feed. snapshotFile is a server-side
+  // filesystem path and is deliberately omitted.
+  const BACKUP_LOG_FIELDS = {
+    id: true, type: true, status: true, recordCount: true, recordsDeleted: true,
+    fileName: true, sourceExportDate: true, sourceVersion: true, createdAt: true,
+  };
+
   // GET /api/export - Full JSON dump of all data (excludes SystemConfig)
   app.get('/api/export', authMiddleware, async (req, res) => {
     try {
       const data = {};
+      let recordCount = 0;
       for (const { key, model } of BACKUP_MODELS) {
         data[key] = await prisma[model].findMany();
+        recordCount += data[key].length;
       }
-      res.json({
-        exportDate: new Date().toISOString(),
-        version: '2.0',
-        data,
-      });
+      // Record the export in the install-local history. Skipped in the online
+      // demo so the "read-only" guarantee holds (this is the one GET that would
+      // otherwise write). A logging failure must never break the export itself.
+      if (process.env.DEMO_MODE !== 'true') {
+        try {
+          await prisma.backupLog.create({
+            data: { type: 'export', status: 'success', recordCount, actor: req.user?.role || null },
+          });
+        } catch (logErr) {
+          console.error('[API] export log failed (non-fatal):', logErr.message);
+        }
+      }
+      res.json({ exportDate: new Date().toISOString(), version: '2.0', data });
     } catch (error) {
       console.error('[API] GET /api/export failed:', error);
       res.status(500).json({ message: 'Error exporting data' });
@@ -875,9 +895,16 @@ export function createApp() {
   // categories/skills/collaborators/assessments/snapshots) imports cleanly — the
   // newer collections are simply absent and skipped.
   app.post('/api/import', authMiddleware, async (req, res) => {
+    const { data, fileName, sourceExportDate, sourceVersion } = req.body;
+    // Provenance comes from an uploaded (possibly hand-edited or third-party)
+    // file, so sanitize it: cap the strings, and coerce a bad date to null
+    // instead of letting `new Date('garbage')` abort an otherwise-valid restore.
+    const safeFileName = typeof fileName === 'string' ? fileName.slice(0, 255) : null;
+    const safeVersion = typeof sourceVersion === 'string' ? sourceVersion.slice(0, 32) : null;
+    const parsedExportDate = sourceExportDate ? new Date(sourceExportDate) : null;
+    const safeExportDate = parsedExportDate && !Number.isNaN(parsedExportDate.getTime()) ? parsedExportDate : null;
+    let snapshotFile = null;
     try {
-      const { data } = req.body;
-
       if (!data || !Array.isArray(data.categories) || !Array.isArray(data.skills)) {
         return res.status(400).json({ message: 'Invalid data format' });
       }
@@ -889,10 +916,38 @@ export function createApp() {
         }
       }
 
+      // Pre-restore safety snapshot: dump the CURRENT state to a file before the
+      // wipe, so an accidental restore is recoverable. Best-effort — a snapshot
+      // failure must not block the user's explicit restore.
+      try {
+        const snapshot = {};
+        for (const { key, model } of BACKUP_MODELS) {
+          snapshot[key] = await prisma[model].findMany();
+        }
+        const dir = getBackupSnapshotDir();
+        mkdirSync(dir, { recursive: true });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        snapshotFile = join(dir, `pre-restore-${stamp}.json`);
+        writeFileSync(snapshotFile, JSON.stringify({ exportDate: new Date().toISOString(), version: '2.0', data: snapshot }));
+        // Keep only the most recent snapshots so recovery dumps don't grow
+        // unbounded. ISO-timestamp names sort chronologically, so the oldest
+        // are at the front. Pruning is best-effort and never blocks the restore.
+        const dumps = readdirSync(dir).filter((f) => f.startsWith('pre-restore-') && f.endsWith('.json')).sort();
+        for (const old of dumps.slice(0, -SNAPSHOT_RETENTION)) {
+          try { unlinkSync(join(dir, old)); } catch { /* ignore */ }
+        }
+      } catch (snapErr) {
+        console.error('[API] pre-restore snapshot failed (proceeding):', snapErr.message);
+        snapshotFile = null;
+      }
+
+      let recordsDeleted = 0;
+      let recordsInserted = 0;
       await prisma.$transaction(async (tx) => {
         // Wipe leaves -> roots so foreign keys never block a delete.
         for (const { model } of [...BACKUP_MODELS].reverse()) {
-          await tx[model].deleteMany();
+          const { count } = await tx[model].deleteMany();
+          recordsDeleted += count;
         }
         // Restore roots -> leaves. Rows carry their original ids so relations
         // (including string-UUID PKs and the FKs that point at them) survive.
@@ -900,15 +955,61 @@ export function createApp() {
         for (const { key, model } of BACKUP_MODELS) {
           const rows = data[key];
           if (Array.isArray(rows) && rows.length > 0) {
-            await tx[model].createMany({ data: rows });
+            const { count } = await tx[model].createMany({ data: rows });
+            recordsInserted += count;
           }
         }
+        // Log the restore as the LAST statement in the transaction. BackupLog is
+        // outside BACKUP_MODELS, so the wipe above never touches it — the row
+        // commits atomically with the restore (a rolled-back import writes none).
+        await tx.backupLog.create({
+          data: {
+            type: 'restore',
+            status: 'success',
+            recordCount: recordsInserted,
+            recordsDeleted,
+            fileName: safeFileName,
+            sourceExportDate: safeExportDate,
+            sourceVersion: safeVersion,
+            snapshotFile,
+            actor: req.user?.role || null,
+          },
+        });
       }, { timeout: 30000 });
 
-      res.json({ success: true, message: 'Data imported successfully' });
+      res.json({ success: true, message: 'Data imported successfully', recordsDeleted, recordsInserted });
     } catch (error) {
       console.error('[API] POST /api/import failed:', error);
+      // Record the failed restore outside the rolled-back transaction.
+      try {
+        await prisma.backupLog.create({
+          data: { type: 'restore', status: 'failed', fileName: safeFileName, snapshotFile, actor: req.user?.role || null },
+        });
+      } catch (logErr) {
+        console.error('[API] restore failure log failed:', logErr.message);
+      }
       res.status(500).json({ message: 'Error importing data' });
+    }
+  });
+
+  // GET /api/backup-log - install-local history of exports & restores.
+  // Returns the 20 most recent events plus the single most-recent successful
+  // export tracked independently, so the "last backup" status stays accurate
+  // even when recent restores have pushed the last export out of the window.
+  app.get('/api/backup-log', authMiddleware, async (req, res) => {
+    try {
+      const [entries, lastExport] = await Promise.all([
+        prisma.backupLog.findMany({ orderBy: { createdAt: 'desc' }, take: 20, select: BACKUP_LOG_FIELDS }),
+        prisma.backupLog.findFirst({
+          where: { type: 'export', status: 'success' },
+          orderBy: { createdAt: 'desc' },
+          select: BACKUP_LOG_FIELDS,
+        }),
+      ]);
+      res.json({ lastExport, entries });
+    } catch (error) {
+      console.error('[API] GET /api/backup-log failed:', error);
+      res.status(500).json({ message: 'Error fetching backup log' });
     }
   });
 
