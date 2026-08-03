@@ -58,6 +58,10 @@ export function createApp() {
         : undefined
     )
   );
+  // The import route carries a full-database backup, which easily exceeds the
+  // default 1mb cap — otherwise you could export a backup you can't re-import.
+  // body-parser skips the global 1mb parser below once this one reads the body.
+  app.use('/api/import', express.json({ limit: '25mb' }));
   app.use(express.json({ limit: '1mb' }));
   app.use(cookieParser());
 
@@ -821,25 +825,44 @@ export function createApp() {
   // DATA PORTABILITY ROUTES
   // ============================================================
 
-  // GET /api/export - Full JSON dump
+  // All backup-able models in restore order (parents -> children). Export dumps
+  // each; import restores in this order and wipes in reverse. SystemConfig is
+  // intentionally excluded — it holds the admin password hash and install-local
+  // config, which must never travel in a portable backup.
+  const BACKUP_MODELS = [
+    { key: 'categories', model: 'category' },
+    { key: 'collaborators', model: 'collaborator' },
+    { key: 'snapshots', model: 'snapshot' },
+    { key: 'roleProfiles', model: 'roleProfile' },
+    { key: 'timePeriods', model: 'timePeriod' },
+    { key: 'reviewCycles', model: 'reviewCycle' },
+    { key: 'skills', model: 'skill' },
+    { key: 'evaluationSessions', model: 'evaluationSession' },
+    { key: 'developmentPlans', model: 'developmentPlan' },
+    { key: 'objectives', model: 'objective' },
+    { key: 'checkInNotes', model: 'checkInNote' },
+    { key: 'assessments', model: 'assessment' },
+    { key: 'developmentGoals', model: 'developmentGoal' },
+    { key: 'keyResults', model: 'keyResult' },
+    { key: 'reviews', model: 'review' },
+    { key: 'kpis', model: 'kPI' },
+    { key: 'developmentActions', model: 'developmentAction' },
+    { key: 'checkIns', model: 'checkIn' },
+    { key: 'reviewSkillRatings', model: 'reviewSkillRating' },
+    { key: 'kpiEntries', model: 'kPIEntry' },
+  ];
+
+  // GET /api/export - Full JSON dump of all data (excludes SystemConfig)
   app.get('/api/export', authMiddleware, async (req, res) => {
     try {
-      const categories = await prisma.category.findMany();
-      const skills = await prisma.skill.findMany();
-      const collaborators = await prisma.collaborator.findMany();
-      const assessments = await prisma.assessment.findMany();
-      const snapshots = await prisma.snapshot.findMany();
-
+      const data = {};
+      for (const { key, model } of BACKUP_MODELS) {
+        data[key] = await prisma[model].findMany();
+      }
       res.json({
         exportDate: new Date().toISOString(),
-        version: '1.0',
-        data: {
-          categories,
-          skills,
-          collaborators,
-          assessments,
-          snapshots
-        }
+        version: '2.0',
+        data,
       });
     } catch (error) {
       console.error('[API] GET /api/export failed:', error);
@@ -847,51 +870,40 @@ export function createApp() {
     }
   });
 
-  // POST /api/import - Wipe and replace (Protected)
+  // POST /api/import - Wipe and replace, atomically (Protected).
+  // Restores every collection present in the payload. A legacy v1.0 backup (only
+  // categories/skills/collaborators/assessments/snapshots) imports cleanly — the
+  // newer collections are simply absent and skipped.
   app.post('/api/import', authMiddleware, async (req, res) => {
     try {
       const { data } = req.body;
 
-      if (!data || !data.categories || !data.skills) {
+      if (!data || !Array.isArray(data.categories) || !Array.isArray(data.skills)) {
         return res.status(400).json({ message: 'Invalid data format' });
       }
+      // A malformed collection must never trigger the destructive wipe: reject
+      // before touching the DB if any provided collection isn't an array.
+      for (const { key } of BACKUP_MODELS) {
+        if (data[key] !== undefined && !Array.isArray(data[key])) {
+          return res.status(400).json({ message: `Invalid data format: ${key} must be an array` });
+        }
+      }
 
-      // Wipe existing data (order matters due to foreign keys)
-      await prisma.developmentAction.deleteMany();
-      await prisma.developmentGoal.deleteMany();
-      await prisma.developmentPlan.deleteMany();
-      await prisma.checkIn.deleteMany();
-      await prisma.keyResult.deleteMany();
-      await prisma.objective.deleteMany();
-      await prisma.timePeriod.deleteMany();
-      await prisma.reviewSkillRating.deleteMany();
-      await prisma.review.deleteMany();
-      await prisma.reviewCycle.deleteMany();
-      await prisma.kPIEntry.deleteMany();
-      await prisma.kPI.deleteMany();
-      await prisma.checkInNote.deleteMany();
-      await prisma.assessment.deleteMany();
-      await prisma.snapshot.deleteMany();
-      await prisma.collaborator.deleteMany();
-      await prisma.skill.deleteMany();
-      await prisma.category.deleteMany();
-
-      // Import new data
-      if (data.categories.length > 0) {
-        await prisma.category.createMany({ data: data.categories });
-      }
-      if (data.skills.length > 0) {
-        await prisma.skill.createMany({ data: data.skills });
-      }
-      if (data.collaborators?.length > 0) {
-        await prisma.collaborator.createMany({ data: data.collaborators });
-      }
-      if (data.snapshots?.length > 0) {
-        await prisma.snapshot.createMany({ data: data.snapshots });
-      }
-      if (data.assessments?.length > 0) {
-        await prisma.assessment.createMany({ data: data.assessments });
-      }
+      await prisma.$transaction(async (tx) => {
+        // Wipe leaves -> roots so foreign keys never block a delete.
+        for (const { model } of [...BACKUP_MODELS].reverse()) {
+          await tx[model].deleteMany();
+        }
+        // Restore roots -> leaves. Rows carry their original ids so relations
+        // (including string-UUID PKs and the FKs that point at them) survive.
+        // Prisma coerces ISO date strings on createMany; nulls stay null.
+        for (const { key, model } of BACKUP_MODELS) {
+          const rows = data[key];
+          if (Array.isArray(rows) && rows.length > 0) {
+            await tx[model].createMany({ data: rows });
+          }
+        }
+      }, { timeout: 30000 });
 
       res.json({ success: true, message: 'Data imported successfully' });
     } catch (error) {
