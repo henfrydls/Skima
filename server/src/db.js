@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { resolve, dirname } from 'path';
+import { resolve, dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
 
 /**
@@ -32,6 +32,17 @@ if (customDbPath) {
 
 // Singleton Prisma client for the entire app
 export const prisma = new PrismaClient();
+
+/**
+ * Directory for pre-restore safety snapshots. Lives next to the database so it
+ * shares the same app-data location as the data it protects. Overridable via
+ * BACKUP_SNAPSHOT_DIR (used by tests).
+ */
+export function getBackupSnapshotDir() {
+  if (process.env.BACKUP_SNAPSHOT_DIR) return process.env.BACKUP_SNAPSHOT_DIR;
+  const base = customDbPath ? dirname(customDbPath) : resolve(process.cwd(), 'prisma');
+  return join(base, 'pre-restore-snapshots');
+}
 
 /**
  * Auto-initialize the database schema on first run.
@@ -100,6 +111,9 @@ export async function ensureDatabase() {
       // ── CheckIn Notes table (v1.3.0) ──
       `CREATE TABLE IF NOT EXISTS "CheckInNote" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "collaboratorId" INTEGER NOT NULL, "title" TEXT, "content" TEXT NOT NULL, "meetingDate" DATETIME NOT NULL, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" DATETIME NOT NULL, CONSTRAINT "CheckInNote_collaboratorId_fkey" FOREIGN KEY ("collaboratorId") REFERENCES "Collaborator" ("id") ON DELETE CASCADE ON UPDATE CASCADE)`,
       `CREATE INDEX IF NOT EXISTS "CheckInNote_collaboratorId_meetingDate_idx" ON "CheckInNote"("collaboratorId", "meetingDate")`,
+      // ── Backup log (install-local; excluded from export/import) (v1.4.3) ──
+      `CREATE TABLE IF NOT EXISTS "BackupLog" ("id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "type" TEXT NOT NULL, "status" TEXT NOT NULL DEFAULT 'success', "recordCount" INTEGER, "recordsDeleted" INTEGER, "fileName" TEXT, "sourceExportDate" DATETIME, "sourceVersion" TEXT, "snapshotFile" TEXT, "actor" TEXT, "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)`,
+      `CREATE INDEX IF NOT EXISTS "BackupLog_type_createdAt_idx" ON "BackupLog"("type", "createdAt")`,
     ];
     for (const sql of statements) {
       await prisma.$executeRawUnsafe(sql);
