@@ -70,6 +70,9 @@ credentials/
 *.bak
 *.backup
 
+# Pre-restore auto-snapshots (runtime recovery dumps, may contain user data)
+server/prisma/pre-restore-snapshots/
+
 # Tauri
 src-tauri/target/
 src-tauri/binaries/

@@ -382,4 +382,26 @@ model CheckInNote {
   @@index([collaboratorId, meetingDate])
 }
 
+// ============================================================
+// BACKUP LOG (install-local history of exports & restores)
+// Append-only. NEVER added to the backup export/import model list —
+// it must survive the restore it documents (same reason SystemConfig
+// is excluded). Records provenance of destructive restores.
+// ============================================================
+model BackupLog {
+  id               Int       @id @default(autoincrement())
+  type             String    // 'export' | 'restore'
+  status           String    @default("success") // 'success' | 'failed'
+  recordCount      Int?      // export: rows dumped; restore: rows inserted
+  recordsDeleted   Int?      // restore only: rows wiped before the replace
+  fileName         String?   // restore only: uploaded backup's file name
+  sourceExportDate DateTime? // restore only: exportDate from the backup's envelope
+  sourceVersion    String?   // restore only: format version from the envelope
+  snapshotFile     String?   // restore only: path of the pre-restore auto-snapshot (recoverability)
+  actor            String?   // who performed it (JWT role today; real identity post multi-user)
+  createdAt        DateTime  @default(now())
+
+  @@index([type, createdAt])
+}
+
 
