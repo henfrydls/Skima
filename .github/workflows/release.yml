@@ -40,6 +40,22 @@ jobs:
           # @yao-pkg/pkg to `bun build --compile` + Prisma 7 driver
           # adapter, which builds reproducibly from any Linux host and
           # eliminates the pkg ICU coupling.
+          #
+          # IMPORTANT when rebuilding these two macOS sidecars on a Mac:
+          # server/prisma/schema.prisma's `binaryTargets` is ["native", <debian>]
+          # with no explicit "darwin". On an arm64 Mac, native = darwin-arm64, so
+          # `prisma generate` emits only the arm64 Prisma query engine. The
+          # x86_64 sidecar then ships WITHOUT a darwin engine and cannot open the
+          # DB on Intel Macs. It still boots and logs "API running", so a
+          # does-it-abort (ICU) smoke-test does NOT catch it — verify DB access
+          # explicitly under Rosetta (must print "Database schema verified").
+          # Build the sidecars PER-ARCH so each carries the right engine:
+          #   arm64: `npx prisma generate` (native)          -> pkg node20-macos-arm64
+          #   x64:   add "darwin" to binaryTargets, regenerate -> pkg node20-macos-x64,
+          #          then `git checkout -- server/prisma/schema.prisma`.
+          # Do NOT commit the "darwin" target: it would bloat the arm64 sidecar
+          # and every CI Linux/Windows sidecar with an unused ~66MB macOS engine.
+          # (Fixed by hand at v1.4.3; removed entirely by the Bun migration, v1.5.0.)
           - platform: ubuntu-22.04
             target: node20-macos-x64
             sidecar-name: skima-server-x86_64-apple-darwin
