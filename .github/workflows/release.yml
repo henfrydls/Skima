@@ -283,6 +283,12 @@ jobs:
           # Tauri updater signing — produces .sig files and the latest.json manifest
           # the auto-updater reads at runtime. Without these the bundle is unsigned
           # and existing v1.4.0+ clients will refuse the update.
+          # linuxdeploy strips every binary in the AppDir by default, and strip
+          # DESTROYS a Bun standalone sidecar: it drops the bunfs trailer, strip
+          # exits 0, and the binary dies at runtime with "Module not found"
+          # (verified locally at v1.5.0-rc.1 — the AppImage bundling also failed
+          # outright with `failed to run linuxdeploy`). Cost: a larger AppImage.
+          NO_STRIP: true
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
           # NOTE on macOS code signing: Apple Developer Program enrollment is
