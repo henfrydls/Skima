@@ -9,63 +9,15 @@ permissions:
   contents: write
 
 jobs:
+  # All four sidecars cross-compile from ONE Linux host with `bun build
+  # --compile` (server/scripts/build-sidecars.mjs). The Prisma client is fully
+  # Rust-free (WASM query compiler, no per-platform engines), which is what
+  # makes this possible. This replaced @yao-pkg/pkg, whose macOS binaries had
+  # to be prebuilt manually on a Mac (ICU abort on Tahoe) and could silently
+  # ship without a Prisma engine — both bug classes are gone by construction,
+  # and the macOS jobs below smoke-test DB access as a regression net.
   build-sidecar:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: ubuntu-22.04
-            target: node20-linux-x64
-            sidecar-name: skima-server-x86_64-unknown-linux-gnu
-          - platform: windows-latest
-            target: node20-win-x64
-            sidecar-name: skima-server-x86_64-pc-windows-msvc.exe
-          # macOS sidecars are NOT built in CI. We discovered that
-          # `@yao-pkg/pkg`'s prebuilt Node 20.20.2 binary embeds an ICU
-          # data table that aborts at v8::Isolate::Initialize when run
-          # on macOS 26 Tahoe — regardless of whether the runner is
-          # macos-15 (Sequoia) or macos-26 itself. The same pkg invocation
-          # from a Mac that already had the pre-regression pkg-fetch
-          # cache produces a binary that works; CI runners always pull
-          # fresh and get the broken binary.
-          #
-          # Workaround: the two macOS sidecars are built locally on
-          # a Mac with a known-good pkg-fetch cache and uploaded to a
-          # separate "sidecar-binaries-v1" GitHub release. The macOS
-          # rows below skip pkg entirely and `gh release download`
-          # those assets. Linux + Windows still build normally because
-          # they are not affected by the pkg ICU bug.
-          #
-          # Permanent fix (tracked for v1.4.2): migrate the sidecar from
-          # @yao-pkg/pkg to `bun build --compile` + Prisma 7 driver
-          # adapter, which builds reproducibly from any Linux host and
-          # eliminates the pkg ICU coupling.
-          #
-          # IMPORTANT when rebuilding these two macOS sidecars on a Mac:
-          # server/prisma/schema.prisma's `binaryTargets` is ["native", <debian>]
-          # with no explicit "darwin". On an arm64 Mac, native = darwin-arm64, so
-          # `prisma generate` emits only the arm64 Prisma query engine. The
-          # x86_64 sidecar then ships WITHOUT a darwin engine and cannot open the
-          # DB on Intel Macs. It still boots and logs "API running", so a
-          # does-it-abort (ICU) smoke-test does NOT catch it — verify DB access
-          # explicitly under Rosetta (must print "Database schema verified").
-          # Build the sidecars PER-ARCH so each carries the right engine:
-          #   arm64: `npx prisma generate` (native)          -> pkg node20-macos-arm64
-          #   x64:   add "darwin" to binaryTargets, regenerate -> pkg node20-macos-x64,
-          #          then `git checkout -- server/prisma/schema.prisma`.
-          # Do NOT commit the "darwin" target: it would bloat the arm64 sidecar
-          # and every CI Linux/Windows sidecar with an unused ~66MB macOS engine.
-          # (Fixed by hand at v1.4.3; removed entirely by the Bun migration, v1.5.0.)
-          - platform: ubuntu-22.04
-            target: node20-macos-x64
-            sidecar-name: skima-server-x86_64-apple-darwin
-            prebuilt: true
-          - platform: ubuntu-22.04
-            target: node20-macos-arm64
-            sidecar-name: skima-server-aarch64-apple-darwin
-            prebuilt: true
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-22.04
     steps:
       - uses: actions/checkout@v4
 
@@ -74,36 +26,48 @@ jobs:
         with:
           node-version: '20'
 
+      # Pin Bun to the exact version validated for this flow. Bun has shipped
+      # Mach-O signing regressions before — never float this.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
       - name: Install Server Dependencies
-        if: '!matrix.prebuilt'
-        run: cd server && npm install
+        run: cd server && npm ci
 
-      - name: Generate Prisma Client
-        if: '!matrix.prebuilt'
-        run: cd server && npx prisma generate
+      - name: Build all sidecars (linux, windows, darwin-x64, darwin-arm64)
+        run: cd server && node scripts/build-sidecars.mjs
 
-      - name: Download prebuilt macOS sidecar
-        if: matrix.prebuilt
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # Quick functional check of the host-native binary: boots, applies the
+      # schema, answers a Prisma-backed query.
+      - name: Smoke test (linux binary)
         run: |
-          mkdir -p src-tauri/binaries
-          gh release download sidecar-binaries-v1 \
-            --repo "${{ github.repository }}" \
-            --pattern "${{ matrix.sidecar-name }}" \
-            --output "src-tauri/binaries/${{ matrix.sidecar-name }}"
+          ./src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu --db-path /tmp/smoke.db --port 11999 > /tmp/smoke.log 2>&1 &
+          for i in $(seq 1 20); do
+            grep -q "API running" /tmp/smoke.log && break
+            sleep 1
+          done
+          cat /tmp/smoke.log
+          grep -q "Database schema verified" /tmp/smoke.log
+          curl -sf http://localhost:11999/api/config > /dev/null
 
-      - name: Build Sidecar
-        if: '!matrix.prebuilt'
+      # Checksums travel with the binaries so every consumer can verify the
+      # artifact roundtrip (upload-artifact once corrupted a large binary's
+      # tail bytes in transit — never trust the transport).
+      - name: Checksums
         run: |
-          cd server
-          npx @yao-pkg/pkg . --target ${{ matrix.target }} --output "../src-tauri/binaries/${{ matrix.sidecar-name }}" --compress GZip
+          cd src-tauri/binaries
+          sha256sum skima-server-* > SHA256SUMS
+          cat SHA256SUMS
 
-      - name: Upload Sidecar Artifact
+      - name: Upload Sidecar Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: sidecar-${{ matrix.target }}
-          path: src-tauri/binaries/${{ matrix.sidecar-name }}
+          name: sidecars
+          path: |
+            src-tauri/binaries/skima-server-*
+            src-tauri/binaries/SHA256SUMS
 
   create-release:
     needs: build-sidecar
@@ -178,58 +142,65 @@ jobs:
           npm install
           cd client && npm install
 
-      # Download sidecar binaries for this platform
-      - name: Download Sidecar (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
+      # All platforms take their sidecar from the single `sidecars` artifact.
+      # The SHA256 check exists because the artifact zip roundtrip once
+      # silently corrupted a large binary's tail bytes — verify, never trust.
+      - name: Download Sidecars
         uses: actions/download-artifact@v4
         with:
-          name: sidecar-node20-linux-x64
+          name: sidecars
           path: src-tauri/binaries/
 
-      - name: Download Sidecar (Windows)
+      - name: Verify sidecar checksums
+        if: matrix.platform != 'windows-latest'
+        run: cd src-tauri/binaries && shasum -a 256 -c SHA256SUMS && rm SHA256SUMS
+
+      - name: Verify sidecar checksums (Windows)
         if: matrix.platform == 'windows-latest'
-        uses: actions/download-artifact@v4
-        with:
-          name: sidecar-node20-win-x64
-          path: src-tauri/binaries/
-
-      # macOS sidecars come from the sidecar-binaries-v1 release directly
-      # (bypassing the actions/upload-artifact → download-artifact roundtrip)
-      # because the artifact zip path silently mangles a few bytes near the
-      # end of the binary in transit — the SHA256 of the downloaded file no
-      # longer matches what was uploaded, and the resulting sidecar crashes
-      # at v8::Isolate::Initialize on launch. Fetching the binary straight
-      # from the GitHub release preserves the original bytes.
-      - name: Download prebuilt macOS sidecar (arm64)
-        if: matrix.mac-arch == 'aarch64'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: pwsh
         run: |
-          mkdir -p src-tauri/binaries
-          gh release download sidecar-binaries-v1 \
-            --repo "${{ github.repository }}" \
-            --pattern "skima-server-aarch64-apple-darwin" \
-            --output "src-tauri/binaries/skima-server-aarch64-apple-darwin"
-          shasum -a 256 "src-tauri/binaries/skima-server-aarch64-apple-darwin"
-
-      - name: Download prebuilt macOS sidecar (x64)
-        if: matrix.mac-arch == 'x86_64'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          mkdir -p src-tauri/binaries
-          gh release download sidecar-binaries-v1 \
-            --repo "${{ github.repository }}" \
-            --pattern "skima-server-x86_64-apple-darwin" \
-            --output "src-tauri/binaries/skima-server-x86_64-apple-darwin"
-          shasum -a 256 "src-tauri/binaries/skima-server-x86_64-apple-darwin"
-
-      # No `lipo -create` step — see matrix comment for why. Each macOS
-      # job now ships only its native sidecar.
+          cd src-tauri/binaries
+          $failed = $false
+          Get-Content SHA256SUMS | ForEach-Object {
+            $parts = $_ -split '\s+', 2
+            $expected = $parts[0]; $file = $parts[1].TrimStart('*')
+            $actual = (Get-FileHash -Algorithm SHA256 $file).Hash.ToLower()
+            if ($actual -ne $expected) { Write-Error "CHECKSUM MISMATCH: $file"; $failed = $true }
+          }
+          if ($failed) { exit 1 }
+          Remove-Item SHA256SUMS
 
       - name: Make Sidecar Executable
         if: matrix.platform != 'windows-latest'
         run: chmod +x src-tauri/binaries/skima-server-*
+
+      # Bun's cross-compiled Mach-O signature can trip Gatekeeper variants and
+      # Bun has shipped signing regressions before — re-sign ad-hoc on the
+      # runner as belt-and-suspenders before Tauri bundles it.
+      - name: Re-sign sidecar ad-hoc (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          BIN="src-tauri/binaries/skima-server-$([ "${{ matrix.mac-arch }}" = "aarch64" ] && echo aarch64 || echo x86_64)-apple-darwin"
+          codesign --remove-signature "$BIN" 2>/dev/null || true
+          codesign -s - -f "$BIN"
+          codesign -v "$BIN"
+
+      # Hard smoke test on the real macOS runner: the sidecar must boot AND
+      # open the database. This catches BOTH historic silent-failure classes —
+      # an ICU-style abort (no output) and a binary that serves "API running"
+      # while unable to touch the DB (the v1.4.x Intel-engine bug).
+      - name: Smoke test sidecar (macOS)
+        if: startsWith(matrix.platform, 'macos')
+        run: |
+          BIN="src-tauri/binaries/skima-server-$([ "${{ matrix.mac-arch }}" = "aarch64" ] && echo aarch64 || echo x86_64)-apple-darwin"
+          "$BIN" --db-path /tmp/smoke.db --port 11999 > /tmp/smoke.log 2>&1 &
+          for i in $(seq 1 20); do
+            grep -q "API running" /tmp/smoke.log && break
+            sleep 1
+          done
+          cat /tmp/smoke.log
+          grep -q "Database schema verified" /tmp/smoke.log
+          curl -sf http://localhost:11999/api/config > /dev/null
 
       # src-tauri/resources/ is now always present (Assets.car is committed),
       # so we no longer need a "mkdir -p" pre-step. The previous step used
