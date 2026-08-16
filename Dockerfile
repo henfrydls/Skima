@@ -3,14 +3,6 @@ FROM node:20-alpine AS build
 
 WORKDIR /app/client
 
-# Optional web-only analytics for the demo/landing build. Vite inlines these at
-# build time. Left empty for forks/desktop → analytics disabled (see
-# client/src/lib/analytics.js). Values are public (they appear in page source).
-ARG VITE_UMAMI_SRC
-ARG VITE_UMAMI_WEBSITE_ID
-ENV VITE_UMAMI_SRC=$VITE_UMAMI_SRC
-ENV VITE_UMAMI_WEBSITE_ID=$VITE_UMAMI_WEBSITE_ID
-
 COPY client/package.json client/package-lock.json ./
 RUN npm ci
 
