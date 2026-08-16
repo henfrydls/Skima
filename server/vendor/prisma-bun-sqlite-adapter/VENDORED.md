@@ -14,6 +14,12 @@ Vendored (2026-08-16) rather than npm-installed because:
    `timestampFormat: 'unixepoch-ms'`). Without the patch, the sidecar would
    corrupt user databases with mixed date formats. Reads already accept both.
 
-Upstream: https://github.com/nogo/prisma-bun-sqlite-adapter (MIT).
-If you update this vendor copy, re-apply the SKIMA PATCH and re-run the
-date-compatibility test in `src/__tests__/` plus the sidecar smoke test.
+Also patched: a null guard at the top of `mapQueryArgs` (upstream let null
+Int?/Float? args become NaN via parseInt), and `adapter.js`'s package.json
+require path adjusted for the flat vendored layout.
+
+Upstream: https://github.com/nogo/prisma-bun-sqlite-adapter (MIT — see LICENSE).
+If you update this vendor copy: re-apply every `SKIMA PATCH`, keep the local
+`package.json` (`"type": "commonjs"` — the server package is ESM), and re-run
+`src/__tests__/dbAdapter.test.js` (guards the date dialect + null handling)
+plus the sidecar smoke test in CI.

@@ -21,8 +21,12 @@ WORKDIR /app
 # small.
 COPY server/package.json server/package-lock.json ./server/
 COPY server/prisma/ ./server/prisma/
+# prisma CLI is a devDependency (omitted here), so pin the npx-fetched version
+# to the client's exact release: the Rust-free client (engineType=client +
+# queryCompiler WASM) is a tight generator/runtime contract — a floating
+# `prisma@latest` could emit a client the runtime can't load.
 RUN apk add --no-cache --virtual .build-deps python3 make g++ \
-    && cd server && npm ci --omit=dev && npx prisma generate \
+    && cd server && npm ci --omit=dev && npx prisma@6.19.3 generate \
     && apk del .build-deps
 
 # Copy server source

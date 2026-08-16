@@ -196,6 +196,13 @@ function mapRow(row, columnTypes) {
 }
 function mapQueryArgs(args, argTypes) {
     return args.map((arg, i) => {
+        // SKIMA PATCH: null guard first — upstream let null Int?/Float? args
+        // fall into Number.parseInt(null) => NaN, which only landed as NULL by
+        // an undocumented double coercion. The official adapter returns null
+        // first; mirror that. (Hot path: Assessment.snapshotId is Int? null.)
+        if (arg === null || arg === undefined) {
+            return null;
+        }
         const argType = argTypes[i];
         if (argType.scalarType === "int") {
             return Number.parseInt(arg);

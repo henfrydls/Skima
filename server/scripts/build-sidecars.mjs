@@ -26,7 +26,7 @@
  *   targets: linux | windows | darwin-x64 | darwin-arm64 | all (default)
  */
 import { execSync } from 'child_process';
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 'fs';
 import { resolve, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -46,8 +46,10 @@ const run = (cmd) => execSync(cmd, { cwd: SERVER_DIR, stdio: 'inherit' });
 
 // ── 1. Generate the Rust-free client ──
 run('npx prisma generate');
-const engines = execSync('ls node_modules/.prisma/client', { cwd: SERVER_DIR })
-  .toString().split('\n').filter((f) => f.endsWith('.so.node') || f.includes('query_engine-'));
+// Any .node addon or engine binary in the generated client means the generator
+// config regressed (covers .so.node/.dylib.node/.dll.node — any host OS).
+const engines = readdirSync(resolve(SERVER_DIR, 'node_modules/.prisma/client'))
+  .filter((f) => f.endsWith('.node') || f.includes('query_engine-'));
 if (engines.length > 0) {
   console.error('FATAL: native engines emitted — the client is not Rust-free:', engines);
   process.exit(1);

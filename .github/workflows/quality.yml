@@ -95,3 +95,49 @@ jobs:
         run: npm audit --audit-level=high
         working-directory: ./server
         continue-on-error: true
+
+  # Builds the linux sidecar exactly as release.yml will, so generator-contract
+  # breakage (e.g. a prisma bump changing the generated WASM-loader shape that
+  # scripts/build-sidecars.mjs patches) fails on the dependency PR — not on
+  # release day when the tag is pushed. ~3 minutes.
+  sidecar-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Same pin as release.yml — keep them in sync.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Install Server Dependencies
+        run: cd server && npm ci
+
+      - name: Build linux sidecar
+        run: cd server && node scripts/build-sidecars.mjs linux
+
+      # Isolated on purpose: the WASM disk-fallback resolves relative to cwd,
+      # so running from the repo could mask a non-embedded WASM.
+      - name: Smoke test (isolated)
+        run: |
+          BIN="$GITHUB_WORKSPACE/src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu"
+          cd "$(mktemp -d)"
+          "$BIN" --db-path ./smoke.db --port 11999 > ./smoke.log 2>&1 &
+          SIDECAR_PID=$!
+          trap 'kill $SIDECAR_PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 20); do
+            grep -q "API running" ./smoke.log && break
+            sleep 1
+          done
+          cat ./smoke.log
+          grep -q "Database schema verified" ./smoke.log
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":false'
+          curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
+            -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'

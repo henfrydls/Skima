@@ -39,18 +39,29 @@ jobs:
       - name: Build all sidecars (linux, windows, darwin-x64, darwin-arm64)
         run: cd server && node scripts/build-sidecars.mjs
 
-      # Quick functional check of the host-native binary: boots, applies the
-      # schema, answers a Prisma-backed query.
+      # Functional check of the host-native binary: boots, applies the schema,
+      # and completes a WRITE round-trip (covers datetime + boolean coercion
+      # through the bun:sqlite adapter, not just a read).
+      # Runs from an empty temp dir ON PURPOSE: the client's WASM disk-fallback
+      # resolves relative to cwd, so running from the repo could mask a
+      # non-embedded WASM. Isolation must be explicit, not incidental.
       - name: Smoke test (linux binary)
         run: |
-          ./src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu --db-path /tmp/smoke.db --port 11999 > /tmp/smoke.log 2>&1 &
+          BIN="$GITHUB_WORKSPACE/src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu"
+          cd "$(mktemp -d)"
+          "$BIN" --db-path ./smoke.db --port 11999 > ./smoke.log 2>&1 &
+          SIDECAR_PID=$!
+          trap 'kill $SIDECAR_PID 2>/dev/null || true' EXIT
           for i in $(seq 1 20); do
-            grep -q "API running" /tmp/smoke.log && break
+            grep -q "API running" ./smoke.log && break
             sleep 1
           done
-          cat /tmp/smoke.log
-          grep -q "Database schema verified" /tmp/smoke.log
-          curl -sf http://localhost:11999/api/config > /dev/null
+          cat ./smoke.log
+          grep -q "Database schema verified" ./smoke.log
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":false'
+          curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
+            -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'
 
       # Checksums travel with the binaries so every consumer can verify the
       # artifact roundtrip (upload-artifact once corrupted a large binary's
@@ -80,11 +91,19 @@ jobs:
       - name: Create Release with changelog
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        # Prerelease tags (-rc./-beta./-alpha.) must be born as prereleases:
+        # /releases/latest/download/latest.json is the live updater endpoint,
+        # and an RC marked --latest — even for the build window until
+        # set-prerelease-flag runs — could serve v1.4.x users a partial RC
+        # manifest. The `gh release view ||` guard makes workflow re-runs
+        # idempotent instead of failing on "release already exists".
         run: |
-          gh release create ${{ github.ref_name }} \
-            --title "Skima ${{ github.ref_name }}" \
+          TAG="${{ github.ref_name }}"
+          if [[ "$TAG" =~ -(rc|beta|alpha)\. ]]; then FLAG="--prerelease"; else FLAG="--latest"; fi
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" \
+            --title "Skima $TAG" \
             --generate-notes \
-            --latest
+            "$FLAG"
 
   build-tauri:
     needs: [build-sidecar, create-release]
@@ -127,9 +146,6 @@ jobs:
 
       - name: Install Rust Stable
         uses: dtolnay/rust-toolchain@stable
-        with:
-          # Each macOS job only needs its own Rust target.
-          targets: ${{ matrix.mac-arch == 'aarch64' && 'aarch64-apple-darwin' || (matrix.mac-arch == 'x86_64' && 'x86_64-apple-darwin' || '') }}
 
       - name: Install Linux Dependencies
         if: matrix.platform == 'ubuntu-22.04'
@@ -170,6 +186,39 @@ jobs:
           if ($failed) { exit 1 }
           Remove-Item SHA256SUMS
 
+      # Windows is the one target nobody boots outside CI — same hard smoke
+      # test as macOS: boot + schema verified + a write round-trip, from an
+      # isolated temp dir so a non-embedded WASM cannot be masked by disk files.
+      - name: Smoke test sidecar (Windows)
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $bin = Join-Path $PWD 'src-tauri/binaries/skima-server-x86_64-pc-windows-msvc.exe'
+          $work = Join-Path $env:RUNNER_TEMP 'sidecar-smoke'
+          New-Item -ItemType Directory -Force $work | Out-Null
+          Set-Location $work
+          $p = Start-Process -FilePath $bin -ArgumentList '--db-path', "$work\smoke.db", '--port', '11999' `
+            -RedirectStandardOutput "$work\smoke.log" -RedirectStandardError "$work\smoke.err" -PassThru
+          try {
+            $ok = $false
+            foreach ($i in 1..20) {
+              Start-Sleep -Seconds 1
+              if ((Get-Content "$work\smoke.log" -Raw -ErrorAction SilentlyContinue) -match 'API running') { $ok = $true; break }
+            }
+            Get-Content "$work\smoke.log" -ErrorAction SilentlyContinue
+            Get-Content "$work\smoke.err" -ErrorAction SilentlyContinue
+            if (-not $ok) { throw 'sidecar never reported API running' }
+            if ((Get-Content "$work\smoke.log" -Raw) -notmatch 'Database schema verified') { throw 'schema not verified' }
+            $cfg = Invoke-RestMethod http://localhost:11999/api/config
+            if ($cfg.isSetup -ne $false) { throw 'unexpected initial isSetup' }
+            Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/setup `
+              -ContentType 'application/json' -Body '{"companyName":"CI Smoke","adminName":"CI"}' | Out-Null
+            $cfg2 = Invoke-RestMethod http://localhost:11999/api/config
+            if ($cfg2.isSetup -ne $true) { throw 'setup write round-trip failed' }
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Make Sidecar Executable
         if: matrix.platform != 'windows-latest'
         run: chmod +x src-tauri/binaries/skima-server-*
@@ -180,7 +229,7 @@ jobs:
       - name: Re-sign sidecar ad-hoc (macOS)
         if: startsWith(matrix.platform, 'macos')
         run: |
-          BIN="src-tauri/binaries/skima-server-$([ "${{ matrix.mac-arch }}" = "aarch64" ] && echo aarch64 || echo x86_64)-apple-darwin"
+          BIN="src-tauri/binaries/skima-server-${{ matrix.mac-arch }}-apple-darwin"
           codesign --remove-signature "$BIN" 2>/dev/null || true
           codesign -s - -f "$BIN"
           codesign -v "$BIN"
@@ -192,15 +241,21 @@ jobs:
       - name: Smoke test sidecar (macOS)
         if: startsWith(matrix.platform, 'macos')
         run: |
-          BIN="src-tauri/binaries/skima-server-$([ "${{ matrix.mac-arch }}" = "aarch64" ] && echo aarch64 || echo x86_64)-apple-darwin"
-          "$BIN" --db-path /tmp/smoke.db --port 11999 > /tmp/smoke.log 2>&1 &
+          BIN="$PWD/src-tauri/binaries/skima-server-${{ matrix.mac-arch }}-apple-darwin"
+          cd "$(mktemp -d)"
+          "$BIN" --db-path ./smoke.db --port 11999 > ./smoke.log 2>&1 &
+          SIDECAR_PID=$!
+          trap 'kill $SIDECAR_PID 2>/dev/null || true' EXIT
           for i in $(seq 1 20); do
-            grep -q "API running" /tmp/smoke.log && break
+            grep -q "API running" ./smoke.log && break
             sleep 1
           done
-          cat /tmp/smoke.log
-          grep -q "Database schema verified" /tmp/smoke.log
-          curl -sf http://localhost:11999/api/config > /dev/null
+          cat ./smoke.log
+          grep -q "Database schema verified" ./smoke.log
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":false'
+          curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
+            -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
+          curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'
 
       # src-tauri/resources/ is now always present (Assets.car is committed),
       # so we no longer need a "mkdir -p" pre-step. The previous step used

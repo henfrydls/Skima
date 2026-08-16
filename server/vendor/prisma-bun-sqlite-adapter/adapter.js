@@ -4,8 +4,9 @@ exports.PrismaBunSQLiteAdapterFactory = exports.PrismaBunSQLiteAdapter = void 0;
 const driver_adapter_utils_1 = require("@prisma/driver-adapter-utils");
 const async_mutex_1 = require("async-mutex");
 const bun_sqlite_1 = require("bun:sqlite");
-// SKIMA PATCH: vendored copy has no package.json; only `.name` was used.
-const package_json_1 = { name: "@synapsenwerkstatt/prisma-bun-sqlite-adapter" };
+// Path adjusted for the vendored layout (upstream lived in dist/, one level
+// below its package.json; here they're siblings).
+const package_json_1 = require("./package.json");
 const errors_1 = require("./errors");
 const conversion_1 = require("./conversion");
 const debug = (0, driver_adapter_utils_1.Debug)("prisma:driver-adapter:bun-sqlite");
