@@ -70,6 +70,10 @@ credentials/
 *.bak
 *.backup
 
+# Internal handoff / infra docs — NEVER commit to this public repo
+# (contain infrastructure details, credentials references, growth strategy)
+HANDOFF-*.md
+
 # Pre-restore auto-snapshots (runtime recovery dumps, may contain user data)
 server/prisma/pre-restore-snapshots/
 
