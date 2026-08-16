@@ -1579,9 +1579,11 @@ function getPort() {
   return parseInt(process.env.PORT, 10) || 3001;
 }
 
-// Only start server if this file is run directly (not imported for tests)
-// process.pkg is set when running as a compiled pkg binary (sidecar)
-const isDirectRun = process.pkg || (process.argv[1] && process.argv[1].includes('index.js'));
+// Only start server if this file is run directly (not imported for tests).
+// - import.meta.main: Bun (`bun run` and a `bun build --compile` standalone,
+//   where argv[1] is a /$bunfs/ virtual path that never matches 'index.js')
+// - argv check: `node src/index.js` (dev; import.meta.main is undefined there)
+const isDirectRun = import.meta.main === true || (process.argv[1] && process.argv[1].includes('index.js'));
 if (isDirectRun) {
   const PORT = getPort();
   const app = createApp();

@@ -32,14 +32,14 @@ function normalizeSqliteUrl(databaseUrl) {
   return `file:${resolve(SCHEMA_DIR, path)}`;
 }
 
-export function createPrismaAdapter(databaseUrl) {
+export async function createPrismaAdapter(databaseUrl) {
+  const url = normalizeSqliteUrl(databaseUrl);
   if (typeof process !== 'undefined' && process.versions?.bun) {
-    throw new Error(
-      '[Skima Server] Bun runtime detected but the bun:sqlite adapter is not wired yet (INFRA-1 Phase 2).'
-    );
+    // Packaged sidecar (bun build --compile): bun:sqlite, no native addon.
+    // Vendored + patched to write epoch-ms dates — see vendor/…/VENDORED.md.
+    // Static string literal so Bun bundles it into the standalone binary.
+    const { PrismaBunSQLite } = await import('../vendor/prisma-bun-sqlite-adapter/index.js');
+    return new PrismaBunSQLite({ url });
   }
-  return new PrismaBetterSQLite3(
-    { url: normalizeSqliteUrl(databaseUrl) },
-    { timestampFormat: 'unixepoch-ms' }
-  );
+  return new PrismaBetterSQLite3({ url }, { timestampFormat: 'unixepoch-ms' });
 }

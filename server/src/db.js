@@ -34,9 +34,10 @@ if (customDbPath) {
 // Singleton Prisma client for the entire app. The Rust-free client requires a
 // driver adapter (see dbAdapter.js). The fallback mirrors prisma/.env's value
 // (a schema-dir-relative path the factory normalizes), so behavior matches the
-// legacy engine even if the env file wasn't loaded.
+// legacy engine even if the env file wasn't loaded. Top-level await: the
+// factory is async because the Bun branch dynamically imports its adapter.
 export const prisma = new PrismaClient({
-  adapter: createPrismaAdapter(process.env.DATABASE_URL || 'file:./skills.db'),
+  adapter: await createPrismaAdapter(process.env.DATABASE_URL || 'file:./skills.db'),
 });
 
 /**
