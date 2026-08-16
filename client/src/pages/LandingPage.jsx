@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ArrowRight, Download, ShieldCheck, CheckCircle, LayoutGrid, TrendingUp, BarChart3, Shield, Clock, Eye, Search, Users, LineChart, Target, Database, Cpu } from 'lucide-react';
 import DownloadModal from '../components/common/DownloadModal';
+import { track } from '../lib/analytics';
 
 const GITHUB_URL = 'https://github.com/henfrydls/Skima';
 const GITHUB_RELEASES = `${GITHUB_URL}/releases`;
@@ -21,12 +22,14 @@ export default function LandingPage() {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => track('github', { location: 'nav' })}
               className="hidden md:flex items-center gap-3 text-sm font-medium hover:text-primary transition-colors"
             >
               View on GitHub
             </a>
             <a
               href="/demo"
+              onClick={() => track('demo', { location: 'nav' })}
               className="bg-amber-500 hover:bg-amber-600 text-white px-5 py-2 rounded-lg text-sm font-bold transition-all shadow-sm"
             >
               Try Live Demo
@@ -50,6 +53,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center gap-6">
               <a
                 href="/demo"
+                onClick={() => track('demo', { location: 'hero' })}
                 className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-amber-200 transition-all"
               >
                 Try Live Demo
@@ -57,7 +61,7 @@ export default function LandingPage() {
               </a>
               <button
                 type="button"
-                onClick={() => setDownloadOpen(true)}
+                onClick={() => { track('download_open', { location: 'hero' }); setDownloadOpen(true); }}
                 className="inline-flex items-center gap-2 border-2 border-slate-300 hover:border-primary text-slate-700 hover:text-primary px-6 py-3.5 rounded-xl font-bold text-base transition-all"
               >
                 <Download size={18} />
@@ -294,7 +298,7 @@ export default function LandingPage() {
             <div className="flex flex-wrap items-center justify-center gap-10">
               <button
                 type="button"
-                onClick={() => setDownloadOpen(true)}
+                onClick={() => { track('download_open', { location: 'footer' }); setDownloadOpen(true); }}
                 className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg shadow-amber-200/30 hover:-translate-y-0.5 transition-all duration-200"
               >
                 Download Free
@@ -302,6 +306,7 @@ export default function LandingPage() {
               </button>
               <a
                 href="/demo"
+                onClick={() => track('demo', { location: 'footer' })}
                 className="inline-flex items-center gap-2 text-white/80 hover:text-white font-medium text-base transition-colors"
               >
                 Try Live Demo
@@ -323,9 +328,9 @@ export default function LandingPage() {
             <span className="leading-none">Built by <a href="https://henfrydls.com" target="_blank" rel="noopener noreferrer" className="text-slate-600 hover:text-primary transition-colors font-medium">DLSLabs</a></span>
           </div>
           <div className="flex items-center gap-6 text-sm text-slate-400">
-            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 transition-colors">GitHub</a>
-            <a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 transition-colors">Releases</a>
-            <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" className="hover:text-slate-600 transition-colors">License</a>
+            <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'repo' })} className="hover:text-slate-600 transition-colors">GitHub</a>
+            <a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'releases' })} className="hover:text-slate-600 transition-colors">Releases</a>
+            <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'license' })} className="hover:text-slate-600 transition-colors">License</a>
             <span>© 2026 Skima</span>
           </div>
         </div>

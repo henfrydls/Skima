@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import { useGitHubRelease } from '../../hooks/useGitHubRelease';
+import { track } from '../../lib/analytics';
 
 const REPO_URL = 'https://github.com/henfrydls/Skima';
 const TERMINAL_CMD = 'xattr -cr /Applications/Skima.app';
@@ -421,6 +422,14 @@ export default function DownloadModal({ isOpen, onClose }) {
   };
 
   const handlePrimaryClick = () => {
+    // The key funnel event: what people actually download (OS + exact asset).
+    track('download', {
+      os: detectedOS,
+      asset: primaryAsset?.name,
+      arch: detectedOS === 'macos' ? activeMacArch : undefined,
+      version,
+      cta: 'primary',
+    });
     if (detectedOS === 'macos') {
       // Pulse the help block to draw attention to install instructions
       setPulsing(true);
@@ -549,6 +558,7 @@ export default function DownloadModal({ isOpen, onClose }) {
                 <a
                   key={card.name}
                   href={card.url}
+                  onClick={() => track('download', { asset: card.name, label: card.label, version, cta: 'other' })}
                   className="flex flex-col gap-0.5 px-3 py-2 rounded-lg border border-gray-200 hover:border-primary text-sm transition-colors"
                 >
                   <span className="font-medium text-gray-700">{card.label}</span>
@@ -567,6 +577,7 @@ export default function DownloadModal({ isOpen, onClose }) {
             href={REPO_URL}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => track('github', { location: 'download_modal' })}
             className="text-xs text-gray-500 hover:text-primary inline-flex items-center gap-1.5"
           >
             <Github size={14} />
