@@ -70,6 +70,13 @@ credentials/
 *.bak
 *.backup
 
+# Internal working docs — NEVER commit to this public repo (plans, briefs,
+# inventories, strategy, growth, infra/credential references).
+# Convention: keep internal docs under docs/plans/ (already ignored above).
+# Safety nets for docs created elsewhere: HANDOFF-*.md and any *.internal.md.
+HANDOFF-*.md
+*.internal.md
+
 # Pre-restore auto-snapshots (runtime recovery dumps, may contain user data)
 server/prisma/pre-restore-snapshots/
 
