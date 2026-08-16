@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Users, Layers, FolderTree, ClipboardCheck, Briefcase, Target, AlertTriangle, X, Info, Database } from 'lucide-react';
@@ -54,6 +54,8 @@ export default function SettingsPage() {
   const [pendingTab, setPendingTab] = useState(null);
   // Data version - increments when role profiles change to trigger refetch in other tabs
   const [dataVersion, setDataVersion] = useState(0);
+  // Active tab button — used to scroll it into view when the ribbon overflows
+  const activeTabRef = useRef(null);
 
   // Update mounted tabs when active tab changes
   useEffect(() => {
@@ -61,6 +63,12 @@ export default function SettingsPage() {
       setMountedTabs(prev => [...prev, activeTab]);
     }
   }, [activeTab, mountedTabs]);
+
+  // Keep the active tab visible when the ribbon scrolls horizontally (e.g. a
+  // deep link lands on a tab that's off-screen on a narrow window).
+  useEffect(() => {
+    activeTabRef.current?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
+  }, [activeTab]);
 
   const handleTabChange = (tabId) => {
     // Block if leaving RoleProfiles with unsaved changes
@@ -93,21 +101,23 @@ export default function SettingsPage() {
         </p>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Tab Navigation — scrolls horizontally instead of compressing on narrow windows */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-6" aria-label="Tabs">
+        <nav className="flex gap-6 overflow-x-auto pb-1" aria-label="Tabs">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
-            
+
             return (
               <button
                 key={tab.id}
+                ref={isActive ? activeTabRef : null}
                 onClick={() => handleTabChange(tab.id)}
                 className={`
                   flex items-center gap-2 py-3 px-1 border-b-2 text-sm font-medium transition-colors
-                  ${isActive 
-                    ? 'border-primary text-primary' 
+                  shrink-0 whitespace-nowrap
+                  ${isActive
+                    ? 'border-primary text-primary'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }
                 `}
