@@ -1,9 +1,14 @@
 # Online demo override — use with: docker compose -f docker-compose.yml -f docker-compose.demo.yml up -d
-# Seeds sample data on first run, injects privacy-first analytics (Umami),
-# and blocks destructive operations. See docker/entrypoint.sh for details.
+# Seeds sample data on first run, injects optional analytics (Umami), and blocks
+# destructive operations. See docker/entrypoint.sh for details.
+#
+# Analytics is opt-in and kept out of this public repo: set UMAMI_SRC and
+# UMAMI_WEBSITE_ID in a gitignored .env next to this file. Leave them unset to
+# run the demo with no analytics.
 services:
   skima:
     container_name: skima-demo
     environment:
       - DEMO_MODE=true
-      - UMAMI_WEBSITE_ID=e1a101bc-4436-46f9-8859-ec19dba3c043
+      - UMAMI_SRC=${UMAMI_SRC:-}
+      - UMAMI_WEBSITE_ID=${UMAMI_WEBSITE_ID:-}

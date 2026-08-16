@@ -1,51 +1,17 @@
-// Web-only, opt-in analytics (Umami) for the public landing/demo.
+// Custom analytics events for the public demo funnel.
 //
-// Privacy contract:
-// - NEVER runs inside the desktop app (Tauri). Skima's promise is "no account,
-//   no cloud, no tracking" and the user's data never leaves their machine.
-// - Disabled unless the build explicitly provides BOTH env vars below. Only the
-//   demo/landing build sets them, so forks and dev builds ship with tracking
-//   fully off by default (no reference to anyone's analytics server).
-// - Every call is a safe no-op when disabled, so instrumentation can live in
-//   shared components (landing + app) without leaking into desktop.
+// The Umami tracking script is injected at RUNTIME by docker/entrypoint.sh, and
+// ONLY in the online demo (DEMO_MODE=true + UMAMI_SRC + UMAMI_WEBSITE_ID). It is
+// never in the source, the built image, the desktop app, or a fork's build —
+// keeping Skima's "no account, no cloud, no tracking" promise.
 //
-// Configure via build-time env (see Dockerfile / docker.yml):
-//   VITE_UMAMI_SRC        e.g. https://analytics.example.com/script.js
-//   VITE_UMAMI_WEBSITE_ID the Umami website UUID (public; appears in page source)
-
-function isTauri() {
-  return (
-    typeof window !== 'undefined' &&
-    (window.__TAURI__ !== undefined ||
-      window.__TAURI_INTERNALS__ !== undefined ||
-      window.isTauri === true)
-  );
-}
+// This module only records custom events on top of that script (e.g. what
+// visitors download). Every call is a safe no-op when the script isn't present
+// (desktop, dev, forks, or before it finishes loading), so instrumentation can
+// live in shared components without leaking tracking anywhere it shouldn't.
 
 /**
- * Inject the Umami tracking script when — and only when — analytics is both
- * configured (env vars present) and running on the web (not Tauri). Idempotent.
- */
-export function initAnalytics() {
-  if (typeof window === 'undefined' || typeof document === 'undefined') return;
-
-  const src = import.meta.env.VITE_UMAMI_SRC;
-  const websiteId = import.meta.env.VITE_UMAMI_WEBSITE_ID;
-  if (!src || !websiteId) return; // not configured → disabled (forks, dev)
-  if (isTauri()) return; // desktop app → never track
-  if (document.querySelector('script[data-website-id]')) return; // already injected
-
-  const script = document.createElement('script');
-  script.async = true;
-  script.defer = true;
-  script.src = src;
-  script.setAttribute('data-website-id', websiteId);
-  document.head.appendChild(script);
-}
-
-/**
- * Record a custom event. Safe everywhere: a no-op if the Umami script never
- * loaded (desktop, dev, forks, or before the async script resolves).
+ * Record a custom event. No-op unless the Umami script has loaded.
  *
  * @param {string} event  event name, e.g. 'download'
  * @param {object} [data] event data, e.g. { os: 'macos', asset: 'Skima_1.4.3_aarch64.dmg' }

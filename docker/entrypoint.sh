@@ -21,19 +21,18 @@ done
 
 # Analytics injection (runtime only, never in source code)
 #
-# When running as an online demo, we inject a self-hosted Umami analytics
-# script into the built HTML at container startup. This keeps the tracking
-# code out of the repository — desktop and local Docker users never see it.
+# When running as an online demo, inject a Umami analytics script into the built
+# HTML at container startup. This keeps tracking OUT of the repo, the image, the
+# desktop app, and forks — the operator opts in per deployment via env vars.
 #
-# Required env vars (set in docker-compose.demo.yml):
-#   UMAMI_WEBSITE_ID  — UUID from Umami dashboard (e.g. "e1a101bc-...")
-#   UMAMI_HOST        — Optional, defaults to https://analytics.henfrydls.com
+# Both are required (no defaults, so the repo stays generic). Set them in a
+# gitignored .env next to docker-compose.demo.yml:
+#   UMAMI_SRC         — full tracking script URL (e.g. https://umami.example.com/script.js)
+#   UMAMI_WEBSITE_ID  — website UUID from the Umami dashboard
 #
-# The script is privacy-first: no cookies, no cross-site tracking,
-# respects Do Not Track. Used to measure landing-to-demo conversion.
-if [ "$DEMO_MODE" = "true" ] && [ -n "$UMAMI_WEBSITE_ID" ]; then
-  UMAMI_HOST="${UMAMI_HOST:-https://analytics.henfrydls.com}"
-  sed -i "s|</head>|<script defer src=\"${UMAMI_HOST}/stats.js\" data-website-id=\"${UMAMI_WEBSITE_ID}\"></script></head>|" /app/client/dist/index.html
+# Privacy-first: no cookies, no cross-site tracking, respects Do Not Track.
+if [ "$DEMO_MODE" = "true" ] && [ -n "$UMAMI_SRC" ] && [ -n "$UMAMI_WEBSITE_ID" ]; then
+  sed -i "s|</head>|<script defer src=\"${UMAMI_SRC}\" data-website-id=\"${UMAMI_WEBSITE_ID}\"></script></head>|" /app/client/dist/index.html
   echo "  Analytics script injected."
 fi
 

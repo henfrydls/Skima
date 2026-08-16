@@ -47,12 +47,6 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          # Web-only analytics for the demo build. Set as repo Variables (not in
-          # this file) so forks build with tracking disabled by default. Empty
-          # when unset → analytics.js no-ops. Values are public (page-source).
-          build-args: |
-            VITE_UMAMI_SRC=${{ vars.VITE_UMAMI_SRC }}
-            VITE_UMAMI_WEBSITE_ID=${{ vars.VITE_UMAMI_WEBSITE_ID }}
           # GHCR rejects the SLSA provenance attestation manifest that buildx
           # attaches by default ("ERROR: unknown blob" on push), especially
           # after a package version has been deleted and its blobs are pending
