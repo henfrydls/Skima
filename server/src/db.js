@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import { resolve, dirname, join } from 'path';
 import { existsSync, mkdirSync } from 'fs';
+import { createPrismaAdapter } from './dbAdapter.js';
 
 /**
  * Database configuration with dynamic path support for Tauri sidecar.
@@ -30,8 +31,14 @@ if (customDbPath) {
   process.env.DATABASE_URL = `file:${customDbPath}`;
 }
 
-// Singleton Prisma client for the entire app
-export const prisma = new PrismaClient();
+// Singleton Prisma client for the entire app. The Rust-free client requires a
+// driver adapter (see dbAdapter.js). The fallback mirrors prisma/.env's value
+// (a schema-dir-relative path the factory normalizes), so behavior matches the
+// legacy engine even if the env file wasn't loaded. Top-level await: the
+// factory is async because the Bun branch dynamically imports its adapter.
+export const prisma = new PrismaClient({
+  adapter: await createPrismaAdapter(process.env.DATABASE_URL || 'file:./skills.db'),
+});
 
 /**
  * Directory for pre-restore safety snapshots. Lives next to the database so it

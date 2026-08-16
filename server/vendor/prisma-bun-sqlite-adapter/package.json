@@ -1,0 +1,8 @@
+{
+  "name": "@synapsenwerkstatt/prisma-bun-sqlite-adapter",
+  "version": "1.2.2",
+  "description": "Vendored copy — see VENDORED.md. CJS inside Skima's ESM server; this file makes Node resolve it correctly so tests can import it.",
+  "type": "commonjs",
+  "main": "index.js",
+  "license": "MIT"
+}

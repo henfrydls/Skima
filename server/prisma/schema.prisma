@@ -4,8 +4,16 @@ datasource db {
 }
 
 generator client {
-  provider      = "prisma-client-js"
-  binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
+  provider        = "prisma-client-js"
+  // Fully Rust-free client — all three settings are required together:
+  // - driverAdapters: a JS driver replaces the native connection layer
+  // - queryCompiler + engineType "client": the WASM query compiler replaces the
+  //   per-platform Rust query engine (binaryTargets is gone on purpose)
+  // This is what lets one Linux CI host build sidecars for every platform.
+  // driverAdapters alone is NOT enough: the client would still load the native
+  // engine and only appear to work on machines that have it on disk.
+  previewFeatures = ["driverAdapters", "queryCompiler"]
+  engineType      = "client"
 }
 
 model Category {

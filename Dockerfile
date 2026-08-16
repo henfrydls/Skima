@@ -14,10 +14,20 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install server dependencies + generate Prisma client
+# Install server dependencies + generate Prisma client.
+# better-sqlite3 (the Prisma driver-adapter's SQLite driver) is a native addon
+# with no musl prebuilds, so alpine compiles it from source — install the
+# toolchain just for npm ci and drop it in the same layer to keep the image
+# small.
 COPY server/package.json server/package-lock.json ./server/
 COPY server/prisma/ ./server/prisma/
-RUN cd server && npm ci --omit=dev && npx prisma generate
+# prisma CLI is a devDependency (omitted here), so pin the npx-fetched version
+# to the client's exact release: the Rust-free client (engineType=client +
+# queryCompiler WASM) is a tight generator/runtime contract — a floating
+# `prisma@latest` could emit a client the runtime can't load.
+RUN apk add --no-cache --virtual .build-deps python3 make g++ \
+    && cd server && npm ci --omit=dev && npx prisma@6.19.3 generate \
+    && apk del .build-deps
 
 # Copy server source
 COPY server/src/ ./server/src/
