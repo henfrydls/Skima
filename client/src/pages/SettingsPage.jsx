@@ -70,6 +70,15 @@ export default function SettingsPage() {
     activeTabRef.current?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
   }, [activeTab]);
 
+  // Mouse-wheel users have no horizontal gesture: translate vertical wheel to
+  // horizontal scroll while the ribbon overflows (standard ribbon pattern).
+  const handleRibbonWheel = (e) => {
+    const el = e.currentTarget;
+    if (el.scrollWidth > el.clientWidth && e.deltaY !== 0) {
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
   const handleTabChange = (tabId) => {
     // Block if leaving RoleProfiles with unsaved changes
     if (activeTab === 'perfiles' && roleProfilesDirty && tabId !== 'perfiles') {
@@ -103,7 +112,7 @@ export default function SettingsPage() {
 
       {/* Tab Navigation — scrolls horizontally instead of compressing on narrow windows */}
       <div className="border-b border-gray-200">
-        <nav className="flex gap-6 overflow-x-auto pb-1" aria-label="Tabs">
+        <nav className="flex gap-6 overflow-x-auto pb-1 scrollbar-visible-x" aria-label="Tabs" onWheel={handleRibbonWheel}>
           {TABS.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
