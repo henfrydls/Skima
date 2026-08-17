@@ -74,14 +74,15 @@ class BunSQLiteQueryable {
         }
     }
     getTableFromQuery(sql) {
-        // Simple regex to extract table name from SELECT queries
-        // This handles common cases like SELECT ... FROM table, SELECT ... FROM "table", etc.
-        const match = sql.match(/\bFROM\s+(?:`([^`]+)`|"([^"]+)"|(\w+))/i);
-        return match ? (match[1] || match[2] || match[3]) : null;
+        // SKIMA PATCH: moved to conversion.js (getTableNameFromQuery) so the
+        // fix for schema-qualified tables is unit-testable under Node/vitest
+        // (this file requires bun:sqlite and can only load under Bun).
+        return (0, conversion_1.getTableNameFromQuery)(sql);
     }
     async getColumnTypes(tableName, columnNames) {
         try {
-            const tableInfoStmt = this.db.query(`PRAGMA table_info(${tableName})`);
+            // SKIMA PATCH: quote the identifier (names come from parsed SQL).
+            const tableInfoStmt = this.db.query(`PRAGMA table_info(\`${tableName.replace(/`/g, '')}\`)`);
             const tableInfo = tableInfoStmt.all();
             // Create a map of column names to types
             const typeMap = new Map();

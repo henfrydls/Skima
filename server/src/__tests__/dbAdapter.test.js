@@ -5,7 +5,7 @@ import { createRequire } from 'module';
 
 // The vendored bun:sqlite adapter is CJS (see its package.json).
 const require = createRequire(import.meta.url);
-const { mapQueryArgs } = require('../../vendor/prisma-bun-sqlite-adapter/conversion.js');
+const { mapQueryArgs, getTableNameFromQuery } = require('../../vendor/prisma-bun-sqlite-adapter/conversion.js');
 
 // ── The date-dialect invariant (INFRA-1's #1 data-integrity rule) ──
 // Every v1.4.x database stores DateTime as unix-epoch-ms INTEGERs (legacy Rust
@@ -49,6 +49,34 @@ describe('vendored bun:sqlite adapter — mapQueryArgs (SKIMA PATCH)', () => {
     expect(mapQueryArgs(['2.5'], T('float'))).toEqual([2.5]);
     expect(mapQueryArgs([true], T('unknown'))).toEqual([1]);
     expect(mapQueryArgs([false], T('unknown'))).toEqual([0]);
+  });
+});
+
+// ── Table-name extraction (SKIMA PATCH — the v1.5.0-rc.4 date-loss bug) ──
+// Prisma's query compiler emits schema-qualified tables (FROM `main`.`X`).
+// Upstream extracted "main", PRAGMA table_info(main) returned nothing, and
+// EVERY DateTime read (and export!) silently became null. Never regress this.
+describe('vendored bun:sqlite adapter — getTableNameFromQuery (SKIMA PATCH)', () => {
+  it('handles schema-qualified backtick tables (the rc.4 bug)', () => {
+    expect(getTableNameFromQuery('SELECT `main`.`Collaborator`.`id` FROM `main`.`Collaborator` WHERE 1=1')).toBe('Collaborator');
+  });
+
+  it('handles schema-qualified double-quoted tables', () => {
+    expect(getTableNameFromQuery('SELECT * FROM "main"."EvaluationSession" ORDER BY 1')).toBe('EvaluationSession');
+  });
+
+  it('handles unqualified tables (backtick, quoted, bare)', () => {
+    expect(getTableNameFromQuery('SELECT * FROM `Skill`')).toBe('Skill');
+    expect(getTableNameFromQuery('SELECT * FROM "Category" WHERE x=1')).toBe('Category');
+    expect(getTableNameFromQuery('SELECT * FROM Assessment')).toBe('Assessment');
+  });
+
+  it('handles dotted bare identifiers', () => {
+    expect(getTableNameFromQuery('SELECT * FROM main.Snapshot')).toBe('Snapshot');
+  });
+
+  it('returns null when there is no FROM', () => {
+    expect(getTableNameFromQuery('PRAGMA table_info(`X`)')).toBe(null);
   });
 });
 

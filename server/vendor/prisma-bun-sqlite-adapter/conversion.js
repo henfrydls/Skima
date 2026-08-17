@@ -237,4 +237,20 @@ function mapQueryArgs(args, argTypes) {
         return arg;
     });
 }
+
+// SKIMA PATCH: extract the table name from a SELECT. Prisma's query compiler
+// emits SCHEMA-QUALIFIED tables — FROM `main`.`Collaborator` — and upstream's
+// regex captured the first identifier ("main"), so PRAGMA table_info(main)
+// returned nothing, declaredTypes fell to null, and every DateTime read came
+// back null (silent data loss in reads AND exports; caught in the
+// v1.5.0-rc.4 install-over validation). Capture the full dotted identifier
+// chain and keep the LAST segment (the actual table).
+function getTableNameFromQuery(sql) {
+    const match = sql.match(/\bFROM\s+((?:`[^`]+`|"[^"]+"|\w+)(?:\s*\.\s*(?:`[^`]+`|"[^"]+"|\w+))*)/i);
+    if (!match)
+        return null;
+    const segments = match[1].split('.').map((s) => s.trim().replace(/^[`"]|[`"]$/g, ''));
+    return segments[segments.length - 1] || null;
+}
+exports.getTableNameFromQuery = getTableNameFromQuery;
 //# sourceMappingURL=conversion.js.map
