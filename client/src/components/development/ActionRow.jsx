@@ -3,6 +3,7 @@ import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Tra
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
+import { formatDateOnly } from '../../lib/dateOnly';
 
 const ACTION_TYPES = {
   experience: { label: 'Experience', bg: 'bg-blue-50', text: 'text-blue-700', icon: Briefcase },
@@ -47,10 +48,9 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
     }
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
+  // Date-only fields render in UTC so the stored calendar day never
+  // shifts in negative-offset timezones (issue #73).
+  const formatDate = (dateStr) => (dateStr ? formatDateOnly(dateStr, { month: 'short', day: 'numeric' }) : null);
 
   return (
     <div className="flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors">

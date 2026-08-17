@@ -1,6 +1,7 @@
 import { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { Calendar, ChevronDown, Check, Clock, RotateCcw } from 'lucide-react';
+import { formatDateOnly } from '../../lib/dateOnly';
 
 /**
  * DashboardHeader - Controls for Time Travel & Global Actions
@@ -135,7 +136,7 @@ export default function DashboardHeader({
                       <div className="flex flex-col items-start">
                         <span className="font-medium">{period.label}</span>
                         <span className="text-[10px] text-gray-400">
-                           {period.startDate ? new Date(period.startDate).toLocaleDateString() : ''} - {period.endDate ? new Date(period.endDate).toLocaleDateString() : ''}
+                           {formatDateOnly(period.startDate, { dateStyle: 'short' })} - {formatDateOnly(period.endDate, { dateStyle: 'short' })}
                         </span>
                       </div>
                       {selectedPeriod === period.id && <Check size={14} />}

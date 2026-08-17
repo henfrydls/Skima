@@ -13,6 +13,7 @@ import GoalFormModal from './DevelopmentGoalFormModal';
 import ActionFormModal from './DevelopmentActionFormModal';
 import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES } from '../../lib/developmentConstants';
 import { getPriorityMeta } from '../../lib/goalPriority';
+import { formatDateOnly } from '../../lib/dateOnly';
 
 const ACTION_STATUS_OPTIONS = [
   { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
@@ -496,10 +497,9 @@ export default function DevelopmentTab({ isActive }) {
     return countableActions > 0 ? Math.round((completedActions / countableActions) * 100) : 0;
   };
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  // Date-only fields render in UTC so the stored calendar day never
+  // shifts in negative-offset timezones (issue #73).
+  const formatDate = (dateStr) => (dateStr ? formatDateOnly(dateStr) : null);
 
   // --- Loading ---
   if (loading) {
