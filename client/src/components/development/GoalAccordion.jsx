@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, ChevronRight, Plus, Trash2, Edit2, Target, CheckCircle2 } from 'lucide-react';
 import ActionRow from './ActionRow';
 import { getPriorityMeta } from '../../lib/goalPriority';
+import { formatDateOnly } from '../../lib/dateOnly';
 
 /**
  * GoalAccordion - Expandable goal card with nested actions
@@ -17,10 +18,9 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const progress = countableActions.length > 0 ? (completedActions / countableActions.length) * 100 : 0;
   const priority = getPriorityMeta(goal.priority);
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  // Date-only fields render in UTC so the stored calendar day never
+  // shifts in negative-offset timezones (issue #73).
+  const formatDate = (dateStr) => (dateStr ? formatDateOnly(dateStr) : null);
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">

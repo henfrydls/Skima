@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Target, Calendar, CheckCircle2 } from 'lucide-react';
 import { PLAN_STATUS_BADGES } from '../../lib/developmentConstants';
+import { formatDateOnly } from '../../lib/dateOnly';
 
 /**
  * PlanCard - Card for development plan list
@@ -19,10 +20,9 @@ export default function PlanCard({ plan }) {
 
   const collaboratorName = plan.collaborator?.nombre || plan.collaborator?.name;
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-  };
+  // Date-only fields render in UTC so the stored calendar day never
+  // shifts in negative-offset timezones (issue #73).
+  const formatDate = (dateStr) => (dateStr ? formatDateOnly(dateStr, { month: 'short', year: 'numeric' }) : null);
 
   return (
     <div

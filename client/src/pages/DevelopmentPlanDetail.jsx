@@ -6,6 +6,7 @@ import { CardSkeleton } from '../components/common';
 import { GoalAccordion } from '../components/development';
 import { API_BASE } from '../lib/apiBase';
 import { PLAN_STATUS_BADGES } from '../lib/developmentConstants';
+import { formatDateOnly } from '../lib/dateOnly';
 
 /**
  * DevelopmentPlanDetail - Read-only detail view for a single development plan
@@ -46,10 +47,9 @@ export default function DevelopmentPlanDetail() {
   );
   const overallProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
 
-  const formatDate = (dateStr) => {
-    if (!dateStr) return null;
-    return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-  };
+  // Date-only fields render in UTC so the stored calendar day never
+  // shifts in negative-offset timezones (issue #73).
+  const formatDate = (dateStr) => (dateStr ? formatDateOnly(dateStr) : null);
 
   const daysRemaining = plan?.endDate
     ? Math.max(0, Math.ceil((new Date(plan.endDate) - new Date()) / (1000 * 60 * 60 * 24)))
