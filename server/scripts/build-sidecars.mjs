@@ -35,12 +35,34 @@ const OUT_DIR = resolve(SERVER_DIR, '../src-tauri/binaries');
 const WASM = 'node_modules/.prisma/client/query_compiler_bg.wasm';
 const GENERATED = 'node_modules/.prisma/client/index.js';
 
+// Linux is special: linuxdeploy (Tauri's AppImage assembler) must never see a
+// Bun standalone — its ldd pass crashes on it, and both strip and patchelf
+// destroy the bunfs trailer (strip exits 0 but the binary dies with "Module
+// not found"; patchelf segfaults it). Verified empirically: only usr/share/
+// escapes linuxdeploy's processing. So on Linux the externalBin slot gets a
+// tiny SHELL WRAPPER (non-ELF → ignored by linuxdeploy) and the real Bun
+// binary ships as 'skima-server-real-…', which tauri.linux.conf.json places
+// at /usr/share/skima/skima-server via deb.files (the AppImage reuses the
+// deb's data tree). The wrapper also falls back to the real binary sitting
+// next to it, which covers dev/CI runs straight from src-tauri/binaries/.
 const TARGETS = {
-  'linux':        { bun: 'bun-linux-x64',            out: 'skima-server-x86_64-unknown-linux-gnu' },
+  'linux':        { bun: 'bun-linux-x64',            out: 'skima-server-real-x86_64-unknown-linux-gnu', wrapper: 'skima-server-x86_64-unknown-linux-gnu' },
   'windows':      { bun: 'bun-windows-x64',          out: 'skima-server-x86_64-pc-windows-msvc.exe' },
   'darwin-x64':   { bun: 'bun-darwin-x64-baseline',  out: 'skima-server-x86_64-apple-darwin' },
   'darwin-arm64': { bun: 'bun-darwin-arm64',         out: 'skima-server-aarch64-apple-darwin' },
 };
+
+const LINUX_WRAPPER = `#!/bin/sh
+# Skima sidecar launcher (Linux). The real Bun server binary must not sit in
+# usr/bin: linuxdeploy (AppImage) crashes on it and strip/patchelf corrupt it.
+# Packaged installs ship it at ../share/skima/skima-server; dev/CI keep it
+# next to this script as skima-server-real-x86_64-unknown-linux-gnu.
+HERE="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
+if [ -x "$HERE/../share/skima/skima-server" ]; then
+  exec "$HERE/../share/skima/skima-server" "$@"
+fi
+exec "$HERE/skima-server-real-x86_64-unknown-linux-gnu" "$@"
+`;
 
 const run = (cmd) => execSync(cmd, { cwd: SERVER_DIR, stdio: 'inherit' });
 
@@ -100,5 +122,10 @@ for (const name of names) {
   if (!t) { console.error(`Unknown target '${name}'. Valid: ${Object.keys(TARGETS).join(', ')}`); process.exit(1); }
   console.log(`\n=== ${name} (${t.bun}) -> ${t.out} ===`);
   run(`bun build --compile --target=${t.bun} src/index.js ${WASM} --outfile "${resolve(OUT_DIR, t.out)}"`);
+  if (t.wrapper) {
+    const wrapperPath = resolve(OUT_DIR, t.wrapper);
+    writeFileSync(wrapperPath, LINUX_WRAPPER, { mode: 0o755 });
+    console.log(`wrapper -> ${t.wrapper}`);
+  }
 }
 console.log('\nDone. Binaries in', OUT_DIR);
