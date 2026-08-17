@@ -192,3 +192,25 @@ body {
   -moz-osx-font-smoothing: grayscale;
   @apply bg-background;
 }
+
+/* Horizontal-scroll affordance for tab ribbons (Settings). The default
+   overlay scrollbars in the desktop webviews are invisible until you're
+   already scrolling, leaving no visible way to reach off-screen tabs on
+   narrow windows. This renders a slim, always-visible track. */
+.scrollbar-visible-x {
+  scrollbar-width: thin;                 /* Firefox */
+  scrollbar-color: #cbd5e1 transparent;  /* slate-300 thumb */
+}
+.scrollbar-visible-x::-webkit-scrollbar {
+  height: 6px;
+}
+.scrollbar-visible-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scrollbar-visible-x::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* slate-300 */
+  border-radius: 3px;
+}
+.scrollbar-visible-x::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* slate-400 */
+}
