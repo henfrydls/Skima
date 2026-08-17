@@ -99,10 +99,30 @@ describe('GoalAccordion', () => {
     expect(badge).toHaveAttribute('title', expect.stringContaining('React'));
   });
 
-  it('shows action count (completed/total)', () => {
+  it('shows the goal progress percentage (issue #72)', () => {
     renderGoal();
-    // 1 completed out of 2
-    expect(screen.getByText('1/2')).toBeInTheDocument();
+    // 1 completed out of 2 -> 50%
+    expect(screen.getByText('50%')).toBeInTheDocument();
+  });
+
+  it('keeps the exact action count accessible on the progress bar', () => {
+    renderGoal();
+    const bar = screen.getByRole('progressbar');
+    expect(bar).toHaveAttribute('aria-valuenow', '50');
+    expect(bar).toHaveAttribute('aria-label', expect.stringContaining('1 of 2 actions completed'));
+    expect(bar).toHaveAttribute('title', '1/2 actions');
+  });
+
+  it('shows an em dash instead of 0% when the goal has no actions', () => {
+    renderGoal({ goal: { ...mockGoal, actions: [] } });
+    expect(screen.getByText('—')).toBeInTheDocument();
+    expect(screen.queryByText('0%')).not.toBeInTheDocument();
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-label', 'Goal progress: no actions yet');
+  });
+
+  it('uses the emerald bar when the goal is completed', () => {
+    const { container } = renderGoal({ goal: { ...mockGoal, completedAt: '2026-06-01T12:00:00.000Z' } });
+    expect(container.querySelector('.bg-emerald-500.rounded-full')).toBeInTheDocument();
   });
 
   it('shows progress bar', () => {

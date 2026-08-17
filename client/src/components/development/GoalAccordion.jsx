@@ -15,6 +15,8 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const countableActions = actions.filter(a => a.status !== 'skipped');
   const completedActions = countableActions.filter(a => a.status === 'completed').length;
   const progress = countableActions.length > 0 ? (completedActions / countableActions.length) * 100 : 0;
+  const hasActions = countableActions.length > 0;
+  const roundedProgress = Math.round(progress);
   const priority = getPriorityMeta(goal.priority);
 
   const formatDate = (dateStr) => {
@@ -72,16 +74,31 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
           </span>
         )}
 
-        {/* Progress */}
-        <span className="text-xs text-gray-400 flex-shrink-0 w-16 text-right">
-          {completedActions}/{countableActions.length}
+        {/* Progress % — mirrors PlanCard's language: sibling metric, same
+            visual weight. '—' when the goal has no actions yet (app-wide
+            no-data convention). The exact action count moved to the bar's
+            aria-label/title (issue #72). */}
+        <span className="text-xs font-medium text-gray-500 tabular-nums flex-shrink-0 w-16 text-right">
+          {hasActions ? `${roundedProgress}%` : '—'}
         </span>
 
-        {/* Mini progress bar */}
-        <div className="w-16 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
+        {/* Mini progress bar — exact action count lives here as accessible name + tooltip */}
+        <div
+          className="w-16 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden"
+          role="progressbar"
+          aria-valuenow={hasActions ? roundedProgress : 0}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-label={
+            hasActions
+              ? `Goal progress: ${roundedProgress}% (${completedActions} of ${countableActions.length} actions completed)`
+              : 'Goal progress: no actions yet'
+          }
+          title={hasActions ? `${completedActions}/${countableActions.length} actions` : 'No actions yet'}
+        >
           <div
-            className="h-full bg-primary rounded-full transition-all duration-300"
-            style={{ width: `${progress}%` }}
+            className={`h-full rounded-full transition-all duration-300 ${goal.completedAt ? 'bg-emerald-500' : 'bg-primary'}`}
+            style={{ width: `${hasActions ? progress : 0}%` }}
           />
         </div>
 
