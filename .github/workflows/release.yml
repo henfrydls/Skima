@@ -224,10 +224,16 @@ jobs:
             if ($cfg2.isSetup -ne $true) { throw 'setup write round-trip failed' }
             # DATE ROUND-TRIP (rc.4: all DateTime READS were null while boot +
             # writes looked healthy): write a collaborator, require an ISO date back.
+            # Match the RAW JSON (like the bash smokes' grep) — Invoke-RestMethod
+            # auto-coerces ISO strings into [datetime] objects, which stringify
+            # in locale format and false-failed this check on rc.5.
             Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/collaborators `
               -ContentType 'application/json' -Body '{"nombre":"DateCheck","rol":"CI"}' | Out-Null
-            $col = Invoke-RestMethod http://localhost:11999/api/collaborators
-            if (-not ($col | Where-Object { $_.joinedAt -match '^20\d{2}-' })) { throw 'DateTime read round-trip failed (joinedAt not ISO)' }
+            $raw = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/collaborators).Content
+            if ($raw -notmatch '"joinedAt":"20\d{2}-') {
+              Write-Host "RAW RESPONSE: $raw"
+              throw 'DateTime read round-trip failed (joinedAt not an ISO string in the JSON)'
+            }
           } finally {
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           }
