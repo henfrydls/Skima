@@ -1,6 +1,6 @@
 {
   "name": "skima-server",
-  "version": "1.5.0-rc.6",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "bin": "src/index.js",
