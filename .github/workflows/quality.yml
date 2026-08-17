@@ -141,3 +141,10 @@ jobs:
           curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
             -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
           curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'
+          # DATE ROUND-TRIP: rc.4 shipped a sidecar whose DateTime READS were
+          # all null (exports lost every date) while boot + writes looked
+          # healthy. Write a collaborator (joinedAt = now) and require the API
+          # to return it as an ISO date.
+          curl -sf -X POST http://localhost:11999/api/collaborators -H 'Content-Type: application/json' \
+            -d '{"nombre":"DateCheck","rol":"CI"}' > /dev/null
+          curl -sf http://localhost:11999/api/collaborators | grep -qE '"joinedAt":"20[0-9]{2}-'
