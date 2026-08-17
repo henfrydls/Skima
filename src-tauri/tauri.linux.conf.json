@@ -1,8 +1,16 @@
 {
   "bundle": {
-    "targets": ["deb", "appimage"],
+    "targets": [
+      "deb",
+      "appimage"
+    ],
     "linux": {
       "deb": {
+        "files": {
+          "/usr/share/skima/skima-server": "binaries/skima-server-real-x86_64-unknown-linux-gnu"
+        }
+      },
+      "appimage": {
         "files": {
           "/usr/share/skima/skima-server": "binaries/skima-server-real-x86_64-unknown-linux-gnu"
         }
