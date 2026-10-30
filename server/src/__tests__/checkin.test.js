@@ -25,6 +25,7 @@ import {
 } from '../checkin.js';
 
 const TEST_DIR = join(tmpdir(), `skima-checkin-test-${process.pid}`);
+const EXPECTED_OS = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform;
 
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
@@ -231,8 +232,8 @@ describe('buildData', () => {
     expect(d.id).toBe('test-id');
     expect(d.source).toBe('installer');
     expect(d.v).toBeDefined();
-    expect(d.os).toBe('linux');
-    expect(d.arch).toBe('x64');
+    expect(d.os).toBe(EXPECTED_OS);
+    expect(d.arch).toBe(process.arch === 'x64' ? 'x64' : process.arch);
     expect(d.d).toBe(todayDate());
     expect(d.last).toBeUndefined();
   });
@@ -379,7 +380,7 @@ describe('getCheckinFields', () => {
     const fields = getCheckinFields();
     expect(fields).not.toBeNull();
     expect(fields.v).toBeDefined();
-    expect(fields.os).toBe('linux');
+    expect(fields.os).toBe(EXPECTED_OS);
     expect(fields.source).toBeDefined();
   });
 });

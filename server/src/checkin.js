@@ -120,7 +120,7 @@ export function buildData(instanceId, source, { last = false } = {}) {
   const d = {
     id: instanceId,
     v: getVersion(),
-    os: process.platform === 'win32' ? 'windows' : process.platform,
+    os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source,
     d: todayDate(),
@@ -174,7 +174,7 @@ export function getCheckinFields() {
   return {
     id: readId(dir),
     v: getVersion(),
-    os: process.platform === 'win32' ? 'windows' : process.platform,
+    os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source: detectSource(),
   };
