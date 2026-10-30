@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Download, Upload, AlertTriangle, Clock, CheckCircle2, XCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { invoke } from '@tauri-apps/api/core';
 import Button from '../common/Button';
 import ConfirmModal from '../common/ConfirmModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { API_BASE } from '../../lib/apiBase';
+
+const isTauri = () => typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
 // Every backup-able collection, with friendly labels. All 20 are covered so the
 // summary never says "No records" when a backup only holds less-common data.
@@ -110,22 +113,43 @@ export default function BackupTab() {
   const backupStale = daysSinceBackup === null || daysSinceBackup > 30;
 
   const handleExport = async () => {
+    // Desktop: ask where first. The server records an export when it serves one, so
+    // choosing after would leave a recorded backup behind a cancelled dialog.
+    let savedAs = null;
+    if (isTauri()) {
+      try {
+        savedAs = await invoke('choose_backup_path', {
+          fileName: `skima-backup-${new Date().toISOString().slice(0, 10)}.json`,
+        });
+      } catch {
+        toast.error('Could not open the save dialog');
+        return;
+      }
+      if (!savedAs) return;
+    }
+
     setExporting(true);
     try {
       const res = await authFetch(`${API_BASE}/api/export`);
       if (!res.ok) throw new Error('Export failed');
       const json = await res.json();
-      const date = (json.exportDate || new Date().toISOString()).slice(0, 10);
-      const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `skima-backup-${date}.json`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success('Backup downloaded');
+      const contents = JSON.stringify(json, null, 2);
+      if (savedAs) {
+        await invoke('write_backup', { contents });
+        toast.success(`Backup saved to ${savedAs}`);
+      } else {
+        const date = (json.exportDate || new Date().toISOString()).slice(0, 10);
+        const blob = new Blob([contents], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `skima-backup-${date}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success('Backup downloaded');
+      }
       loadLog(); // reflect the new backup in the status line & history
     } catch (err) {
       if (err.message !== 'SESSION_EXPIRED') toast.error('Error exporting data');
