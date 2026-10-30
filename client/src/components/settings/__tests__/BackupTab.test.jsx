@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import BackupTab from '../BackupTab';
 
@@ -14,6 +14,8 @@ vi.mock('../../../contexts/ConfigContext', () => ({
 vi.mock('react-hot-toast', () => ({
   default: { success: vi.fn(), error: vi.fn() },
 }));
+const { mockInvoke } = vi.hoisted(() => ({ mockInvoke: vi.fn() }));
+vi.mock('@tauri-apps/api/core', () => ({ invoke: mockInvoke }));
 
 const makeFile = (obj, name = 'skima-backup-2026-06-01.json') =>
   new File([JSON.stringify(obj)], name, { type: 'application/json' });
@@ -175,5 +177,58 @@ describe('BackupTab', () => {
     await waitFor(() => expect(screen.getByText(/not available in the online demo/i)).toBeInTheDocument());
     expect(screen.queryByRole('heading', { name: /Recent Activity/i })).not.toBeInTheDocument();
     expect(mockAuthFetch).not.toHaveBeenCalledWith(expect.stringContaining('/api/backup-log'));
+  });
+});
+
+describe('BackupTab — saving a backup', () => {
+  const EXPORT = { exportDate: '2026-06-01T10:00:00.000Z', version: '2.0', data: { categories: [{ id: 1 }], skills: [] } };
+  const exportCalls = () => mockAuthFetch.mock.calls.filter(([url]) => String(url).includes('/api/export'));
+
+  beforeEach(() => {
+    mockAuthFetch.mockImplementation(async (url) => (String(url).includes('/api/export')
+      ? { ok: true, status: 200, json: async () => EXPORT }
+      : { ok: true, status: 200, json: async () => ({ lastExport: null, entries: [] }) }));
+    globalThis.URL.createObjectURL = vi.fn(() => 'blob:x');
+    globalThis.URL.revokeObjectURL = vi.fn();
+  });
+
+  afterEach(() => {
+    delete window.__TAURI_INTERNALS__;
+  });
+
+  it('desktop: cancelling the dialog exports and writes nothing', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    mockInvoke.mockResolvedValueOnce(null);
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith('choose_backup_path', {
+      fileName: expect.stringMatching(/^skima-backup-\d{4}-\d{2}-\d{2}\.json$/),
+    }));
+    await new Promise((r) => setTimeout(r, 0));
+    expect(exportCalls()).toHaveLength(0);
+    expect(mockInvoke).not.toHaveBeenCalledWith('write_backup', expect.anything());
+  });
+
+  it('desktop: asks first, then exports and writes the exact export to the chosen file', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    mockInvoke.mockImplementation(async (cmd) => (cmd === 'choose_backup_path' ? '/home/u/skima-backup.json' : undefined));
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(mockInvoke).toHaveBeenCalledWith('write_backup', expect.anything()));
+    expect(mockInvoke.mock.calls[0][0]).toBe('choose_backup_path');
+    expect(exportCalls()).toHaveLength(1);
+    const { contents } = mockInvoke.mock.calls.find(([c]) => c === 'write_backup')[1];
+    expect(JSON.parse(contents)).toEqual(EXPORT);
+    expect(URL.createObjectURL).not.toHaveBeenCalled();
+    const toast = (await import('react-hot-toast')).default;
+    expect(toast.success).toHaveBeenCalledWith('Backup saved to /home/u/skima-backup.json');
+  });
+
+  it('web: downloads through the browser and never calls the desktop commands', async () => {
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled());
+    expect(mockInvoke).not.toHaveBeenCalled();
+    expect(exportCalls()).toHaveLength(1);
   });
 });

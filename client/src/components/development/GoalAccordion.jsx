@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight, Plus, Trash2, Edit2, Target, CheckCircle2 } 
 import ActionRow from './ActionRow';
 import { getPriorityMeta } from '../../lib/goalPriority';
 import { formatDateOnly } from '../../lib/dateOnly';
+import { goalProgress } from '../../lib/developmentProgress';
 
 /**
  * GoalAccordion - Expandable goal card with nested actions
@@ -13,11 +14,9 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
   const [expanded, setExpanded] = useState(false);
 
   const actions = goal.actions || [];
-  const countableActions = actions.filter(a => a.status !== 'skipped');
-  const completedActions = countableActions.filter(a => a.status === 'completed').length;
-  const progress = countableActions.length > 0 ? (completedActions / countableActions.length) * 100 : 0;
-  const hasActions = countableActions.length > 0;
-  const roundedProgress = Math.round(progress);
+  const { completed: completedActions, total: countableTotal, percent: roundedProgress } = goalProgress(actions);
+  const progress = roundedProgress;
+  const hasActions = countableTotal > 0;
   const priority = getPriorityMeta(goal.priority);
 
   // Date-only fields render in UTC so the stored calendar day never
@@ -91,10 +90,10 @@ export default function GoalAccordion({ goal, onEdit, onDelete, onAddAction, onU
           aria-valuemax={100}
           aria-label={
             hasActions
-              ? `Goal progress: ${roundedProgress}% (${completedActions} of ${countableActions.length} actions completed)`
+              ? `Goal progress: ${roundedProgress}% (${completedActions} of ${countableTotal} actions completed)`
               : 'Goal progress: no actions yet'
           }
-          title={hasActions ? `${completedActions}/${countableActions.length} actions` : 'No actions yet'}
+          title={hasActions ? `${completedActions}/${countableTotal} actions` : 'No actions yet'}
         >
           <div
             className={`h-full rounded-full transition-all duration-300 ${goal.completedAt ? 'bg-emerald-500' : 'bg-primary'}`}

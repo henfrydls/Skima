@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Check, Square, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2 } from 'lucide-react';
+import { Check, Square, SquareMinus, Briefcase, Users, GraduationCap, BookOpen, Calendar, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { API_BASE } from '../../lib/apiBase';
 import { formatDateOnly } from '../../lib/dateOnly';
+import { ACTION_STATUS_MAP } from '../../lib/developmentConstants';
 
 const ACTION_TYPES = {
   experience: { label: 'Experience', bg: 'bg-blue-50', text: 'text-blue-700', icon: Briefcase },
@@ -22,6 +23,10 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
   const [toggling, setToggling] = useState(false);
 
   const isCompleted = action.status === 'completed';
+  // Skipped is not pending work: it gets its own look, and no toggle that would turn it
+  // into "completed" by accident. Its status is changed in Settings > Development.
+  const isSkipped = action.status === 'skipped';
+  const statusBadge = isSkipped || action.status === 'in_progress' ? ACTION_STATUS_MAP[action.status] : null;
   const typeConfig = ACTION_TYPES[action.actionType] || ACTION_TYPES.experience;
   const TypeIcon = typeConfig.icon;
 
@@ -55,7 +60,16 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
   return (
     <div className="flex items-center gap-3 py-2 px-3 rounded-lg group hover:bg-gray-50 transition-colors">
       {/* Checkbox - interactive in edit mode, static indicator in read-only */}
-      {readOnly ? (
+      {isSkipped ? (
+        <span
+          className="flex-shrink-0"
+          role="img"
+          aria-label={`"${action.title}" was skipped`}
+          title={readOnly ? 'Skipped' : 'Skipped. Change its status in Settings > Development.'}
+        >
+          <SquareMinus size={18} className="text-amber-500" />
+        </span>
+      ) : readOnly ? (
         <span className="flex-shrink-0">
           {isCompleted ? (
             <Check size={18} className="text-competent" />
@@ -85,8 +99,13 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
       </span>
 
       {/* Title + inline completion date */}
-      <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+      <span className={`flex-1 text-sm ${isCompleted ? 'line-through text-gray-500' : isSkipped ? 'text-gray-400' : 'text-gray-700'}`}>
         {action.title}
+        {statusBadge && (
+          <span className={`ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${statusBadge.bg} ${statusBadge.text}`}>
+            {statusBadge.label}
+          </span>
+        )}
         {isCompleted && action.completedAt && (
           <span className="no-underline inline-flex items-center ml-2 text-xs text-gray-400 font-normal" style={{ textDecoration: 'none' }}>
             &middot; {formatDate(action.completedAt)}
@@ -94,8 +113,8 @@ export default function ActionRow({ action, onUpdate, onDelete, readOnly = false
         )}
       </span>
 
-      {/* Due date for non-completed actions */}
-      {!isCompleted && action.dueDate && (
+      {/* Due date only for work still pending */}
+      {!isCompleted && !isSkipped && action.dueDate && (
         <span className="flex items-center gap-1 text-xs text-gray-400">
           <Calendar size={12} />
           {formatDate(action.dueDate)}

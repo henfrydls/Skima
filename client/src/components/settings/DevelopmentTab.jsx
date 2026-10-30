@@ -11,18 +11,12 @@ import LoginModal from '../auth/LoginModal';
 import PlanFormModal from './DevelopmentPlanFormModal';
 import GoalFormModal from './DevelopmentGoalFormModal';
 import ActionFormModal from './DevelopmentActionFormModal';
-import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES } from '../../lib/developmentConstants';
+import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES, ACTION_STATUS_OPTIONS, ACTION_STATUS_MAP } from '../../lib/developmentConstants';
 import { getPriorityMeta } from '../../lib/goalPriority';
 import { formatDateOnly } from '../../lib/dateOnly';
+import { planProgress, goalProgress } from '../../lib/developmentProgress';
 
-const ACTION_STATUS_OPTIONS = [
-  { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
-  { value: 'in_progress', bg: 'bg-blue-50', text: 'text-blue-700', label: 'In Progress' },
-  { value: 'completed', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Completed' },
-  { value: 'skipped', bg: 'bg-amber-50', text: 'text-amber-600', label: 'Skipped' },
-];
 
-const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.value, s]));
 
 /**
  * ActionStatusDropdown - Clickable status badge that opens a dropdown to change action status
@@ -488,14 +482,7 @@ export default function DevelopmentTab({ isActive }) {
   };
 
   // --- Helpers ---
-  const getPlanProgress = (plan) => {
-    const goals = plan.goals || [];
-    const countableActions = goals.reduce((sum, g) => sum + (g.actions?.filter(a => a.status !== 'skipped').length || 0), 0);
-    const completedActions = goals.reduce(
-      (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
-    );
-    return countableActions > 0 ? Math.round((completedActions / countableActions) * 100) : 0;
-  };
+  const getPlanProgress = (plan) => planProgress(plan.goals).percent;
 
   // Date-only fields render in UTC so the stored calendar day never
   // shifts in negative-offset timezones (issue #73).
@@ -710,9 +697,7 @@ export default function DevelopmentTab({ isActive }) {
                         {goals.map(goal => {
                           const isGoalExpanded = expandedGoalId === goal.id;
                           const actions = goal.actions || [];
-                          const countableActions = actions.filter(a => a.status !== 'skipped');
-                          const completedActions = countableActions.filter(a => a.status === 'completed').length;
-                          const goalProgress = countableActions.length > 0 ? Math.round((completedActions / countableActions.length) * 100) : 0;
+                          const { completed: completedActions, total: countableTotal, percent: goalProgressPercent } = goalProgress(actions);
                           const priorityMeta = getPriorityMeta(goal.priority);
 
                           return (
@@ -765,13 +750,13 @@ export default function DevelopmentTab({ isActive }) {
                                 {/* Progress (hidden on mobile) */}
                                 <div className="hidden sm:flex items-center gap-2">
                                   <span className="text-xs text-gray-400 flex-shrink-0">
-                                    {completedActions}/{countableActions.length}
+                                    {completedActions}/{countableTotal}
                                   </span>
 
                                   <div className="w-12 h-2 bg-gray-100 rounded-full flex-shrink-0 overflow-hidden">
                                     <div
                                       className="h-full bg-primary rounded-full transition-all duration-300"
-                                      style={{ width: `${goalProgress}%` }}
+                                      style={{ width: `${goalProgressPercent}%` }}
                                     />
                                   </div>
                                 </div>
