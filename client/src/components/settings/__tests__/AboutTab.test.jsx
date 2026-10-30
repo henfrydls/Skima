@@ -63,7 +63,7 @@ describe('AboutTab', () => {
 
   it('shows License section', () => {
     render(<AboutTab />);
-    expect(screen.getByText(/PolyForm Noncommercial/i)).toBeInTheDocument();
+    expect(screen.getByText(/GNU AGPL-3\.0/i)).toBeInTheDocument();
   });
 
   it('shows source code link', () => {

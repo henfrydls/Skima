@@ -116,12 +116,12 @@ export default function AboutTab() {
             <div className="flex-1">
               <p className="text-sm text-gray-700">License</p>
               <a
-                href="https://polyformproject.org/licenses/noncommercial/1.0.0/"
+                href="https://www.gnu.org/licenses/agpl-3.0.html"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-xs text-primary hover:underline"
               >
-                PolyForm Noncommercial 1.0.0
+                GNU AGPL-3.0
               </a>
             </div>
           </div>
