@@ -69,9 +69,10 @@ fn get_db_path(app: &tauri::App) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Before the builder: without WebView2 the window can never exist.
+    // Store copy only: the NSIS installer installs WebView2, and a false positive there
+    // would stop working installs from opening. Before the builder: no window exists yet.
     #[cfg(target_os = "windows")]
-    if webview2::is_missing() {
+    if packaging::is_msix() && webview2::is_missing() {
         webview2::explain_and_exit();
     }
 
