@@ -59,6 +59,11 @@ jobs:
           DATABASE_URL: file:./prisma/test.db
           SKIMA_DISABLE_CHECKIN: '1'
 
+      # Release tooling (scripts/): plain Node, OS-independent, so once is enough.
+      - name: Run Release Script Tests
+        if: matrix.os == 'ubuntu-latest'
+        run: npm run test:scripts
+
       # Build Check
       - name: Build Client
         run: npm run build

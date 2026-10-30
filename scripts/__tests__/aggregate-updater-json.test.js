@@ -84,3 +84,57 @@ describe('aggregate-updater-json — summarizePlatforms', () => {
     assert.equal(JSON.stringify(manifest), before);
   });
 });
+
+const { notesFromReleaseBody } = require('../aggregate-updater-json.js');
+
+describe('aggregate-updater-json — notesFromReleaseBody', () => {
+  const URL = 'https://github.com/o/r/releases/tag/v9.9.9';
+  const generated = [
+    "## What's Changed",
+    '* feat(development): show per-goal progress percentage by @someone in https://github.com/o/r/pull/95',
+    '* fix(dates): render date-only fields in UTC by @someone in https://github.com/o/r/pull/94',
+    '* ci(release): Windows date smoke must match the raw JSON by @someone in https://github.com/o/r/pull/101',
+    '* chore(release): v9.9.9 by @someone in https://github.com/o/r/pull/103',
+    '* perf: faster dashboard by @someone in https://github.com/o/r/pull/7',
+    '',
+    '',
+    '**Full Changelog**: https://github.com/o/r/compare/v9.9.8...v9.9.9',
+  ].join('\n');
+
+  it('keeps user-facing changes, without prefix, author or link', () => {
+    assert.equal(
+      notesFromReleaseBody(generated, URL),
+      ['• Show per-goal progress percentage', '• Render date-only fields in UTC', '• Faster dashboard'].join('\n'),
+    );
+  });
+
+  it('a curated Highlights section wins over the generated list', () => {
+    const body = `## Highlights\n- Store package\n- Check-in switch\n\n${generated}`;
+    assert.equal(notesFromReleaseBody(body, URL), '- Store package\n- Check-in switch');
+  });
+
+  it('a Highlights section at the very end is still read', () => {
+    assert.equal(notesFromReleaseBody('## Highlights\nOne line only', URL), 'One line only');
+  });
+
+  it('caps the list and links to the rest', () => {
+    const many = Array.from({ length: 13 }, (_, i) => `* fix: thing ${i} by @a in https://x/pull/${i}`).join('\n');
+    const lines = notesFromReleaseBody(many, URL).split('\n');
+    assert.equal(lines.length, 11);
+    assert.equal(lines[10], `…and 3 more changes: ${URL}`);
+  });
+
+  it('with no user-facing change, points to the full notes', () => {
+    assert.equal(notesFromReleaseBody('* chore(release): v1 by @a in https://x/pull/1', URL), `See what's new: ${URL}`);
+  });
+
+  it('never returns the empty string the dialog shows as "No release notes provided"', () => {
+    for (const body of ['', null, undefined, '**Full Changelog**: x']) {
+      assert.ok(notesFromReleaseBody(body, URL).length > 0, `body=${JSON.stringify(body)}`);
+    }
+  });
+
+  it('handles CRLF bodies', () => {
+    assert.equal(notesFromReleaseBody('* fix: a by @x in https://x/pull/1\r\n', URL), '• A');
+  });
+});
