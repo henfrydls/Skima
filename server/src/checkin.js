@@ -191,29 +191,41 @@ export function getCheckinFields() {
   };
 }
 
+function checkinNowFailed(reason) {
+  console.error(`[check-in] --checkin-now failed: ${reason}`);
+  return 1;
+}
+
+// The CI canary: send once, now, with the given ID, and report it through the exit code.
+// Every way it cannot send is a failure here, never a silent no-op, so a broken build
+// turns the job red instead of passing.
+export async function checkinNow(id) {
+  if (!id || id.startsWith('--')) return checkinNowFailed('it needs an ID');
+  if (isDisabled()) return checkinNowFailed('SKIMA_DISABLE_CHECKIN is set');
+  if (process.env.DEMO_MODE === 'true') return checkinNowFailed('demo mode never sends');
+  if (!isConfigured()) return checkinNowFailed('this build has no check-in URL and website ID');
+  try {
+    await sendCheckin(buildData(id, detectSource()), getCheckinUrl());
+  } catch (err) {
+    return checkinNowFailed(err.message);
+  }
+  console.info(`[check-in] sent ${id} (--checkin-now)`);
+  return 0;
+}
+
 export async function maybeCheckin() {
+  if (hasCliFlag('--checkin-now')) {
+    const code = await checkinNow(parseCliArg('--checkin-now'));
+    if (!hasCliFlag('--port')) process.exit(code);
+    return;
+  }
+
   if (isDisabled()) return;
   if (process.env.DEMO_MODE === 'true') return;
   if (!isConfigured()) return;
   const url = getCheckinUrl();
-
-  const checkinNowId = parseCliArg('--checkin-now');
   const dir = dataDir();
   const source = detectSource();
-
-  if (checkinNowId) {
-    const data = buildData(checkinNowId, source);
-    try {
-      await sendCheckin(data, url);
-      console.info('[check-in] sent (--checkin-now)');
-    } catch (err) {
-      console.warn(`[check-in] failed: ${err.message}`);
-    }
-    if (hasCliFlag('--checkin-now') && !hasCliFlag('--port')) {
-      process.exit(0);
-    }
-    return;
-  }
 
   if (isOff(dir)) return;
   if (alreadySentToday(dir)) return;
