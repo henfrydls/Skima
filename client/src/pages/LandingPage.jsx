@@ -275,7 +275,7 @@ export default function LandingPage() {
         </div>
 
         <p className="mt-12 text-center text-xs text-slate-400">
-          PolyForm Noncommercial 1.0.0. Free for personal use. Commercial license available.
+          Open source under the GNU AGPL-3.0. Free to use, including at work.
         </p>
       </section>
 

@@ -584,7 +584,7 @@ export default function DownloadModal({ isOpen, onClose }) {
             View source on GitHub
             <ExternalLink size={10} />
           </a>
-          <span className="text-xs text-gray-400">Free for noncommercial use</span>
+          <span className="text-xs text-gray-400">Free and open source</span>
         </div>
       </div>
     </div>,

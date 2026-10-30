@@ -268,4 +268,5 @@ server/src/
 
 ## License
 
-[PolyForm Noncommercial 1.0.0](LICENSE) -- DLSLabs
+[GNU AGPL-3.0](LICENSE), DLSLabs. Free to use, including at work. If you offer a modified
+version as a network service, you must share your changes under the same license.
