@@ -15,7 +15,7 @@ pub fn is_msix() -> bool {
     use std::ffi::c_ulong;
 
     #[link(name = "kernel32")]
-    extern "system" {
+    unsafe extern "system" {
         fn GetCurrentPackageFullName(
             package_full_name_length: *mut c_ulong,
             package_full_name: *mut u16,
