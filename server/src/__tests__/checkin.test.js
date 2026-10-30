@@ -639,6 +639,172 @@ describe('checkin-fields endpoint (auth required)', () => {
   });
 });
 
+describe('copies that predate the check-in', () => {
+  let originalArgv;
+
+  beforeEach(() => {
+    originalArgv = process.argv;
+    process.argv = [...originalArgv, '--db-path', join(TEST_DIR, 'db.sqlite')];
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    process.argv = originalArgv;
+  });
+
+  it('detects an update: set up, with no ID, date or off file', async () => {
+    const { isUpgradeFromBeforeCheckin: up } = await import('../checkin.js');
+    expect(up(TEST_DIR, true)).toBe(true);
+    expect(up(TEST_DIR, false)).toBe(false);
+  });
+
+  it('any trace of a previous check-in means it is not an update', async () => {
+    const { isUpgradeFromBeforeCheckin: up } = await import('../checkin.js');
+    getOrCreateId(TEST_DIR);
+    expect(up(TEST_DIR, true)).toBe(false);
+    deleteId(TEST_DIR);
+    markSentToday(TEST_DIR);
+    expect(up(TEST_DIR, true)).toBe(false);
+    rmSync(join(TEST_DIR, '.skima-checkin-date'));
+    markOff(TEST_DIR);
+    expect(up(TEST_DIR, true)).toBe(false);
+  });
+
+  it('defaults to starting updates off', async () => {
+    const { UPGRADES_START_OFF } = await import('../checkin.js');
+    expect(UPGRADES_START_OFF).toBe(true);
+  });
+
+  it('with updates starting off: an update is turned off, gets no ID and sends nothing', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: true, upgradesStartOff: true });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(isOff(TEST_DIR)).toBe(true);
+    expect(readId(TEST_DIR)).toBeNull();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('with updates starting on: an update gets an ID and sends, like a new install', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: true, upgradesStartOff: false });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(readId(TEST_DIR)).not.toBeNull();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('a new install (not set up yet) starts on either way', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: false, upgradesStartOff: true });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(readId(TEST_DIR)).not.toBeNull();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('once turned off as an update, later starts stay off', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: true, upgradesStartOff: true });
+    await mc({ isSetup: true, upgradesStartOff: true });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(isOff(TEST_DIR)).toBe(true);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('one-time notice', () => {
+  it('is unseen until marked, then seen', async () => {
+    const { noticeSeen, markNoticeSeen } = await import('../checkin.js');
+    expect(noticeSeen(TEST_DIR)).toBe(false);
+    markNoticeSeen(TEST_DIR);
+    expect(noticeSeen(TEST_DIR)).toBe(true);
+  });
+});
+
+describe('checkin-on and checkin-notice-seen endpoints', () => {
+  async function appWithPassword(password) {
+    const { default: request } = await import('supertest');
+    const { createApp } = await import('../index.js');
+    const { ensureDatabase, prisma } = await import('../db.js');
+    await ensureDatabase();
+    const bcrypt = await import('bcryptjs');
+    const hashed = password ? await bcrypt.default.hash(password, 10) : null;
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: { adminPassword: hashed },
+      create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: hashed, isSetup: true },
+    });
+    // db.js already bound Prisma at import; this only redirects dataDir().
+    vi.stubEnv('DATABASE_URL', `file:${join(TEST_DIR, 'db.sqlite')}`);
+    return { request, app: createApp(), prisma };
+  }
+
+  it('an update turned on stays on: start (off) → checkin-on → start sends the ID shown in "What gets sent"', async () => {
+    const { request, app, prisma } = await appWithPassword(null);
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+    const { maybeCheckin: mc } = await import('../checkin.js');
+
+    // First start of the new version on a copy set up before: it starts off.
+    await mc({ isSetup: true, upgradesStartOff: true });
+    expect(isOff(TEST_DIR)).toBe(true);
+
+    expect((await request(app).post('/api/checkin-on')).status).toBe(200);
+    expect(isOff(TEST_DIR)).toBe(false);
+    const shown = (await request(app).get('/api/checkin-fields')).body.fields.id;
+    expect(shown).toMatch(/^[0-9a-f-]{36}$/);
+
+    // Next start: it must not be mistaken for an update again.
+    vi.useFakeTimers();
+    try {
+      await mc({ isSetup: true, upgradesStartOff: true });
+      await vi.advanceTimersByTimeAsync(10_000);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body).payload.data.id).toBe(shown);
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('checkin-on requires auth when a password is set', async () => {
+    const { request, app, prisma } = await appWithPassword('test');
+    markOff(TEST_DIR);
+    expect((await request(app).post('/api/checkin-on')).status).toBe(401);
+    expect(isOff(TEST_DIR)).toBe(true);
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('checkin-on clears the off state and sends nothing now', async () => {
+    const { request, app, prisma } = await appWithPassword(null);
+    const mockFetch = vi.fn();
+    vi.stubGlobal('fetch', mockFetch);
+    markOff(TEST_DIR);
+    const res = await request(app).post('/api/checkin-on');
+    expect(res.status).toBe(200);
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(mockFetch).not.toHaveBeenCalled();
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('checkin-notice-seen requires auth, then shows up in checkin-status', async () => {
+    const { request, app, prisma } = await appWithPassword('test');
+    expect((await request(app).post('/api/checkin-notice-seen')).status).toBe(401);
+    expect((await request(app).get('/api/checkin-status')).body.noticeSeen).toBe(false);
+    await prisma.systemConfig.update({ where: { id: 1 }, data: { adminPassword: null } });
+    expect((await request(app).post('/api/checkin-notice-seen')).status).toBe(200);
+    expect((await request(app).get('/api/checkin-status')).body.noticeSeen).toBe(true);
+    await prisma.systemConfig.deleteMany();
+  });
+});
+
 describe('checkin-off endpoint (auth required)', () => {
   it('POST /api/checkin-off returns 401 when password is set and no token', async () => {
     const { default: request } = await import('supertest');

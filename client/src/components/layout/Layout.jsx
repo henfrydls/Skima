@@ -24,6 +24,7 @@ import { useAppVersion } from '../../hooks/useAppVersion';
 import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
 import DemoBanner from '../common/DemoBanner';
+import CheckinNotice from '../common/CheckinNotice';
 
 // Skima Brand Assets
 import logoFull from '../../assets/skima-full.svg';
@@ -320,6 +321,7 @@ export default function Layout() {
 
         {/* Content area */}
         <div className="p-6 flex-1 flex flex-col">
+          <CheckinNotice />
           <div key={location.pathname} className="animate-fade-in flex-1 flex flex-col">
             <Outlet />
           </div>

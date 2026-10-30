@@ -17,6 +17,10 @@ tauri = { version = "2", features = ["tray-icon"] }
 tauri-plugin-shell = "2"
 tauri-plugin-updater = { version = "2", default-features = false, features = ["native-tls", "zip"] }
 tauri-plugin-process = "2"
+# Held to the lines that support tauri 2.10: dialog 2.8+ and fs 2.6+ require tauri 2.12,
+# and moving the whole framework is its own change. fs only comes in through dialog.
+tauri-plugin-dialog = "~2.7.3"
+tauri-plugin-fs = "~2.5.2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

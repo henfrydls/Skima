@@ -1,11 +1,12 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import ActionRow from '../ActionRow';
 
 // Mock useAuth
+const { mockAuthFetch } = vi.hoisted(() => ({ mockAuthFetch: vi.fn() }));
 vi.mock('../../../contexts/AuthContext', () => ({
   useAuth: () => ({
-    authFetch: vi.fn(),
+    authFetch: mockAuthFetch,
   }),
 }));
 
@@ -148,5 +149,55 @@ describe('ActionRow', () => {
     renderAction({ readOnly: false });
     const deleteBtn = screen.getByTitle('Delete action');
     expect(deleteBtn).toBeInTheDocument();
+  });
+
+  describe('each status looks like what it is', () => {
+    const withStatus = (status, extra = {}) => ({ ...mockAction, status, completedAt: null, ...extra });
+
+    it.each([true, false])('skipped (readOnly=%s): marked skipped, not pending, no due date', (readOnly) => {
+      renderAction({ readOnly, action: withStatus('skipped') });
+      expect(screen.getByRole('img', { name: /was skipped/ })).toBeInTheDocument();
+      expect(screen.getByText('Skipped')).toBeInTheDocument();
+      expect(screen.queryByRole('button', { name: /Mark ".*" as/ })).toBeNull();
+      expect(screen.queryByText(/May 1/)).toBeNull();
+      expect(screen.getByText('Complete testing course').className).not.toContain('line-through');
+    });
+
+    it('skipped in edit mode: clicking the indicator sends no status change', () => {
+      mockAuthFetch.mockClear();
+      renderAction({ readOnly: false, action: withStatus('skipped') });
+      fireEvent.click(screen.getByRole('img', { name: /was skipped/ }));
+      expect(mockAuthFetch).not.toHaveBeenCalled();
+    });
+
+    it('not_started in edit mode: clicking the toggle sends completed (the path skipped must not take)', () => {
+      mockAuthFetch.mockClear();
+      mockAuthFetch.mockResolvedValue({ ok: true, json: async () => ({}) });
+      renderAction({ readOnly: false, action: withStatus('not_started') });
+      fireEvent.click(screen.getByRole('button', { name: /as complete/ }));
+      expect(JSON.parse(mockAuthFetch.mock.calls[0][1].body)).toEqual({ status: 'completed' });
+    });
+
+    it('in_progress: shows an In Progress badge, a toggle and its due date', () => {
+      renderAction({ readOnly: false, action: withStatus('in_progress') });
+      expect(screen.getByText('In Progress')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: /as complete/ })).toBeInTheDocument();
+      expect(screen.getByText(/May 1/)).toBeInTheDocument();
+    });
+
+    it('not_started: no status badge, a toggle and its due date', () => {
+      renderAction({ readOnly: false, action: withStatus('not_started') });
+      expect(screen.queryByText('Skipped')).toBeNull();
+      expect(screen.queryByText('In Progress')).toBeNull();
+      expect(screen.getByRole('button', { name: /as complete/ })).toBeInTheDocument();
+      expect(screen.getByText(/May 1/)).toBeInTheDocument();
+    });
+
+    it('completed: struck through, no badge, no due date', () => {
+      renderAction({ readOnly: true, action: { ...mockAction } });
+      expect(screen.getByText('Complete testing course').className).toContain('line-through');
+      expect(screen.queryByText('Skipped')).toBeNull();
+      expect(screen.queryByText(/May 1/)).toBeNull();
+    });
   });
 });

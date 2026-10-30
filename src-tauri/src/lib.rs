@@ -5,6 +5,7 @@ use tauri::{Manager, State};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
+mod backup;
 mod packaging;
 mod webview2;
 
@@ -80,8 +81,14 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_plugin_process::init())
-        .invoke_handler(tauri::generate_handler![prepare_for_update])
+        .plugin(tauri_plugin_dialog::init())
+        .invoke_handler(tauri::generate_handler![
+            prepare_for_update,
+            backup::choose_backup_path,
+            backup::write_backup
+        ])
         .manage(SidecarState(Mutex::new(None)))
+        .manage(backup::PendingBackupPath::default())
         .setup(|app| {
             let db_path = get_db_path(app);
             let port = "11420";

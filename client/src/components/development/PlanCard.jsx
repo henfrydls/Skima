@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Target, Calendar, CheckCircle2 } from 'lucide-react';
 import { PLAN_STATUS_BADGES } from '../../lib/developmentConstants';
 import { formatDateOnly } from '../../lib/dateOnly';
+import { planProgress } from '../../lib/developmentProgress';
 
 /**
  * PlanCard - Card for development plan list
@@ -12,11 +13,7 @@ export default function PlanCard({ plan }) {
 
   const status = PLAN_STATUS_BADGES[plan.status] || PLAN_STATUS_BADGES.draft;
   const goals = plan.goals || [];
-  const countableActions = goals.reduce((sum, g) => sum + (g.actions?.filter(a => a.status !== 'skipped').length || 0), 0);
-  const completedActions = goals.reduce(
-    (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
-  );
-  const progress = countableActions > 0 ? Math.round((completedActions / countableActions) * 100) : 0;
+  const progress = planProgress(goals).percent;
 
   const collaboratorName = plan.collaborator?.nombre || plan.collaborator?.name;
 

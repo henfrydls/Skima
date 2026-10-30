@@ -143,7 +143,42 @@ function summarizePlatforms(manifest, expectedPlatforms = EXPECTED_PLATFORMS) {
   return { present, missing };
 }
 
-module.exports = { summarizePlatforms, EXPECTED_PLATFORMS };
+const MAX_NOTE_LINES = 10;
+const USER_FACING = /^(feat|fix|perf)(\([^)]*\))?!?:\s*/i;
+
+/**
+ * Pure helper: the update dialog's notes, from the GitHub release body.
+ *
+ * release.yml passes an empty releaseBody to tauri-action, so latest.json carries no
+ * notes and the dialog said "No release notes provided". A curated "## Highlights"
+ * section wins when present. Otherwise the generated list is reduced to what a user
+ * notices (feat, fix, perf), without the conventional prefix, author or PR link, and
+ * capped so it fits the dialog. With nothing left, it points to the full notes.
+ */
+function notesFromReleaseBody(body, releaseUrl) {
+  const text = typeof body === 'string' ? body.replace(/\r\n/g, '\n') : '';
+  const fallback = releaseUrl ? `See what's new: ${releaseUrl}` : '';
+
+  const highlights = text.match(/^##\s*Highlights\s*\n([\s\S]*?)(?=^##\s|\n\*\*Full Changelog\*\*|$(?![\s\S]))/im);
+  if (highlights && highlights[1].trim()) return highlights[1].trim();
+
+  const items = text
+    .split('\n')
+    .map((line) => line.match(/^\s*[*-]\s+(.*)$/))
+    .filter(Boolean)
+    .map((m) => m[1].replace(/\s+by @[\w-]+ in https?:\/\/\S+\s*$/, '').trim())
+    .filter((line) => USER_FACING.test(line))
+    .map((line) => line.replace(USER_FACING, ''))
+    .map((line) => line.charAt(0).toUpperCase() + line.slice(1));
+
+  if (items.length === 0) return fallback;
+  const shown = items.slice(0, MAX_NOTE_LINES).map((line) => `• ${line}`);
+  const rest = items.length - shown.length;
+  if (rest > 0) shown.push(`…and ${rest} more change${rest === 1 ? '' : 's'}${releaseUrl ? `: ${releaseUrl}` : '.'}`);
+  return shown.join('\n');
+}
+
+module.exports = { summarizePlatforms, notesFromReleaseBody, EXPECTED_PLATFORMS };
 
 async function main() {
   console.log(`Aggregating latest.json for ${TAG_NAME}${DRY_RUN ? ' (dry-run)' : ''}...`);
@@ -203,9 +238,17 @@ async function main() {
     process.exit(1);
   }
 
+  // Notes for the update dialog: kept if a job already wrote some, otherwise taken
+  // from the release body (issue #104).
+  const notes = typeof manifest.notes === 'string' && manifest.notes.trim()
+    ? manifest.notes
+    : notesFromReleaseBody(release.body, release.html_url);
+  console.log(`\nUpdate dialog notes (${notes.length} chars):\n${notes || '(none)'}`);
+
   // Re-upload with refreshed pub_date to signal "aggregation complete".
   const finalManifest = {
     ...manifest,
+    notes,
     pub_date: new Date().toISOString(),
   };
   const finalContent = JSON.stringify(finalManifest, null, 2);

@@ -17,6 +17,15 @@ export const ACTION_TYPE_BADGES = {
   self_directed: { bg: 'bg-amber-50', text: 'text-amber-700', label: 'Self-directed' },
 };
 
+export const ACTION_STATUS_OPTIONS = [
+  { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
+  { value: 'in_progress', bg: 'bg-blue-50', text: 'text-blue-700', label: 'In Progress' },
+  { value: 'completed', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Completed' },
+  { value: 'skipped', bg: 'bg-amber-50', text: 'text-amber-600', label: 'Skipped' },
+];
+
+export const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map((s) => [s.value, s]));
+
 export const PRIORITY_COLORS = {
   high: 'bg-critical',
   medium: 'bg-warning',
