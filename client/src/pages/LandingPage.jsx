@@ -48,7 +48,7 @@ export default function LandingPage() {
             </h1>
             <p className="text-lg text-slate-600 max-w-lg leading-relaxed">
               Map skills. Spot gaps. Plan growth. Track progress.<br />
-              Free and source-available. Your data never leaves your machine.
+              Free and open source. Your team's data never leaves your machine.
             </p>
             <div className="flex flex-wrap items-center gap-6">
               <a
@@ -233,7 +233,7 @@ export default function LandingPage() {
               Your data. Your machine. Always.
             </h2>
             <p className="text-slate-600 mb-8 leading-relaxed">
-              Skima is a desktop application built with privacy as the core feature. Your team's data never leaves your machine unless you choose to export it. No subscriptions, no cloud accounts, no data harvesting.
+              Skima is a desktop application built with privacy as the core feature. Your team's data never leaves your machine unless you choose to export it. No subscriptions, no cloud accounts, no data harvesting. One anonymous daily check-in tells us Skima is in use, and you can turn it off.
             </p>
 
             {/* Tech badges */}
@@ -269,7 +269,7 @@ export default function LandingPage() {
               <PrivacyCheckItem text="Data stored in local SQLite database" />
               <PrivacyCheckItem text="Offline-first desktop application" />
               <PrivacyCheckItem text="Direct CSV/JSON export/import" />
-              <PrivacyCheckItem text="Source-available transparency" />
+              <PrivacyCheckItem text="Open-source transparency" />
             </div>
           </div>
         </div>
@@ -293,7 +293,7 @@ export default function LandingPage() {
               Ready to see what your <br />team can do?
             </h2>
             <p className="text-white/90 font-medium text-lg max-w-md mx-auto">
-              Free and source-available. Set up in under 5 minutes.
+              Free and open source. Set up in under 5 minutes.
             </p>
             <div className="flex flex-wrap items-center justify-center gap-10">
               <button
@@ -331,6 +331,7 @@ export default function LandingPage() {
             <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'repo' })} className="hover:text-slate-600 transition-colors">GitHub</a>
             <a href={GITHUB_RELEASES} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'releases' })} className="hover:text-slate-600 transition-colors">Releases</a>
             <a href={`${GITHUB_URL}/blob/main/LICENSE`} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'license' })} className="hover:text-slate-600 transition-colors">License</a>
+            <a href={`${GITHUB_URL}/blob/main/PRIVACY.md`} target="_blank" rel="noopener noreferrer" onClick={() => track('github', { location: 'footer', target: 'privacy' })} className="hover:text-slate-600 transition-colors">Privacy</a>
             <span>© 2026 Skima</span>
           </div>
         </div>

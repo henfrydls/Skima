@@ -2,8 +2,8 @@
 //
 // The Umami tracking script is injected at RUNTIME by docker/entrypoint.sh, and
 // ONLY in the online demo (DEMO_MODE=true + UMAMI_SRC + UMAMI_WEBSITE_ID). It is
-// never in the source, the built image, the desktop app, or a fork's build —
-// keeping Skima's "no account, no cloud, no tracking" promise.
+// never in the source, the built image, the desktop app, or a fork's build. The app's
+// only signal is the anonymous check-in described in PRIVACY.md.
 //
 // This module only records custom events on top of that script (e.g. what
 // visitors download). Every call is a safe no-op when the script isn't present
