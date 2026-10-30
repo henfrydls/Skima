@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
-import { maybeCheckin, handleCheckinOn, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
+import { maybeCheckin, recordUse as checkinRecordUse, handleCheckinOn, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -315,7 +315,16 @@ export function createApp() {
     res.json(result);
   });
 
-  // POST /api/checkin-on - Turn it back on. Nothing is sent now; the next start sends.
+  // POST /api/use - The interface reports that someone is using Skima. The only thing that
+  // sends the daily check-in: a server that runs with nobody using it, or a monitor
+  // polling other endpoints, never counts. Public: a viewer without a session is a use too.
+  // Answers at once; the send (first report of the day only) runs after.
+  app.post('/api/use', (req, res) => {
+    res.status(204).end();
+    checkinRecordUse().catch(() => {});
+  });
+
+  // POST /api/checkin-on - Turn it back on. Nothing is sent now; the next use sends.
   app.post('/api/checkin-on', authMiddleware, (req, res) => {
     res.json({ off: handleCheckinOn().off });
   });

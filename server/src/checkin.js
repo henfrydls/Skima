@@ -248,9 +248,7 @@ export async function maybeCheckin({ isSetup = false, upgradesStartOff = UPGRADE
   if (isDisabled()) return;
   if (process.env.DEMO_MODE === 'true') return;
   if (!isConfigured()) return;
-  const url = getCheckinUrl();
   const dir = dataDir();
-  const source = detectSource();
 
   if (upgradesStartOff && isUpgradeFromBeforeCheckin(dir, isSetup)) {
     markOff(dir);
@@ -258,28 +256,55 @@ export async function maybeCheckin({ isSetup = false, upgradesStartOff = UPGRADE
     return;
   }
   if (isOff(dir)) return;
-  if (alreadySentToday(dir)) return;
+  // Starting sends nothing: a day counts when Skima is used (recordUse), not when the
+  // process runs. The ID is made now so "What gets sent" shows it from the first start.
+  getOrCreateId(dir);
+}
 
-  const instanceId = getOrCreateId(dir);
-  const data = buildData(instanceId, source);
+// The day this process has already handled, so a use report after the first of the day
+// returns without touching the disk. Turning the check-in on clears it.
+let handledDay = null;
 
-  setTimeout(async () => {
-    try {
-      await sendCheckin(data, url);
-      markSentToday(dir);
-      console.info('[check-in] sent');
-    } catch (err) {
-      console.warn(`[check-in] failed: ${err.message}`);
-    }
-  }, 5_000);
+export function forgetHandledDay() {
+  handledDay = null;
+}
+
+// Someone is using Skima: the interface reports it (POST /api/use). The first report of
+// the day sends the check-in, at most once a day as before. Nothing else counts: not
+// starting the server, and not monitors or scripts calling other endpoints.
+export async function recordUse() {
+  const today = todayDate();
+  if (handledDay === today) return false;
+  handledDay = today;
+
+  if (isDisabled()) return false;
+  if (process.env.DEMO_MODE === 'true') return false;
+  if (!isConfigured()) return false;
+  const dir = dataDir();
+  if (isOff(dir)) return false;
+  if (alreadySentToday(dir)) return false;
+
+  try {
+    await sendCheckin(buildData(getOrCreateId(dir), detectSource()), getCheckinUrl());
+    markSentToday(dir);
+    console.info('[check-in] sent');
+    return true;
+  } catch (err) {
+    // A later report today tries again (the interface reports at most every few minutes).
+    handledDay = null;
+    console.warn(`[check-in] failed: ${err.message}`);
+    return false;
+  }
 }
 
 // Turn the check-in on. The ID is made now, not at the next start: it is the trace that
 // keeps the next start from taking this copy for an update and turning it off again, and
-// it lets "What gets sent" show the real number at once. Nothing is sent until then.
+// it lets "What gets sent" show the real number at once. Nothing is sent now; the next
+// use report sends, even later today.
 export function handleCheckinOn() {
   const dir = dataDir();
   clearOff(dir);
+  forgetHandledDay();
   return { off: false, id: getOrCreateId(dir) };
 }
 
