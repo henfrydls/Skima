@@ -5,6 +5,8 @@ use tauri::{Manager, State};
 use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
+mod packaging;
+
 /// Holds the sidecar child process so we can kill it on exit
 struct SidecarState(Mutex<Option<CommandChild>>);
 
@@ -79,12 +81,27 @@ pub fn run() {
             println!("[Skima] DB path: {}", db_path);
             println!("[Skima] Starting sidecar on port {}", port);
 
+            // Detect install source for the anonymous check-in
+            let install_source = packaging::detect_install_source();
+            let is_store = packaging::is_msix();
+
+            println!("[Skima] Install source: {}", install_source);
+
+            let mut sidecar_args = vec![
+                "--db-path".to_string(), db_path.clone(),
+                "--port".to_string(), port.to_string(),
+                "--install-source".to_string(), install_source.to_string(),
+            ];
+            if is_store {
+                sidecar_args.push("--store-install".to_string());
+            }
+
             // Spawn the sidecar backend
             let sidecar = app
                 .shell()
                 .sidecar("skima-server")
                 .expect("failed to create sidecar command")
-                .args(["--db-path", &db_path, "--port", port]);
+                .args(&sidecar_args);
 
             let (mut rx, child) = sidecar.spawn().expect("failed to spawn sidecar");
 
