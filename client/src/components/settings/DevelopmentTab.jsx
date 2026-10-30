@@ -11,19 +11,12 @@ import LoginModal from '../auth/LoginModal';
 import PlanFormModal from './DevelopmentPlanFormModal';
 import GoalFormModal from './DevelopmentGoalFormModal';
 import ActionFormModal from './DevelopmentActionFormModal';
-import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES } from '../../lib/developmentConstants';
+import { PLAN_STATUS_BADGES, ACTION_TYPE_BADGES, ACTION_STATUS_OPTIONS, ACTION_STATUS_MAP } from '../../lib/developmentConstants';
 import { getPriorityMeta } from '../../lib/goalPriority';
 import { formatDateOnly } from '../../lib/dateOnly';
 import { planProgress, goalProgress } from '../../lib/developmentProgress';
 
-const ACTION_STATUS_OPTIONS = [
-  { value: 'not_started', bg: 'bg-gray-100', text: 'text-gray-600', label: 'Not Started' },
-  { value: 'in_progress', bg: 'bg-blue-50', text: 'text-blue-700', label: 'In Progress' },
-  { value: 'completed', bg: 'bg-emerald-50', text: 'text-emerald-700', label: 'Completed' },
-  { value: 'skipped', bg: 'bg-amber-50', text: 'text-amber-600', label: 'Skipped' },
-];
 
-const ACTION_STATUS_MAP = Object.fromEntries(ACTION_STATUS_OPTIONS.map(s => [s.value, s]));
 
 /**
  * ActionStatusDropdown - Clickable status badge that opens a dropdown to change action status
