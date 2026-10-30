@@ -17,8 +17,19 @@ jobs:
   # ship without a Prisma engine — both bug classes are gone by construction,
   # and the macOS jobs below smoke-test DB access as a regression net.
   build-sidecar:
+    # Forks have no secrets: official binaries are only built in the upstream repo.
+    if: ${{ !github.event.repository.fork }}
     runs-on: ubuntu-22.04
     steps:
+      # A binary without the check-in values would ship silently uncounted.
+      - name: Require check-in secrets
+        env:
+          CHECKIN_URL: ${{ secrets.CHECKIN_URL }}
+          CHECKIN_WEBSITE_ID: ${{ secrets.CHECKIN_WEBSITE_ID }}
+        run: |
+          [ -n "$CHECKIN_URL" ] || { echo "::error::secret CHECKIN_URL is empty"; exit 1; }
+          [ -n "$CHECKIN_WEBSITE_ID" ] || { echo "::error::secret CHECKIN_WEBSITE_ID is empty"; exit 1; }
+
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
@@ -37,6 +48,9 @@ jobs:
         run: cd server && npm ci
 
       - name: Build all sidecars (linux, windows, darwin-x64, darwin-arm64)
+        env:
+          CHECKIN_URL: ${{ secrets.CHECKIN_URL }}
+          CHECKIN_WEBSITE_ID: ${{ secrets.CHECKIN_WEBSITE_ID }}
         run: cd server && node scripts/build-sidecars.mjs
 
       # Functional check of the host-native binary: boots, applies the schema,
@@ -46,6 +60,8 @@ jobs:
       # resolves relative to cwd, so running from the repo could mask a
       # non-embedded WASM. Isolation must be explicit, not incidental.
       - name: Smoke test (linux binary)
+        env:
+          SKIMA_DISABLE_CHECKIN: '1'
         run: |
           BIN="$GITHUB_WORKSPACE/src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu"
           cd "$(mktemp -d)"
@@ -62,13 +78,16 @@ jobs:
           curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
             -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
           curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'
-          # DATE ROUND-TRIP: rc.4 shipped a sidecar whose DateTime READS were
-          # all null (exports lost every date) while boot + writes looked
-          # healthy. Write a collaborator (joinedAt = now) and require the API
-          # to return it as an ISO date.
+          # DATE ROUND-TRIP
           curl -sf -X POST http://localhost:11999/api/collaborators -H 'Content-Type: application/json' \
             -d '{"nombre":"DateCheck","rol":"CI"}' > /dev/null
           curl -sf http://localhost:11999/api/collaborators | grep -qE '"joinedAt":"20[0-9]{2}-'
+          # CHECK-IN: version injected, URL+websiteId injected, gate holds
+          STATUS=$(curl -sf http://localhost:11999/api/checkin-status)
+          echo "checkin-status: $STATUS"
+          echo "$STATUS" | grep -q '"disabled":true'
+          echo "$STATUS" | grep -q '"version":"[0-9]'
+          echo "$STATUS" | grep -q '"configured":true'
 
       # Checksums travel with the binaries so every consumer can verify the
       # artifact roundtrip (upload-artifact once corrupted a large binary's
@@ -199,6 +218,8 @@ jobs:
       - name: Smoke test sidecar (Windows)
         if: matrix.platform == 'windows-latest'
         shell: pwsh
+        env:
+          SKIMA_DISABLE_CHECKIN: '1'
         run: |
           $bin = Join-Path $PWD 'src-tauri/binaries/skima-server-x86_64-pc-windows-msvc.exe'
           $work = Join-Path $env:RUNNER_TEMP 'sidecar-smoke'
@@ -222,11 +243,7 @@ jobs:
               -ContentType 'application/json' -Body '{"companyName":"CI Smoke","adminName":"CI"}' | Out-Null
             $cfg2 = Invoke-RestMethod http://localhost:11999/api/config
             if ($cfg2.isSetup -ne $true) { throw 'setup write round-trip failed' }
-            # DATE ROUND-TRIP (rc.4: all DateTime READS were null while boot +
-            # writes looked healthy): write a collaborator, require an ISO date back.
-            # Match the RAW JSON (like the bash smokes' grep) — Invoke-RestMethod
-            # auto-coerces ISO strings into [datetime] objects, which stringify
-            # in locale format and false-failed this check on rc.5.
+            # DATE ROUND-TRIP
             Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/collaborators `
               -ContentType 'application/json' -Body '{"nombre":"DateCheck","rol":"CI"}' | Out-Null
             $raw = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/collaborators).Content
@@ -234,6 +251,12 @@ jobs:
               Write-Host "RAW RESPONSE: $raw"
               throw 'DateTime read round-trip failed (joinedAt not an ISO string in the JSON)'
             }
+            # CHECK-IN: version injected, URL+websiteId injected, gate holds
+            $statusRaw = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/checkin-status).Content
+            Write-Host "checkin-status: $statusRaw"
+            if ($statusRaw -notmatch '"disabled":true') { throw 'SKIMA_DISABLE_CHECKIN gate not holding' }
+            if ($statusRaw -notmatch '"version":"\d') { throw 'version not injected (got unknown)' }
+            if ($statusRaw -notmatch '"configured":true') { throw 'CHECKIN_URL not injected' }
           } finally {
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           }
@@ -259,6 +282,8 @@ jobs:
       # while unable to touch the DB (the v1.4.x Intel-engine bug).
       - name: Smoke test sidecar (macOS)
         if: startsWith(matrix.platform, 'macos')
+        env:
+          SKIMA_DISABLE_CHECKIN: '1'
         run: |
           BIN="$PWD/src-tauri/binaries/skima-server-${{ matrix.mac-arch }}-apple-darwin"
           cd "$(mktemp -d)"
@@ -275,13 +300,16 @@ jobs:
           curl -sf -X POST http://localhost:11999/api/setup -H 'Content-Type: application/json' \
             -d '{"companyName":"CI Smoke","adminName":"CI"}' > /dev/null
           curl -sf http://localhost:11999/api/config | grep -q '"isSetup":true'
-          # DATE ROUND-TRIP: rc.4 shipped a sidecar whose DateTime READS were
-          # all null (exports lost every date) while boot + writes looked
-          # healthy. Write a collaborator (joinedAt = now) and require the API
-          # to return it as an ISO date.
+          # DATE ROUND-TRIP
           curl -sf -X POST http://localhost:11999/api/collaborators -H 'Content-Type: application/json' \
             -d '{"nombre":"DateCheck","rol":"CI"}' > /dev/null
           curl -sf http://localhost:11999/api/collaborators | grep -qE '"joinedAt":"20[0-9]{2}-'
+          # CHECK-IN: version injected, URL+websiteId injected, gate holds
+          STATUS=$(curl -sf http://localhost:11999/api/checkin-status)
+          echo "checkin-status: $STATUS"
+          echo "$STATUS" | grep -q '"disabled":true'
+          echo "$STATUS" | grep -q '"version":"[0-9]'
+          echo "$STATUS" | grep -q '"configured":true'
 
       # src-tauri/resources/ is now always present (Assets.car is committed),
       # so we no longer need a "mkdir -p" pre-step. The previous step used
