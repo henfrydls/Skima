@@ -230,10 +230,10 @@ describe('buildData', () => {
     const d = buildData('test-id', 'installer');
     expect(d.id).toBe('test-id');
     expect(d.source).toBe('installer');
-    expect(d.v).toBeDefined();
+    expect(d.version).toBe(getVersion());
     expect(d.os).toBe(EXPECTED_OS);
     expect(d.arch).toBe(process.arch === 'x64' ? 'x64' : process.arch);
-    expect(d.d).toBe(todayDate());
+    expect(d.date).toBe(todayDate());
     expect(d.last).toBeUndefined();
   });
 
@@ -241,11 +241,19 @@ describe('buildData', () => {
     const d = buildData('test-id', 'installer', { last: true });
     expect(d.last).toBe(true);
   });
+
+  // The receiver's queries read these exact keys; renaming one silently empties a metric.
+  it('carries exactly the shared key set', () => {
+    expect(Object.keys(buildData('x', 'deb')).sort())
+      .toEqual(['arch', 'date', 'id', 'os', 'source', 'version']);
+    expect(Object.keys(buildData('x', 'deb', { last: true })).sort())
+      .toEqual(['arch', 'date', 'id', 'last', 'os', 'source', 'version']);
+  });
 });
 
 describe('buildEnvelope', () => {
   it('wraps data in Umami event format', () => {
-    const data = { id: 'abc', v: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', d: '2026-11-01' };
+    const data = { id: 'abc', version: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', date: '2026-11-01' };
     const env = buildEnvelope(data, 'website-123');
     expect(env.type).toBe('event');
     expect(env.payload.website).toBe('website-123');
@@ -257,13 +265,13 @@ describe('buildEnvelope', () => {
   });
 
   it('omits payload.id when data has no id', () => {
-    const data = { v: '1.6.0' };
+    const data = { version: '1.6.0' };
     const env = buildEnvelope(data, 'w');
     expect(env.payload.id).toBeUndefined();
   });
 
   it('carries exactly the expected payload keys', () => {
-    const data = { id: 'x', v: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', d: '2026-11-01' };
+    const data = { id: 'x', version: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', date: '2026-11-01' };
     const env = buildEnvelope(data, 'w');
     const keys = Object.keys(env.payload).sort();
     expect(keys).toEqual(['data', 'hostname', 'id', 'name', 'url', 'website']);
@@ -300,7 +308,7 @@ describe('sendCheckin', () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', mockFetch);
 
-    const data = { id: 'x', v: '1.0.0' };
+    const data = { id: 'x', version: '1.0.0' };
     await sendCheckin(data, 'http://example.com/api/send', 'test-website');
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, opts] = mockFetch.mock.calls[0];
@@ -378,7 +386,7 @@ describe('getCheckinFields', () => {
     vi.stubEnv('CHECKIN_URL', 'http://test.local');
     const fields = getCheckinFields();
     expect(fields).not.toBeNull();
-    expect(fields.v).toBeDefined();
+    expect(fields.version).toBe(getVersion());
     expect(fields.os).toBe(EXPECTED_OS);
     expect(fields.source).toBeDefined();
   });

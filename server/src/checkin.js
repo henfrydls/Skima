@@ -119,14 +119,16 @@ export function getVersion() {
 }
 
 // The data fields: what the check-in carries about this copy. Nothing else.
+// Key names are shared with other apps on the same receiver so one set of
+// queries reads all of them: keep id/version/os/source/date/last stable.
 export function buildData(instanceId, source, { last = false } = {}) {
   const d = {
     id: instanceId,
-    v: getVersion(),
+    version: getVersion(),
     os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source,
-    d: todayDate(),
+    date: todayDate(),
   };
   if (last) d.last = true;
   return d;
@@ -176,7 +178,7 @@ export function getCheckinFields() {
   const dir = dataDir();
   return {
     id: readId(dir),
-    v: getVersion(),
+    version: getVersion(),
     os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source: detectSource(),
