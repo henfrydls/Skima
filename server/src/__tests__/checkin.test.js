@@ -501,6 +501,71 @@ describe('maybeCheckin', () => {
     expect(body.payload.data.id).toBe('canary-id');
     expect(mockExit).toHaveBeenCalledWith(0);
   });
+
+  describe('--checkin-now exit code (the CI canary)', () => {
+    let mockExit;
+
+    beforeEach(() => {
+      vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+      vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+      mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    });
+
+    async function run(...args) {
+      process.argv = [...originalArgv, ...args];
+      const { maybeCheckin: mc } = await import('../checkin.js');
+      await mc();
+    }
+
+    it('exits 1 when the receiver answers non-2xx', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
+      await run('--checkin-now', 'ci-canary-1');
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it('exits 1 on a network error', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('getaddrinfo ENOTFOUND')));
+      await run('--checkin-now', 'ci-canary-1');
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it.each([
+      ['the build has no URL', () => vi.stubEnv('CHECKIN_URL', '')],
+      ['the build has no website ID', () => vi.stubEnv('CHECKIN_WEBSITE_ID', '')],
+      ['SKIMA_DISABLE_CHECKIN is set', () => vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1')],
+      ['in demo mode', () => vi.stubEnv('DEMO_MODE', 'true')],
+    ])('exits 1 without sending when %s', async (_, setup) => {
+      setup();
+      await run('--checkin-now', 'ci-canary-1');
+      expect(fetch).not.toHaveBeenCalled();
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it('exits 1 without sending when no ID is given', async () => {
+      await run('--checkin-now');
+      expect(fetch).not.toHaveBeenCalled();
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it('does not take the next flag as the ID', async () => {
+      await run('--checkin-now', '--install-source', 'canary');
+      expect(fetch).not.toHaveBeenCalled();
+      expect(mockExit).toHaveBeenCalledWith(1);
+    });
+
+    it('with --port it keeps serving instead of exiting', async () => {
+      await run('--checkin-now', 'ci-canary-1', '--port', '11998');
+      expect(fetch).toHaveBeenCalledOnce();
+      expect(mockExit).not.toHaveBeenCalled();
+    });
+
+    it('sends source=canary when started as the canary', async () => {
+      await run('--install-source', 'canary', '--checkin-now', 'ci-canary-7');
+      const body = JSON.parse(fetch.mock.calls[0][1].body);
+      expect(body.payload.data).toMatchObject({ id: 'ci-canary-7', source: 'canary' });
+      expect(mockExit).toHaveBeenCalledWith(0);
+    });
+  });
 });
 
 // ============================================================

@@ -1,0 +1,66 @@
+# Weekly end-to-end check that a build of main can still report.
+#
+# Builds the Linux sidecar exactly as release.yml does, with the real check-in values,
+# and has that binary send one check-in marked source=canary with a ci-canary-* ID (both
+# excluded from the metrics). A failed send exits non-zero and turns this run red, so a
+# broken receiver, network path or injection shows up between releases, not on tag day.
+# Whether the receiver stored the event is checked outside CI; no receiver credentials
+# live here. Never runs on pull requests.
+name: Canary
+
+on:
+  schedule:
+    - cron: '17 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  canary:
+    # Forks have no secrets and nothing to report.
+    if: ${{ !github.event.repository.fork }}
+    runs-on: ubuntu-22.04
+    timeout-minutes: 20
+    steps:
+      - name: Require check-in secrets
+        env:
+          CHECKIN_URL: ${{ secrets.CHECKIN_URL }}
+          CHECKIN_WEBSITE_ID: ${{ secrets.CHECKIN_WEBSITE_ID }}
+        run: |
+          [ -n "$CHECKIN_URL" ] || { echo "::error::secret CHECKIN_URL is empty"; exit 1; }
+          [ -n "$CHECKIN_WEBSITE_ID" ] || { echo "::error::secret CHECKIN_WEBSITE_ID is empty"; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Same pin as release.yml — keep them in sync.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Install Server Dependencies
+        run: cd server && npm ci
+
+      - name: Build linux sidecar
+        env:
+          CHECKIN_URL: ${{ secrets.CHECKIN_URL }}
+          CHECKIN_WEBSITE_ID: ${{ secrets.CHECKIN_WEBSITE_ID }}
+        run: cd server && node scripts/build-sidecars.mjs linux
+
+      # The only step here without SKIMA_DISABLE_CHECKIN: it sends a real check-in.
+      - name: Canary check-in (real send, excluded from metrics)
+        run: |
+          if [ -n "${SKIMA_DISABLE_CHECKIN+set}" ]; then
+            echo "::error::SKIMA_DISABLE_CHECKIN must be unset in this step only"; exit 1
+          fi
+          BIN="$GITHUB_WORKSPACE/src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu"
+          ID="ci-canary-$GITHUB_RUN_ID"
+          cd "$(mktemp -d)"
+          PORT=11997 timeout 60 "$BIN" --db-path ./canary.db --install-source canary --checkin-now "$ID"
+          echo "Canary check-in sent: \`$ID\` (source=canary)" >> "$GITHUB_STEP_SUMMARY"

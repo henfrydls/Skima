@@ -1630,10 +1630,14 @@ if (isDirectRun) {
   // Auto-initialize DB schema in sidecar mode before starting
   ensureDatabase().then(() => {
     // isSetup tells a fresh install from an update. If it cannot be read, skip the
-    // check-in this start rather than guess "new install" and turn it on.
+    // check-in this start rather than guess "new install" and turn it on. The CI canary
+    // (--checkin-now, run without --port) must fail loudly instead, like maybeCheckin does.
     prisma.systemConfig.findFirst()
       .then((cfg) => maybeCheckin({ isSetup: !!cfg?.isSetup }))
-      .catch((err) => console.warn(`[check-in] skipped: ${err.message}`));
+      .catch((err) => {
+        console.warn(`[check-in] skipped: ${err.message}`);
+        if (process.argv.includes('--checkin-now') && !process.argv.includes('--port')) process.exit(1);
+      });
     app.listen(PORT, () => {
       console.log(`[Skima Server] API running on http://localhost:${PORT}`);
     });

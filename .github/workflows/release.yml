@@ -92,6 +92,21 @@ jobs:
           echo "$STATUS" | grep -q '"version":"[0-9]'
           echo "$STATUS" | grep -q '"configured":true'
 
+      # The ONE step in CI that runs without SKIMA_DISABLE_CHECKIN: the built binary sends
+      # a real check-in, marked source=canary and with a ci-canary-* ID, both excluded from
+      # the metrics. It proves the release can report; a failed send exits non-zero and
+      # stops the release. Whether the receiver stored it is checked outside CI.
+      - name: Canary check-in (real send, excluded from metrics)
+        run: |
+          if [ -n "${SKIMA_DISABLE_CHECKIN+set}" ]; then
+            echo "::error::SKIMA_DISABLE_CHECKIN must be unset in this step only"; exit 1
+          fi
+          BIN="$GITHUB_WORKSPACE/src-tauri/binaries/skima-server-x86_64-unknown-linux-gnu"
+          ID="ci-canary-$GITHUB_RUN_ID"
+          cd "$(mktemp -d)"
+          PORT=11997 timeout 60 "$BIN" --db-path ./canary.db --install-source canary --checkin-now "$ID"
+          echo "Canary check-in sent: \`$ID\` (source=canary)" >> "$GITHUB_STEP_SUMMARY"
+
       # Checksums travel with the binaries so every consumer can verify the
       # artifact roundtrip (upload-artifact once corrupted a large binary's
       # tail bytes in transit — never trust the transport).
