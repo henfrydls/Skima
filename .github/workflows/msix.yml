@@ -1,0 +1,240 @@
+# Packs the Microsoft Store package.
+#
+# Tauri has no MSIX target, so this assembles one from the Windows build: Skima.exe,
+# the Bun sidecar next to it, the logo set and packaging/msix/AppxManifest.xml.
+# Unsigned on purpose: the Store re-signs MSIX packages during certification.
+#
+# Two modes:
+#   test (pull_request, or manual with store_build=false): fake check-in values under
+#     .invalid and the placeholder identity. Proves the package packs and the sidecar
+#     inside it answers; it cannot be uploaded.
+#   store (manual with store_build=true): real check-in secrets and the Partner Center
+#     identity from repository variables; fails if any is empty.
+#
+# WHAT IT CLAIMS: makeappx accepts the manifest, and the sidecar in the package layout
+# boots, reports the injected version and honours --store-install.
+# WHAT IT DOES NOT CLAIM: that the Store accepts it, or that the app runs from an
+# installed package. The first certification is the real test.
+name: MSIX
+
+on:
+  workflow_dispatch:
+    inputs:
+      store_build:
+        description: 'Build for Store upload (real identity and check-in secrets)'
+        type: boolean
+        default: false
+  # workflow_dispatch only exists once merged, so PRs that touch the packaging run it too.
+  pull_request:
+    paths:
+      - 'packaging/msix/**'
+      - '.github/workflows/msix.yml'
+      - 'src-tauri/icons/Square*.png'
+      - 'src-tauri/icons/StoreLogo.png'
+      - 'src-tauri/src/**'
+      - 'src-tauri/Cargo.toml'
+      - 'server/scripts/build-sidecars.mjs'
+
+permissions:
+  contents: read
+
+env:
+  STORE_BUILD: ${{ github.event_name == 'workflow_dispatch' && inputs.store_build }}
+
+jobs:
+  # Same host and toolchain as release.yml: every sidecar is built on Linux with Bun.
+  sidecar:
+    runs-on: ubuntu-22.04
+    env:
+      CHECKIN_URL: ${{ (github.event_name == 'workflow_dispatch' && inputs.store_build) && secrets.CHECKIN_URL || 'http://checkin.invalid/api/send' }}
+      CHECKIN_WEBSITE_ID: ${{ (github.event_name == 'workflow_dispatch' && inputs.store_build) && secrets.CHECKIN_WEBSITE_ID || '00000000-0000-0000-0000-000000000000' }}
+    steps:
+      - name: Require check-in values
+        run: |
+          [ -n "$CHECKIN_URL" ] || { echo "::error::secret CHECKIN_URL is empty"; exit 1; }
+          [ -n "$CHECKIN_WEBSITE_ID" ] || { echo "::error::secret CHECKIN_WEBSITE_ID is empty"; exit 1; }
+
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Same pin as release.yml — keep them in sync.
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.14'
+
+      - name: Install Server Dependencies
+        run: cd server && npm ci
+
+      - name: Build windows sidecar
+        run: cd server && node scripts/build-sidecars.mjs windows
+
+      - name: Upload sidecar
+        uses: actions/upload-artifact@v4
+        with:
+          name: msix-sidecar
+          path: src-tauri/binaries/skima-server-x86_64-pc-windows-msvc.exe
+          retention-days: 1
+
+  pack:
+    needs: sidecar
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require Store identity
+        if: env.STORE_BUILD == 'true'
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          foreach ($n in 'MSIX_IDENTITY_NAME', 'MSIX_PUBLISHER', 'MSIX_PUBLISHER_DISPLAY_NAME') {
+            if (-not [Environment]::GetEnvironmentVariable($n)) { throw "repository variable $n is empty" }
+          }
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: |
+          npm ci
+          cd client && npm ci
+
+      - name: Download sidecar
+        uses: actions/download-artifact@v4
+        with:
+          name: msix-sidecar
+          path: src-tauri/binaries/
+
+      # The executable only: the package is the installer.
+      - name: Build the app
+        run: npx --yes @tauri-apps/cli@2.10.1 build --no-bundle
+
+      - name: Lay the package out
+        shell: pwsh
+        env:
+          MSIX_IDENTITY_NAME: ${{ vars.MSIX_IDENTITY_NAME }}
+          MSIX_PUBLISHER: ${{ vars.MSIX_PUBLISHER }}
+          MSIX_PUBLISHER_DISPLAY_NAME: ${{ vars.MSIX_PUBLISHER_DISPLAY_NAME }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $version = (Get-Content server\package.json | ConvertFrom-Json).version
+          $packageVersion = "$version.0"
+          Write-Host "Packaging Skima $version as $packageVersion (store build: $env:STORE_BUILD)"
+
+          New-Item -ItemType Directory -Force -Path msix\Assets | Out-Null
+          # Cargo names the binary after the crate; the manifest names Skima.exe.
+          Copy-Item src-tauri\target\release\skima.exe msix\Skima.exe
+          # tauri-plugin-shell resolves a sidecar in the directory of the running exe,
+          # without the target triple. Not in binaries\: that folder only exists at build time.
+          Copy-Item src-tauri\binaries\skima-server-x86_64-pc-windows-msvc.exe msix\skima-server.exe
+
+          foreach ($logo in 'StoreLogo', 'Square44x44Logo', 'Square71x71Logo', 'Square150x150Logo') {
+            Copy-Item "src-tauri\icons\$logo.png" msix\Assets\
+          }
+
+          $manifest = Get-Content packaging\msix\AppxManifest.xml -Raw
+          $manifest = $manifest -replace 'Version="0\.0\.0\.0"', "Version=`"$packageVersion`""
+          if ($env:STORE_BUILD -eq 'true') {
+            $manifest = $manifest.Replace('Name="Placeholder.Skima"', "Name=`"$env:MSIX_IDENTITY_NAME`"")
+            $manifest = $manifest.Replace('Publisher="CN=00000000-0000-0000-0000-000000000000"', "Publisher=`"$env:MSIX_PUBLISHER`"")
+            $manifest = $manifest.Replace('<PublisherDisplayName>Placeholder Publisher</PublisherDisplayName>', "<PublisherDisplayName>$env:MSIX_PUBLISHER_DISPLAY_NAME</PublisherDisplayName>")
+            if ($manifest -match 'Placeholder|CN=00000000-') { throw 'Store build still carries a placeholder identity' }
+          }
+          Set-Content msix\AppxManifest.xml $manifest -Encoding UTF8
+
+          if ($manifest -notmatch [regex]::Escape("Version=`"$packageVersion`"")) {
+            throw 'The manifest still carries the placeholder version'
+          }
+          Get-ChildItem -Recurse msix | Select-Object FullName, Length
+
+      # The sidecar exactly as it sits in the package, started the way lib.rs starts it
+      # from a Store install. SKIMA_DISABLE_CHECKIN keeps CI from sending anything.
+      - name: Smoke test the packaged sidecar
+        shell: pwsh
+        env:
+          SKIMA_DISABLE_CHECKIN: '1'
+        run: |
+          $bin = Join-Path $PWD 'msix\skima-server.exe'
+          $version = (Get-Content server\package.json | ConvertFrom-Json).version
+          $work = Join-Path $env:RUNNER_TEMP 'msix-smoke'
+          New-Item -ItemType Directory -Force $work | Out-Null
+          Set-Location $work
+          $p = Start-Process -FilePath $bin -ArgumentList '--db-path', "$work\smoke.db", '--port', '11999', `
+            '--install-source', 'store', '--store-install' `
+            -RedirectStandardOutput "$work\smoke.log" -RedirectStandardError "$work\smoke.err" -PassThru
+          try {
+            $ok = $false
+            foreach ($i in 1..30) {
+              Start-Sleep -Seconds 1
+              if ((Get-Content "$work\smoke.log" -Raw -ErrorAction SilentlyContinue) -match 'API running') { $ok = $true; break }
+            }
+            Get-Content "$work\smoke.log" -ErrorAction SilentlyContinue
+            Get-Content "$work\smoke.err" -ErrorAction SilentlyContinue
+            if (-not $ok) { throw 'sidecar never reported API running' }
+            $cfg = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/config).Content
+            Write-Host "config: $cfg"
+            if ($cfg -notmatch '"isStoreInstall":true') { throw '--store-install did not reach /api/config' }
+            $status = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/checkin-status).Content
+            Write-Host "checkin-status: $status"
+            if ($status -notmatch '"disabled":true') { throw 'SKIMA_DISABLE_CHECKIN gate not holding' }
+            if ($status -notmatch '"configured":true') { throw 'check-in URL not injected' }
+            if ($status -notmatch [regex]::Escape("`"version`":`"$version`"")) { throw "version is not $version" }
+          } finally {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+          }
+
+      - name: Pack it
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Sorted by [version], not by name: bin\ also holds x86/x64 folders and
+          # 10.0.9.0 would sort above 10.0.17763.0 as text.
+          $roots = @("${env:ProgramFiles(x86)}\Windows Kits\10\bin", "$env:ProgramFiles\Windows Kits\10\bin") |
+                   Where-Object { $_ -and (Test-Path $_) }
+          $makeappx = $null
+          foreach ($root in $roots) {
+            $versions = Get-ChildItem $root -Directory -ErrorAction SilentlyContinue |
+                        Where-Object { $_.Name -as [version] } |
+                        Sort-Object { [version]$_.Name } -Descending
+            foreach ($v in $versions) {
+              $candidate = Join-Path $v.FullName 'x64\makeappx.exe'
+              if (Test-Path $candidate) { $makeappx = $candidate; break }
+            }
+            if ($makeappx) { break }
+          }
+          if (-not $makeappx) { throw 'makeappx.exe is not on this image' }
+          Write-Host "Using $makeappx"
+
+          & $makeappx pack /d msix /p Skima.msix /o
+          if ($LASTEXITCODE -ne 0) { throw "makeappx failed with $LASTEXITCODE" }
+
+          $size = (Get-Item Skima.msix).Length
+          $kind = if ($env:STORE_BUILD -eq 'true') { 'Store identity' } else { 'TEST: placeholder identity and fake check-in, not uploadable' }
+          Write-Host "Packed Skima.msix ($size bytes) - $kind"
+          "Packed **Skima.msix**, $size bytes, unsigned. $kind." | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Upload the package
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.STORE_BUILD == 'true' && 'skima-msix' || 'skima-msix-test' }}
+          path: Skima.msix
+          retention-days: 14

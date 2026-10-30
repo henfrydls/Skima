@@ -65,6 +65,7 @@ export function ConfigProvider({ children }) {
     isSetup: config?.isSetup ?? false,
     isDemo: config?.isDemo ?? false,
     isOnlineDemo: config?.isOnlineDemo ?? false,
+    isStoreInstall: config?.isStoreInstall ?? false,
     companyName: config?.companyName ?? 'Skima',
     adminName: config?.adminName ?? 'Admin',
     onSetupComplete,

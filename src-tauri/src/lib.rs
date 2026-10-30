@@ -6,6 +6,7 @@ use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
 mod packaging;
+mod webview2;
 
 /// Holds the sidecar child process so we can kill it on exit
 struct SidecarState(Mutex<Option<CommandChild>>);
@@ -68,6 +69,12 @@ fn get_db_path(app: &tauri::App) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Before the builder: without WebView2 the window can never exist.
+    #[cfg(target_os = "windows")]
+    if webview2::is_missing() {
+        webview2::explain_and_exit();
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())

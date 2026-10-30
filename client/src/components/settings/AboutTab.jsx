@@ -13,7 +13,7 @@ const REPO_URL = 'https://github.com/henfrydls/Skima';
  */
 export default function AboutTab() {
   const version = useAppVersion();
-  const { state, checkNow, isTauri } = useUpdate();
+  const { state, checkNow, isTauri, isStoreInstall } = useUpdate();
 
   // Default ON unless explicitly set to "false"
   const [autoCheck, setAutoCheck] = useState(
@@ -58,6 +58,10 @@ export default function AboutTab() {
         {!isTauri ? (
           <p className="text-sm text-gray-500 italic">
             Auto-updates are only available in the desktop app.
+          </p>
+        ) : isStoreInstall ? (
+          <p className="text-sm text-gray-700">
+            Updates are managed by the Microsoft Store.
           </p>
         ) : (
           <>

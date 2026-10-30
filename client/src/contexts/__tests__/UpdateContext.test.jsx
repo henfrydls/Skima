@@ -66,6 +66,7 @@ describe('UpdateContext', () => {
     window.__TAURI_INTERNALS__ = {};
     // Default: setup is complete
     mockConfig.isSetup = true;
+    mockConfig.isStoreInstall = false;
   });
 
   afterEach(() => {
@@ -150,6 +151,18 @@ describe('UpdateContext', () => {
       }, { timeout: 5000 });
       expect(mockCheck).toHaveBeenCalledTimes(2);
     }, 8_000);
+  });
+
+  describe('Microsoft Store install', () => {
+    it('a manual check does not reach the updater and stays idle', async () => {
+      mockConfig.isStoreInstall = true;
+      mockCheck.mockResolvedValue({ version: '9.9.9', body: '' });
+      renderWithProvider();
+      await act(async () => { screen.getByTestId('check').click(); });
+      expect(mockCheck).not.toHaveBeenCalled();
+      expect(screen.getByTestId('state').textContent).toBe('idle');
+      expect(screen.queryByTestId('update-modal')).toBeNull();
+    });
   });
 
   describe('preferences', () => {
@@ -270,6 +283,15 @@ describe('UpdateContext', () => {
     });
 
     // Bug #57: don't run auto-check while setup wizard is showing on first install
+    it('does not run in a Microsoft Store install', async () => {
+      mockConfig.isStoreInstall = true;
+      mockCheck.mockResolvedValue(null);
+      vi.useFakeTimers();
+      renderWithProvider();
+      await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+      expect(mockCheck).not.toHaveBeenCalled();
+    });
+
     it('does not run when setup is incomplete (config.isSetup=false)', async () => {
       mockConfig.isSetup = false;
       vi.useFakeTimers();

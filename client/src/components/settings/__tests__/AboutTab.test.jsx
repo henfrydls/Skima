@@ -3,12 +3,14 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import AboutTab from '../AboutTab';
 
 const mockCheckNow = vi.fn();
+const mockUpdate = { isStoreInstall: false };
 
 vi.mock('../../../contexts/UpdateContext', () => ({
   useUpdate: () => ({
     state: 'idle',
     checkNow: mockCheckNow,
     isTauri: true,
+    isStoreInstall: mockUpdate.isStoreInstall,
   }),
 }));
 
@@ -19,9 +21,18 @@ vi.mock('../../../hooks/useAppVersion', () => ({
 beforeEach(() => {
   vi.clearAllMocks();
   localStorage.clear();
+  mockUpdate.isStoreInstall = false;
 });
 
 describe('AboutTab', () => {
+  it('in a Microsoft Store install, says the Store manages updates and offers no updater controls', () => {
+    mockUpdate.isStoreInstall = true;
+    render(<AboutTab />);
+    expect(screen.getByText(/Updates are managed by the Microsoft Store/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Check for updates/i })).toBeNull();
+    expect(screen.queryByRole('checkbox', { name: /Check for updates automatically/i })).toBeNull();
+  });
+
   it('shows current app version', () => {
     render(<AboutTab />);
     expect(screen.getByText(/1\.4\.0/)).toBeInTheDocument();
