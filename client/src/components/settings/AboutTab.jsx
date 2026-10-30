@@ -3,6 +3,7 @@ import { Info, Github, Bug, FileText, RefreshCw, CheckCircle2 } from 'lucide-rea
 import Button from '../common/Button';
 import { useAppVersion } from '../../hooks/useAppVersion';
 import { useUpdate } from '../../contexts/UpdateContext';
+import CheckinSettings from './CheckinSettings';
 
 const STORAGE_AUTO_CHECK = 'skima.update.autoCheck';
 const REPO_URL = 'https://github.com/henfrydls/Skima';
@@ -107,6 +108,8 @@ export default function AboutTab() {
           </>
         )}
       </div>
+
+      <CheckinSettings />
 
       {/* About */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">

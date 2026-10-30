@@ -11,6 +11,12 @@ const BUILTIN_VERSION = '__SKIMA_VERSION__';
 const ID_FILE = '.skima-instance-id';
 const DATE_FILE = '.skima-checkin-date';
 const OFF_FILE = '.skima-checkin-off';
+const NOTICE_FILE = '.skima-checkin-notice-seen';
+
+// A copy that existed before the check-in did was installed under the promise that it
+// sent nothing. true: such a copy starts with the check-in off and is told it can turn
+// it on. false: it starts on, like a new install. New installs always start on.
+export const UPGRADES_START_OFF = true;
 
 export function getCheckinUrl() {
   if (BUILTIN_CHECKIN_URL !== '__CHECKIN' + '_URL__') return BUILTIN_CHECKIN_URL;
@@ -65,6 +71,25 @@ export function markOff(dir) {
 export function clearOff(dir) {
   const file = join(dir, OFF_FILE);
   if (existsSync(file)) unlinkSync(file);
+}
+
+// Set up before, yet no trace of the check-in ever having run: an update from a version
+// without it. A new install reaches its first start not set up; any copy that has run the
+// check-in once has an ID, a date or the off file.
+export function isUpgradeFromBeforeCheckin(dir, isSetup) {
+  return !!isSetup
+    && !readId(dir)
+    && !existsSync(join(dir, DATE_FILE))
+    && !isOff(dir);
+}
+
+export function noticeSeen(dir) {
+  return existsSync(join(dir, NOTICE_FILE));
+}
+
+export function markNoticeSeen(dir) {
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, NOTICE_FILE), todayDate(), 'utf8');
 }
 
 export function getOrCreateId(dir) {
@@ -191,7 +216,7 @@ export function getCheckinFields() {
   };
 }
 
-export async function maybeCheckin() {
+export async function maybeCheckin({ isSetup = false, upgradesStartOff = UPGRADES_START_OFF } = {}) {
   if (isDisabled()) return;
   if (process.env.DEMO_MODE === 'true') return;
   if (!isConfigured()) return;
@@ -215,6 +240,11 @@ export async function maybeCheckin() {
     return;
   }
 
+  if (upgradesStartOff && isUpgradeFromBeforeCheckin(dir, isSetup)) {
+    markOff(dir);
+    console.info('[check-in] off: this copy predates the check-in');
+    return;
+  }
   if (isOff(dir)) return;
   if (alreadySentToday(dir)) return;
 

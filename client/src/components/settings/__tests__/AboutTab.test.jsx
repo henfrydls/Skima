@@ -14,6 +14,9 @@ vi.mock('../../../contexts/UpdateContext', () => ({
   }),
 }));
 
+// Has its own tests; it needs auth and config providers this file does not set up.
+vi.mock('../CheckinSettings', () => ({ default: () => null }));
+
 vi.mock('../../../hooks/useAppVersion', () => ({
   useAppVersion: () => '1.4.0',
 }));

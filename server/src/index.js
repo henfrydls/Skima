@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
-import { maybeCheckin, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion } from './checkin.js';
+import { maybeCheckin, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, clearOff as checkinClearOff, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -297,6 +297,7 @@ export function createApp() {
       configured: checkinConfigured(),
       disabled: checkinDisabled(),
       off: checkinIsOff(checkinDataDir()),
+      noticeSeen: checkinNoticeSeen(checkinDataDir()),
       version: checkinVersion(),
     });
   });
@@ -312,6 +313,18 @@ export function createApp() {
   app.post('/api/checkin-off', authMiddleware, async (req, res) => {
     const result = await handleCheckinOff();
     res.json(result);
+  });
+
+  // POST /api/checkin-on - Turn it back on. Nothing is sent now; the next start sends.
+  app.post('/api/checkin-on', authMiddleware, (req, res) => {
+    checkinClearOff(checkinDataDir());
+    res.json({ off: false });
+  });
+
+  // POST /api/checkin-notice-seen - The one-time notice was shown to this installation.
+  app.post('/api/checkin-notice-seen', authMiddleware, (req, res) => {
+    checkinMarkNoticeSeen(checkinDataDir());
+    res.json({ noticeSeen: true });
   });
 
   // ============================================================
@@ -1617,7 +1630,11 @@ if (isDirectRun) {
   const app = createApp();
   // Auto-initialize DB schema in sidecar mode before starting
   ensureDatabase().then(() => {
-    maybeCheckin();
+    // isSetup tells a fresh install from an update. If it cannot be read, skip the
+    // check-in this start rather than guess "new install" and turn it on.
+    prisma.systemConfig.findFirst()
+      .then((cfg) => maybeCheckin({ isSetup: !!cfg?.isSetup }))
+      .catch((err) => console.warn(`[check-in] skipped: ${err.message}`));
     app.listen(PORT, () => {
       console.log(`[Skima Server] API running on http://localhost:${PORT}`);
     });
