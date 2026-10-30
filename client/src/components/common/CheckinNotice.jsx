@@ -8,7 +8,7 @@ import { useCheckinStatus } from '../../hooks/useCheckinStatus';
 
 /**
  * One line, once per installation, saying whether the anonymous check-in is on.
- * A new install has it on; nobody should find that out later. A line, not a dialog:
+ * New installs and updated copies have it on; nobody should find that out later. A line, not a dialog:
  * nothing has to be answered first. Marked seen when shown, not when answered.
  */
 export default function CheckinNotice() {
