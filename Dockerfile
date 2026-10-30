@@ -40,6 +40,16 @@ RUN mkdir -p /app/data
 
 ENV PORT=3001
 ENV DATABASE_URL=file:/app/data/skills.db
+ENV DOCKER=true
+
+# Anonymous check-in. Empty by default: a local or fork build sends nothing.
+# The official image gets them as build args from CI secrets (docker.yml).
+ARG CHECKIN_URL=""
+ARG CHECKIN_WEBSITE_ID=""
+ARG SKIMA_VERSION=""
+ENV CHECKIN_URL=$CHECKIN_URL
+ENV CHECKIN_WEBSITE_ID=$CHECKIN_WEBSITE_ID
+ENV SKIMA_VERSION=$SKIMA_VERSION
 
 EXPOSE 3001
 

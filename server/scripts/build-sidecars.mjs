@@ -113,19 +113,59 @@ if (!gen.includes('Bun.embeddedFiles')) {
   console.log('WASM loader already patched.');
 }
 
-// ── 3. Compile ──
-mkdirSync(OUT_DIR, { recursive: true });
+// Validate targets before touching checkin.js: process.exit() skips `finally`.
 const requested = process.argv.slice(2).filter((t) => t !== 'all');
 const names = requested.length ? requested : Object.keys(TARGETS);
-for (const name of names) {
-  const t = TARGETS[name];
-  if (!t) { console.error(`Unknown target '${name}'. Valid: ${Object.keys(TARGETS).join(', ')}`); process.exit(1); }
-  console.log(`\n=== ${name} (${t.bun}) -> ${t.out} ===`);
-  run(`bun build --compile --target=${t.bun} src/index.js ${WASM} --outfile "${resolve(OUT_DIR, t.out)}"`);
-  if (t.wrapper) {
-    const wrapperPath = resolve(OUT_DIR, t.wrapper);
-    writeFileSync(wrapperPath, LINUX_WRAPPER, { mode: 0o755 });
-    console.log(`wrapper -> ${t.wrapper}`);
+const unknown = names.filter((n) => !TARGETS[n]);
+if (unknown.length) {
+  console.error(`Unknown target(s) ${unknown.join(', ')}. Valid: ${Object.keys(TARGETS).join(', ')}`);
+  process.exit(1);
+}
+
+// ── 2b. Inject build-time constants into checkin.js ──
+// CHECKIN_URL and CHECKIN_WEBSITE_ID come from env (GitHub secrets in CI).
+// SKIMA_VERSION is always read from package.json at build time.
+const CHECKIN_SRC = resolve(SERVER_DIR, 'src/checkin.js');
+const originalCheckinSrc = readFileSync(CHECKIN_SRC, 'utf8');
+let checkinSrc = originalCheckinSrc;
+const pkgVersion = JSON.parse(readFileSync(resolve(SERVER_DIR, 'package.json'), 'utf8')).version;
+
+const injections = [
+  { sentinel: '__CHECKIN_URL__',        value: process.env.CHECKIN_URL || '' },
+  { sentinel: '__CHECKIN_WEBSITE_ID__', value: process.env.CHECKIN_WEBSITE_ID || '' },
+  { sentinel: '__SKIMA_VERSION__',      value: pkgVersion },
+];
+let injected = false;
+for (const { sentinel, value } of injections) {
+  if (value && checkinSrc.includes(`'${sentinel}'`)) {
+    checkinSrc = checkinSrc.replace(`'${sentinel}'`, `'${value}'`);
+    console.log(`Injected ${sentinel} = ${sentinel.includes('URL') || sentinel.includes('ID') ? '(set)' : value}`);
+    injected = true;
+  } else if (!value) {
+    console.log(`${sentinel}: not set (env empty), sentinel stays — check-in disabled in this build.`);
+  }
+}
+if (injected) writeFileSync(CHECKIN_SRC, checkinSrc);
+
+// ── 3. Compile ──
+mkdirSync(OUT_DIR, { recursive: true });
+try {
+  for (const name of names) {
+    const t = TARGETS[name];
+    console.log(`\n=== ${name} (${t.bun}) -> ${t.out} ===`);
+    run(`bun build --compile --target=${t.bun} src/index.js ${WASM} --outfile "${resolve(OUT_DIR, t.out)}"`);
+    if (t.wrapper) {
+      const wrapperPath = resolve(OUT_DIR, t.wrapper);
+      writeFileSync(wrapperPath, LINUX_WRAPPER, { mode: 0o755 });
+      console.log(`wrapper -> ${t.wrapper}`);
+    }
+  }
+} finally {
+  // ── 4. Restore checkin.js to its source form ──
+  // Always restore, even on build failure, so injected values never leak into a commit.
+  if (injected) {
+    writeFileSync(CHECKIN_SRC, originalCheckinSrc);
+    console.log('Restored checkin.js to source form (sentinels intact).');
   }
 }
 console.log('\nDone. Binaries in', OUT_DIR);

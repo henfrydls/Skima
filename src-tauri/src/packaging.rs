@@ -1,4 +1,4 @@
-/// Install-source detection for the anonymous check-in (H0).
+/// Install-source detection for the anonymous check-in.
 ///
 /// Maps how Skima was installed to a short string the server sends in the
 /// check-in payload. The Rust side detects the source because it has access

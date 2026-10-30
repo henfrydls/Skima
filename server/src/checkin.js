@@ -7,6 +7,7 @@ import { createRequire } from 'module';
 // In development, env var fallback; empty = disabled. Neither value appears in source.
 const BUILTIN_CHECKIN_URL = '__CHECKIN_URL__';
 const BUILTIN_WEBSITE_ID = '__CHECKIN_WEBSITE_ID__';
+const BUILTIN_VERSION = '__SKIMA_VERSION__';
 const ID_FILE = '.skima-instance-id';
 const DATE_FILE = '.skima-checkin-date';
 const OFF_FILE = '.skima-checkin-off';
@@ -23,8 +24,8 @@ export function getWebsiteId() {
 
 // The one gate: SKIMA_DISABLE_CHECKIN set to anything (including empty) means no
 // check-in, no endpoint, nothing sent. Every CI job that starts the binary sets it,
-// and a guardian step fails the job if it does not arrive. Lesson: four CI paths
-// wrote to production in Daylo because each had its own check; one gate prevents that.
+// and its smoke test fails if the gate does not hold. One gate, not a check per CI
+// path, so a new path cannot forget its own and write to production.
 export function isDisabled() {
   return process.env.SKIMA_DISABLE_CHECKIN !== undefined;
 }
@@ -106,30 +107,34 @@ export function detectSource() {
   return 'unknown';
 }
 
-function getVersion() {
+export function getVersion() {
+  if (BUILTIN_VERSION !== '__SKIMA_' + 'VERSION__') return BUILTIN_VERSION;
+  if (process.env.SKIMA_VERSION) return process.env.SKIMA_VERSION;
   try {
     const require = createRequire(import.meta.url);
-    return require('../../package.json').version;
+    return require('../package.json').version;
   } catch {
     return 'unknown';
   }
 }
 
 // The data fields: what the check-in carries about this copy. Nothing else.
+// Key names are shared with other apps on the same receiver so one set of
+// queries reads all of them: keep id/version/os/source/date/last stable.
 export function buildData(instanceId, source, { last = false } = {}) {
   const d = {
     id: instanceId,
-    v: getVersion(),
+    version: getVersion(),
     os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source,
-    d: todayDate(),
+    date: todayDate(),
   };
   if (last) d.last = true;
   return d;
 }
 
-// The Umami event envelope. Same structure Daylo uses: the panel reads `data` for the
+// The Umami event envelope: the panel reads `data` for the
 // fields, `payload.id` as the distinct session identifier (so Umami can count devices),
 // and `name` as the event type.
 export function buildEnvelope(data, websiteId) {
@@ -173,7 +178,7 @@ export function getCheckinFields() {
   const dir = dataDir();
   return {
     id: readId(dir),
-    v: getVersion(),
+    version: getVersion(),
     os: process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform,
     arch: process.arch === 'x64' ? 'x64' : process.arch,
     source: detectSource(),
@@ -223,7 +228,7 @@ export async function maybeCheckin() {
 }
 
 // Turn off the check-in. Deletes the ID, sends a last message, then returns.
-// The order follows Daylo: delete first, send goodbye with the old ID.
+// Delete first, so a failed send cannot leave the ID behind; the goodbye carries the old ID.
 export async function handleCheckinOff() {
   const dir = dataDir();
   const id = readId(dir);
