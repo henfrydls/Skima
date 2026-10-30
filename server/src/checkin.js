@@ -16,7 +16,7 @@ const NOTICE_FILE = '.skima-checkin-notice-seen';
 // A copy that existed before the check-in did was installed under the promise that it
 // sent nothing. true: such a copy starts with the check-in off and is told it can turn
 // it on. false: it starts on, like a new install. New installs always start on.
-export const UPGRADES_START_OFF = true;
+export const UPGRADES_START_OFF = false;
 
 export function getCheckinUrl() {
   if (BUILTIN_CHECKIN_URL !== '__CHECKIN' + '_URL__') return BUILTIN_CHECKIN_URL;

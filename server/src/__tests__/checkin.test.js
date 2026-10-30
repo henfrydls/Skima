@@ -674,9 +674,19 @@ describe('copies that predate the check-in', () => {
     expect(up(TEST_DIR, true)).toBe(false);
   });
 
-  it('defaults to starting updates off', async () => {
+  it('defaults to starting updates on', async () => {
     const { UPGRADES_START_OFF } = await import('../checkin.js');
-    expect(UPGRADES_START_OFF).toBe(true);
+    expect(UPGRADES_START_OFF).toBe(false);
+  });
+
+  it('by default an update sends, and still has the one-time notice to see', async () => {
+    const { maybeCheckin: mc, noticeSeen } = await import('../checkin.js');
+    await mc({ isSetup: true });
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(fetch).toHaveBeenCalledOnce();
+    // The notice is now the only thing that tells this user something is sent.
+    expect(noticeSeen(TEST_DIR)).toBe(false);
   });
 
   it('with updates starting off: an update is turned off, gets no ID and sends nothing', async () => {
@@ -791,6 +801,25 @@ describe('checkin-on and checkin-notice-seen endpoints', () => {
     expect(res.status).toBe(200);
     expect(isOff(TEST_DIR)).toBe(false);
     expect(mockFetch).not.toHaveBeenCalled();
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('an update started with the defaults reports on and notice unseen, so the notice shows', async () => {
+    const { request, app, prisma } = await appWithPassword(null);
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    vi.useFakeTimers();
+    try {
+      await mc({ isSetup: true });
+      await vi.advanceTimersByTimeAsync(10_000);
+    } finally {
+      vi.useRealTimers();
+    }
+    const status = (await request(app).get('/api/checkin-status')).body;
+    expect(status.off).toBe(false);
+    expect(status.noticeSeen).toBe(false);
     await prisma.systemConfig.deleteMany();
   });
 
