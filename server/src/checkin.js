@@ -22,6 +22,12 @@ export function getWebsiteId() {
   return process.env.CHECKIN_WEBSITE_ID || '';
 }
 
+// Sending needs both; with only one, sendCheckin refuses. Every caller asks here so
+// the status endpoint cannot report "configured" for a build that would send nothing.
+export function isConfigured() {
+  return !!getCheckinUrl() && !!getWebsiteId();
+}
+
 // The one gate: SKIMA_DISABLE_CHECKIN set to anything (including empty) means no
 // check-in, no endpoint, nothing sent. Every CI job that starts the binary sets it,
 // and its smoke test fails if the gate does not hold. One gate, not a check per CI
@@ -174,7 +180,7 @@ export async function sendCheckin(data, url, websiteId) {
 // The check-in fields as the UI would show them (for "What gets sent?" in About).
 export function getCheckinFields() {
   if (isDisabled()) return null;
-  if (!getCheckinUrl()) return null;
+  if (!isConfigured()) return null;
   const dir = dataDir();
   return {
     id: readId(dir),
@@ -188,9 +194,8 @@ export function getCheckinFields() {
 export async function maybeCheckin() {
   if (isDisabled()) return;
   if (process.env.DEMO_MODE === 'true') return;
+  if (!isConfigured()) return;
   const url = getCheckinUrl();
-  if (!url) return;
-  if (!getWebsiteId()) return;
 
   const checkinNowId = parseCliArg('--checkin-now');
   const dir = dataDir();
@@ -236,8 +241,8 @@ export async function handleCheckinOff() {
   markOff(dir);
   if (!id) return { sent: false };
 
+  if (isDisabled() || !isConfigured()) return { sent: false };
   const url = getCheckinUrl();
-  if (!url || isDisabled() || !getWebsiteId()) return { sent: false };
 
   const source = detectSource();
   const data = buildData(id, source, { last: true });
@@ -248,5 +253,3 @@ export async function handleCheckinOff() {
     return { sent: false };
   }
 }
-
-export const checkinUrl = getCheckinUrl();

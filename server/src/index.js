@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
-import { maybeCheckin, checkinUrl, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion } from './checkin.js';
+import { maybeCheckin, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -294,7 +294,7 @@ export function createApp() {
   // GET /api/checkin-status - CI smoke test: is a CHECKIN_URL baked into this build?
   app.get('/api/checkin-status', (req, res) => {
     res.json({
-      configured: !!checkinUrl,
+      configured: checkinConfigured(),
       disabled: checkinDisabled(),
       off: checkinIsOff(checkinDataDir()),
       version: checkinVersion(),

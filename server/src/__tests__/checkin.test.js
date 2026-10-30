@@ -23,6 +23,7 @@ import {
   dataDir,
   handleCheckinOff,
   getVersion,
+  isConfigured,
 } from '../checkin.js';
 
 const TEST_DIR = join(tmpdir(), `skima-checkin-test-${process.pid}`);
@@ -371,6 +372,21 @@ describe('getWebsiteId', () => {
 // getCheckinFields
 // ============================================================
 
+describe('isConfigured', () => {
+  it('needs both the URL and the website ID', () => {
+    vi.stubEnv('CHECKIN_URL', '');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', '');
+    expect(isConfigured()).toBe(false);
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    expect(isConfigured()).toBe(false);
+    vi.stubEnv('CHECKIN_URL', '');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    expect(isConfigured()).toBe(false);
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    expect(isConfigured()).toBe(true);
+  });
+});
+
 describe('getCheckinFields', () => {
   it('returns null when disabled', () => {
     vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1');
@@ -382,8 +398,15 @@ describe('getCheckinFields', () => {
     expect(getCheckinFields()).toBeNull();
   });
 
+  it('returns null with a URL but no website ID', () => {
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', '');
+    expect(getCheckinFields()).toBeNull();
+  });
+
   it('returns fields when configured', () => {
     vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
     const fields = getCheckinFields();
     expect(fields).not.toBeNull();
     expect(fields.version).toBe(getVersion());
@@ -496,6 +519,17 @@ describe('checkin-status endpoint', () => {
     expect(res.body).toHaveProperty('off');
     expect(res.body).toHaveProperty('version');
     expect(res.body.version).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it('reports configured:false with a URL but no website ID, true with both', async () => {
+    const { default: request } = await import('supertest');
+    const { createApp } = await import('../index.js');
+    const app = createApp();
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', '');
+    expect((await request(app).get('/api/checkin-status')).body.configured).toBe(false);
+    vi.stubEnv('CHECKIN_WEBSITE_ID', '00000000-0000-0000-0000-000000000000');
+    expect((await request(app).get('/api/checkin-status')).body.configured).toBe(true);
   });
 });
 
