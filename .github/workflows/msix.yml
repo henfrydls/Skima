@@ -137,7 +137,13 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $version = (Get-Content server\package.json | ConvertFrom-Json).version
-          $packageVersion = "$version.0"
+          # MSIX versions are four numbers only: an RC (1.6.0-rc.1) packs as 1.6.0.0.
+          # Never for the Store, which would then refuse the real 1.6.0 as no newer.
+          $core = ($version -split '-', 2)[0]
+          if ($core -ne $version -and $env:STORE_BUILD -eq 'true') {
+            throw "A Store build needs a release version, not $version"
+          }
+          $packageVersion = "$core.0"
           Write-Host "Packaging Skima $version as $packageVersion (store build: $env:STORE_BUILD)"
 
           New-Item -ItemType Directory -Force -Path msix\Assets | Out-Null
