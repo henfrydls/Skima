@@ -678,6 +678,37 @@ describe('checkin-on and checkin-notice-seen endpoints', () => {
     return { request, app: createApp(), prisma };
   }
 
+  it('an update turned on stays on: start (off) → checkin-on → start sends the ID shown in "What gets sent"', async () => {
+    const { request, app, prisma } = await appWithPassword(null);
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
+    vi.stubGlobal('fetch', mockFetch);
+    const { maybeCheckin: mc } = await import('../checkin.js');
+
+    // First start of the new version on a copy set up before: it starts off.
+    await mc({ isSetup: true, upgradesStartOff: true });
+    expect(isOff(TEST_DIR)).toBe(true);
+
+    expect((await request(app).post('/api/checkin-on')).status).toBe(200);
+    expect(isOff(TEST_DIR)).toBe(false);
+    const shown = (await request(app).get('/api/checkin-fields')).body.fields.id;
+    expect(shown).toMatch(/^[0-9a-f-]{36}$/);
+
+    // Next start: it must not be mistaken for an update again.
+    vi.useFakeTimers();
+    try {
+      await mc({ isSetup: true, upgradesStartOff: true });
+      await vi.advanceTimersByTimeAsync(10_000);
+    } finally {
+      vi.useRealTimers();
+    }
+    expect(isOff(TEST_DIR)).toBe(false);
+    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(JSON.parse(mockFetch.mock.calls[0][1].body).payload.data.id).toBe(shown);
+    await prisma.systemConfig.deleteMany();
+  });
+
   it('checkin-on requires auth when a password is set', async () => {
     const { request, app, prisma } = await appWithPassword('test');
     markOff(TEST_DIR);

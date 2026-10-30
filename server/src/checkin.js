@@ -262,6 +262,15 @@ export async function maybeCheckin({ isSetup = false, upgradesStartOff = UPGRADE
   }, 5_000);
 }
 
+// Turn the check-in on. The ID is made now, not at the next start: it is the trace that
+// keeps the next start from taking this copy for an update and turning it off again, and
+// it lets "What gets sent" show the real number at once. Nothing is sent until then.
+export function handleCheckinOn() {
+  const dir = dataDir();
+  clearOff(dir);
+  return { off: false, id: getOrCreateId(dir) };
+}
+
 // Turn off the check-in. Deletes the ID, sends a last message, then returns.
 // Delete first, so a failed send cannot leave the ID behind; the goodbye carries the old ID.
 export async function handleCheckinOff() {

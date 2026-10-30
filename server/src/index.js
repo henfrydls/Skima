@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
-import { maybeCheckin, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, clearOff as checkinClearOff, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
+import { maybeCheckin, handleCheckinOn, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -317,8 +317,7 @@ export function createApp() {
 
   // POST /api/checkin-on - Turn it back on. Nothing is sent now; the next start sends.
   app.post('/api/checkin-on', authMiddleware, (req, res) => {
-    checkinClearOff(checkinDataDir());
-    res.json({ off: false });
+    res.json({ off: handleCheckinOn().off });
   });
 
   // POST /api/checkin-notice-seen - The one-time notice was shown to this installation.
