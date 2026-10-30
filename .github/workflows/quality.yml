@@ -63,6 +63,28 @@ jobs:
         run: npm run build
         working-directory: ./client
 
+      # The Windows-only Rust (cfg(target_os = "windows")) is compiled nowhere
+      # else before a tag: Linux and macOS skip it, and release.yml is the first
+      # Windows build. Needs client/dist (above) and a placeholder sidecar for
+      # tauri-build's externalBin check.
+      - name: Install Rust (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Rust tests (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType File -Force src-tauri/binaries/skima-server-x86_64-pc-windows-msvc.exe | Out-Null
+          cd src-tauri
+          cargo test --lib
+
       # Upload Coverage Artifacts (only from Ubuntu to avoid duplicates)
       - name: Upload Client Coverage
         if: always() && matrix.os == 'ubuntu-latest'

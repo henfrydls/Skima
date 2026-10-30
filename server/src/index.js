@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
+import { maybeCheckin, checkinUrl, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -89,11 +90,14 @@ export function createApp() {
     try {
       const config = await prisma.systemConfig.findFirst();
 
+      const storeInstall = process.argv.includes('--store-install');
+
       if (!config) {
         return res.json({
           isSetup: false,
           isDemo: false,
           isOnlineDemo: process.env.DEMO_MODE === 'true',
+          isStoreInstall: storeInstall,
           companyName: null,
           adminName: null,
           hasPassword: false
@@ -107,6 +111,7 @@ export function createApp() {
         isSetup: config.isSetup,
         isDemo: demoCount > 0,
         isOnlineDemo: process.env.DEMO_MODE === 'true',
+        isStoreInstall: storeInstall,
         companyName: config.companyName,
         adminName: config.adminName,
         hasPassword: !!config.adminPassword
@@ -284,6 +289,28 @@ export function createApp() {
       console.error('Error verifying password:', error);
       res.status(500).json({ error: 'Failed to verify password', valid: false });
     }
+  });
+
+  // GET /api/checkin-status - CI smoke test: is a CHECKIN_URL baked into this build?
+  app.get('/api/checkin-status', (req, res) => {
+    res.json({
+      configured: !!checkinUrl,
+      disabled: checkinDisabled(),
+      off: checkinIsOff(checkinDataDir()),
+    });
+  });
+
+  // GET /api/checkin-fields - What this build would send (for "What gets sent?" in About)
+  app.get('/api/checkin-fields', authMiddleware, (req, res) => {
+    const fields = getCheckinFields();
+    if (!fields) return res.json({ available: false });
+    res.json({ available: true, fields });
+  });
+
+  // POST /api/checkin-off - Turn off the check-in: delete ID, send goodbye
+  app.post('/api/checkin-off', authMiddleware, async (req, res) => {
+    const result = await handleCheckinOff();
+    res.json(result);
   });
 
   // ============================================================
@@ -1589,6 +1616,7 @@ if (isDirectRun) {
   const app = createApp();
   // Auto-initialize DB schema in sidecar mode before starting
   ensureDatabase().then(() => {
+    maybeCheckin();
     app.listen(PORT, () => {
       console.log(`[Skima Server] API running on http://localhost:${PORT}`);
     });
