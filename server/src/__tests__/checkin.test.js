@@ -22,13 +22,19 @@ import {
   clearOff,
   dataDir,
   handleCheckinOff,
+  getVersion,
 } from '../checkin.js';
 
 const TEST_DIR = join(tmpdir(), `skima-checkin-test-${process.pid}`);
 const EXPECTED_OS = process.platform === 'win32' ? 'windows' : process.platform === 'darwin' ? 'macos' : process.platform;
 
+// CI runs the suite with SKIMA_DISABLE_CHECKIN=1. Tests here exercise the open
+// gate, so each starts without it and tests that need it closed stub it.
+const ciGate = process.env.SKIMA_DISABLE_CHECKIN;
+
 beforeEach(() => {
   mkdirSync(TEST_DIR, { recursive: true });
+  delete process.env.SKIMA_DISABLE_CHECKIN;
 });
 
 afterEach(() => {
@@ -36,6 +42,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
+  if (ciGate === undefined) delete process.env.SKIMA_DISABLE_CHECKIN;
+  else process.env.SKIMA_DISABLE_CHECKIN = ciGate;
 });
 
 // ============================================================
@@ -116,15 +124,6 @@ describe('isOff / markOff / clearOff', () => {
 });
 
 describe('handleCheckinOff persists off state', () => {
-  it('marks off even when no ID exists', async () => {
-    vi.stubEnv('CHECKIN_URL', '');
-    const { handleCheckinOff: hco } = await import('../checkin.js');
-    // Can't easily test with custom dir through handleCheckinOff (uses dataDir()),
-    // so we test the building blocks directly.
-    markOff(TEST_DIR);
-    expect(isOff(TEST_DIR)).toBe(true);
-  });
-
   it('off → restart → no new ID created', () => {
     markOff(TEST_DIR);
     expect(isOff(TEST_DIR)).toBe(true);
@@ -386,6 +385,20 @@ describe('getCheckinFields', () => {
 });
 
 // ============================================================
+// getVersion
+// ============================================================
+
+describe('getVersion', () => {
+  it('returns a semver string in dev (reads package.json)', () => {
+    expect(getVersion()).toMatch(/^\d+\.\d+\.\d+/);
+  });
+
+  it('does not return "unknown" in dev', () => {
+    expect(getVersion()).not.toBe('unknown');
+  });
+});
+
+// ============================================================
 // maybeCheckin paths (Fix #5)
 // ============================================================
 
@@ -464,7 +477,7 @@ describe('maybeCheckin', () => {
 // ============================================================
 
 describe('checkin-status endpoint', () => {
-  it('GET /api/checkin-status returns configured, disabled, and off state', async () => {
+  it('GET /api/checkin-status returns configured, disabled, off, and version', async () => {
     const { default: request } = await import('supertest');
     const { createApp } = await import('../index.js');
     const app = createApp();
@@ -473,6 +486,8 @@ describe('checkin-status endpoint', () => {
     expect(res.body).toHaveProperty('configured');
     expect(res.body).toHaveProperty('disabled');
     expect(res.body).toHaveProperty('off');
+    expect(res.body).toHaveProperty('version');
+    expect(res.body.version).toMatch(/^\d+\.\d+\.\d+/);
   });
 });
 
@@ -531,13 +546,16 @@ describe('checkin-off endpoint (auth required)', () => {
       update: { adminPassword: hashed },
       create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: hashed, isSetup: true },
     });
+    // db.js already bound Prisma at import; this only redirects dataDir().
+    vi.stubEnv('DATABASE_URL', `file:${join(TEST_DIR, 'db.sqlite')}`);
     const app = createApp();
     const res = await request(app).post('/api/checkin-off');
     expect(res.status).toBe(401);
+    expect(isOff(TEST_DIR)).toBe(false);
     await prisma.systemConfig.deleteMany();
   });
 
-  it('POST /api/checkin-off returns sent status when no password', async () => {
+  it('POST /api/checkin-off persists the off state when no password', async () => {
     const { default: request } = await import('supertest');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
@@ -548,10 +566,14 @@ describe('checkin-off endpoint (auth required)', () => {
       update: { adminPassword: null },
       create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: null, isSetup: true },
     });
+    vi.stubEnv('DATABASE_URL', `file:${join(TEST_DIR, 'db.sqlite')}`);
+    getOrCreateId(TEST_DIR);
     const app = createApp();
     const res = await request(app).post('/api/checkin-off');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('sent');
+    expect(isOff(TEST_DIR)).toBe(true);
+    expect(readId(TEST_DIR)).toBeNull();
     await prisma.systemConfig.deleteMany();
   });
 });
