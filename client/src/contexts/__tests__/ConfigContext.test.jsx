@@ -103,6 +103,22 @@ describe('ConfigContext', () => {
     expect(screen.getByTestId('isSetup')).toHaveTextContent('not-setup');
   });
 
+  function StoreProbe() {
+    const { isLoading, isStoreInstall } = useConfig();
+    return <div data-testid="store">{isLoading ? 'loading' : String(isStoreInstall)}</div>;
+  }
+
+  it('exposes isStoreInstall from the server, false when absent', async () => {
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ isSetup: true, isStoreInstall: true }) });
+    const { unmount } = render(<ConfigProvider><StoreProbe /></ConfigProvider>);
+    await waitFor(() => expect(screen.getByTestId('store')).toHaveTextContent('true'));
+    unmount();
+
+    fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ isSetup: true }) });
+    render(<ConfigProvider><StoreProbe /></ConfigProvider>);
+    await waitFor(() => expect(screen.getByTestId('store')).toHaveTextContent('false'));
+  });
+
   it('isSetup true when server says setup', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,

@@ -6,6 +6,7 @@ use tauri_plugin_shell::ShellExt;
 use tauri_plugin_shell::process::CommandChild;
 
 mod packaging;
+mod webview2;
 
 /// Holds the sidecar child process so we can kill it on exit
 struct SidecarState(Mutex<Option<CommandChild>>);
@@ -68,6 +69,13 @@ fn get_db_path(app: &tauri::App) -> String {
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Store copy only: the NSIS installer installs WebView2, and a false positive there
+    // would stop working installs from opening. Before the builder: no window exists yet.
+    #[cfg(target_os = "windows")]
+    if packaging::is_msix() && webview2::is_missing() {
+        webview2::explain_and_exit();
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_updater::Builder::new().build())

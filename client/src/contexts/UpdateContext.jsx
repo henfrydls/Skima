@@ -113,7 +113,9 @@ function isPlatformNotInManifestError(err) {
 export function UpdateProvider({ children }) {
   // Setup wizard runs on first launch — we suppress auto-check until it's done
   // so the "Update failed" / "Available" modal doesn't overlay the welcome screen.
-  const { isSetup } = useConfig();
+  // A Microsoft Store copy is updated by the Store; the Tauri updater would offer
+  // an installer the MSIX sandbox cannot apply.
+  const { isSetup, isStoreInstall } = useConfig();
 
   const [state, setState] = useState('idle');
   const [updateInfo, setUpdateInfo] = useState(null);
@@ -131,6 +133,7 @@ export function UpdateProvider({ children }) {
       if (!silent) toast.error('Auto-updates are only available in the desktop app');
       return;
     }
+    if (isStoreInstall) return;
     setState('checking');
     setError(null);
     try {
@@ -182,7 +185,7 @@ export function UpdateProvider({ children }) {
       setState('error');
       if (!silent) toast.error('Could not check for updates');
     }
-  }, []);
+  }, [isStoreInstall]);
 
   /**
    * Download + install + relaunch. Only valid in 'available' or 'error' state.
@@ -271,11 +274,12 @@ export function UpdateProvider({ children }) {
     if (import.meta.env.MODE === 'development') return;
     if (!getAutoCheckPref()) return;
     if (!isSetup) return;
+    if (isStoreInstall) return;
     const t = setTimeout(() => {
       checkNow({ silent: true });
     }, AUTO_CHECK_DELAY_MS);
     return () => clearTimeout(t);
-  }, [checkNow, isSetup]);
+  }, [checkNow, isSetup, isStoreInstall]);
 
   const showModal = state === 'available' || state === 'preparing' || state === 'downloading' || state === 'installing' || state === 'error' || state === 'manual-only';
 
@@ -285,6 +289,7 @@ export function UpdateProvider({ children }) {
     progress,
     error,
     isTauri: isTauri(),
+    isStoreInstall,
     checkNow,
     installNow,
     remindLater,
