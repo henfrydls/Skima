@@ -82,6 +82,16 @@ describe('CheckinSettings', () => {
     expect(screen.getByText(/sends one last message/i)).toBeInTheDocument();
   });
 
+  it('"What gets sent" ends with the privacy policy, opened outside the app', async () => {
+    mockServer();
+    render(<CheckinSettings />);
+    fireEvent.click(await screen.findByTestId('checkin-what-gets-sent'));
+    const link = await screen.findByRole('link', { name: /privacy policy/i });
+    expect(link).toHaveAttribute('href', 'https://github.com/henfrydls/Skima/blob/main/PRIVACY.md');
+    expect(link).toHaveAttribute('target', '_blank');
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+  });
+
   it('marks the number as an example while on but before the first check-in', async () => {
     mockServer({ id: null });
     render(<CheckinSettings />);
