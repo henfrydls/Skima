@@ -5,7 +5,7 @@ import bcrypt from 'bcryptjs';
 import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
-import { maybeCheckin, checkinUrl, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled } from './checkin.js';
+import { maybeCheckin, checkinUrl, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir } from './checkin.js';
 import authRoutes from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
 import demoRoutes from './routes/demo.js';
@@ -293,18 +293,22 @@ export function createApp() {
 
   // GET /api/checkin-status - CI smoke test: is a CHECKIN_URL baked into this build?
   app.get('/api/checkin-status', (req, res) => {
-    res.json({ configured: !!checkinUrl, disabled: checkinDisabled() });
+    res.json({
+      configured: !!checkinUrl,
+      disabled: checkinDisabled(),
+      off: checkinIsOff(checkinDataDir()),
+    });
   });
 
   // GET /api/checkin-fields - What this build would send (for "What gets sent?" in About)
-  app.get('/api/checkin-fields', (req, res) => {
+  app.get('/api/checkin-fields', authMiddleware, (req, res) => {
     const fields = getCheckinFields();
     if (!fields) return res.json({ available: false });
     res.json({ available: true, fields });
   });
 
   // POST /api/checkin-off - Turn off the check-in: delete ID, send goodbye
-  app.post('/api/checkin-off', async (req, res) => {
+  app.post('/api/checkin-off', authMiddleware, async (req, res) => {
     const result = await handleCheckinOff();
     res.json(result);
   });

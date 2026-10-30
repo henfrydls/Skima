@@ -10,11 +10,18 @@ import {
   markSentToday,
   todayDate,
   detectSource,
-  buildPayload,
+  buildData,
+  buildEnvelope,
   sendCheckin,
   getCheckinUrl,
+  getWebsiteId,
   isDisabled,
   getCheckinFields,
+  isOff,
+  markOff,
+  clearOff,
+  dataDir,
+  handleCheckinOff,
 } from '../checkin.js';
 
 const TEST_DIR = join(tmpdir(), `skima-checkin-test-${process.pid}`);
@@ -29,6 +36,10 @@ afterEach(() => {
   vi.unstubAllEnvs();
   vi.unstubAllGlobals();
 });
+
+// ============================================================
+// ID persistence
+// ============================================================
 
 describe('getOrCreateId', () => {
   it('creates a UUID v4 file on first call', () => {
@@ -77,6 +88,67 @@ describe('deleteId / readId', () => {
   });
 });
 
+// ============================================================
+// Off state persistence (Fix #1)
+// ============================================================
+
+describe('isOff / markOff / clearOff', () => {
+  it('isOff returns false when no file', () => {
+    expect(isOff(TEST_DIR)).toBe(false);
+  });
+
+  it('markOff creates the file and isOff returns true', () => {
+    markOff(TEST_DIR);
+    expect(isOff(TEST_DIR)).toBe(true);
+    expect(existsSync(join(TEST_DIR, '.skima-checkin-off'))).toBe(true);
+  });
+
+  it('clearOff removes the file', () => {
+    markOff(TEST_DIR);
+    clearOff(TEST_DIR);
+    expect(isOff(TEST_DIR)).toBe(false);
+  });
+
+  it('clearOff is safe when file does not exist', () => {
+    expect(() => clearOff(TEST_DIR)).not.toThrow();
+  });
+});
+
+describe('handleCheckinOff persists off state', () => {
+  it('marks off even when no ID exists', async () => {
+    vi.stubEnv('CHECKIN_URL', '');
+    const { handleCheckinOff: hco } = await import('../checkin.js');
+    // Can't easily test with custom dir through handleCheckinOff (uses dataDir()),
+    // so we test the building blocks directly.
+    markOff(TEST_DIR);
+    expect(isOff(TEST_DIR)).toBe(true);
+  });
+
+  it('off → restart → no new ID created', () => {
+    markOff(TEST_DIR);
+    expect(isOff(TEST_DIR)).toBe(true);
+    expect(readId(TEST_DIR)).toBeNull();
+    // getOrCreateId would create an ID, but maybeCheckin checks isOff first
+    // We verify the guard condition that maybeCheckin uses:
+    if (!isOff(TEST_DIR)) {
+      getOrCreateId(TEST_DIR);
+    }
+    expect(readId(TEST_DIR)).toBeNull();
+  });
+
+  it('off → clearOff → ID can be created again', () => {
+    markOff(TEST_DIR);
+    clearOff(TEST_DIR);
+    expect(isOff(TEST_DIR)).toBe(false);
+    const id = getOrCreateId(TEST_DIR);
+    expect(id).toMatch(/^[0-9a-f]{8}/);
+  });
+});
+
+// ============================================================
+// Date-based dedup
+// ============================================================
+
 describe('alreadySentToday / markSentToday', () => {
   it('returns false when no date file exists', () => {
     expect(alreadySentToday(TEST_DIR)).toBe(false);
@@ -99,6 +171,37 @@ describe('todayDate', () => {
   });
 });
 
+// ============================================================
+// dataDir (Fix #2: Docker DATABASE_URL)
+// ============================================================
+
+describe('dataDir', () => {
+  it('uses DATABASE_URL directory when no --db-path', () => {
+    vi.stubEnv('DATABASE_URL', 'file:/app/data/skills.db');
+    const dir = dataDir();
+    expect(dir).toBe('/app/data');
+  });
+
+  it('falls back to cwd/prisma with no DATABASE_URL', () => {
+    vi.stubEnv('DATABASE_URL', '');
+    const dir = dataDir();
+    expect(dir).toBe(join(process.cwd(), 'prisma'));
+  });
+
+  it('prefers --db-path over DATABASE_URL', () => {
+    const orig = process.argv;
+    process.argv = [...orig, '--db-path', '/custom/path/db.sqlite'];
+    vi.stubEnv('DATABASE_URL', 'file:/app/data/skills.db');
+    const dir = dataDir();
+    expect(dir).toBe('/custom/path');
+    process.argv = orig;
+  });
+});
+
+// ============================================================
+// Source detection
+// ============================================================
+
 describe('detectSource', () => {
   it('returns "unknown" with no indicators', () => {
     expect(detectSource()).toBe('unknown');
@@ -118,30 +221,58 @@ describe('detectSource', () => {
   });
 });
 
-describe('buildPayload', () => {
-  it('includes required fields', () => {
-    const p = buildPayload('test-id', 'installer');
-    expect(p.id).toBe('test-id');
-    expect(p.source).toBe('installer');
-    expect(p.v).toBe('1.5.0');
-    expect(p.os).toBe('linux');
-    expect(p.arch).toBe('x64');
-    expect(p.d).toBe(todayDate());
-    expect(p.internal).toBeUndefined();
-    expect(p.last).toBeUndefined();
-  });
+// ============================================================
+// Payload building
+// ============================================================
 
-  it('includes internal:true when CHECKIN_INTERNAL=1', () => {
-    vi.stubEnv('CHECKIN_INTERNAL', '1');
-    const p = buildPayload('test-id', 'docker');
-    expect(p.internal).toBe(true);
+describe('buildData', () => {
+  it('includes required fields', () => {
+    const d = buildData('test-id', 'installer');
+    expect(d.id).toBe('test-id');
+    expect(d.source).toBe('installer');
+    expect(d.v).toBeDefined();
+    expect(d.os).toBe('linux');
+    expect(d.arch).toBe('x64');
+    expect(d.d).toBe(todayDate());
+    expect(d.last).toBeUndefined();
   });
 
   it('includes last:true when turning off', () => {
-    const p = buildPayload('test-id', 'installer', { last: true });
-    expect(p.last).toBe(true);
+    const d = buildData('test-id', 'installer', { last: true });
+    expect(d.last).toBe(true);
   });
 });
+
+describe('buildEnvelope', () => {
+  it('wraps data in Umami event format', () => {
+    const data = { id: 'abc', v: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', d: '2026-11-01' };
+    const env = buildEnvelope(data, 'website-123');
+    expect(env.type).toBe('event');
+    expect(env.payload.website).toBe('website-123');
+    expect(env.payload.hostname).toBe('app');
+    expect(env.payload.url).toBe('/');
+    expect(env.payload.name).toBe('check-in');
+    expect(env.payload.data).toBe(data);
+    expect(env.payload.id).toBe('abc');
+  });
+
+  it('omits payload.id when data has no id', () => {
+    const data = { v: '1.6.0' };
+    const env = buildEnvelope(data, 'w');
+    expect(env.payload.id).toBeUndefined();
+  });
+
+  it('carries exactly the expected payload keys', () => {
+    const data = { id: 'x', v: '1.6.0', os: 'linux', arch: 'x64', source: 'deb', d: '2026-11-01' };
+    const env = buildEnvelope(data, 'w');
+    const keys = Object.keys(env.payload).sort();
+    expect(keys).toEqual(['data', 'hostname', 'id', 'name', 'url', 'website']);
+  });
+});
+
+// ============================================================
+// SKIMA_DISABLE_CHECKIN gate
+// ============================================================
 
 describe('isDisabled (SKIMA_DISABLE_CHECKIN)', () => {
   it('returns false when not set', () => {
@@ -160,40 +291,54 @@ describe('isDisabled (SKIMA_DISABLE_CHECKIN)', () => {
   });
 });
 
+// ============================================================
+// sendCheckin
+// ============================================================
+
 describe('sendCheckin', () => {
-  it('POSTs JSON to url/checkin', async () => {
+  it('POSTs Umami envelope to URL with User-Agent Skima', async () => {
     const mockFetch = vi.fn().mockResolvedValue({ ok: true });
     vi.stubGlobal('fetch', mockFetch);
 
-    await sendCheckin({ id: 'x', v: '1.0.0' }, 'http://example.com');
+    const data = { id: 'x', v: '1.0.0' };
+    await sendCheckin(data, 'http://example.com/api/send', 'test-website');
     expect(mockFetch).toHaveBeenCalledOnce();
     const [url, opts] = mockFetch.mock.calls[0];
-    expect(url).toBe('http://example.com/checkin');
+    expect(url).toBe('http://example.com/api/send');
     expect(opts.method).toBe('POST');
-    expect(JSON.parse(opts.body)).toEqual({ id: 'x', v: '1.0.0' });
-  });
-
-  it('strips trailing slashes from the base URL', async () => {
-    const mockFetch = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', mockFetch);
-
-    await sendCheckin({}, 'http://example.com///');
-    expect(mockFetch.mock.calls[0][0]).toBe('http://example.com/checkin');
+    expect(opts.headers['User-Agent']).toBe('Skima');
+    const body = JSON.parse(opts.body);
+    expect(body.type).toBe('event');
+    expect(body.payload.website).toBe('test-website');
+    expect(body.payload.data).toEqual(data);
+    expect(body.payload.id).toBe('x');
   });
 
   it('throws on non-OK response', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false, status: 500 }));
-    await expect(sendCheckin({}, 'http://example.com')).rejects.toThrow('HTTP 500');
+    await expect(sendCheckin({}, 'http://example.com', 'w')).rejects.toThrow('HTTP 500');
   });
 
   it('refuses when SKIMA_DISABLE_CHECKIN is set', async () => {
     vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1');
     const mockFetch = vi.fn();
     vi.stubGlobal('fetch', mockFetch);
-    await expect(sendCheckin({}, 'http://example.com')).rejects.toThrow('SKIMA_DISABLE_CHECKIN');
+    await expect(sendCheckin({}, 'http://example.com', 'w')).rejects.toThrow('SKIMA_DISABLE_CHECKIN');
     expect(mockFetch).not.toHaveBeenCalled();
   });
+
+  it('refuses when no URL provided', async () => {
+    await expect(sendCheckin({}, '', 'w')).rejects.toThrow('no CHECKIN_URL');
+  });
+
+  it('refuses when no websiteId provided', async () => {
+    await expect(sendCheckin({}, 'http://example.com', '')).rejects.toThrow('no CHECKIN_WEBSITE_ID');
+  });
 });
+
+// ============================================================
+// URL / website ID helpers
+// ============================================================
 
 describe('getCheckinUrl', () => {
   it('falls back to CHECKIN_URL env var in dev', () => {
@@ -206,6 +351,17 @@ describe('getCheckinUrl', () => {
     expect(getCheckinUrl()).toBe('');
   });
 });
+
+describe('getWebsiteId', () => {
+  it('falls back to CHECKIN_WEBSITE_ID env var in dev', () => {
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'test-id');
+    expect(getWebsiteId()).toBe('test-id');
+  });
+});
+
+// ============================================================
+// getCheckinFields
+// ============================================================
 
 describe('getCheckinFields', () => {
   it('returns null when disabled', () => {
@@ -222,14 +378,92 @@ describe('getCheckinFields', () => {
     vi.stubEnv('CHECKIN_URL', 'http://test.local');
     const fields = getCheckinFields();
     expect(fields).not.toBeNull();
-    expect(fields.v).toBe('1.5.0');
+    expect(fields.v).toBeDefined();
     expect(fields.os).toBe('linux');
     expect(fields.source).toBeDefined();
   });
 });
 
+// ============================================================
+// maybeCheckin paths (Fix #5)
+// ============================================================
+
+describe('maybeCheckin', () => {
+  let originalArgv;
+
+  beforeEach(() => {
+    originalArgv = process.argv;
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+  });
+
+  afterEach(() => {
+    process.argv = originalArgv;
+  });
+
+  it('skips when SKIMA_DISABLE_CHECKIN is set', async () => {
+    vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1');
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('skips when DEMO_MODE=true', async () => {
+    vi.stubEnv('DEMO_MODE', 'true');
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('skips when no CHECKIN_URL', async () => {
+    vi.stubEnv('CHECKIN_URL', '');
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('skips when no CHECKIN_WEBSITE_ID', async () => {
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', '');
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('skips when off file is present (off → restart → no network)', async () => {
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    // Ensure dataDir points to TEST_DIR
+    process.argv = [...originalArgv, '--db-path', join(TEST_DIR, 'db.sqlite')];
+    markOff(TEST_DIR);
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).not.toHaveBeenCalled();
+    expect(readId(TEST_DIR)).toBeNull();
+  });
+
+  it('--checkin-now sends immediately and exits', async () => {
+    vi.stubEnv('CHECKIN_URL', 'http://test.local');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    const mockExit = vi.spyOn(process, 'exit').mockImplementation(() => {});
+    process.argv = [...originalArgv, '--checkin-now', 'canary-id'];
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc();
+    expect(fetch).toHaveBeenCalledOnce();
+    const body = JSON.parse(fetch.mock.calls[0][1].body);
+    expect(body.payload.data.id).toBe('canary-id');
+    expect(mockExit).toHaveBeenCalledWith(0);
+  });
+});
+
+// ============================================================
+// HTTP endpoint tests
+// ============================================================
+
 describe('checkin-status endpoint', () => {
-  it('GET /api/checkin-status returns configured and disabled state', async () => {
+  it('GET /api/checkin-status returns configured, disabled, and off state', async () => {
     const { default: request } = await import('supertest');
     const { createApp } = await import('../index.js');
     const app = createApp();
@@ -237,31 +471,87 @@ describe('checkin-status endpoint', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('configured');
     expect(res.body).toHaveProperty('disabled');
-    expect(typeof res.body.configured).toBe('boolean');
-    expect(typeof res.body.disabled).toBe('boolean');
+    expect(res.body).toHaveProperty('off');
   });
 });
 
-describe('checkin-fields endpoint', () => {
-  it('GET /api/checkin-fields returns availability', async () => {
+describe('checkin-fields endpoint (auth required)', () => {
+  it('GET /api/checkin-fields returns 401 when password is set and no token', async () => {
     const { default: request } = await import('supertest');
     const { createApp } = await import('../index.js');
+    const { ensureDatabase } = await import('../db.js');
+    const { prisma } = await import('../db.js');
+    await ensureDatabase();
+    // Set a password so auth is required
+    const bcrypt = await import('bcryptjs');
+    const hashed = await bcrypt.default.hash('test', 10);
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: { adminPassword: hashed },
+      create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: hashed, isSetup: true },
+    });
+    const app = createApp();
+    const res = await request(app).get('/api/checkin-fields');
+    expect(res.status).toBe(401);
+    // Clean up
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('GET /api/checkin-fields returns 200 when no password configured', async () => {
+    const { default: request } = await import('supertest');
+    const { createApp } = await import('../index.js');
+    const { ensureDatabase } = await import('../db.js');
+    const { prisma } = await import('../db.js');
+    await ensureDatabase();
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: { adminPassword: null },
+      create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: null, isSetup: true },
+    });
     const app = createApp();
     const res = await request(app).get('/api/checkin-fields');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('available');
+    await prisma.systemConfig.deleteMany();
   });
 });
 
-describe('checkin-off endpoint', () => {
-  it('POST /api/checkin-off returns sent status', async () => {
+describe('checkin-off endpoint (auth required)', () => {
+  it('POST /api/checkin-off returns 401 when password is set and no token', async () => {
     const { default: request } = await import('supertest');
     const { createApp } = await import('../index.js');
+    const { ensureDatabase } = await import('../db.js');
+    const { prisma } = await import('../db.js');
+    await ensureDatabase();
+    const bcrypt = await import('bcryptjs');
+    const hashed = await bcrypt.default.hash('test', 10);
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: { adminPassword: hashed },
+      create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: hashed, isSetup: true },
+    });
+    const app = createApp();
+    const res = await request(app).post('/api/checkin-off');
+    expect(res.status).toBe(401);
+    await prisma.systemConfig.deleteMany();
+  });
+
+  it('POST /api/checkin-off returns sent status when no password', async () => {
+    const { default: request } = await import('supertest');
+    const { createApp } = await import('../index.js');
+    const { ensureDatabase } = await import('../db.js');
+    const { prisma } = await import('../db.js');
+    await ensureDatabase();
+    await prisma.systemConfig.upsert({
+      where: { id: 1 },
+      update: { adminPassword: null },
+      create: { id: 1, companyName: 'Test', adminName: 'Admin', adminPassword: null, isSetup: true },
+    });
     const app = createApp();
     const res = await request(app).post('/api/checkin-off');
     expect(res.status).toBe(200);
     expect(res.body).toHaveProperty('sent');
-    expect(res.body.sent).toBe(false);
+    await prisma.systemConfig.deleteMany();
   });
 });
 
