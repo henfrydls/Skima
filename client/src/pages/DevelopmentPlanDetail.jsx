@@ -7,6 +7,7 @@ import { GoalAccordion } from '../components/development';
 import { API_BASE } from '../lib/apiBase';
 import { PLAN_STATUS_BADGES } from '../lib/developmentConstants';
 import { formatDateOnly } from '../lib/dateOnly';
+import { planProgress, isGoalDone } from '../lib/developmentProgress';
 
 /**
  * DevelopmentPlanDetail - Read-only detail view for a single development plan
@@ -41,11 +42,7 @@ export default function DevelopmentPlanDetail() {
 
   // --- Computed progress ---
   const goals = plan?.goals || [];
-  const totalActions = goals.reduce((sum, g) => sum + (g.actions?.length || 0), 0);
-  const completedActions = goals.reduce(
-    (sum, g) => sum + (g.actions?.filter(a => a.status === 'completed').length || 0), 0
-  );
-  const overallProgress = totalActions > 0 ? Math.round((completedActions / totalActions) * 100) : 0;
+  const { completed: completedActions, total: totalActions, percent: overallProgress } = planProgress(goals);
 
   // Date-only fields render in UTC so the stored calendar day never
   // shifts in negative-offset timezones (issue #73).
@@ -182,7 +179,7 @@ export default function DevelopmentPlanDetail() {
             <Target size={16} className="text-primary" />
             <div>
               <p className="text-sm font-medium text-gray-700">
-                {goals.filter(g => g.actions?.every(a => a.status === 'completed') && g.actions?.length > 0).length}/{goals.length}
+                {goals.filter(g => isGoalDone(g.actions)).length}/{goals.length}
               </p>
               <p className="text-xs text-gray-400">Goals</p>
             </div>
