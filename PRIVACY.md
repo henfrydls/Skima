@@ -13,13 +13,13 @@ Skima stores your organization, its people, skills, evaluations, development pla
 
 ## What the app sends
 
-Two things, and each one can be turned off. Nothing else. There is no crash reporting and no third-party analytics or advertising code inside the app. Both requests are made by Skima's own server process (`server/src`), not by the screen you see.
+Two things, and each one can be turned off. Nothing else. There is no crash reporting, no third-party analytics or advertising code, and nothing loaded from other companies' servers, such as fonts. The check-in is sent by Skima's own server process (`server/src/checkin.js`); the update check is made by the desktop app itself.
 
 ### The anonymous check-in
 
-On a new installation the check-in is on from the start, and Skima says so the first time it opens, with a link to see exactly what is sent and to turn it off. Copies updated from an earlier version also start with it on, and show the same notice once.
+On a new installation the check-in is on from the start, and Skima says so the first time it opens, with a link to see exactly what is sent and to turn it off. Copies updated from an earlier version also start with it on, and show the same notice once. The first check-in goes out the first time you use Skima, at the same moment the notice appears; if you turn it off then, Skima sends the last message described below and nothing more.
 
-At most once a day, and only on a day Skima is used, it sends six things to a server we run ourselves:
+At most once a day (days are counted in UTC), and only on a day someone uses Skima's interface, it sends a message to a server we run ourselves. Leaving Skima running with nobody using it sends nothing. Each message carries:
 
 - a random number made on your device. It is derived from nothing about you, your organization or your device, and is tied to no name, email or account;
 - the app version, for example `1.6.0`;
@@ -28,7 +28,7 @@ At most once a day, and only on a day Skima is used, it sends six things to a se
 - how Skima was installed, as one word, for example `installer`, `store`, `dmg`, `appimage`, `deb` or `docker`;
 - the date.
 
-That is everything. It never includes your organization's name, your people, their skills, evaluations or plans, your language, your location, or anything typed into Skima. **Settings → About → What gets sent** shows the exact values your copy sends. The code is one file, `server/src/checkin.js`.
+That is everything the message says about your copy. It is addressed to our server with fixed labels that are the same in every copy of Skima, and identifies itself as `Skima`. It never includes your organization's name, your people, their skills, evaluations or plans, your language, your location, or anything typed into Skima. **Settings → About → What gets sent** shows the exact values your copy sends. The code is one file, `server/src/checkin.js`.
 
 ### Where it goes and what we keep
 
@@ -36,7 +36,7 @@ The message goes to [Umami](https://umami.is), an open-source analytics tool we 
 
 ### Turning it off
 
-- **Desktop and Docker:** the switch is in **Settings → About**, under **Anonymous check-in**. When you turn it off, Skima sends one last message with the same six things and a mark saying it is the last one, deletes the random number, and sends nothing more. If you turn it on again later, a new random number is made, and the two cannot be joined. We do not delete the earlier messages when you turn it off, because that would mean sending your copy's number once more; they expire with everything else after thirteen months.
+- **Desktop and Docker:** the switch is in **Settings → About**, under **Anonymous check-in**. When you turn it off, Skima deletes the random number, tries once to send a last message with the same six things and a mark saying it is the last one, and sends nothing more. If you turn it on again later, a new random number is made, and nothing in the messages links the old number to the new one. We do not delete the earlier messages when you turn it off, because that would mean sending your copy's number once more; they expire with everything else after thirteen months.
 - **Docker, before it ever starts:** set the environment variable `SKIMA_DISABLE_CHECKIN` (any value) and nothing is ever sent.
 - **Built from source or a fork:** sends nothing. The address is added only when we build the official releases.
 - **The online demo:** never sends.
