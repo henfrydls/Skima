@@ -4,7 +4,7 @@
 
 <p align="center">
   Open-source people development platform — skills matrix, development plans, gap analysis, and team growth tracking.<br/>
-  Self-hosted, local-first. No account, no cloud, no tracking.
+  Self-hosted, local-first. No account, no cloud. Your team's data stays with you.
 </p>
 
 <p align="center">
@@ -80,7 +80,7 @@
 
 ## Installation
 
-Skima runs entirely on your device — no account, no cloud, no tracking.
+Skima runs entirely on your device — no account, no cloud. Your team's data never leaves it. Skima sends one anonymous daily check-in, which you can turn off: see [Privacy](#privacy).
 
 - **[Desktop app](#desktop-app)** (Windows, macOS, Linux) — Download from GitHub Releases
 - **[Docker](#docker)** — Self-hosted via `docker compose`
@@ -263,6 +263,17 @@ server/src/
 | Desktop | Tauri 2 |
 | Testing | Vitest, React Testing Library (939 tests, 75%+ coverage) |
 | CI/CD | GitHub Actions |
+
+---
+
+## Privacy
+
+Your team's data stays on your device or your server. Skima sends one anonymous check-in a
+day, on days it is used: a random number, the app version, the operating system, the
+processor type, how it was installed, and the date. Nothing about your organization or your
+people. It is on by default, the app says so the first time it opens, and **Settings →
+About** turns it off. On Docker, set `SKIMA_DISABLE_CHECKIN` and nothing is ever sent.
+Builds from source send nothing. Full details in the [privacy policy](PRIVACY.md).
 
 ---
 
