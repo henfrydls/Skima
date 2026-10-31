@@ -261,7 +261,7 @@ jobs:
             if ((Get-Content "$work\smoke.log" -Raw) -notmatch 'Database schema verified') { throw 'schema not verified' }
             $cfg = Invoke-RestMethod http://localhost:11999/api/config
             if ($cfg.isSetup -ne $false) { throw 'unexpected initial isSetup' }
-            Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/setup `
+            Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/setup -Headers @{ 'X-Skima' = '1' } `
               -ContentType 'application/json' -Body '{"companyName":"CI Smoke","adminName":"CI"}' | Out-Null
             $cfg2 = Invoke-RestMethod http://localhost:11999/api/config
             if ($cfg2.isSetup -ne $true) { throw 'setup write round-trip failed' }
@@ -270,13 +270,18 @@ jobs:
             # Match the RAW JSON (like the bash smokes' grep) — Invoke-RestMethod
             # auto-coerces ISO strings into [datetime] objects, which stringify
             # in locale format and false-failed this check on rc.5.
-            Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/collaborators `
+            Invoke-RestMethod -Method Post -Uri http://localhost:11999/api/collaborators -Headers @{ 'X-Skima' = '1' } `
               -ContentType 'application/json' -Body '{"nombre":"DateCheck","rol":"CI"}' | Out-Null
             $raw = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/collaborators).Content
             if ($raw -notmatch '"joinedAt":"20\d{2}-') {
               Write-Host "RAW RESPONSE: $raw"
               throw 'DateTime read round-trip failed (joinedAt not an ISO string in the JSON)'
             }
+            # CROSS-SITE GUARD: a write without the API header is refused (403).
+            $guard = Invoke-WebRequest -UseBasicParsing -SkipHttpErrorCheck -Method Post `
+              -Uri http://localhost:11999/api/collaborators `
+              -ContentType 'application/json' -Body '{"nombre":"NoHeader","rol":"CI"}'
+            if ($guard.StatusCode -ne 403) { throw "POST without X-Skima returned $($guard.StatusCode), not 403" }
             # CHECK-IN: version injected, URL+websiteId injected, gate holds
             $statusRaw = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/checkin-status).Content
             Write-Host "checkin-status: $statusRaw"
