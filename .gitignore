@@ -63,10 +63,11 @@ server/prisma/*.db
 *.key
 *.cert
 .jwt-secret
-# Anonymous check-in state (instance ID, last-sent date, off switch)
+# Anonymous check-in state (instance ID, last-sent date, off switch, notice seen)
 .skima-instance-id
 .skima-checkin-date
 .skima-checkin-off
+.skima-checkin-notice-seen
 secrets/
 credentials/
 
