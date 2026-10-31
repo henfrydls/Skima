@@ -923,7 +923,10 @@ export function createApp() {
       // Record the export in the install-local history. Skipped in the online
       // demo so the "read-only" guarantee holds (this is the one GET that would
       // otherwise write). A logging failure must never break the export itself.
-      if (process.env.DEMO_MODE !== 'true') {
+      // ?record=later: the desktop writes the file itself after this returns, so
+      // it records the outcome through POST /api/backup-log/export instead; a
+      // success recorded here would stand even if that write then failed.
+      if (process.env.DEMO_MODE !== 'true' && req.query.record !== 'later') {
         try {
           await prisma.backupLog.create({
             data: { type: 'export', status: 'success', recordCount, actor: req.user?.role || null },
@@ -1038,6 +1041,29 @@ export function createApp() {
         console.error('[API] restore failure log failed:', logErr.message);
       }
       res.status(500).json({ message: 'Error importing data' });
+    }
+  });
+
+  // POST /api/backup-log/export - the outcome of a desktop export, recorded once
+  // the file is written (or failed to be). Pairs with GET /api/export?record=later.
+  app.post('/api/backup-log/export', authMiddleware, async (req, res) => {
+    const { status, recordCount } = req.body || {};
+    if (status !== 'success' && status !== 'failed') {
+      return res.status(400).json({ message: "status must be 'success' or 'failed'" });
+    }
+    try {
+      await prisma.backupLog.create({
+        data: {
+          type: 'export',
+          status,
+          recordCount: Number.isInteger(recordCount) && recordCount >= 0 ? recordCount : null,
+          actor: req.user?.role || null,
+        },
+      });
+      res.status(201).json({ recorded: true });
+    } catch (error) {
+      console.error('[API] POST /api/backup-log/export failed:', error);
+      res.status(500).json({ message: 'Error recording the export' });
     }
   });
 

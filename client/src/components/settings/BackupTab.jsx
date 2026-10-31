@@ -10,6 +10,9 @@ import { API_BASE } from '../../lib/apiBase';
 
 const isTauri = () => typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 
+// A Tauri command rejects with the string it returned as its error, not an Error.
+const errorText = (err) => (typeof err === 'string' ? err : err?.message || 'unknown error');
+
 // Every backup-able collection, with friendly labels. All 20 are covered so the
 // summary never says "No records" when a backup only holds less-common data.
 const SUMMARY_KEYS = [
@@ -112,30 +115,52 @@ export default function BackupTab() {
   const daysSinceBackup = daysSince(lastExport?.createdAt);
   const backupStale = daysSinceBackup === null || daysSinceBackup > 30;
 
-  const handleExport = async () => {
-    // Desktop: ask where first. The server records an export when it serves one, so
-    // choosing after would leave a recorded backup behind a cancelled dialog.
-    let savedAs = null;
-    if (isTauri()) {
-      try {
-        savedAs = await invoke('choose_backup_path', {
-          fileName: `skima-backup-${new Date().toISOString().slice(0, 10)}.json`,
-        });
-      } catch {
-        toast.error('Could not open the save dialog');
-        return;
-      }
-      if (!savedAs) return;
-    }
+  // The desktop records its export only once the file is written, so a failed
+  // write never counts as the last backup. A failure to record is not worth an
+  // error over a backup that was saved.
+  const recordExport = async (status, recordCount) => {
+    try {
+      await authFetch(`${API_BASE}/api/backup-log/export`, {
+        method: 'POST',
+        body: JSON.stringify({ status, recordCount }),
+      });
+    } catch { /* the history misses one entry */ }
+  };
 
+  const handleExport = async () => {
+    // Busy from the dialog on, so a second click cannot open a second dialog.
     setExporting(true);
     try {
-      const res = await authFetch(`${API_BASE}/api/export`);
+      // Desktop: ask where first, so a cancelled dialog exports nothing.
+      let savedAs = null;
+      if (isTauri()) {
+        try {
+          savedAs = await invoke('choose_backup_path', {
+            fileName: `skima-backup-${new Date().toISOString().slice(0, 10)}.json`,
+          });
+        } catch (err) {
+          toast.error(`Could not open the save dialog: ${errorText(err)}`);
+          return;
+        }
+        if (!savedAs) return;
+      }
+
+      const res = await authFetch(`${API_BASE}/api/export${savedAs ? '?record=later' : ''}`);
       if (!res.ok) throw new Error('Export failed');
       const json = await res.json();
       const contents = JSON.stringify(json, null, 2);
       if (savedAs) {
-        await invoke('write_backup', { contents });
+        const recordCount = Object.values(json.data || {})
+          .reduce((n, rows) => n + (Array.isArray(rows) ? rows.length : 0), 0);
+        try {
+          await invoke('write_backup', { contents });
+        } catch (err) {
+          await recordExport('failed', recordCount);
+          loadLog();
+          toast.error(`Could not save the backup: ${errorText(err)}`);
+          return;
+        }
+        await recordExport('success', recordCount);
         toast.success(`Backup saved to ${savedAs}`);
       } else {
         const date = (json.exportDate || new Date().toISOString()).slice(0, 10);

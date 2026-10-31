@@ -251,6 +251,34 @@ describe('Data portability endpoints', () => {
       expect(log.recordCount).toBeGreaterThan(0);
     });
 
+    // Desktop: the file is written after the export is served, so a success
+    // recorded at serve time would stand even when that write fails.
+    it('?record=later serves the export without recording it', async () => {
+      const res = await request(app).get('/api/export?record=later').expect(200);
+      expect(res.body.data).toBeTruthy();
+      expect(await prisma.backupLog.count()).toBe(0);
+    });
+
+    it('a failed desktop write is recorded as failed and is not the last backup', async () => {
+      await request(app).get('/api/export?record=later').expect(200);
+      await request(app).post('/api/backup-log/export').send({ status: 'failed', recordCount: 5 }).expect(201);
+      const res = await request(app).get('/api/backup-log');
+      expect(res.body.lastExport).toBeNull();
+      expect(res.body.entries).toHaveLength(1);
+      expect(res.body.entries[0]).toMatchObject({ type: 'export', status: 'failed', recordCount: 5 });
+    });
+
+    it('a written desktop backup is recorded as the last backup', async () => {
+      await request(app).post('/api/backup-log/export').send({ status: 'success', recordCount: 7 }).expect(201);
+      const res = await request(app).get('/api/backup-log');
+      expect(res.body.lastExport).toMatchObject({ type: 'export', status: 'success', recordCount: 7 });
+    });
+
+    it('POST /api/backup-log/export refuses an unknown status', async () => {
+      await request(app).post('/api/backup-log/export').send({ status: 'maybe' }).expect(400);
+      expect(await prisma.backupLog.count()).toBe(0);
+    });
+
     it('records a restore with provenance and counts, and the log survives the wipe', async () => {
       const res = await request(app).post('/api/import').send({
         data: { categories: [{ id: 10, nombre: 'Frontend', abrev: 'FE' }], skills: [] },

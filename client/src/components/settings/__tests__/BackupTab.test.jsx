@@ -224,6 +224,81 @@ describe('BackupTab — saving a backup', () => {
     expect(toast.success).toHaveBeenCalledWith('Backup saved to /home/u/skima-backup.json');
   });
 
+  const recordCalls = () => mockAuthFetch.mock.calls.filter(([url]) => String(url).includes('/api/backup-log/export'));
+
+  it('desktop: records the backup only after the file is written', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    const order = [];
+    mockInvoke.mockImplementation(async (cmd) => {
+      order.push(cmd);
+      return cmd === 'choose_backup_path' ? '/home/u/b.json' : undefined;
+    });
+    mockAuthFetch.mockImplementation(async (url, opts) => {
+      order.push(String(url).replace(/^.*\/api/, '/api'));
+      if (String(url).includes('/api/export')) return { ok: true, status: 200, json: async () => EXPORT };
+      return { ok: true, status: 200, json: async () => ({ lastExport: null, entries: [] }), opts };
+    });
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(recordCalls()).toHaveLength(1));
+    // the export is served without being recorded; the record follows the write
+    expect(order.filter((s) => s !== '/api/backup-log')).toEqual([
+      'choose_backup_path', '/api/export?record=later', 'write_backup', '/api/backup-log/export',
+    ]);
+    const [, opts] = recordCalls()[0];
+    expect(opts.method).toBe('POST');
+    expect(JSON.parse(opts.body)).toEqual({ status: 'success', recordCount: 1 });
+  });
+
+  it('desktop: a failed write is recorded as failed and shows the real error', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    mockInvoke.mockImplementation(async (cmd) => {
+      if (cmd === 'choose_backup_path') return 'E:\\skima-backup.json';
+      throw 'E:\\skima-backup.json: No space left on device (os error 28)';
+    });
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(recordCalls()).toHaveLength(1));
+    expect(JSON.parse(recordCalls()[0][1].body).status).toBe('failed');
+    const toast = (await import('react-hot-toast')).default;
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith(
+      'Could not save the backup: E:\\skima-backup.json: No space left on device (os error 28)',
+    ));
+    expect(toast.success).not.toHaveBeenCalled();
+  });
+
+  it('desktop: shows why the dialog could not open', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    mockInvoke.mockRejectedValueOnce('a save dialog is already open');
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    const toast = (await import('react-hot-toast')).default;
+    await waitFor(() => expect(toast.error).toHaveBeenCalledWith('Could not open the save dialog: a save dialog is already open'));
+    expect(exportCalls()).toHaveLength(0);
+  });
+
+  it('desktop: the button is busy while the dialog is open, so it cannot open a second one', async () => {
+    window.__TAURI_INTERNALS__ = {};
+    let close;
+    mockInvoke.mockImplementationOnce(() => new Promise((r) => { close = r; }));
+    render(<BackupTab />);
+    const button = screen.getByRole('button', { name: /Download Backup/i });
+    fireEvent.click(button);
+    await waitFor(() => expect(button).toBeDisabled());
+    fireEvent.click(button);
+    expect(mockInvoke).toHaveBeenCalledTimes(1);
+    close(null);
+    await waitFor(() => expect(button).not.toBeDisabled());
+  });
+
+  it('web: the server records the download as it serves it', async () => {
+    render(<BackupTab />);
+    fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
+    await waitFor(() => expect(URL.createObjectURL).toHaveBeenCalled());
+    expect(exportCalls()[0][0]).toMatch(/\/api\/export$/);
+    expect(recordCalls()).toHaveLength(0);
+  });
+
   it('web: downloads through the browser and never calls the desktop commands', async () => {
     render(<BackupTab />);
     fireEvent.click(screen.getByRole('button', { name: /Download Backup/i }));
