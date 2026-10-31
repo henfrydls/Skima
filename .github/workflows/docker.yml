@@ -81,6 +81,23 @@ jobs:
           echo "$STATUS" | grep -qF '"version":"${{ steps.version.outputs.version }}"'
           docker exec skima-smoke printenv DOCKER | grep -qx true
 
+      # The online demo runs this image with DEMO_MODE=true: the entrypoint seeds it
+      # through the API, so a seed refused by the cross-site guard leaves it empty.
+      - name: Smoke test demo mode
+        run: |
+          docker run -d --name skima-demo-smoke -p 13002:3001 -e SKIMA_DISABLE_CHECKIN=1 -e DEMO_MODE=true skima-smoke:ci
+          trap 'docker logs skima-demo-smoke; docker rm -f skima-demo-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 90); do
+            docker logs skima-demo-smoke 2>&1 | grep -q "Skima is ready" && break
+            sleep 1
+          done
+          CONFIG=$(curl -sf http://localhost:13002/api/config)
+          echo "config: $CONFIG"
+          echo "$CONFIG" | grep -q '"isSetup":true'
+          curl -sf http://localhost:13002/api/collaborators | grep -q '"nombre"'
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:13002/api/seed-demo)
+          [ "$CODE" = "403" ] || { echo "::error::POST without X-Skima returned $CODE, not 403"; exit 1; }
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3

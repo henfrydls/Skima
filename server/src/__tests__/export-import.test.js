@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readdirSync, readFileSync, existsSync, rmSync } from 'fs';
 import { join } from 'path';
-import request from 'supertest';
+import request from './helpers/request.js';
 import { createApp, prisma } from '../index.js';
 
 // Characterization tests for the data-portability endpoints (GET /api/export,

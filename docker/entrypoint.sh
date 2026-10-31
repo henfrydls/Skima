@@ -41,7 +41,7 @@ if [ "$DEMO_MODE" = "true" ]; then
   IS_SETUP=$(wget -q -O - http://localhost:3001/api/config 2>/dev/null | grep -o '"isSetup":true')
   if [ -z "$IS_SETUP" ]; then
     echo "  Seeding demo data..."
-    wget -q -O /dev/null --post-data '' http://localhost:3001/api/seed-demo 2>/dev/null
+    wget -q -O /dev/null --header='X-Skima: 1' --post-data '' http://localhost:3001/api/seed-demo 2>/dev/null
     echo "  Demo data seeded."
   else
     echo "  Database already has data, skipping seed."

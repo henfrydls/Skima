@@ -12,6 +12,7 @@ import demoRoutes from './routes/demo.js';
 import developmentRoutes from './routes/development.js';
 import { authMiddleware } from './middleware/auth.js';
 import { demoModeMiddleware } from './middleware/demo.js';
+import { requireApiHeader, DESKTOP_ORIGINS } from './middleware/apiHeader.js';
 
 // Re-export prisma for any routes that still import from index
 export { prisma };
@@ -38,27 +39,32 @@ export function createApp() {
     next();
   });
 
-  // CORS: permissive by default (the desktop Tauri webview and local dev call
-  // the API cross-origin and rely on this). Hosted deployments lock it down by
-  // setting ALLOWED_ORIGINS to a comma-separated origin list; a non-allowlisted
-  // browser origin then receives no CORS header and is blocked by the browser.
+  // CORS: only origins that are Skima itself. ALLOWED_ORIGINS (comma-separated)
+  // replaces the list for hosted deployments. Docker without it serves the client
+  // from this same origin, which needs no CORS header. Otherwise (desktop, local
+  // dev) the Tauri webview and the Vite dev server, which call the API cross-origin.
+  // A browser origin outside the list receives no CORS header and is blocked.
   const allowedOrigins = process.env.ALLOWED_ORIGINS
     ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
-    : null;
+    : process.env.DOCKER === 'true'
+      ? []
+      : DESKTOP_ORIGINS;
   app.use(
-    cors(
-      allowedOrigins
-        ? {
-            origin(origin, cb) {
-              // No Origin header = same-origin or non-browser client (curl,
-              // server-to-server) — always allowed.
-              if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
-              return cb(null, false);
-            },
-          }
-        : undefined
-    )
+    cors({
+      origin(origin, cb) {
+        // No Origin header = same-origin or non-browser client (curl,
+        // server-to-server) — always allowed.
+        if (!origin || allowedOrigins.includes(origin)) return cb(null, true);
+        return cb(null, false);
+      },
+    })
   );
+  // CORS alone does not stop another site from sending a simple request (a form
+  // POST, or fetch with mode no-cors): the browser sends it and only hides the
+  // answer. A custom header cannot be added to such a request without a preflight,
+  // which only the origins above pass. So every state change, and the reads that
+  // carry the whole database or the check-in ID, require it.
+  app.use('/api', requireApiHeader);
   // The import route carries a full-database backup, which easily exceeds the
   // default 1mb cap — otherwise you could export a backup you can't re-import.
   // body-parser skips the global 1mb parser below once this one reads the body.

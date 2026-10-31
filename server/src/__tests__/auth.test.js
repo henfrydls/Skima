@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import request from 'supertest';
+import request from './helpers/request.js';
 import jwt from 'jsonwebtoken';
 import { createApp } from '../index.js';
 import { prisma } from '../db.js';

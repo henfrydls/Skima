@@ -8,6 +8,8 @@ export default defineConfig({
   },
   use: {
     baseURL: 'http://localhost:5173',
+    // page.request calls the API directly, so it needs the header the client adds.
+    extraHTTPHeaders: { 'X-Skima': '1' },
     headless: false,
     viewport: { width: 1280, height: 720 },
     screenshot: 'only-on-failure',
