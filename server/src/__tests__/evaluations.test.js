@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import request from 'supertest';
+import request from './helpers/request.js';
 import { createApp, prisma } from '../index.js';
 
 // Characterization tests for the evaluation endpoints. These lock in the

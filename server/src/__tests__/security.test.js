@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import request from 'supertest';
+import request from './helpers/request.js';
 import { createApp } from '../index.js';
 
 describe('Security Headers', () => {

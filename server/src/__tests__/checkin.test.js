@@ -575,7 +575,7 @@ describe('maybeCheckin', () => {
 
 describe('checkin-status endpoint', () => {
   it('GET /api/checkin-status returns configured, disabled, off, and version', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const app = createApp();
     const res = await request(app).get('/api/checkin-status');
@@ -588,7 +588,7 @@ describe('checkin-status endpoint', () => {
   });
 
   it('reports configured:false with a URL but no website ID, true with both', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const app = createApp();
     vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
@@ -601,7 +601,7 @@ describe('checkin-status endpoint', () => {
 
 describe('checkin-fields endpoint (auth required)', () => {
   it('GET /api/checkin-fields returns 401 when password is set and no token', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     const { prisma } = await import('../db.js');
@@ -622,7 +622,7 @@ describe('checkin-fields endpoint (auth required)', () => {
   });
 
   it('GET /api/checkin-fields returns 200 when no password configured', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     const { prisma } = await import('../db.js');
@@ -738,7 +738,7 @@ describe('one-time notice', () => {
 
 describe('checkin-on and checkin-notice-seen endpoints', () => {
   async function appWithPassword(password) {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase, prisma } = await import('../db.js');
     await ensureDatabase();
@@ -833,7 +833,7 @@ describe('checkin-on and checkin-notice-seen endpoints', () => {
 
 describe('checkin-off endpoint (auth required)', () => {
   it('POST /api/checkin-off returns 401 when password is set and no token', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     const { prisma } = await import('../db.js');
@@ -855,7 +855,7 @@ describe('checkin-off endpoint (auth required)', () => {
   });
 
   it('POST /api/checkin-off persists the off state when no password', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     const { prisma } = await import('../db.js');
@@ -879,7 +879,7 @@ describe('checkin-off endpoint (auth required)', () => {
 
 describe('config endpoint includes isStoreInstall', () => {
   it('GET /api/config returns isStoreInstall=false by default', async () => {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     await ensureDatabase();
@@ -1018,7 +1018,7 @@ describe('a day counts when Skima is used (recordUse)', () => {
 
 describe('POST /api/use is the only thing that counts a day', () => {
   async function app() {
-    const { default: request } = await import('supertest');
+    const { default: request } = await import('./helpers/request.js');
     const { createApp } = await import('../index.js');
     const { ensureDatabase } = await import('../db.js');
     await ensureDatabase();
