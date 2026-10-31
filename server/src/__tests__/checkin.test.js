@@ -38,7 +38,8 @@ beforeEach(() => {
   delete process.env.SKIMA_DISABLE_CHECKIN;
 });
 
-afterEach(() => {
+afterEach(async () => {
+  (await import('../checkin.js')).forgetHandledDay();
   rmSync(TEST_DIR, { recursive: true, force: true });
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
@@ -679,10 +680,10 @@ describe('copies that predate the check-in', () => {
     expect(UPGRADES_START_OFF).toBe(false);
   });
 
-  it('by default an update sends, and still has the one-time notice to see', async () => {
-    const { maybeCheckin: mc, noticeSeen } = await import('../checkin.js');
+  it('by default an update sends on its first use, and still has the one-time notice to see', async () => {
+    const { maybeCheckin: mc, recordUse, noticeSeen } = await import('../checkin.js');
     await mc({ isSetup: true });
-    await vi.advanceTimersByTimeAsync(10_000);
+    await recordUse();
     expect(isOff(TEST_DIR)).toBe(false);
     expect(fetch).toHaveBeenCalledOnce();
     // The notice is now the only thing that tells this user something is sent.
@@ -698,13 +699,13 @@ describe('copies that predate the check-in', () => {
     expect(fetch).not.toHaveBeenCalled();
   });
 
-  it('with updates starting on: an update gets an ID and sends, like a new install', async () => {
+  it('with updates starting on: an update gets an ID at start, like a new install, and sends nothing until used', async () => {
     const { maybeCheckin: mc } = await import('../checkin.js');
     await mc({ isSetup: true, upgradesStartOff: false });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(isOff(TEST_DIR)).toBe(false);
     expect(readId(TEST_DIR)).not.toBeNull();
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('a new install (not set up yet) starts on either way', async () => {
@@ -713,7 +714,7 @@ describe('copies that predate the check-in', () => {
     await vi.advanceTimersByTimeAsync(10_000);
     expect(isOff(TEST_DIR)).toBe(false);
     expect(readId(TEST_DIR)).not.toBeNull();
-    expect(fetch).toHaveBeenCalledOnce();
+    expect(fetch).not.toHaveBeenCalled();
   });
 
   it('once turned off as an update, later starts stay off', async () => {
@@ -753,7 +754,7 @@ describe('checkin-on and checkin-notice-seen endpoints', () => {
     return { request, app: createApp(), prisma };
   }
 
-  it('an update turned on stays on: start (off) → checkin-on → start sends the ID shown in "What gets sent"', async () => {
+  it('an update turned on stays on: start (off) → checkin-on → start → use sends the ID shown in "What gets sent"', async () => {
     const { request, app, prisma } = await appWithPassword(null);
     vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
     vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
@@ -770,16 +771,12 @@ describe('checkin-on and checkin-notice-seen endpoints', () => {
     const shown = (await request(app).get('/api/checkin-fields')).body.fields.id;
     expect(shown).toMatch(/^[0-9a-f-]{36}$/);
 
-    // Next start: it must not be mistaken for an update again.
-    vi.useFakeTimers();
-    try {
-      await mc({ isSetup: true, upgradesStartOff: true });
-      await vi.advanceTimersByTimeAsync(10_000);
-    } finally {
-      vi.useRealTimers();
-    }
+    // Next start: it must not be mistaken for an update again. Then someone uses it.
+    await mc({ isSetup: true, upgradesStartOff: true });
     expect(isOff(TEST_DIR)).toBe(false);
-    expect(mockFetch).toHaveBeenCalledOnce();
+    expect(mockFetch).not.toHaveBeenCalled();
+    expect((await request(app).post('/api/use')).status).toBe(204);
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledOnce());
     expect(JSON.parse(mockFetch.mock.calls[0][1].body).payload.data.id).toBe(shown);
     await prisma.systemConfig.deleteMany();
   });
@@ -890,5 +887,141 @@ describe('config endpoint includes isStoreInstall', () => {
     const res = await request(app).get('/api/config');
     expect(res.status).toBe(200);
     expect(res.body.isStoreInstall).toBe(false);
+  });
+});
+
+describe('a day counts when Skima is used (recordUse)', () => {
+  let originalArgv;
+  const sentDates = () => fetch.mock.calls.map(([, o]) => JSON.parse(o.body).payload.data.date);
+
+  beforeEach(() => {
+    originalArgv = process.argv;
+    process.argv = [...originalArgv, '--db-path', join(TEST_DIR, 'db.sqlite')];
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-02T09:00:00Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+    process.argv = originalArgv;
+  });
+
+  it('starting the server sends nothing', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: true });
+    await vi.advanceTimersByTimeAsync(60_000);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('server on for 3 days, used on 2 of them: 2 check-ins, one per day of use', async () => {
+    const { maybeCheckin: mc, recordUse } = await import('../checkin.js');
+    await mc({ isSetup: true });
+    await recordUse();
+    await recordUse();
+    vi.setSystemTime(new Date('2026-11-03T09:00:00Z')); // nobody uses it
+    vi.setSystemTime(new Date('2026-11-04T15:00:00Z'));
+    await recordUse();
+    await recordUse();
+    expect(sentDates()).toEqual(['2026-11-02', '2026-11-04']);
+  });
+
+  it('server on for 3 days, never used: no check-in', async () => {
+    const { maybeCheckin: mc } = await import('../checkin.js');
+    await mc({ isSetup: true });
+    for (const day of ['2026-11-03', '2026-11-04']) {
+      vi.setSystemTime(new Date(`${day}T09:00:00Z`));
+      await vi.advanceTimersByTimeAsync(60_000);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('app left open across midnight: the first use of the new day sends', async () => {
+    const { recordUse } = await import('../checkin.js');
+    vi.setSystemTime(new Date('2026-11-02T23:58:00Z'));
+    await recordUse();
+    vi.setSystemTime(new Date('2026-11-03T00:01:00Z'));
+    await recordUse();
+    expect(sentDates()).toEqual(['2026-11-02', '2026-11-03']);
+  });
+
+  it('later uses of the day are answered from memory, without reading the disk', async () => {
+    const { recordUse } = await import('../checkin.js');
+    expect(await recordUse()).toBe(true);
+    // With the files gone, a disk read would find nothing sent today and send again.
+    rmSync(TEST_DIR, { recursive: true, force: true });
+    expect(await recordUse()).toBe(false);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('a new process the same day does not send twice (the date on disk holds)', async () => {
+    const { recordUse, forgetHandledDay } = await import('../checkin.js');
+    await recordUse();
+    forgetHandledDay(); // as after a restart
+    await recordUse();
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it('a failed send is tried again on a later use the same day', async () => {
+    fetch.mockRejectedValueOnce(new Error('offline'));
+    const { recordUse } = await import('../checkin.js');
+    expect(await recordUse()).toBe(false);
+    expect(await recordUse()).toBe(true);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(alreadySentToday(TEST_DIR)).toBe(true);
+  });
+
+  it('turned on later the same day: the next use sends', async () => {
+    const { recordUse, handleCheckinOn } = await import('../checkin.js');
+    markOff(TEST_DIR);
+    expect(await recordUse()).toBe(false);
+    handleCheckinOn();
+    expect(await recordUse()).toBe(true);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    ['the gate is closed', () => vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1')],
+    ['in demo mode', () => vi.stubEnv('DEMO_MODE', 'true')],
+    ['with no URL', () => vi.stubEnv('CHECKIN_URL', '')],
+    ['when turned off', () => markOff(TEST_DIR)],
+  ])('sends nothing when %s', async (_, setup) => {
+    setup();
+    const { recordUse } = await import('../checkin.js');
+    expect(await recordUse()).toBe(false);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+});
+
+describe('POST /api/use is the only thing that counts a day', () => {
+  async function app() {
+    const { default: request } = await import('supertest');
+    const { createApp } = await import('../index.js');
+    const { ensureDatabase } = await import('../db.js');
+    await ensureDatabase();
+    // db.js already bound Prisma at import; this only redirects dataDir().
+    vi.stubEnv('DATABASE_URL', `file:${join(TEST_DIR, 'db.sqlite')}`);
+    vi.stubEnv('CHECKIN_URL', 'http://checkin.invalid/api/send');
+    vi.stubEnv('CHECKIN_WEBSITE_ID', 'w');
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true }));
+    return { request, app: createApp() };
+  }
+
+  it('a monitor polling the server sends nothing', async () => {
+    const { request, app: a } = await app();
+    for (const path of ['/', '/api/config', '/api/checkin-status', '/api/collaborators', '/api/health']) {
+      await request(a).get(path);
+    }
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('the interface reporting use answers 204 at once and sends the day\'s check-in', async () => {
+    const { request, app: a } = await app();
+    expect((await request(a).post('/api/use')).status).toBe(204);
+    await vi.waitFor(() => expect(fetch).toHaveBeenCalledOnce());
+    expect((await request(a).post('/api/use')).status).toBe(204);
+    expect(fetch).toHaveBeenCalledOnce();
   });
 });

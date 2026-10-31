@@ -25,6 +25,7 @@ import LoginModal from '../auth/LoginModal';
 import SidebarUser from './SidebarUser';
 import DemoBanner from '../common/DemoBanner';
 import CheckinNotice from '../common/CheckinNotice';
+import { useReportUse } from '../../hooks/useReportUse';
 
 // Skima Brand Assets
 import logoFull from '../../assets/skima-full.svg';
@@ -87,6 +88,7 @@ export default function Layout() {
   const location = useLocation();
   const { isAuthenticated, login } = useAuth();
   const { adminName, isDemo, isOnlineDemo } = useConfig();
+  useReportUse();
   const version = useAppVersion();
   
   const navItems = getNavItems(isAuthenticated);
