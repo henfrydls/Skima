@@ -982,6 +982,27 @@ describe('a day counts when Skima is used (recordUse)', () => {
     expect(fetch).toHaveBeenCalledOnce();
   });
 
+  it('turned off and on again the same day: the next use sends the new ID', async () => {
+    const { recordUse, handleCheckinOn, handleCheckinOff } = await import('../checkin.js');
+    expect(await recordUse()).toBe(true);
+    const sentIds = () => fetch.mock.calls.map(([, opts]) => JSON.parse(opts.body).payload.data);
+    const first = sentIds()[0].id;
+    await handleCheckinOff(); // the goodbye carries the old ID
+    const { id: second } = handleCheckinOn();
+    expect(second).not.toBe(first);
+    expect(await recordUse()).toBe(true);
+    expect(sentIds().map((d) => [d.id, !!d.last])).toEqual([[first, false], [first, true], [second, false]]);
+    expect(alreadySentToday(TEST_DIR)).toBe(true);
+  });
+
+  it('turning it on while already on does not count the day twice for the same ID', async () => {
+    const { recordUse, handleCheckinOn } = await import('../checkin.js');
+    expect(await recordUse()).toBe(true);
+    handleCheckinOn();
+    expect(await recordUse()).toBe(false);
+    expect(fetch).toHaveBeenCalledOnce();
+  });
+
   it.each([
     ['the gate is closed', () => vi.stubEnv('SKIMA_DISABLE_CHECKIN', '1')],
     ['in demo mode', () => vi.stubEnv('DEMO_MODE', 'true')],

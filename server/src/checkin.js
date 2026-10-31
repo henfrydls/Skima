@@ -127,6 +127,11 @@ export function markSentToday(dir) {
   writeFileSync(join(dir, DATE_FILE), todayDate(), 'utf8');
 }
 
+export function clearSentToday(dir) {
+  const file = join(dir, DATE_FILE);
+  if (existsSync(file)) unlinkSync(file);
+}
+
 export function todayDate() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -300,10 +305,13 @@ export async function recordUse() {
 // Turn the check-in on. The ID is made now, not at the next start: it is the trace that
 // keeps the next start from taking this copy for an update and turning it off again, and
 // it lets "What gets sent" show the real number at once. Nothing is sent now; the next
-// use report sends, even later today.
+// use report sends, even later today. Turned off and on again the same day, today's date
+// belongs to the ID that turning off deleted: cleared with it, or the new ID would wait
+// until tomorrow. With an ID still there the date is its own and stays.
 export function handleCheckinOn() {
   const dir = dataDir();
   clearOff(dir);
+  if (!readId(dir)) clearSentToday(dir);
   forgetHandledDay();
   return { off: false, id: getOrCreateId(dir) };
 }
