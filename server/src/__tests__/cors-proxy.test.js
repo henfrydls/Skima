@@ -93,6 +93,12 @@ describe('API header guard', () => {
     ['delete', '/api/skills/1'],
     ['get', '/api/export'],
     ['get', '/api/checkin-fields'],
+    // Express matches routes case-insensitively and with a trailing slash.
+    ['get', '/api/EXPORT'],
+    ['get', '/api/export/'],
+    ['get', '/api/Checkin-Fields'],
+    ['get', '/api/checkin-fields/'],
+    ['get', '/api/export?download=1'],
   ])('refuses %s %s without the header', async (method, path) => {
     const res = await request(createApp())[method](path)
       .set('Origin', 'https://evil.example')

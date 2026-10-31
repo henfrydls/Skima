@@ -26,9 +26,15 @@ export const DESKTOP_ORIGINS = [
 const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 const GUARDED_READS = new Set(['/export', '/checkin-fields']);
 
+// Express routes case-insensitively and accepts a trailing slash, so /EXPORT and
+// /export/ reach the export route: compare the path the same way it is matched.
+function routePath(path) {
+  return path.toLowerCase().replace(/\/+$/, '');
+}
+
 // Mounted at /api, so req.path is relative to it.
 export function requireApiHeader(req, res, next) {
-  if (SAFE_METHODS.has(req.method) && !GUARDED_READS.has(req.path)) return next();
+  if (SAFE_METHODS.has(req.method) && !GUARDED_READS.has(routePath(req.path))) return next();
   if (req.get(API_HEADER) === '1') return next();
   return res.status(403).json({
     message: `Missing ${API_HEADER} header.`,
