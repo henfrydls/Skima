@@ -6,6 +6,8 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useConfig } from '../../contexts/ConfigContext';
 import { useCheckinStatus } from '../../hooks/useCheckinStatus';
 
+const PRIVACY_URL = 'https://github.com/henfrydls/Skima/blob/main/PRIVACY.md';
+
 /** Shown where the real number would be until one exists. Belongs to no installation. */
 export const EXAMPLE_ID = '4f9c2a7e-1b60-4d3a-8c5e-2f1b74a9d0c6';
 
@@ -137,6 +139,15 @@ export default function CheckinSettings() {
             )}
             <p>Like any website, our server sees your connection&apos;s address and does not keep it.</p>
             <p>Turning it off deletes the random number and sends one last message saying so.</p>
+            <a
+              href={PRIVACY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              data-testid="checkin-privacy-policy"
+              className="inline-block text-primary hover:underline"
+            >
+              Privacy policy →
+            </a>
           </div>
         )}
       </div>
