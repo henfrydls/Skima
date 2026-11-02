@@ -44,9 +44,16 @@ describe('listen host', () => {
     expect(listenHost({ DOCKER: 'true' })).toBeUndefined();
   });
 
-  it('follows HOST when it is set, in both', () => {
-    expect(listenHost({ HOST: '0.0.0.0' })).toBe('0.0.0.0');
-    expect(listenHost({ HOST: '0.0.0.0', DOCKER: 'true' })).toBe('0.0.0.0');
+  it('follows SKIMA_HOST when it is set, in both', () => {
+    expect(listenHost({ SKIMA_HOST: '0.0.0.0' })).toBe('0.0.0.0');
+    expect(listenHost({ SKIMA_HOST: '0.0.0.0', DOCKER: 'true' })).toBe('0.0.0.0');
+  });
+
+  // Shells and dev tools export HOST (tcsh: the machine name; Vite and others: 0.0.0.0),
+  // and the sidecar inherits the user's environment.
+  it('ignores a plain HOST', () => {
+    expect(listenHost({ HOST: '0.0.0.0' })).toBe(LOOPBACK);
+    expect(listenHost({ HOST: 'my-laptop' })).toBe(LOOPBACK);
   });
 
   it('listens on loopback only by default', async () => {
