@@ -63,6 +63,15 @@ describe('host check', () => {
       expect((await withEnv(env, () => get('skima.lan:3000'))).status).toBe(200);
       expect((await withEnv(env, () => get('evil.example'))).status).toBe(421);
     });
+
+    // The entrypoint's start-up wait and health checks call localhost.
+    it.each(['localhost:3001', '127.0.0.1:3001', '[::1]:3001'])(
+      'still accepts %s when hosts are configured',
+      async (host) => {
+        const env = { DOCKER: 'true', ALLOWED_ORIGINS: 'https://skills.example' };
+        expect((await withEnv(env, () => get(host))).status).toBe(200);
+      },
+    );
   });
 
   it('follows SKIMA_HOST: listening beyond loopback works like Docker', () => {

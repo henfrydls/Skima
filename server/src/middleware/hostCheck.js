@@ -31,18 +31,19 @@ function originHost(origin) {
 
 /**
  * The host names to accept, or null to accept any.
- * Listening on loopback (the desktop): the loopback names, plus ALLOWED_HOSTS.
- * Listening beyond it (Docker, or SKIMA_HOST): the hosts of ALLOWED_ORIGINS plus
- * ALLOWED_HOSTS, or any when neither is set, as a deployment reached by a name
- * Skima cannot know would otherwise stop working.
+ * The loopback names are always accepted: a rebound request carries its own name,
+ * never these, and the container's entrypoint and health checks call localhost.
+ * Listening on loopback (the desktop): those, plus ALLOWED_HOSTS.
+ * Listening beyond it (Docker, or SKIMA_HOST): those, plus the hosts of
+ * ALLOWED_ORIGINS and ALLOWED_HOSTS; or any when neither is set, as a deployment
+ * reached by a name Skima cannot know would otherwise stop working.
  */
 export function allowedHosts(env = process.env) {
   const extra = list(env.ALLOWED_HOSTS).map(hostName);
   const host = listenHost(env)?.toLowerCase();
   if (LOOPBACK_LISTEN.includes(host)) return [...LOOPBACK_NAMES, ...extra];
-  const fromOrigins = list(env.ALLOWED_ORIGINS).map(originHost).filter(Boolean);
-  const hosts = [...fromOrigins, ...extra];
-  return hosts.length ? hosts : null;
+  const configured = [...list(env.ALLOWED_ORIGINS).map(originHost).filter(Boolean), ...extra];
+  return configured.length ? [...LOOPBACK_NAMES, ...configured] : null;
 }
 
 export function hostCheck(env = process.env) {

@@ -83,6 +83,27 @@ jobs:
           echo "$STATUS" | grep -qF '"version":"${{ steps.version.outputs.version }}"'
           docker exec skima-smoke printenv DOCKER | grep -qx true
 
+      # A deployment that lists its hosts must still start: the entrypoint waits for
+      # the server through localhost, and other names must be refused.
+      - name: Smoke test with ALLOWED_ORIGINS
+        run: |
+          docker run -d --name skima-hosts-smoke -p 13004:3001 -e SKIMA_DISABLE_CHECKIN=1 \
+            -e ALLOWED_ORIGINS=https://skills.example skima-smoke:ci
+          trap 'docker logs skima-hosts-smoke; docker rm -f skima-hosts-smoke >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 90); do
+            docker logs skima-hosts-smoke 2>&1 | grep -q "Skima is ready" && break
+            sleep 1
+          done
+          # "Server is up." is printed only once the entrypoint's localhost check passed.
+          docker logs skima-hosts-smoke 2>&1 | grep -q "Server is up." \
+            || { echo "::error::the entrypoint never reached the server through localhost"; exit 1; }
+          for host in skills.example localhost:13004; do
+            CODE=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $host" http://localhost:13004/api/config)
+            [ "$CODE" = "200" ] || { echo "::error::Host $host returned $CODE, not 200"; exit 1; }
+          done
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: other.example' http://localhost:13004/api/config)
+          [ "$CODE" = "421" ] || { echo "::error::Host other.example returned $CODE, not 421"; exit 1; }
+
       # The online demo runs this image with DEMO_MODE=true: the entrypoint seeds it
       # through the API, so a seed refused by the cross-site guard leaves it empty.
       - name: Smoke test demo mode
