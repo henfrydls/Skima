@@ -1,9 +1,9 @@
 /**
  * API base URL - detects Tauri desktop vs web browser at runtime.
- * In Tauri: backend runs as sidecar on localhost:11420
- * In browser dev: Vite proxy handles /api -> localhost:3001
+ * In Tauri: backend runs as sidecar on 127.0.0.1:11420 (the server listens on IPv4 loopback only)
+ * In browser dev: Vite proxy handles /api -> 127.0.0.1:3001
  */
-export const API_BASE = window.__TAURI_INTERNALS__ ? 'http://localhost:11420' : '';
+export const API_BASE = window.__TAURI_INTERNALS__ ? 'http://127.0.0.1:11420' : '';
 
 /**
  * The server refuses state changes (and the export) without this header: another

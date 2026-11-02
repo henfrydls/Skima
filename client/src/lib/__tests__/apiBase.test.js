@@ -19,8 +19,8 @@ describe('installApiHeader', () => {
   });
 
   it('adds the header to the sidecar URL (desktop)', async () => {
-    const { target, sent } = install('http://localhost:11420');
-    await target.fetch('http://localhost:11420/api/export');
+    const { target, sent } = install('http://127.0.0.1:11420');
+    await target.fetch('http://127.0.0.1:11420/api/export');
     expect(sent()[1].headers.get(API_HEADER)).toBe('1');
   });
 
@@ -37,7 +37,7 @@ describe('installApiHeader', () => {
   });
 
   it('never sends the header to another site', async () => {
-    const { target, sent } = install('http://localhost:11420');
+    const { target, sent } = install('http://127.0.0.1:11420');
     const init = { headers: { Accept: 'application/json' } };
     await target.fetch('https://api.github.com/repos/x/y/releases/latest', init);
     expect(sent()[1]).toBe(init);
@@ -48,7 +48,7 @@ describe('isApiUrl', () => {
   it('matches only paths under /api/ on the base', () => {
     expect(isApiUrl('/api/config', '')).toBe(true);
     expect(isApiUrl('/apidocs', '')).toBe(false);
-    expect(isApiUrl('http://localhost:11420/api/use', 'http://localhost:11420')).toBe(true);
-    expect(isApiUrl('http://localhost:11420.evil.example/api/use', 'http://localhost:11420')).toBe(false);
+    expect(isApiUrl('http://127.0.0.1:11420/api/use', 'http://127.0.0.1:11420')).toBe(true);
+    expect(isApiUrl('http://127.0.0.1:11420.evil.example/api/use', 'http://127.0.0.1:11420')).toBe(false);
   });
 });

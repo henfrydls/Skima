@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { enterDemo, loginToSettings } from './helpers/auth.js';
 import { navigateTo, waitForPageReady } from './helpers/navigation.js';
 
-const API_BASE = 'http://localhost:3001';
+const API_BASE = 'http://127.0.0.1:3001';
 
 // ---------------------------------------------------------------------------
 // Helpers
