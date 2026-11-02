@@ -49,6 +49,20 @@ export async function authMiddleware(req, res, next) {
 }
 
 /**
+ * Whether the request carries a valid admin token, whatever the password state.
+ */
+export function hasValidToken(req) {
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) return false;
+  try {
+    jwt.verify(authHeader.split(' ')[1], JWT_SECRET);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Generate JWT token for authenticated user
  */
 export function generateToken(payload, expiresIn = '24h') {

@@ -6,11 +6,11 @@ import { existsSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'f
 import { resolve, join } from 'path';
 import { prisma, ensureDatabase, getBackupSnapshotDir } from './db.js';
 import { maybeCheckin, recordUse as checkinRecordUse, handleCheckinOn, isConfigured as checkinConfigured, getCheckinFields, handleCheckinOff, isDisabled as checkinDisabled, isOff as checkinIsOff, dataDir as checkinDataDir, getVersion as checkinVersion, noticeSeen as checkinNoticeSeen, markNoticeSeen as checkinMarkNoticeSeen } from './checkin.js';
-import authRoutes from './routes/auth.js';
+import authRoutes, { checkRateLimit } from './routes/auth.js';
 import evolutionRoutes from './routes/evolution.js';
-import demoRoutes from './routes/demo.js';
+import demoRoutes, { DEMO_ADMIN_PASSWORD } from './routes/demo.js';
 import developmentRoutes from './routes/development.js';
-import { authMiddleware } from './middleware/auth.js';
+import { authMiddleware, hasValidToken } from './middleware/auth.js';
 import { demoModeMiddleware } from './middleware/demo.js';
 import { requireApiHeader, DESKTOP_ORIGINS } from './middleware/apiHeader.js';
 import { listen, listenHost } from './listenHost.js';
@@ -149,14 +149,28 @@ export function createApp() {
 
       // Check if already set up
       const existingConfig = await prisma.systemConfig.findFirst();
-      const demoCount = await prisma.collaborator.count({ where: { esDemo: true } });
-      const isInDemoMode = demoCount > 0;
+      const [demoCount, realCount] = await Promise.all([
+        prisma.collaborator.count({ where: { esDemo: true } }),
+        prisma.collaborator.count({ where: { esDemo: false } }),
+      ]);
+      // Demo data may be replaced only while it is all the install holds.
+      const isInDemoMode = demoCount > 0 && realCount === 0;
 
       // Block re-setup only if already configured AND not in demo mode
       if (existingConfig?.isSetup && !isInDemoMode) {
         return res.status(400).json({
           error: 'System is already configured'
         });
+      }
+
+      // Replacing the demo wipes every table. With the demo's own (public) password
+      // anyone may do it, as the demo invites; with any other password, only the admin.
+      if (isInDemoMode && existingConfig?.adminPassword && !hasValidToken(req)) {
+        const isDemoPassword = await bcrypt.compare(DEMO_ADMIN_PASSWORD, existingConfig.adminPassword)
+          .catch(() => false);
+        if (!isDemoPassword) {
+          return res.status(401).json({ message: 'Sign in to replace this data.', code: 'AUTH_REQUIRED' });
+        }
       }
 
       // If transitioning from demo, wipe ALL data (everything is demo data)
@@ -223,7 +237,7 @@ export function createApp() {
   });
 
   // PUT /api/config - Update system configuration (for Settings)
-  app.put('/api/config', async (req, res) => {
+  app.put('/api/config', authMiddleware, async (req, res) => {
     try {
       const { companyName, adminName, adminPassword, currentPassword } = req.body;
 
@@ -235,14 +249,18 @@ export function createApp() {
       // If changing password, verify current password first
       // Also require verification when removing password (empty string)
       if (config.adminPassword && adminPassword !== undefined) {
+        if (!checkRateLimit(req.ip || req.socket?.remoteAddress || 'unknown')) {
+          return res.status(429).json({ error: 'Too many attempts. Try again in 15 minutes.', code: 'RATE_LIMITED' });
+        }
         let currentValid = false;
         if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
           currentValid = await bcrypt.compare(currentPassword || '', config.adminPassword);
         } else {
           currentValid = currentPassword === config.adminPassword;
         }
+        // 403, not 401: the session is valid, only the current password is wrong.
         if (!currentValid) {
-          return res.status(401).json({ error: 'Current password is incorrect' });
+          return res.status(403).json({ error: 'Current password is incorrect' });
         }
       }
 
@@ -267,34 +285,6 @@ export function createApp() {
     } catch (error) {
       console.error('Error updating config:', error);
       res.status(500).json({ error: 'Failed to update config' });
-    }
-  });
-
-  // POST /api/config/verify - Verify admin password
-  app.post('/api/config/verify', async (req, res) => {
-    try {
-      const { password } = req.body;
-
-      const config = await prisma.systemConfig.findFirst();
-      if (!config) {
-        return res.status(404).json({ error: 'Config not found', valid: false });
-      }
-
-      // If no password set, consider it valid (open access)
-      if (!config.adminPassword) {
-        return res.json({ valid: true });
-      }
-
-      let valid = false;
-      if (config.adminPassword.startsWith('$2a$') || config.adminPassword.startsWith('$2b$')) {
-        valid = await bcrypt.compare(password || '', config.adminPassword);
-      } else {
-        valid = password === config.adminPassword;
-      }
-      res.json({ valid });
-    } catch (error) {
-      console.error('Error verifying password:', error);
-      res.status(500).json({ error: 'Failed to verify password', valid: false });
     }
   });
 
@@ -479,9 +469,10 @@ export function createApp() {
   });
 
   // POST /api/collaborators - Add new collaborator
-  app.post('/api/collaborators', async (req, res) => {
+  app.post('/api/collaborators', authMiddleware, async (req, res) => {
     try {
-      const { nombre, rol, skills, esDemo = false } = req.body;
+      // esDemo is never taken from the client: only seeding the demo sets it.
+      const { nombre, rol, skills } = req.body;
 
       if (!nombre || typeof nombre !== 'string' || nombre.trim().length === 0) {
         return res.status(400).json({ message: 'Collaborator name is required' });
@@ -496,8 +487,7 @@ export function createApp() {
       const collaborator = await prisma.collaborator.create({
         data: {
           nombre,
-          rol,
-          esDemo
+          rol
         }
       });
 
@@ -532,7 +522,7 @@ export function createApp() {
   });
 
   // POST /api/reset-demo - Remove demo data
-  app.post('/api/reset-demo', async (req, res) => {
+  app.post('/api/reset-demo', authMiddleware, async (req, res) => {
     try {
       const demoCollaborators = await prisma.collaborator.findMany({
         where: { esDemo: true }

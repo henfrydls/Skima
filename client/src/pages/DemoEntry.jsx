@@ -2,19 +2,28 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { API_BASE } from '../lib/apiBase';
+import { useConfig } from '../contexts/ConfigContext';
 
 /**
- * DemoEntry — /demo route
+ * DemoEntry — /demo route, for the online demo only
  *
  * 1. Calls POST /api/seed-demo to ensure demo data exists
  * 2. Sets demo_active cookie (24h)
  * 3. Redirects to /
+ *
+ * Anywhere else it only redirects: seeding replaces every table.
  */
 export default function DemoEntry() {
   const navigate = useNavigate();
+  const { isLoading, isOnlineDemo } = useConfig();
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (isLoading) return;
+    if (!isOnlineDemo) {
+      navigate('/', { replace: true });
+      return;
+    }
     const initDemo = async () => {
       try {
         // Seed demo data
@@ -36,7 +45,7 @@ export default function DemoEntry() {
     };
 
     initDemo();
-  }, [navigate]);
+  }, [navigate, isLoading, isOnlineDemo]);
 
   if (error) {
     return (

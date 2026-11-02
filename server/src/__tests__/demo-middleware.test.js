@@ -165,12 +165,12 @@ describe('Demo Mode Middleware', () => {
       expect(res.status).not.toBe(403);
     });
 
-    it('POST /api/config/verify is not blocked', async () => {
+    it('POST /api/config/verify is no longer allowlisted', async () => {
       const res = await request(app)
         .post('/api/config/verify')
         .send({ password: 'test' });
 
-      expect(res.status).not.toBe(403);
+      expect(res.status).toBe(403);
     });
 
     it('GET /api/export is not blocked', async () => {

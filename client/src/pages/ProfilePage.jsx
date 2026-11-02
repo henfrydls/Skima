@@ -65,9 +65,8 @@ export default function ProfilePage() {
         }
       }
 
-      const response = await fetch(`${API_BASE}/api/config`, {
+      const response = await authFetch('/api/config', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body)
       });
 
