@@ -198,3 +198,58 @@ jobs:
           echo "$STATUS" | grep -q '"disabled":true'
           echo "$STATUS" | grep -q '"version":"[0-9]'
           echo "$STATUS" | grep -q '"configured":true'
+
+  # The installer hooks (src-tauri/windows/hooks.nsh) stop a sidecar left running by a
+  # killed Skima.exe, which otherwise locks skima-server.exe and makes installing over it
+  # fail. This runs them in a small test installer, without building the app.
+  nsis-hooks:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer hooks stop a running sidecar
+        shell: pwsh
+        run: |
+          $makensis = "${env:ProgramFiles(x86)}\NSIS\makensis.exe"
+          if (-not (Test-Path $makensis)) { choco install nsis -y --no-progress | Out-Null }
+          if (-not (Test-Path $makensis)) { throw 'makensis not found' }
+          $work = Join-Path $env:RUNNER_TEMP 'nsis-hooks'
+          $inst = Join-Path $work 'Skima'
+          $other = Join-Path $work 'Other'
+          New-Item -ItemType Directory -Force $inst, $other | Out-Null
+
+          # Exit code of a test installer run while a stand-in sidecar holds the file.
+          # The stand-in is ping, renamed: it keeps running and keeps its file locked.
+          # A second copy outside the install folder must be left alone.
+          function Invoke-Case([string]$kind, [string[]]$defines) {
+            $exe = Join-Path $work "hooks-$kind.exe"
+            & $makensis /V2 "/DOUTFILE=$exe" @defines src-tauri\windows\hooks-test.nsi | Out-Host
+            if ($LASTEXITCODE) { throw "makensis failed ($kind)" }
+            Copy-Item "$env:SystemRoot\System32\PING.EXE" "$inst\skima-server.exe" -Force
+            Copy-Item "$env:SystemRoot\System32\PING.EXE" "$other\skima-server.exe" -Force
+            $target = Start-Process "$inst\skima-server.exe" -ArgumentList '-t', '127.0.0.1' -WindowStyle Hidden -PassThru
+            $decoy = Start-Process "$other\skima-server.exe" -ArgumentList '-t', '127.0.0.1' -WindowStyle Hidden -PassThru
+            try {
+              $run = Start-Process $exe -ArgumentList '/S', "/D=$inst" -Wait -PassThru
+              Write-Host "$kind -> exit $($run.ExitCode), sidecar stopped: $($target.HasExited), other copy stopped: $($decoy.HasExited)"
+              if ($decoy.HasExited) { throw "$kind stopped a skima-server.exe outside the install folder" }
+              return @{ Exit = $run.ExitCode; Stopped = $target.HasExited }
+            } finally {
+              Stop-Process -Id $target.Id, $decoy.Id -Force -ErrorAction SilentlyContinue
+              Start-Sleep -Seconds 1
+            }
+          }
+
+          $none = Invoke-Case 'nohook' @('/DNOHOOK')
+          if ($none.Exit -ne 3) { throw 'without the hook the file should stay locked: the test proves nothing' }
+          foreach ($kind in 'install', 'uninstall') {
+            $defines = if ($kind -eq 'uninstall') { @('/DUNINSTALL') } else { @() }
+            $r = Invoke-Case $kind $defines
+            if (-not $r.Stopped) { throw "$kind hook did not stop the sidecar in the install folder" }
+            if ($r.Exit -ne 0) { throw "$kind hook left skima-server.exe locked (exit $($r.Exit))" }
+          }
+
+          # Nothing running and no file: the hook must not fail.
+          Remove-Item "$inst\skima-server.exe" -Force
+          $run = Start-Process (Join-Path $work 'hooks-install.exe') -ArgumentList '/S', "/D=$inst" -Wait -PassThru
+          if ($run.ExitCode -ne 0) { throw "the hook failed with nothing to stop (exit $($run.ExitCode))" }
