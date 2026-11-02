@@ -128,6 +128,21 @@ jobs:
       - name: Build the app
         run: npx --yes @tauri-apps/cli@2.10.1 build --no-bundle
 
+      # A clean Windows has no Visual C++ redistributable, so an exe that imports
+      # VCRUNTIME140.dll does not start there ("VCRUNTIME140.dll was not found").
+      # rc.2 shipped like that: Tauri CLI 2.12 stopped setting STATIC_VCRUNTIME, which
+      # tauri-build 2.5 needs to link the runtime statically.
+      - name: Executable does not need the VC++ runtime
+        shell: pwsh
+        run: |
+          $dumpbin = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { throw 'dumpbin.exe not found' }
+          $deps = & $dumpbin /nologo /dependents src-tauri\target\release\skima.exe | Out-String
+          Write-Host $deps
+          if ($deps -notmatch '(?im)^\s+kernel32\.dll\s*$') { throw 'could not read the import table' }
+          if ($deps -match '(?im)^\s+(vcruntime|msvcp)\S*\.dll\s*$') { throw "skima.exe imports $($Matches[1])*.dll: the VC++ runtime is not linked statically" }
+
       - name: Lay the package out
         shell: pwsh
         env:
