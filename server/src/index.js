@@ -96,6 +96,17 @@ export function createApp() {
   // SYSTEM CONFIG ROUTES (Public - needed before login)
   // ============================================================
 
+  // The one definition of "demo mode", shared by GET /api/config and POST /api/setup:
+  // the install holds demo people. People added during the demo are real rows
+  // (esDemo is never taken from the client), so they do not end demo mode.
+  async function demoState() {
+    const [demoCount, realCount] = await Promise.all([
+      prisma.collaborator.count({ where: { esDemo: true } }),
+      prisma.collaborator.count({ where: { esDemo: false } }),
+    ]);
+    return { isDemo: demoCount > 0, hasRealPeople: realCount > 0 };
+  }
+
   // GET /api/config - Check if system is set up
   app.get('/api/config', async (req, res) => {
     try {
@@ -115,12 +126,11 @@ export function createApp() {
         });
       }
 
-      // Check if there are demo collaborators
-      const demoCount = await prisma.collaborator.count({ where: { esDemo: true } });
+      const { isDemo } = await demoState();
 
       res.json({
         isSetup: config.isSetup,
-        isDemo: demoCount > 0,
+        isDemo,
         isOnlineDemo: process.env.DEMO_MODE === 'true',
         isStoreInstall: storeInstall,
         companyName: config.companyName,
@@ -153,12 +163,7 @@ export function createApp() {
 
       // Check if already set up
       const existingConfig = await prisma.systemConfig.findFirst();
-      const [demoCount, realCount] = await Promise.all([
-        prisma.collaborator.count({ where: { esDemo: true } }),
-        prisma.collaborator.count({ where: { esDemo: false } }),
-      ]);
-      // Demo data may be replaced only while it is all the install holds.
-      const isInDemoMode = demoCount > 0 && realCount === 0;
+      const { isDemo: isInDemoMode, hasRealPeople } = await demoState();
 
       // Block re-setup only if already configured AND not in demo mode
       if (existingConfig?.isSetup && !isInDemoMode) {
@@ -167,17 +172,26 @@ export function createApp() {
         });
       }
 
-      // Replacing the demo wipes every table. With the demo's own (public) password
-      // anyone may do it, as the demo invites; with any other password, only the admin.
-      if (isInDemoMode && existingConfig?.adminPassword && !hasValidToken(req)) {
-        const isDemoPassword = await bcrypt.compare(DEMO_ADMIN_PASSWORD, existingConfig.adminPassword)
-          .catch(() => false);
-        if (!isDemoPassword) {
+      // Replacing the demo wipes every table. The admin may always do it. Without a
+      // token, only while the demo is all the install holds and its password is the
+      // demo's own (public) one, as the demo invites.
+      if (isInDemoMode && !hasValidToken(req)) {
+        if (hasRealPeople) {
           return res.status(401).json({ message: 'Sign in to replace this data.', code: 'AUTH_REQUIRED' });
+        }
+        if (existingConfig?.adminPassword) {
+          if (!checkRateLimit(req.ip || req.socket?.remoteAddress || 'unknown')) {
+            return res.status(429).json({ message: 'Too many attempts. Try again in 15 minutes.', code: 'RATE_LIMITED' });
+          }
+          const isDemoPassword = await bcrypt.compare(DEMO_ADMIN_PASSWORD, existingConfig.adminPassword)
+            .catch(() => false);
+          if (!isDemoPassword) {
+            return res.status(401).json({ message: 'Sign in to replace this data.', code: 'AUTH_REQUIRED' });
+          }
         }
       }
 
-      // If transitioning from demo, wipe ALL data (everything is demo data)
+      // Leaving the demo wipes ALL data: the demo and anything added while trying it
       if (isInDemoMode) {
         await prisma.$transaction([
           // New people development tables (must delete before collaborators/skills)

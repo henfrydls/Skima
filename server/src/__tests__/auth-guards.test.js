@@ -143,16 +143,50 @@ describe('auth guards', () => {
       expect(await storedPasswordIs('new-password')).toBe(true);
     }, 30000);
 
-    it('treats demo rows next to real people as a configured install', async () => {
+    it('lets the signed-in user leave the demo after adding people to it', async () => {
+      await request(app).post('/api/seed-demo');
+      const login = await request(app).post('/api/auth/login').send({ password: 'admin123' });
+      const token = `Bearer ${login.body.token}`;
+      const added = await request(app)
+        .post('/api/collaborators')
+        .set('Authorization', token)
+        .send({ nombre: 'Trying', rol: 'Dev' });
+      expect(added.status).toBe(200);
+
+      const config = await request(app).get('/api/config');
+      expect(config.body.isDemo).toBe(true);
+
+      const res = await request(app).post('/api/setup').set('Authorization', token).send(body);
+
+      expect(res.status).toBe(200);
+      expect(await prisma.collaborator.count()).toBe(0);
+      expect(await storedPasswordIs('new-password')).toBe(true);
+      expect((await request(app).get('/api/config')).body.isDemo).toBe(false);
+    }, 30000);
+
+    it('needs a token once people were added to the demo, and wipes nothing', async () => {
+      await request(app).post('/api/seed-demo');
+      await prisma.collaborator.create({ data: { nombre: 'Trying', rol: 'Dev' } });
+      const before = await prisma.collaborator.count();
+
+      const res = await request(app).post('/api/setup').send(body);
+
+      expect(res.status).toBe(401);
+      expect(await prisma.collaborator.count()).toBe(before);
+      expect(await storedPasswordIs('admin123')).toBe(true);
+    }, 30000);
+
+    it('limits unauthenticated attempts like login does', async () => {
       await setUpWithPassword();
       await prisma.collaborator.create({ data: { nombre: 'Demo', rol: 'Dev', esDemo: true } });
-      await prisma.collaborator.create({ data: { nombre: 'Real', rol: 'Dev' } });
+      const attempt = () => request(app).post('/api/setup').send(body);
 
-      const res = await request(app).post('/api/setup').set('Authorization', bearer()).send(body);
-
-      expect(res.status).toBe(400);
-      expect(await prisma.collaborator.count()).toBe(2);
-    });
+      for (let i = 0; i < 10; i++) expect((await attempt()).status).toBe(401);
+      expect((await attempt()).status).toBe(429);
+      expect((await request(app).post('/api/auth/login').send({ password: PASSWORD })).status).toBe(429);
+      expect(await prisma.collaborator.count()).toBe(1);
+      expect(await storedPasswordIs(PASSWORD)).toBe(true);
+    }, 30000);
   });
 
   describe('admin password checks', () => {
