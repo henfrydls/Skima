@@ -36,7 +36,9 @@ if [ "$DEMO_MODE" = "true" ] && [ -n "$UMAMI_SRC" ] && [ -n "$UMAMI_WEBSITE_ID" 
   echo "  Analytics script injected."
 fi
 
-# Handle DB state based on DEMO_MODE
+# The online demo seeds itself on first start. Outside it the database is never
+# touched here: demo data a user loaded stays until they replace it from the app
+# ("Set up my space"), which the server does safely.
 if [ "$DEMO_MODE" = "true" ]; then
   IS_SETUP=$(wget -q -O - http://localhost:3001/api/config 2>/dev/null | grep -o '"isSetup":true')
   if [ -z "$IS_SETUP" ]; then
@@ -45,14 +47,6 @@ if [ "$DEMO_MODE" = "true" ]; then
     echo "  Demo data seeded."
   else
     echo "  Database already has data, skipping seed."
-  fi
-else
-  IS_DEMO=$(wget -q -O - http://localhost:3001/api/config 2>/dev/null | grep -o '"isDemo":true')
-  if [ -n "$IS_DEMO" ]; then
-    echo "  Cleaning demo data for normal mode..."
-    rm -f /app/data/skills.db
-    npx prisma db push --skip-generate 2>/dev/null
-    echo "  Database reset. Fresh setup ready."
   fi
 fi
 
