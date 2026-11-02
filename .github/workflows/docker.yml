@@ -100,6 +100,47 @@ jobs:
           CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:13002/api/seed-demo)
           [ "$CODE" = "403" ] || { echo "::error::POST without X-Skima returned $CODE, not 403"; exit 1; }
 
+      # Restarting must never lose data. The entrypoint used to delete the database
+      # when it held demo data and the container came back without DEMO_MODE.
+      - name: Smoke test restart keeps the data
+        run: |
+          docker volume create skima-smoke-data >/dev/null
+          trap 'docker logs skima-restart-smoke 2>&1 | tail -20; docker rm -f skima-restart-smoke >/dev/null 2>&1 || true; docker volume rm -f skima-smoke-data >/dev/null 2>&1 || true' EXIT
+          start() {
+            docker rm -f skima-restart-smoke >/dev/null 2>&1 || true
+            docker run -d --name skima-restart-smoke -p 13003:3001 -v skima-smoke-data:/app/data \
+              -e SKIMA_DISABLE_CHECKIN=1 "$@" skima-smoke:ci >/dev/null
+            for i in $(seq 1 90); do
+              docker logs skima-restart-smoke 2>&1 | grep -q "Skima is ready" && return 0
+              sleep 1
+            done
+            echo "::error::container never reported ready"; return 1
+          }
+          start -e DEMO_MODE=true
+          BEFORE=$(curl -sf http://localhost:13003/api/collaborators | grep -o '"nombre"' | wc -l)
+          [ "$BEFORE" -gt 0 ] || { echo "::error::demo seed left no people"; exit 1; }
+          start
+          AFTER=$(curl -sf http://localhost:13003/api/collaborators | grep -o '"nombre"' | wc -l)
+          echo "people before: $BEFORE, after restart without DEMO_MODE: $AFTER"
+          [ "$AFTER" = "$BEFORE" ] || { echo "::error::restart lost data ($BEFORE -> $AFTER)"; exit 1; }
+
+      # Only a final release tag (vX.Y.Z, no -rc/-beta/-alpha suffix) moves :latest,
+      # which is what `docker pull` gives users by default. The rule is checked on
+      # every run, pull requests included, before it is applied below.
+      - name: Decide whether this build is the latest release
+        id: release
+        run: |
+          is_final() { [[ "$1" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; }
+          for ref in refs/tags/v1.6.0 refs/tags/v10.20.30; do
+            is_final "$ref" || { echo "::error::$ref should be final"; exit 1; }
+          done
+          for ref in refs/tags/v1.6.0-rc.1 refs/tags/v1.6.0-beta.2 refs/tags/v1.6.0-alpha.1 refs/heads/main refs/pull/1/merge; do
+            ! is_final "$ref" || { echo "::error::$ref should not be final"; exit 1; }
+          done
+          if is_final "$GITHUB_REF"; then FINAL=true; else FINAL=false; fi
+          echo "$GITHUB_REF -> latest: $FINAL"
+          echo "final=$FINAL" >> "$GITHUB_OUTPUT"
+
       - name: Log in to GitHub Container Registry
         if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
@@ -114,10 +155,13 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # latest is decided above, not by the action's own rule.
+          flavor: |
+            latest=false
           tags: |
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ steps.release.outputs.final }}
             # Lets a manual workflow_dispatch on a feature branch produce a
             # throwaway tag (= branch name) so the image build/push path can be
             # exercised without cutting a release tag.
