@@ -89,6 +89,9 @@ jobs:
           CODE=$(curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:11999/api/collaborators \
             -H 'Content-Type: application/json' -d '{"nombre":"NoHeader","rol":"CI"}')
           [ "$CODE" = "403" ] || { echo "::error::POST without X-Skima returned $CODE, not 403"; exit 1; }
+          # HOST CHECK: a request naming another host is refused (421).
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -H 'Host: other.example' http://127.0.0.1:11999/api/config)
+          [ "$CODE" = "421" ] || { echo "::error::request for another host returned $CODE, not 421"; exit 1; }
           # LOOPBACK ONLY: the API has no password, so it must not answer on the network.
           LAN=$(hostname -I | awk '{print $1}')
           if [ -n "$LAN" ] && curl -s -o /dev/null --max-time 3 "http://$LAN:11999/api/config"; then
