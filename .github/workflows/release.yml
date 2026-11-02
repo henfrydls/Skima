@@ -368,6 +368,10 @@ jobs:
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # tauri-build 2.5 links the VC++ runtime statically only when this is
+          # "true". CLI 2.10 set it; CLI 2.12 no longer does (it moved to
+          # build.windows.staticVCRuntime, which tauri-build 2.5 does not read).
+          STATIC_VCRUNTIME: 'true'
           # Tauri updater signing — produces .sig files and the latest.json manifest
           # the auto-updater reads at runtime. Without these the bundle is unsigned
           # and existing v1.4.0+ clients will refuse the update.
@@ -398,6 +402,25 @@ jobs:
           prerelease: ${{ contains(github.ref_name, '-rc.') || contains(github.ref_name, '-beta.') || contains(github.ref_name, '-alpha.') }}
           includeUpdaterJson: true
           args: ${{ matrix.args }}
+          # The CLI that matches the tauri crates (Cargo.lock), as in msix.yml. Unpinned,
+          # tauri-action installs the newest 2.x, which drifted ahead of them.
+          tauriScript: npx --yes @tauri-apps/cli@2.10.1
+
+      # A clean Windows has no Visual C++ redistributable, so an exe that imports
+      # VCRUNTIME140.dll does not start there ("VCRUNTIME140.dll was not found").
+      # rc.2 shipped like that: Tauri CLI 2.12 stopped setting STATIC_VCRUNTIME, which
+      # tauri-build 2.5 needs to link the runtime statically.
+      - name: Executable does not need the VC++ runtime
+        if: matrix.platform == 'windows-latest'
+        shell: pwsh
+        run: |
+          $dumpbin = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * `
+            -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { throw 'dumpbin.exe not found' }
+          $deps = & $dumpbin /nologo /dependents src-tauri\target\release\skima.exe | Out-String
+          Write-Host $deps
+          if ($deps -notmatch '(?im)^\s+kernel32\.dll\s*$') { throw 'could not read the import table' }
+          if ($deps -match '(?im)^\s+(vcruntime|msvcp)\S*\.dll\s*$') { throw "skima.exe imports $($Matches[1])*.dll: the VC++ runtime is not linked statically" }
 
   # Validate latest.json after all matrix jobs complete (issue #51).
   # tauri-action's per-platform uploads can leave the manifest with a partial
