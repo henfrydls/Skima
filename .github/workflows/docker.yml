@@ -70,6 +70,8 @@ jobs:
         run: |
           docker run -d --name skima-smoke -p 13001:3001 -e SKIMA_DISABLE_CHECKIN=1 skima-smoke:ci
           trap 'docker logs skima-smoke; docker rm -f skima-smoke >/dev/null 2>&1 || true' EXIT
+          # Reached from the host through the port mapping, so this also proves the
+          # container does not listen on loopback only (the desktop default).
           for i in $(seq 1 90); do
             curl -sf http://localhost:13001/api/config > /dev/null && break
             sleep 1

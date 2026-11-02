@@ -13,6 +13,7 @@ import developmentRoutes from './routes/development.js';
 import { authMiddleware } from './middleware/auth.js';
 import { demoModeMiddleware } from './middleware/demo.js';
 import { requireApiHeader, DESKTOP_ORIGINS } from './middleware/apiHeader.js';
+import { listen, listenHost } from './listenHost.js';
 
 // Re-export prisma for any routes that still import from index
 export { prisma };
@@ -1679,8 +1680,9 @@ if (isDirectRun) {
         console.warn(`[check-in] skipped: ${err.message}`);
         if (process.argv.includes('--checkin-now') && !process.argv.includes('--port')) process.exit(1);
       });
-    app.listen(PORT, () => {
-      console.log(`[Skima Server] API running on http://localhost:${PORT}`);
+    const host = listenHost();
+    listen(app, PORT, host, () => {
+      console.log(`[Skima Server] API running on http://${host ?? 'localhost'}:${PORT}`);
     });
   }).catch(err => {
     console.error('[Skima Server] Failed to initialize database:', err);

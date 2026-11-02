@@ -196,14 +196,18 @@ jobs:
             Get-Content "$work\smoke.log" -ErrorAction SilentlyContinue
             Get-Content "$work\smoke.err" -ErrorAction SilentlyContinue
             if (-not $ok) { throw 'sidecar never reported API running' }
-            $cfg = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/config).Content
+            $cfg = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:11999/api/config).Content
             Write-Host "config: $cfg"
             if ($cfg -notmatch '"isStoreInstall":true') { throw '--store-install did not reach /api/config' }
-            $status = (Invoke-WebRequest -UseBasicParsing http://localhost:11999/api/checkin-status).Content
+            $status = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:11999/api/checkin-status).Content
             Write-Host "checkin-status: $status"
             if ($status -notmatch '"disabled":true') { throw 'SKIMA_DISABLE_CHECKIN gate not holding' }
             if ($status -notmatch '"configured":true') { throw 'check-in URL not injected' }
             if ($status -notmatch [regex]::Escape("`"version`":`"$version`"")) { throw "version is not $version" }
+            # LOOPBACK ONLY: the API has no password, so it must not answer on the network.
+            $listen = @(Get-NetTCPConnection -LocalPort 11999 -State Listen | ForEach-Object LocalAddress)
+            Write-Host "listening on: $($listen -join ', ')"
+            if ($listen.Count -eq 0 -or ($listen | Where-Object { $_ -ne '127.0.0.1' })) { throw "the sidecar listens on $($listen -join ', '), not only on 127.0.0.1" }
           } finally {
             Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
           }
