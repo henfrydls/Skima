@@ -300,10 +300,11 @@ export default function Layout() {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* Main Content. min-w-0: as a flex item, main would otherwise grow to its widest
+          content (the Settings tab row, wide tables) and scroll the whole page sideways. */}
       <main
         className={`
-          flex-1 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
+          flex-1 min-w-0 flex flex-col transition-[margin-left] duration-[250ms] ease-out bg-gray-50
           ${isCollapsed ? 'ml-16' : 'ml-64'}
         `}
       >
