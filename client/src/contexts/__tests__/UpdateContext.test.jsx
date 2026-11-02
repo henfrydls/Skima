@@ -5,6 +5,8 @@ import { UpdateProvider, useUpdate } from '../UpdateContext';
 // Mocks for the Tauri plugins
 const mockCheck = vi.fn();
 const mockDownloadAndInstall = vi.fn();
+const mockDownload = vi.fn();
+const mockInstall = vi.fn();
 const mockRelaunch = vi.fn();
 const mockInvoke = vi.fn();
 
@@ -42,6 +44,7 @@ function Probe() {
     <div>
       <span data-testid="state">{ctx.state}</span>
       <span data-testid="version">{ctx.updateInfo?.version || 'none'}</span>
+      <span data-testid="error">{ctx.error || ''}</span>
       <button data-testid="check" onClick={() => ctx.checkNow({ silent: false })}>check</button>
       <button data-testid="install" onClick={() => ctx.installNow()}>install</button>
       <button data-testid="remind" onClick={() => ctx.remindLater()}>remind</button>
@@ -326,128 +329,108 @@ describe('UpdateContext', () => {
   });
 
   describe('installNow', () => {
-    it('passes through a "preparing" state before downloading (#52)', async () => {
-      // Hold prepare_for_update pending so we can observe the preparing state.
-      let resolvePrepare;
-      mockInvoke.mockReturnValueOnce(new Promise((res) => { resolvePrepare = res; }));
-      mockDownloadAndInstall.mockResolvedValue(undefined);
-      mockRelaunch.mockResolvedValue(undefined);
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
-      });
-      renderWithProvider();
+    // The update handle as the plugin returns it: download and install are separate.
+    const handle = () => ({ version: '1.5.0', body: '', download: mockDownload, install: mockInstall });
 
+    async function clickInstall() {
+      mockCheck.mockResolvedValue(handle());
+      renderWithProvider();
       await act(async () => { screen.getByTestId('check').click(); });
       await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
-
       await act(async () => { screen.getByTestId('install').click(); });
-      // prepare_for_update still pending -> we are 'preparing', not 'downloading'
-      expect(screen.getByTestId('state').textContent).toBe('preparing');
+    }
 
+    const invoked = (command) => mockInvoke.mock.calls.some(([name]) => name === command);
+
+    it('downloads, then stops the sidecar, then installs and relaunches', async () => {
+      const order = [];
+      mockDownload.mockImplementation(async () => { order.push('download'); });
+      mockInvoke.mockImplementation(async (command) => { order.push(command); });
+      mockInstall.mockImplementation(async () => { order.push('install'); });
+      mockRelaunch.mockImplementation(async () => { order.push('relaunch'); });
+
+      await clickInstall();
+
+      await waitFor(() => expect(order).toEqual(['download', 'prepare_for_update', 'install', 'relaunch']));
+    });
+
+    it('passes through a "preparing" state while the sidecar stops (#52)', async () => {
+      let resolvePrepare;
+      mockInvoke.mockReturnValueOnce(new Promise((res) => { resolvePrepare = res; }));
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockResolvedValue(undefined);
+      mockRelaunch.mockResolvedValue(undefined);
+
+      await clickInstall();
+
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('preparing'));
+      expect(mockInstall).not.toHaveBeenCalled();
       await act(async () => { resolvePrepare(); });
       await waitFor(() => expect(mockRelaunch).toHaveBeenCalled());
     });
 
-    it('calls downloadAndInstall then relaunch', async () => {
-      mockDownloadAndInstall.mockResolvedValue(undefined);
-      mockRelaunch.mockResolvedValue(undefined);
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
-      });
-      renderWithProvider();
+    it('leaves the sidecar running when the download fails', async () => {
+      mockDownload.mockRejectedValue(new Error('Network timeout'));
 
-      await act(async () => { screen.getByTestId('check').click(); });
-      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+      await clickInstall();
 
-      await act(async () => { screen.getByTestId('install').click(); });
-
-      await waitFor(() => {
-        expect(mockDownloadAndInstall).toHaveBeenCalled();
-        expect(mockRelaunch).toHaveBeenCalled();
-      });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('error'));
+      expect(invoked('prepare_for_update')).toBe(false);
+      expect(invoked('restart_sidecar')).toBe(false);
+      expect(mockInstall).not.toHaveBeenCalled();
     });
 
-    it('transitions to "error" when download fails', async () => {
-      mockDownloadAndInstall.mockRejectedValue(new Error('Disk full'));
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
+    it('starts the sidecar again when the install fails', async () => {
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockRejectedValue(new Error('Authentication failed or was cancelled'));
+
+      await clickInstall();
+
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('error'));
+      expect(invoked('restart_sidecar')).toBe(true);
+      expect(screen.getByTestId('error').textContent).not.toMatch(/Restart Skima/);
+    });
+
+    it('says to restart Skima when the sidecar cannot be started again', async () => {
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockRejectedValue(new Error('Disk full'));
+      mockInvoke.mockImplementation(async (command) => {
+        if (command === 'restart_sidecar') throw new Error('the local server did not start');
       });
-      renderWithProvider();
 
-      await act(async () => { screen.getByTestId('check').click(); });
-      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+      await clickInstall();
 
-      await act(async () => { screen.getByTestId('install').click(); });
-
-      await waitFor(() => {
-        expect(screen.getByTestId('state').textContent).toBe('error');
-      });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('error'));
+      expect(screen.getByTestId('error').textContent).toMatch(/Disk full[\s\S]*Restart Skima to continue/);
     });
 
     it('transitions to "manual-only" on Linux .deb / .rpm unsupported error', async () => {
       // Tauri v2 emits this error message when running outside an AppImage
-      mockDownloadAndInstall.mockRejectedValue(
-        new Error('binary for the package format deb is not supported')
-      );
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
-      });
-      renderWithProvider();
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockRejectedValue(new Error('binary for the package format deb is not supported'));
 
-      await act(async () => { screen.getByTestId('check').click(); });
-      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
+      await clickInstall();
 
-      await act(async () => { screen.getByTestId('install').click(); });
-
-      await waitFor(() => {
-        expect(screen.getByTestId('state').textContent).toBe('manual-only');
-      });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('manual-only'));
+      expect(invoked('restart_sidecar')).toBe(true);
     });
 
     it('matches the unsupported error in alternate phrasings (rpm)', async () => {
-      mockDownloadAndInstall.mockRejectedValue(
-        new Error('Linux package format rpm is unsupported')
-      );
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
-      });
-      renderWithProvider();
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockRejectedValue(new Error('Linux package format rpm is unsupported'));
 
-      await act(async () => { screen.getByTestId('check').click(); });
-      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
-      await act(async () => { screen.getByTestId('install').click(); });
+      await clickInstall();
 
-      await waitFor(() => {
-        expect(screen.getByTestId('state').textContent).toBe('manual-only');
-      });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('manual-only'));
     });
 
     it('does NOT route to manual-only for unrelated install errors', async () => {
-      mockDownloadAndInstall.mockRejectedValue(new Error('Network timeout'));
-      mockCheck.mockResolvedValue({
-        version: '1.5.0',
-        body: '',
-        downloadAndInstall: mockDownloadAndInstall,
-      });
-      renderWithProvider();
+      mockDownload.mockResolvedValue(undefined);
+      mockInstall.mockRejectedValue(new Error('Network timeout'));
 
-      await act(async () => { screen.getByTestId('check').click(); });
-      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('available'));
-      await act(async () => { screen.getByTestId('install').click(); });
+      await clickInstall();
 
-      await waitFor(() => {
-        expect(screen.getByTestId('state').textContent).toBe('error');
-      });
+      await waitFor(() => expect(screen.getByTestId('state').textContent).toBe('error'));
     });
   });
 });

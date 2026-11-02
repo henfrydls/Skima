@@ -63,7 +63,7 @@ const getAutoCheckPref = () => localStorage.getItem(STORAGE_KEYS.AUTO_CHECK) !==
 /**
  * Detect the "unsupported Linux package format" error from the Tauri updater.
  * Tauri v2 supports auto-update on Linux ONLY when the app is running as an
- * AppImage. Users who installed via .deb / .rpm hit this on `downloadAndInstall`.
+ * AppImage. Users who installed via .deb / .rpm hit this on `install`.
  * The error message comes from the plugin (e.g. "binary for the package format
  * deb is not supported") so we match defensively.
  */
@@ -121,7 +121,7 @@ export function UpdateProvider({ children }) {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [progress, setProgress] = useState({ downloaded: 0, total: 0 });
   const [error, setError] = useState(null);
-  // The native Tauri update handle (has downloadAndInstall) is stored outside
+  // The native Tauri update handle (has download and install) is stored outside
   // React state because it carries non-serializable methods.
   const updateHandleRef = useRef(null);
 
@@ -188,34 +188,24 @@ export function UpdateProvider({ children }) {
   }, [isStoreInstall]);
 
   /**
-   * Download + install + relaunch. Only valid in 'available' or 'error' state.
+   * Download, then install, then relaunch. Only valid in 'available' or 'error' state.
+   *
+   * The sidecar is stopped only once the update is downloaded, right before the
+   * installer runs: on Windows a running skima-server.exe keeps its file locked.
+   * If anything fails before that, the app keeps working. If the install fails
+   * after it, the sidecar is started again, or the error says to restart Skima.
    */
   const installNow = useCallback(async () => {
     const handle = updateHandleRef.current;
     if (!handle) return;
     setError(null);
     setProgress({ downloaded: 0, total: 0 });
-    // Show 'preparing' while the sidecar shuts down. prepare_for_update takes
-    // ~1.5s on Windows to release the file lock; without a distinct state the
-    // user stares at a 'Downloading... 0%' bar that isn't moving yet (#52).
-    setState('preparing');
+    setState('downloading');
 
+    let sidecarStopped = false;
     try {
-      // Kill the sidecar BEFORE the installer runs. If we don't, Windows
-      // holds an open handle on skima-server.exe and NSIS errors with
-      // "Error opening file for writing". The Rust command also waits
-      // ~1.5s so the OS has time to release the file lock.
-      try {
-        await invoke('prepare_for_update');
-      } catch (e) {
-        // Non-fatal — log and proceed; installer will retry on its own
-        // eslint-disable-next-line no-console
-        console.warn('[updater] prepare_for_update failed:', e);
-      }
-
-      setState('downloading');
       let total = 0;
-      await handle.downloadAndInstall((event) => {
+      await handle.download((event) => {
         // Tauri's progress event shape:
         //   { event: 'Started', data: { contentLength } }
         //   { event: 'Progress', data: { chunkLength } }
@@ -228,20 +218,42 @@ export function UpdateProvider({ children }) {
             downloaded: prev.downloaded + (event.data?.chunkLength || 0),
             total: prev.total || total,
           }));
-        } else if (event.event === 'Finished') {
-          setState('installing');
         }
       });
+
+      // Show 'preparing' while the sidecar shuts down: prepare_for_update takes
+      // ~1.5s on Windows to release the file lock (#52).
+      setState('preparing');
+      try {
+        await invoke('prepare_for_update');
+        sidecarStopped = true;
+      } catch (e) {
+        // Non-fatal — log and proceed; installer will retry on its own
+        // eslint-disable-next-line no-console
+        console.warn('[updater] prepare_for_update failed:', e);
+      }
+
+      setState('installing');
+      await handle.install();
       // After install completes, restart
       await relaunch();
     } catch (e) {
+      let message = e?.message || String(e);
+      if (sidecarStopped) {
+        try {
+          await invoke('restart_sidecar');
+        } catch (restartError) {
+          console.warn('[updater] restart_sidecar failed:', restartError);
+          message = `${message}\n\nRestart Skima to continue.`;
+        }
+      }
       if (isLinuxPackageUnsupportedError(e)) {
         // Friendly fallback for .deb / .rpm users — auto-update isn't possible,
         // they need to download from GitHub manually.
         setState('manual-only');
         return;
       }
-      setError(e?.message || String(e));
+      setError(message);
       setState('error');
     }
   }, []);
