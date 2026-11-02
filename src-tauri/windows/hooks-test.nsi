@@ -7,7 +7,8 @@ SilentInstall silent
 Name "Skima installer hooks test"
 OutFile "${OUTFILE}"
 InstallDir "$TEMP\skima-hooks-test"
-!include "${__FILEDIR__}\hooks.nsh"
+; Relative includes resolve against this script's folder.
+!include "hooks.nsh"
 
 Section
   !ifndef NOHOOK
