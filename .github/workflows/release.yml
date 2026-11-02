@@ -185,10 +185,10 @@ jobs:
           # bundle. macos-latest is still macos-15 (Sequoia) until the
           # 2026-06-15 → 2026-07-15 migration completes.
           - platform: macos-26
-            args: '--target aarch64-apple-darwin'
+            args: '--target aarch64-apple-darwin --verbose'
             mac-arch: aarch64
           - platform: macos-26-intel
-            args: '--target x86_64-apple-darwin'
+            args: '--target x86_64-apple-darwin --verbose'
             mac-arch: x86_64
 
     runs-on: ${{ matrix.platform }}
@@ -381,9 +381,15 @@ jobs:
       # the committed Assets.car and reintroduce the `xcrun actool ...`
       # step here. Tracking issue: see repo issues for "macos-26 runner".
 
+      # On the macOS runners, bundle_dmg.sh (hdiutil plus a Finder AppleScript) fails
+      # now and then with no output and passes on the next try with the same code.
+      # macOS gets one more attempt (the step below); every other platform fails here.
+      # --verbose in the macOS args prints what bundle_dmg.sh did if both attempts fail.
       - name: Build Tauri App
+        id: tauri
+        continue-on-error: ${{ startsWith(matrix.platform, 'macos') }}
         uses: tauri-apps/tauri-action@v0
-        env:
+        env: &tauri-env
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # tauri-build 2.5 links the VC++ runtime statically only when this is
           # "true". CLI 2.10 set it; CLI 2.12 no longer does (it moved to
@@ -407,7 +413,7 @@ jobs:
           # Gatekeeper warning on first launch and apply the documented
           # workaround. When Apple secrets are added, remove the "-" identity
           # and add the 6 APPLE_* env vars below the GITHUB_TOKEN line.
-        with:
+        with: &tauri-with
           tagName: ${{ github.ref_name }}
           releaseName: 'Skima ${{ github.ref_name }}'
           releaseBody: ''
@@ -422,6 +428,22 @@ jobs:
           # The CLI that matches the tauri crates (Cargo.lock), as in msix.yml. Unpinned,
           # tauri-action installs the newest 2.x, which drifted ahead of them.
           tauriScript: npx --yes @tauri-apps/cli@2.10.1
+
+      # A failed attempt can leave its scratch image mounted, and the retry would
+      # trip over it, so detach and delete what bundle_dmg.sh left behind first.
+      - name: Clean up after a failed macOS bundle
+        if: steps.tauri.outcome == 'failure'
+        run: |
+          hdiutil info | awk '/\/Volumes\/dmg\./ {print $1}' | while read -r dev; do
+            hdiutil detach -force "$dev" || true
+          done
+          rm -f src-tauri/target/*/release/bundle/macos/rw.*.dmg
+
+      - name: Build Tauri App (second attempt, macOS)
+        if: steps.tauri.outcome == 'failure'
+        uses: tauri-apps/tauri-action@v0
+        env: *tauri-env
+        with: *tauri-with
 
       # A clean Windows has no Visual C++ redistributable, so an exe that imports
       # VCRUNTIME140.dll does not start there ("VCRUNTIME140.dll was not found").
