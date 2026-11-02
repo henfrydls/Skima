@@ -3,6 +3,7 @@ import Button from './Button';
 import useFocusTrap from '../../hooks/useFocusTrap';
 import { useAppVersion } from '../../hooks/useAppVersion';
 import { useUpdate } from '../../contexts/UpdateContext';
+import { openExternal } from '../../lib/openExternal';
 
 function formatBytes(bytes) {
   if (!bytes) return '0 MB';
@@ -161,7 +162,7 @@ export default function UpdateModal() {
               <Button
                 variant="primary"
                 size="sm"
-                onClick={() => window.open('https://github.com/henfrydls/Skima/releases/latest', '_blank', 'noopener')}
+                onClick={() => openExternal('https://github.com/henfrydls/Skima/releases/latest').catch(() => {})}
               >
                 <ExternalLink size={14} className="mr-1.5" />
                 Download from GitHub
