@@ -13,6 +13,7 @@ import developmentRoutes from './routes/development.js';
 import { authMiddleware, hasValidToken } from './middleware/auth.js';
 import { demoModeMiddleware } from './middleware/demo.js';
 import { requireApiHeader, DESKTOP_ORIGINS } from './middleware/apiHeader.js';
+import { hostCheck } from './middleware/hostCheck.js';
 import { listen, listenHost } from './listenHost.js';
 
 // Re-export prisma for any routes that still import from index
@@ -39,6 +40,9 @@ export function createApp() {
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
     next();
   });
+
+  // Only the host names Skima is reached by (see middleware/hostCheck.js).
+  app.use(hostCheck());
 
   // CORS: only origins that are Skima itself. ALLOWED_ORIGINS (comma-separated)
   // replaces the list for hosted deployments. Docker without it serves the client
