@@ -374,7 +374,8 @@ export function createApp() {
         where: { isActive: true },
         include: {
           assessments: {
-            where: { snapshotId: null } // Current (not archived) assessments
+            // Current assessments: not archived and not part of an evaluation session
+            where: { snapshotId: null, evaluationSessionId: null }
           },
           // Include evaluation history for sparklines and comparison
           evaluationSessions: {
@@ -1270,7 +1271,7 @@ export function createApp() {
       const collaboratorId = parseInt(req.params.id);
       
       const assessments = await prisma.assessment.findMany({
-        where: { collaboratorId, snapshotId: null }
+        where: { collaboratorId, snapshotId: null, evaluationSessionId: null }
       });
 
       // Transform to { "1": { nivel: 3, frecuencia: "D" }, ... }
@@ -1317,12 +1318,14 @@ export function createApp() {
 
         const criticidad = profileSkills[skillId] || 'N';
 
-        // Can't use upsert with null in composite key, so use findFirst + update/create
+        // Can't use upsert with null in composite key, so use findFirst + update/create.
+        // evaluationSessionId: null, or this would rewrite a past evaluation's row.
         const existingAssessment = await prisma.assessment.findFirst({
           where: {
             collaboratorId,
             skillId: parseInt(skillId),
-            snapshotId: null
+            snapshotId: null,
+            evaluationSessionId: null
           }
         });
 
@@ -1552,12 +1555,16 @@ export function createApp() {
             });
 
             // Also update/create the current assessment (snapshotId: null)
-            // Can't use upsert with null in composite key, so use findFirst + update/create
+            // Can't use upsert with null in composite key, so use findFirst + update/create.
+            // The session rows above also have snapshotId null: without
+            // evaluationSessionId: null this found the first evaluation's row and
+            // rewrote it, so every new evaluation overwrote the oldest one.
             const existingAssessment = await tx.assessment.findFirst({
               where: {
                 collaboratorId,
                 skillId: parseInt(skillId),
-                snapshotId: null
+                snapshotId: null,
+                evaluationSessionId: null
               }
             });
 

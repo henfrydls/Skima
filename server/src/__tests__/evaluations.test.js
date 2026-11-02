@@ -128,10 +128,52 @@ describe('Evaluation endpoints', () => {
       expect(session.assessments[0].nivel).toBe(4);
       // also mirrors into the current assessment (snapshotId null)
       const current = await prisma.assessment.findFirst({
-        where: { collaboratorId: collab.id, skillId: 1, snapshotId: null },
+        where: { collaboratorId: collab.id, skillId: 1, snapshotId: null, evaluationSessionId: null },
       });
       expect(current).not.toBeNull();
       expect(current.nivel).toBe(4);
+    });
+
+    // Each evaluation keeps its own levels. The "current" row used to be looked up
+    // without excluding session rows, so it matched the first evaluation's row and
+    // every later evaluation rewrote it.
+    it('keeps the levels of earlier evaluations', async () => {
+      const levels = [2, 4, 5];
+      const uuids = [];
+      for (const nivel of levels) {
+        const res = await request(app)
+          .post('/api/evaluations')
+          .send({ collaboratorId: collab.id, skills: { 1: { nivel, frecuencia: 'D' } } });
+        expect(res.status).toBe(200);
+        uuids.push(res.body.uuid);
+      }
+
+      for (const [i, uuid] of uuids.entries()) {
+        const res = await request(app).get(`/api/evaluations/${uuid}`);
+        expect(res.body.skills['1'].nivel).toBe(levels[i]);
+      }
+
+      const data = await request(app).get('/api/data');
+      const ana = data.body.collaborators.find((c) => c.id === collab.id);
+      expect(ana.skills['1'].nivel).toBe(5);
+
+      const current = await prisma.assessment.findMany({
+        where: { collaboratorId: collab.id, skillId: 1, evaluationSessionId: null },
+      });
+      expect(current.map((a) => a.nivel)).toEqual([5]);
+    });
+
+    it('keeps an evaluation when the current levels are edited afterwards', async () => {
+      const created = await request(app)
+        .post('/api/evaluations')
+        .send({ collaboratorId: collab.id, skills: { 1: { nivel: 2, frecuencia: 'D' } } });
+
+      await request(app)
+        .put(`/api/collaborators/${collab.id}/skills`)
+        .send({ 1: { nivel: 5, frecuencia: 'D' } });
+
+      const res = await request(app).get(`/api/evaluations/${created.body.uuid}`);
+      expect(res.body.skills['1'].nivel).toBe(2);
     });
 
     it('returns 400 without a collaboratorId', async () => {

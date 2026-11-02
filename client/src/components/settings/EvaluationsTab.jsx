@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import CollaboratorSelect from './CollaboratorSelect.jsx';
 import { invalidatePreload } from '../../lib/dataPreload';
+import { withCurrentSkills } from '../../lib/collaboratorSkills';
 import { createPortal } from 'react-dom';
 import { useBlocker, useNavigate } from 'react-router-dom';
 import { 
@@ -735,11 +736,9 @@ export default function EvaluationsTab({ initialContext, isActive = false, dataV
       const data = await dataRes.json();
       const allCollaborators = await collabsRes.json();
       
-      // Merge: Use allCollaborators for the list, but enrich if needed. 
-      // Actually, allCollaborators from endpoint should be enough.
-      // But let's respect if 'data' returns other things like categories/skills.
-      
-      setCollaborators(allCollaborators || []);
+      // The full list (archived included) with the current levels from /api/data, so
+      // the form starts from what was evaluated and saving keeps the skills not edited.
+      setCollaborators(withCurrentSkills(allCollaborators, data.collaborators));
       setCategories(data.categories || []);
       setSkills(data.skills || []);
       setRoleProfiles(data.roleProfiles || {});
