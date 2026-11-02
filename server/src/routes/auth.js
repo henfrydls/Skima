@@ -7,12 +7,13 @@ import { prisma } from '../db.js';
 
 const router = express.Router();
 
-// Simple in-memory rate limiter for login attempts
+// Simple in-memory rate limiter for password checks: login and the current-password
+// check in PUT /api/config share it, so neither can be used to guess faster.
 const loginAttempts = new Map();
 const MAX_ATTEMPTS = 10;
 const WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
-function checkRateLimit(ip) {
+export function checkRateLimit(ip) {
   const now = Date.now();
   const record = loginAttempts.get(ip);
 

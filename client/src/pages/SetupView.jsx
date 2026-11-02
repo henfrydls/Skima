@@ -22,7 +22,7 @@ import ConfirmModal from '../components/common/ConfirmModal';
 export default function SetupView({ onSetupComplete }) {
   const navigate = useNavigate();
   const { isDemo, refetchConfig } = useConfig();
-  const { logout } = useAuth();
+  const { logout, getHeaders } = useAuth();
   const [formData, setFormData] = useState({
     companyName: '',
     adminName: '',
@@ -71,9 +71,10 @@ export default function SetupView({ onSetupComplete }) {
     setError(null);
 
     try {
+      // With a token: replacing data under a real password needs the admin's session.
       const response = await fetch(`${API_BASE}/api/setup`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getHeaders(),
         body: JSON.stringify({
           companyName: formData.companyName.trim(),
           adminName: formData.adminName.trim(),

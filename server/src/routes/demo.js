@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../db.js';
+import { authMiddleware } from '../middleware/auth.js';
 import {
   CATEGORIES,
   SKILLS,
@@ -37,11 +38,29 @@ export function resetSeedRateLimiter() {
   seedAttempts.clear();
 }
 
+// The demo data's admin password, shown to visitors of the demo.
+export const DEMO_ADMIN_PASSWORD = 'admin123';
+
+// Seeding replaces every table. Before set-up that is the "explore the demo" choice;
+// once an install is set up, only its admin may do it. The public demo stays open
+// (rate-limited below).
+async function adminOnceSetUp(req, res, next) {
+  if (process.env.DEMO_MODE === 'true') return next();
+  try {
+    const config = await prisma.systemConfig.findFirst();
+    if (!config?.isSetup) return next();
+  } catch (error) {
+    console.error('[API] POST /api/seed-demo: could not read the configuration:', error);
+    return res.status(500).json({ error: 'Failed to read configuration' });
+  }
+  return authMiddleware(req, res, next);
+}
+
 // ============================================================
 // POST /api/seed-demo - Seed rich demo data for first-time experience
 // Uses the same chaos testing dataset as prisma/seed.js
 // ============================================================
-router.post('/', async (req, res) => {
+router.post('/', adminOnceSetUp, async (req, res) => {
   // Throttle reseeds on the public demo only.
   if (process.env.DEMO_MODE === 'true') {
     const ip = req.ip || req.socket?.remoteAddress || 'unknown';
@@ -141,21 +160,23 @@ router.post('/', async (req, res) => {
         }
       }
 
-      // Set up SystemConfig as demo (password: admin123)
-      const demoPassword = await bcrypt.hash('admin123', 10);
+      // Set up SystemConfig as demo. An existing admin password is never replaced;
+      // only an install without one gets the demo password.
+      const existing = await tx.systemConfig.findUnique({ where: { id: 1 } });
+      const adminPassword = existing?.adminPassword || await bcrypt.hash(DEMO_ADMIN_PASSWORD, 10);
       await tx.systemConfig.upsert({
         where: { id: 1 },
         update: {
           companyName: 'Demo Company',
           adminName: 'Administrator',
-          adminPassword: demoPassword,
+          adminPassword,
           isSetup: true,
         },
         create: {
           id: 1,
           companyName: 'Demo Company',
           adminName: 'Administrator',
-          adminPassword: demoPassword,
+          adminPassword,
           isSetup: true,
         },
       });

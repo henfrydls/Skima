@@ -22,6 +22,9 @@ beforeEach(async () => {
   }
   // Append-only audit log — cleared here so backup-log tests are isolated.
   await prisma.backupLog.deleteMany();
+  // Open access (no admin password) unless a test sets one, so no test inherits
+  // another's password.
+  await prisma.systemConfig.deleteMany();
   // Delete in order due to foreign key constraints
   // Development tables (actions -> goals -> plans)
   await prisma.developmentAction.deleteMany();

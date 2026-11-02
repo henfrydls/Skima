@@ -40,8 +40,11 @@ describe('Demo Routes', () => {
       // Seed first
       await request(app).post('/api/seed-demo');
 
-      // Seed again — should clear and re-seed
-      const res = await request(app).post('/api/seed-demo');
+      // Seed again as the admin (the install is now set up) — should clear and re-seed
+      const login = await request(app).post('/api/auth/login').send({ password: 'admin123' });
+      const res = await request(app)
+        .post('/api/seed-demo')
+        .set('Authorization', `Bearer ${login.body.token}`);
 
       expect(res.status).toBe(200);
       expect(res.body.success).toBe(true);

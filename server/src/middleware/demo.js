@@ -10,7 +10,6 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 const DEMO_ALLOWED_MUTATIONS = [
   ['POST', /^\/api\/auth\/login$/],
-  ['POST', /^\/api\/config\/verify$/],
   ['POST', /^\/api\/seed-demo$/],
 ];
 
