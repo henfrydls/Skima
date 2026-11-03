@@ -51,7 +51,7 @@ The desktop app asks GitHub whether a newer version exists each time it starts, 
 
 ## The online demo
 
-The demo is a shared Skima server with sample data. Anything you enter there can be seen by other visitors until the demo resets, every few hours. Do not enter real people's information in it.
+The demo is a shared Skima server with sample data. Anything you enter there can be seen by other visitors until the demo resets, every few hours. Do not enter real people's information in it. Like the website, the demo counts page views with Umami (see below).
 
 ## The website
 
