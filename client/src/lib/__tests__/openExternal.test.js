@@ -32,7 +32,7 @@ describe('openExternal', () => {
 
   afterEach(() => {
     delete window.__TAURI_INTERNALS__;
-    document.removeEventListener('click', handleExternalLinkClick);
+    document.body.removeEventListener('click', handleExternalLinkClick);
     document.body.innerHTML = '';
     vi.restoreAllMocks();
   });
@@ -87,6 +87,42 @@ describe('openExternal', () => {
 
       expect(event.defaultPrevented).toBe(true);
       expect(invoke).toHaveBeenCalledWith('plugin:opener|open_url', { url: 'https://github.com/henfrydls/Skima/blob/main/PRIVACY.md' });
+    });
+
+    // Same behaviour as the listener tauri-plugin-shell injects on <body> (added at
+    // DOMContentLoaded, so after this app's): any _blank link -> plugin:shell|open,
+    // which the app does not allow, plus preventDefault.
+    function addShellPluginListener() {
+      const shell = vi.fn((event) => {
+        const a = event.target.closest('a');
+        if (a && a.target === '_blank' && /^https?:/.test(a.href)) {
+          invoke('plugin:shell|open', { path: a.href });
+          event.preventDefault();
+        }
+      });
+      document.body.addEventListener('click', shell);
+      return shell;
+    }
+
+    it('opens the link even with the shell plugin listening on <body>', () => {
+      installExternalLinks();
+      const shell = addShellPluginListener();
+      const root = document.createElement('div');
+      document.body.appendChild(root);
+      const reactHandler = vi.fn();
+      root.addEventListener('click', reactHandler);
+      const a = document.createElement('a');
+      a.href = 'https://github.com/henfrydls/Skima';
+      a.target = '_blank';
+      root.appendChild(a);
+
+      clickOn(a);
+
+      expect(invoke).toHaveBeenCalledTimes(1);
+      expect(invoke).toHaveBeenCalledWith('plugin:opener|open_url', { url: 'https://github.com/henfrydls/Skima' });
+      expect(shell).not.toHaveBeenCalled();
+      expect(reactHandler).toHaveBeenCalled();
+      document.body.removeEventListener('click', shell);
     });
 
     it('leaves in-app links, non-left clicks and handled clicks alone', () => {
