@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { TrendingUp, Activity, Calendar, ChevronDown, Check, LifeBuoy } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import StatCard from '../components/common/StatCard';
@@ -37,9 +37,11 @@ export default function EvolutionPage() {
 
   const selectedOption = timeOptions.find(o => o.id === timeRange);
 
-  // Transform API data for components
-  const chartData = data ? transformChartData(data.chartData) : [];
-  const collaboratorsData = data ? transformEmployeesForList(data.employees) : [];
+  // Transform API data for components. Memoized on the data: EvolutionChart redraws
+  // its animation whenever `data` changes identity, so local state (the period menu)
+  // must not hand it a new array on every render.
+  const chartData = useMemo(() => (data ? transformChartData(data.chartData) : []), [data]);
+  const collaboratorsData = useMemo(() => (data ? transformEmployeesForList(data.employees) : []), [data]);
   const topImprover = data ? getTopImprover(data.insights) : null;
   const attentionCount = data ? getSupportCount(data.insights) : 0;
   const teamVelocity = chartData.length > 0 ? calculateTeamVelocity(chartData) : { current: null, delta: null };
