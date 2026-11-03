@@ -207,6 +207,36 @@ jobs:
           echo "$STATUS" | grep -q '"version":"[0-9]'
           echo "$STATUS" | grep -q '"configured":true'
 
+  # External links in the real desktop webview, with the plugins' injected scripts:
+  # the unit tests mock them, and that is how a broken click shipped in 1.6.0-rc.5.
+  desktop-links:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Rust Stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Linux Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xvfb
+
+      - name: Install Dependencies
+        run: |
+          npm install
+          cd client && npm install
+          cd ../server && npm install && npx prisma generate
+
+      - name: Clicking an external link opens the system browser
+        run: bash scripts/smoke-desktop-links.sh
+
   # The installer hooks (src-tauri/windows/hooks.nsh) stop a sidecar left running by a
   # killed Skima.exe, which otherwise locks skima-server.exe and makes installing over it
   # fail. This runs them in a small test installer, without building the app.
