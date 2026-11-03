@@ -87,6 +87,37 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # The Store identity check, against the real manifest with fake values, on every
+      # run: a Store build is only ever started by hand, so a broken check would
+      # otherwise surface there first (it did, for 1.6.0).
+      - name: Self-test the Store identity step
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $script = 'packaging\msix\Set-StoreIdentity.ps1'
+          $original = Get-Content packaging\msix\AppxManifest.xml -Raw
+          $out = & $script -Manifest $original -Name 'Fake.Skima' -Publisher 'CN=FAKE-PUBLISHER' -DisplayName 'Fake Publisher'
+          foreach ($want in 'Name="Fake.Skima"', 'Publisher="CN=FAKE-PUBLISHER"', '<PublisherDisplayName>Fake Publisher</PublisherDisplayName>') {
+            if (-not $out.Contains($want)) { throw "self-test: $want missing" }
+          }
+          foreach ($gone in 'Name="Placeholder.Skima"', 'CN=00000000-', '>Placeholder Publisher<') {
+            if ($out.Contains($gone)) { throw "self-test: $gone still there" }
+          }
+          function Expect-Failure($label, $pattern, [scriptblock]$run) {
+            try { & $run; throw "self-test: $label did not fail" }
+            catch { if ($_.Exception.Message -notmatch $pattern) { throw "self-test: $label failed with '$($_.Exception.Message)'" } }
+          }
+          Expect-Failure 'an empty publisher' 'MSIX_PUBLISHER is empty' {
+            & $script -Manifest $original -Name 'Fake.Skima' -Publisher '' -DisplayName 'Fake Publisher' | Out-Null
+          }
+          Expect-Failure 'an empty name' 'MSIX_IDENTITY_NAME is empty' {
+            & $script -Manifest $original -Name ' ' -Publisher 'CN=FAKE' -DisplayName 'Fake Publisher' | Out-Null
+          }
+          Expect-Failure 'a manifest without the placeholders' 'no Name="Placeholder.Skima"' {
+            & $script -Manifest $out -Name 'Fake.Skima' -Publisher 'CN=FAKE' -DisplayName 'Fake Publisher' | Out-Null
+          }
+          Write-Host 'Store identity step: OK'
+
       - name: Require Store identity
         if: env.STORE_BUILD == 'true'
         shell: pwsh
@@ -175,10 +206,9 @@ jobs:
           $manifest = Get-Content packaging\msix\AppxManifest.xml -Raw
           $manifest = $manifest -replace 'Version="0\.0\.0\.0"', "Version=`"$packageVersion`""
           if ($env:STORE_BUILD -eq 'true') {
-            $manifest = $manifest.Replace('Name="Placeholder.Skima"', "Name=`"$env:MSIX_IDENTITY_NAME`"")
-            $manifest = $manifest.Replace('Publisher="CN=00000000-0000-0000-0000-000000000000"', "Publisher=`"$env:MSIX_PUBLISHER`"")
-            $manifest = $manifest.Replace('<PublisherDisplayName>Placeholder Publisher</PublisherDisplayName>', "<PublisherDisplayName>$env:MSIX_PUBLISHER_DISPLAY_NAME</PublisherDisplayName>")
-            if ($manifest -match 'Placeholder|CN=00000000-') { throw 'Store build still carries a placeholder identity' }
+            $manifest = & packaging\msix\Set-StoreIdentity.ps1 -Manifest $manifest `
+              -Name $env:MSIX_IDENTITY_NAME -Publisher $env:MSIX_PUBLISHER -DisplayName $env:MSIX_PUBLISHER_DISPLAY_NAME
+            Write-Host 'Store identity applied: Name, Publisher and PublisherDisplayName'
           }
           Set-Content msix\AppxManifest.xml $manifest -Encoding UTF8
 
